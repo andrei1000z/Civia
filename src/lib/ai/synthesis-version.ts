@@ -57,5 +57,16 @@
  *             MUST contain ≥ 2 section headers literally; output
  *             is auto-rejected otherwise.
  *       Bump invalidates v7 rows so the new gate applies.
+ *   9 — When AI fails to produce structured output (thin input from
+ *       empty `content` field), return null instead of falling back
+ *       to the excerpt. The page (StireDetailPage) already renders
+ *       the synthesis section conditionally on `aiSummary` being
+ *       truthy, so null hides the panel — way better UX than
+ *       showing identical text in "Sinteză Civia" + "Text original"
+ *       panels stacked on top of each other.
+ *       Plus: isJustTheExcerpt() similarity guard catches v7/v8
+ *       cache rows where the AI produced text that's structurally
+ *       valid but content-wise ~90% the excerpt — also returns null.
+ *       Bump invalidates v8 cache.
  */
-export const AI_SUMMARY_VERSION = 8;
+export const AI_SUMMARY_VERSION = 9;

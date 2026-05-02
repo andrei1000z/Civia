@@ -72,6 +72,39 @@ const inFlight = new Map<string, Promise<string | null>>();
  * Concurrent calls for the same stire within one lambda are coalesced
  * into a single Groq request.
  */
+/**
+ * Normalize text for similarity comparison: lowercase, strip
+ * punctuation, collapse whitespace. Used to detect when a summary
+ * is "the excerpt with cosmetic differences" (extra punctuation,
+ * truncation marker, capitalization, etc.).
+ */
+function normalizeForCompare(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Returns true when `summary` is effectively the excerpt repeated
+ * (or a 90%+ overlap of it). When the AI couldn't produce a real
+ * synthesis (thin input, all providers rate-limited, etc.) it tends
+ * to return the excerpt verbatim or rephrased, which produces a
+ * useless "Sinteză Civia = Text Original" duplication on the page.
+ */
+function isJustTheExcerpt(summary: string, excerpt: string | null): boolean {
+  if (!excerpt) return false;
+  const a = normalizeForCompare(summary);
+  const b = normalizeForCompare(excerpt);
+  if (a.length === 0 || b.length === 0) return false;
+  // Exact match or substring containment in either direction.
+  if (a === b) return true;
+  if (a.includes(b) && b.length / a.length > 0.85) return true;
+  if (b.includes(a) && a.length / b.length > 0.85) return true;
+  return false;
+}
+
 export async function getOrGenerateAiSummary(
   stire: SummarizableStire
 ): Promise<string | null> {
@@ -81,6 +114,10 @@ export async function getOrGenerateAiSummary(
     (stire.ai_summary_version ?? 0) >= AI_SUMMARY_VERSION;
 
   if (cacheValid) {
+    // Even cached summaries get the excerpt-overlap check — if a
+    // previous run persisted excerpt-as-summary, hide the section
+    // rather than show the duplicate.
+    if (isJustTheExcerpt(stire.ai_summary!, stire.excerpt)) return null;
     return stire.ai_summary;
   }
 
@@ -93,10 +130,15 @@ export async function getOrGenerateAiSummary(
     .trim();
 
   if (rawText.length < 30) {
-    return stire.excerpt || stire.title || null;
+    return null;
   }
 
-  const promise = generate(stire, rawText);
+  const promise = generate(stire, rawText).then((result) => {
+    // Final guard: never return text that's effectively the excerpt
+    // as the synthesis. The page hides the panel on null.
+    if (result && isJustTheExcerpt(result, stire.excerpt)) return null;
+    return result;
+  });
   inFlight.set(stire.id, promise);
   try {
     return await promise;
@@ -274,14 +316,19 @@ async function generate(
   try {
     const result = await callAiWithFallback(SYSTEM_PROMPT, rawText, stire.source);
     if (!result) {
-      return stire.excerpt || stire.content || stire.title || null;
+      // No provider produced anything — return null so the page
+      // hides the "Sinteză Civia" panel rather than showing the
+      // excerpt as the synthesis (the page already shows the
+      // excerpt in the "Text original" panel below).
+      return null;
     }
     const { raw } = result;
     // Same structure gate as the fallback chain: only persist
-    // responses that look like a real synthesis. Otherwise return
-    // excerpt as a runtime fallback (no DB write — next visit
-    // retries with potentially fresh quota / a different model
-    // available).
+    // responses that look like a real synthesis. Return null when
+    // we can't produce structure — the page hides the "Sinteză
+    // Civia" section on null instead of showing the excerpt as
+    // the "summary" (which produces ugly duplication of the
+    // panel below it).
     const SECTION_MARKERS_GUARD = ["Pe scurt:", "Cifre cheie:", "Context:", "Ce urmează:", "De ce contează:"];
     const structureScore = SECTION_MARKERS_GUARD.filter((m) => raw.includes(m)).length;
     if (raw.length <= 20 || structureScore < 2) {
@@ -295,7 +342,7 @@ async function generate(
           structureScore,
         },
       });
-      return stire.excerpt || stire.content || stire.title || null;
+      return null;
     }
     const summary = polishSynthesis(raw);
 
@@ -335,6 +382,8 @@ async function generate(
         rawTextLength: rawText.length,
       },
     });
-    return stire.excerpt || stire.content || stire.title || null;
+    // All providers errored — hide the panel (return null) instead
+    // of showing the excerpt as a fake synthesis.
+    return null;
   }
 }
