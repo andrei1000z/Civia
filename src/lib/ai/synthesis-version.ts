@@ -68,5 +68,17 @@
  *       cache rows where the AI produced text that's structurally
  *       valid but content-wise ~90% the excerpt — also returns null.
  *       Bump invalidates v8 cache.
+ *  10 — Real fix: lib/stiri/extract-body.ts scrapes the original
+ *       article URL when stiri_cache.content is empty/thin, returning
+ *       up to 6000 chars of body text via deterministic regex (no
+ *       new deps). Wired into:
+ *         - getOrGenerateAiSummary (lazy-scrapes on first synthesis,
+ *           persists to content column for next time)
+ *         - /api/admin/stiri/regenerate-summaries (backfills on bulk
+ *           regen so admins don't wait for organic traffic)
+ *       With real article body, AI now has 2-5 KB of input and can
+ *       produce the full 5-section structured brief that v6-v9 were
+ *       failing to elicit. Bump invalidates v9 cache rows so they
+ *       re-synthesize against the (now-richer) content.
  */
-export const AI_SUMMARY_VERSION = 9;
+export const AI_SUMMARY_VERSION = 10;

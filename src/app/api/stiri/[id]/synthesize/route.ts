@@ -32,7 +32,7 @@ export async function GET(
   const admin = createSupabaseAdmin();
   const { data: stire } = await admin
     .from("stiri_cache")
-    .select("id, title, excerpt, content, source, ai_summary, ai_summary_version")
+    .select("id, url, title, excerpt, content, source, ai_summary, ai_summary_version")
     .eq("id", id)
     .maybeSingle();
 

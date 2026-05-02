@@ -4,6 +4,7 @@ import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from 
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
+import { extractArticleBody } from "@/lib/stiri/extract-body";
 
 export interface SummarizableStire {
   id: string;
@@ -15,6 +16,10 @@ export interface SummarizableStire {
   /** Version stamp written alongside `ai_summary`. When < AI_SUMMARY_VERSION
    *  we regenerate transparently so quality fixes propagate. */
   ai_summary_version?: number | null;
+  /** Original article URL. When `content` is empty/thin we lazy-scrape
+   *  the body from this URL on first synthesis attempt and persist it
+   *  so subsequent attempts hit a richer cache. */
+  url?: string | null;
 }
 
 const SYSTEM_PROMPT = `Ești un jurnalist senior român care scrie pentru Civia, o platformă civică serioasă, de standarde editoriale înalte. Sinteza ta nu e un rezumat — e o reorganizare a faptelor cu valoare adăugată: structură scanabilă, context legal/instituțional, impact pentru cetățean.
@@ -124,7 +129,31 @@ export async function getOrGenerateAiSummary(
   const existing = inFlight.get(stire.id);
   if (existing) return existing;
 
-  const rawText = [stire.title, stire.excerpt, stire.content]
+  // Lazy backfill: when content is empty/thin (RSS only gave us the
+  // excerpt), scrape the original article URL once and persist. The
+  // AI synthesis can then produce a real 5-section brief instead of
+  // rephrasing 300 chars of excerpt.
+  let content = stire.content;
+  if ((!content || content.length < 500) && stire.url) {
+    try {
+      const scraped = await extractArticleBody(stire.url);
+      if (scraped && scraped.length >= 500) {
+        content = scraped;
+        // Persist async — don't block synthesis on the write. Errors
+        // here are fine: worst case the next visit re-scrapes.
+        try {
+          const admin = createSupabaseAdmin();
+          await admin.from("stiri_cache").update({ content }).eq("id", stire.id);
+        } catch {
+          /* ignore — non-critical */
+        }
+      }
+    } catch {
+      /* extractor handles its own failures; just continue with thin input */
+    }
+  }
+
+  const rawText = [stire.title, stire.excerpt, content]
     .filter(Boolean)
     .join("\n\n")
     .trim();
@@ -133,7 +162,7 @@ export async function getOrGenerateAiSummary(
     return null;
   }
 
-  const promise = generate(stire, rawText).then((result) => {
+  const promise = generate({ ...stire, content }, rawText).then((result) => {
     // Final guard: never return text that's effectively the excerpt
     // as the synthesis. The page hides the panel on null.
     if (result && isJustTheExcerpt(result, stire.excerpt)) return null;

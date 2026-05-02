@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
+import { extractArticleBody } from "@/lib/stiri/extract-body";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
   const admin = createSupabaseAdmin();
   const { data: rows, error } = await admin
     .from("stiri_cache")
-    .select("id,title,excerpt,content,source,ai_summary,ai_summary_version")
+    .select("id,url,title,excerpt,content,source,ai_summary,ai_summary_version")
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -84,9 +85,17 @@ export async function POST(req: Request) {
     }
   }
 
-  const results: Array<{ id: string; ok: boolean; len: number; error?: string }> = [];
+  const results: Array<{
+    id: string;
+    ok: boolean;
+    len: number;
+    contentLen: number;
+    scrapedNow: boolean;
+    error?: string;
+  }> = [];
   for (const r of (rows ?? []) as Array<{
     id: string;
+    url: string;
     title: string;
     excerpt: string | null;
     content: string | null;
@@ -94,25 +103,54 @@ export async function POST(req: Request) {
     ai_summary: string | null;
     ai_summary_version: number | null;
   }>) {
+    let content = r.content;
+    let scrapedNow = false;
     try {
+      // Backfill: when the row's content is empty/thin (RSS only
+      // gave us the excerpt), scrape the original URL for the full
+      // article body. The AI synthesis chain needs ≥ 500 chars of
+      // input to produce a real 5-section brief; below that, all
+      // it can do is rephrase the excerpt.
+      if (!content || content.length < 500) {
+        const scraped = await extractArticleBody(r.url);
+        if (scraped && scraped.length >= 500) {
+          content = scraped;
+          scrapedNow = true;
+          // Persist so subsequent visits don't re-scrape.
+          await admin
+            .from("stiri_cache")
+            .update({ content })
+            .eq("id", r.id);
+        }
+      }
+
       // Pass a fresh row shape (no ai_summary, no version) so the
       // cache check in getOrGenerateAiSummary always misses and we
       // hit the synthesis path.
       const summary = await getOrGenerateAiSummary({
         id: r.id,
+        url: r.url,
         title: r.title,
         excerpt: r.excerpt,
-        content: r.content,
+        content,
         source: r.source,
         ai_summary: force ? null : r.ai_summary,
         ai_summary_version: force ? 0 : r.ai_summary_version,
       });
-      results.push({ id: r.id, ok: !!summary, len: summary?.length ?? 0 });
+      results.push({
+        id: r.id,
+        ok: !!summary,
+        len: summary?.length ?? 0,
+        contentLen: content?.length ?? 0,
+        scrapedNow,
+      });
     } catch (e) {
       results.push({
         id: r.id,
         ok: false,
         len: 0,
+        contentLen: content?.length ?? 0,
+        scrapedNow,
         error: e instanceof Error ? e.message.slice(0, 200) : "unknown",
       });
     }
