@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/legal/termeni`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/dezvoltatori`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/accesibilitate`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/updateuri`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
     { url: `${base}/calendar-civic`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${base}/buget`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/siguranta`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },

@@ -56,6 +56,7 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/impact" className={linkCls}>Ce s-a rezolvat prin Civia</Link></li>
+              <li><Link href="/updateuri" className={linkCls}>Update-uri și changelog</Link></li>
               <li><Link href="/dezvoltatori" className={linkCls}>API public — pentru jurnaliști</Link></li>
               <li><Link href="/accesibilitate" className={linkCls}>Accesibilitate (WCAG 2.1)</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
