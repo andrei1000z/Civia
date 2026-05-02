@@ -43,5 +43,19 @@
  *       the next provider; non-rate-limit errors also cascade now
  *       instead of crashing. Bump invalidates v6 cache so the next
  *       page view of any v6 article regenerates properly.
+ *   8 — v7 still cached excerpt-rephrased text as summary because
+ *       most stiri rows have empty `content` (RSS only gives the
+ *       excerpt) — the AI receives ~300 chars of input and returns
+ *       a 320-char rephrasing of it. Two fixes:
+ *         (a) STRUCTURE GATE in callAiWithFallback + generate():
+ *             require ≥ 2 of the 5 expected section markers
+ *             ("Pe scurt:", "Cifre cheie:", "Context:",
+ *              "Ce urmează:", "De ce contează:") in the AI output;
+ *             cascade if missing; refuse to persist if the last
+ *             provider also failed.
+ *         (b) Prompt updated with a HARD output rule: the response
+ *             MUST contain ≥ 2 section headers literally; output
+ *             is auto-rejected otherwise.
+ *       Bump invalidates v7 rows so the new gate applies.
  */
-export const AI_SUMMARY_VERSION = 7;
+export const AI_SUMMARY_VERSION = 8;

@@ -59,7 +59,9 @@ INTERZIS:
 - NU folosi emoji-uri sau adjective evaluative („incredibil", „șocant", „dramatic").
 - NU produce o sinteză identică cu excerpt-ul original. E inutilă.
 
-LUNGIME: 200–400 de cuvinte. Pentru articole foarte scurte (excerpt < 300 caractere), scoate cel puțin „Pe scurt" + „Context" + „De ce contează" — chiar și pe input puțin, structura adaugă valoare.`;
+LUNGIME: 200–400 de cuvinte. Pentru articole foarte scurte (excerpt < 300 caractere), scoate cel puțin „Pe scurt" + „Context" + „De ce contează" — chiar și pe input puțin, structura adaugă valoare.
+
+REGULĂ DE OUTPUT (HARD): răspunsul tău TREBUIE să conțină măcar 2 dintre titlurile de secțiune literal („Pe scurt:" / „Cifre cheie:" / „Context:" / „Ce urmează:" / „De ce contează:"), fiecare pe linie separată, terminate cu „:". Output-ul se respinge automat dacă lipsește această structură. NU genera text liber, fără secțiuni — chiar și pe excerpt scurt, structurează.`;
 
 const inFlight = new Map<string, Promise<string | null>>();
 
@@ -178,26 +180,39 @@ async function callAiWithFallback(
   // the next provider instead of returning it as success.
   const MIN_LEN = 80;
 
+  // Structure check: a real synthesis MUST contain at least 2 of the
+  // 5 expected section headers. Otherwise the model just rephrased
+  // the excerpt and stopped — no value over showing the excerpt
+  // directly. Treat as failure → next provider.
+  const SECTION_MARKERS = ["Pe scurt:", "Cifre cheie:", "Context:", "Ce urmează:", "De ce contează:"];
+  function isStructured(raw: string): boolean {
+    const found = SECTION_MARKERS.filter((m) => raw.includes(m)).length;
+    return found >= 2;
+  }
+
   for (let i = 0; i < candidates.length; i++) {
     const cand = candidates[i]!;
     const isLast = i === candidates.length - 1;
     try {
       const raw = await cand.run();
-      if (raw && raw.length >= MIN_LEN) {
+      // Accept ONLY responses that are both substantial AND
+      // structurally valid (have the section markers). Anything
+      // else cascades to the next provider.
+      if (raw && raw.length >= MIN_LEN && isStructured(raw)) {
         return { raw, modelUsed: `${cand.provider}:${cand.model}` };
       }
-      // Empty / too-short response: log + try next provider.
-      // Common causes: Gemini safety-filtered the prompt (politics,
-      // sensitive content), Gemini 2.5 spent all its max_tokens on
-      // thinking and emitted nothing, or the model truncated mid-
-      // output. Either way, we don't want to "succeed" with garbage.
+      // Failed: empty / too short / unstructured (just rephrased the
+      // excerpt without producing the 5-section brief). Log + try
+      // next provider.
       if (!isLast) {
         const next = candidates[i + 1]!;
-        Sentry.captureMessage("stiri AI returned empty/short response, falling back", {
+        const reason = !raw || raw.length < MIN_LEN ? "empty_or_short" : "no_structure";
+        Sentry.captureMessage(`stiri AI ${reason}, falling back`, {
           level: "info",
-          tags: { kind: "stiri_ai_fallback_empty" },
+          tags: { kind: "stiri_ai_fallback_quality" },
           extra: {
             source,
+            reason,
             fromProvider: cand.provider,
             fromModel: cand.model,
             toProvider: next.provider,
@@ -207,9 +222,9 @@ async function callAiWithFallback(
         });
         continue;
       }
-      // Last candidate also returned nothing — return what we have so
-      // the caller can decide what to do (generate() will fall back
-      // to excerpt at this point).
+      // Last candidate also failed quality. Return what we have so
+      // generate() can decide — it will fall back to excerpt
+      // without persisting (no MIN_LEN summary in DB).
       return { raw: raw ?? "", modelUsed: `${cand.provider}:${cand.model}` };
     } catch (err) {
       if (isRateLimited(err) && !isLast) {
@@ -262,11 +277,23 @@ async function generate(
       return stire.excerpt || stire.content || stire.title || null;
     }
     const { raw } = result;
-    if (raw.length <= 20) {
-      Sentry.captureMessage("stiri AI summary returned too-short response", {
+    // Same structure gate as the fallback chain: only persist
+    // responses that look like a real synthesis. Otherwise return
+    // excerpt as a runtime fallback (no DB write — next visit
+    // retries with potentially fresh quota / a different model
+    // available).
+    const SECTION_MARKERS_GUARD = ["Pe scurt:", "Cifre cheie:", "Context:", "Ce urmează:", "De ce contează:"];
+    const structureScore = SECTION_MARKERS_GUARD.filter((m) => raw.includes(m)).length;
+    if (raw.length <= 20 || structureScore < 2) {
+      Sentry.captureMessage("stiri AI summary failed quality gate", {
         level: "warning",
-        tags: { kind: "stiri_ai_short" },
-        extra: { stireId: stire.id, source: stire.source, rawLength: raw.length },
+        tags: { kind: "stiri_ai_quality_fail" },
+        extra: {
+          stireId: stire.id,
+          source: stire.source,
+          rawLength: raw.length,
+          structureScore,
+        },
       });
       return stire.excerpt || stire.content || stire.title || null;
     }
