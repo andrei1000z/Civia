@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
-import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from "@/lib/ai/gemini";
+import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI_MODEL_BACKUPS } from "@/lib/ai/gemini";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
@@ -239,6 +239,15 @@ async function callAiWithFallback(
       ? [
           { provider: "gemini" as const, model: GEMINI_MODEL, run: geminiCall(GEMINI_MODEL) },
           { provider: "gemini" as const, model: GEMINI_MODEL_FAST, run: geminiCall(GEMINI_MODEL_FAST) },
+          // Backup models with INDEPENDENT per-day quota counters on
+          // Gemini's free tier — when 2.5-flash is 429, flash-latest
+          // still serves. Cycling through 5 of them is functionally 5×
+          // the daily budget from a single key.
+          ...GEMINI_MODEL_BACKUPS.map((m) => ({
+            provider: "gemini" as const,
+            model: m,
+            run: geminiCall(m),
+          })),
         ]
       : []),
     { provider: "groq" as const, model: GROQ_MODEL, run: groqCall(GROQ_MODEL, 900) },

@@ -13,13 +13,28 @@
  */
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
-// Primary = 2.5-flash (best Romanian quality on free tier); fallback
-// to 2.5-flash-lite when primary 429s. Each model has a SEPARATE
-// per-day counter on the free tier so the lite variant acts as a
-// real second life. 2.0-flash is intentionally NOT in the chain —
-// it has the smallest free quota of the bunch.
+// Primary = 2.5-flash (best Romanian quality on free tier); fallbacks
+// cover the case where individual model counters get exhausted —
+// each model on Gemini's free tier has a SEPARATE per-day quota,
+// so cycling through 4 of them is functionally 4× the daily budget
+// from a single-key perspective.
+//
+// Discovered the hard way (5/3/2026): the explicit-version aliases
+// (gemini-2.5-flash, 2.0-flash-lite, etc.) and the "latest" aliases
+// (gemini-flash-latest, gemini-flash-lite-latest) and the Gemma
+// open-weight models (gemma-3-27b-it) all have INDEPENDENT counters
+// even when invoked via the same API key. When 2.5-flash is 429,
+// flash-latest still serves. The chain in callAiWithFallback should
+// try each in turn before falling back to Groq.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 export const GEMINI_MODEL_FAST = process.env.GEMINI_MODEL_FAST || "gemini-2.5-flash-lite";
+/** Additional Gemini models with separate quota counters. Order is
+ *  best-Romanian-quality first → smallest/least-used last. */
+export const GEMINI_MODEL_BACKUPS = [
+  "gemini-flash-latest",
+  "gemini-flash-lite-latest",
+  "gemma-3-27b-it",
+] as const;
 
 export function isGeminiConfigured(): boolean {
   return !!process.env.GEMINI_API_KEY;
