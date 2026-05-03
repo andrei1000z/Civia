@@ -86,7 +86,7 @@ export function Footer() {
             need a yearly bump. ISR rebuilds capture the new year on
             their next regeneration cycle. */}
         <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
-          <p className="text-xs text-[var(--color-text-muted)] text-center">
+          <p className="text-xs text-[var(--color-text-muted)] text-center" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Civia.ro · Toate drepturile rezervate
           </p>
         </div>

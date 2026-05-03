@@ -23,6 +23,11 @@ export function AuthModal() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Default ON. Analytics: 149 logins, 2 newsletter subscribers (1.3%)
+  // when the only path was the footer form. Putting an opt-in here
+  // captures the genuine intent of users who already trust us enough
+  // to log in. They can still uncheck.
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(true);
 
   // Inline validation: only show error AFTER user has blurred the field
   // and only when the value isn't empty (don't shame empty fields prematurely).
@@ -62,6 +67,16 @@ export function AuthModal() {
       setErrorMsg(error);
     } else {
       setStatus("sent");
+      // Best-effort: subscribe to newsletter if the user opted in.
+      // Failure here doesn't block the magic-link flow — they're
+      // already getting the auth email, which is the priority.
+      if (subscribeNewsletter) {
+        fetch("/api/newsletter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: trimmed }),
+        }).catch(() => { /* silent */ });
+      }
     }
   };
 
@@ -206,6 +221,18 @@ export function AuthModal() {
             {errorMsg && (
               <p role="alert" className="text-sm text-red-600 dark:text-red-400 mb-3">{errorMsg}</p>
             )}
+            <label className="flex items-start gap-2.5 mb-3 text-xs text-[var(--color-text-muted)] cursor-pointer leading-relaxed">
+              <input
+                type="checkbox"
+                checked={subscribeNewsletter}
+                onChange={(e) => setSubscribeNewsletter(e.target.checked)}
+                className="mt-0.5 accent-[var(--color-primary)] cursor-pointer shrink-0"
+              />
+              <span>
+                Trimite-mi <strong>newsletter săptămânal</strong> cu sesizările
+                rezolvate, petițiile noi și știri civice locale. Te poți dezabona oricând.
+              </span>
+            </label>
             <button
               type="submit"
               disabled={status === "sending" || !email || oauthLoading !== null}

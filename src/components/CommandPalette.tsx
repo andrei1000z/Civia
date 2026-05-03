@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, FileText, Newspaper, BookOpen, Siren, Hash, Loader2, ArrowRight, X, MapPin, BarChart3, Map as MapIcon, Sparkles, Ticket, Train, User, Building2, Factory, BookA, ShieldAlert, Bus } from "lucide-react";
+import { Search, FileText, Newspaper, BookOpen, Siren, Hash, Loader2, ArrowRight, X, MapPin, BarChart3, Map as MapIcon, Ticket, Train, User, Building2, Factory, BookA, ShieldAlert, Bus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
-  type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "bilet" | "linie" | "primar" | "directie" | "companie" | "glosar" | "ghid-sesizare" | "transport" | "ai";
+  type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "bilet" | "linie" | "primar" | "directie" | "companie" | "glosar" | "ghid-sesizare" | "transport";
   title: string;
   url: string;
   excerpt?: string;
@@ -28,7 +28,6 @@ const TYPE_ICON: Record<string, React.ElementType> = {
   glosar: BookA,
   "ghid-sesizare": ShieldAlert,
   transport: Bus,
-  ai: Search,
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -46,7 +45,6 @@ const TYPE_COLOR: Record<string, string> = {
   glosar: "text-lime-600",
   "ghid-sesizare": "text-rose-500",
   transport: "text-fuchsia-500",
-  ai: "text-violet-500",
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -64,7 +62,6 @@ const TYPE_LABEL: Record<string, string> = {
   glosar: "Termen",
   "ghid-sesizare": "Tip sesizare",
   transport: "Transport",
-  ai: "Răspuns",
 };
 
 const QUICK_LINKS = [
@@ -83,8 +80,6 @@ export function CommandPalette() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [aiAnswer, setAiAnswer] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -107,11 +102,11 @@ export function CommandPalette() {
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
-    else { setQuery(""); setResults([]); setActiveIdx(0); setAiAnswer(null); setAiLoading(false); }
+    else { setQuery(""); setResults([]); setActiveIdx(0); }
   }, [open]);
 
   useEffect(() => {
-    if (!query || query.length < 2) { setResults([]); setAiAnswer(null); return; }
+    if (!query || query.length < 2) { setResults([]); return; }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -164,58 +159,6 @@ export function CommandPalette() {
     prefetchResult(active.url);
   }, [activeIdx, results, prefetchResult]);
 
-  const askAI = useCallback(async () => {
-    if (!query || query.length < 3 || aiLoading) return;
-    setAiLoading(true);
-    setAiAnswer("");
-    try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: query }] }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Eroare server" }));
-        setAiAnswer(err.error ?? "Eroare server");
-        setAiLoading(false);
-        return;
-      }
-      const reader = res.body?.getReader();
-      if (!reader) { setAiAnswer("Nu am putut citi răspunsul."); setAiLoading(false); return; }
-      const decoder = new TextDecoder();
-      let buf = "";
-      let answer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (payload === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(payload);
-            if (parsed.delta) {
-              answer += parsed.delta;
-              setAiAnswer(answer);
-            }
-            if (parsed.error) {
-              answer += `\n${parsed.error}`;
-              setAiAnswer(answer);
-            }
-          } catch { /* skip malformed */ }
-        }
-      }
-      if (!answer) setAiAnswer("Nu am primit un răspuns. Încearcă din nou.");
-    } catch {
-      setAiAnswer("Nu am putut genera un răspuns. Încearcă din nou.");
-    } finally {
-      setAiLoading(false);
-    }
-  }, [query, aiLoading]);
-
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -224,12 +167,11 @@ export function CommandPalette() {
       else if (e.key === "Enter") {
         e.preventDefault();
         if (results.length > 0 && !e.shiftKey && results[activeIdx]) handleSelect(results[activeIdx]!.url);
-        else if (query.length >= 3) askAI();
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, results, activeIdx, handleSelect, query, askAI]);
+  }, [open, results, activeIdx, handleSelect]);
 
   if (!open) return null;
 
@@ -325,49 +267,9 @@ export function CommandPalette() {
               )}
 
               {/* No results message */}
-              {results.length === 0 && !loading && !aiAnswer && !aiLoading && (
+              {results.length === 0 && !loading && (
                 <div className="text-center py-4">
                   <p className="text-sm text-[var(--color-text-muted)]">Niciun rezultat pentru &bdquo;{query}&rdquo;</p>
-                </div>
-              )}
-
-              {/* AI section — always visible when query >= 3 chars */}
-              {query.length >= 3 && !loading && (
-                <div className="border-t border-[var(--color-border)]">
-                  {aiAnswer ? (
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center" aria-hidden="true">
-                          <Sparkles size={10} className="text-violet-500" />
-                        </div>
-                        <p className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Răspuns asistent</p>
-                        {aiLoading && <Loader2 size={10} className="motion-safe:animate-spin text-violet-500" aria-hidden="true" />}
-                      </div>
-                      <p className="text-sm text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">{aiAnswer}</p>
-                    </div>
-                  ) : aiLoading ? (
-                    <div className="flex items-center gap-2 p-4" role="status">
-                      <Loader2 size={14} className="motion-safe:animate-spin text-violet-500" aria-hidden="true" />
-                      <p className="text-xs text-[var(--color-text-muted)]">Se generează răspunsul…</p>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={askAI}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-inset"
-                    >
-                      <div className="w-8 h-8 rounded-[var(--radius-xs)] bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0" aria-hidden="true">
-                        <Sparkles size={14} className="text-violet-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-violet-700 dark:text-violet-300">Întreabă asistentul despre &bdquo;{query}&rdquo;</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">
-                          {results.length > 0 ? "Shift+Enter" : "Enter"} pentru răspuns
-                        </p>
-                      </div>
-                      <Sparkles size={12} className="text-violet-400 shrink-0" aria-hidden="true" />
-                    </button>
-                  )}
                 </div>
               )}
             </>
@@ -382,9 +284,6 @@ export function CommandPalette() {
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 rounded bg-[var(--color-surface-2)] font-mono text-[9px]">↵</kbd> deschide
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 rounded bg-[var(--color-surface-2)] font-mono text-[9px]">⇧↵</kbd> asistent
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 rounded bg-[var(--color-surface-2)] font-mono text-[9px]">esc</kbd> închide

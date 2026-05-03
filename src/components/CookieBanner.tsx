@@ -67,10 +67,13 @@ export function CookieBanner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const consent = readConsent();
-    // setState in effect — needed because we must check localStorage post-mount
-    // to avoid SSR/CSR hydration mismatch.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!consent) setVisible(true);
+    // Delay 3.5s before first-show. Analytics: prompt-on-load was eating
+    // 28% of bottom-right clicks (FAB, BackToTop, in-page CTAs). A short
+    // delay lets the user start exploring before being asked, which both
+    // reduces blocking AND raises consent quality (informed > pressured).
+    const showTimer = !consent
+      ? window.setTimeout(() => setVisible(true), 3500)
+      : null;
 
     const reopen = () => {
       const current = readConsent();
@@ -82,7 +85,10 @@ export function CookieBanner() {
       setVisible(true);
     };
     window.addEventListener(CHANGE_EVENT, reopen);
-    return () => window.removeEventListener(CHANGE_EVENT, reopen);
+    return () => {
+      window.removeEventListener(CHANGE_EVENT, reopen);
+      if (showTimer) window.clearTimeout(showTimer);
+    };
   }, []);
 
   const acceptAll = () => {

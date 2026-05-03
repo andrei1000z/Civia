@@ -21,10 +21,8 @@ import { MobileFab } from "@/components/layout/MobileFab";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
-// CivicAssistant is heavy (AI chat UI) and not needed on first paint — lazy-load it.
-const CivicAssistant = dynamic(
-  () => import("@/components/ai/CivicAssistant").then((m) => ({ default: m.CivicAssistant }))
-);
+// CivicAssistant FAB removed (3 messages in 1500 visits = 0.2% engagement
+// per analytics). Search palette stays (genuine utility for power users).
 const CommandPalette = dynamic(
   () => import("@/components/CommandPalette").then((m) => ({ default: m.CommandPalette }))
 );
@@ -203,7 +201,6 @@ export default function RootLayout({
               {/* Heavy interactive widgets — mount only after first paint + idle.
                   Shaves ~300ms off LCP on slow devices. */}
               <DeferredClientMount>
-                <CivicAssistant />
                 <CommandPalette />
                 <AuthModal />
                 <CookieBanner />

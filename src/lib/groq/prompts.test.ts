@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SYSTEM_PROMPT_FORMAL, SYSTEM_PROMPT_CLASSIFIER, SYSTEM_PROMPT_CIVIC_ASSISTANT } from "./prompts";
+import { SYSTEM_PROMPT_FORMAL, SYSTEM_PROMPT_CLASSIFIER } from "./prompts";
 
 describe("Groq system prompts", () => {
   it("SYSTEM_PROMPT_FORMAL is non-empty Romanian content", () => {
@@ -37,16 +37,5 @@ describe("Groq system prompts", () => {
     // Classifier was simplified to return {"tip": "..."} only
     expect(SYSTEM_PROMPT_CLASSIFIER).toContain('"tip"');
     expect(SYSTEM_PROMPT_CLASSIFIER).not.toContain('"sector"');
-  });
-
-  it("SYSTEM_PROMPT_CIVIC_ASSISTANT covers key topics", () => {
-    const topics = ["STB", "Metrorex", "sesizări", "PMB", "Consiliul General"];
-    for (const t of topics) {
-      expect(SYSTEM_PROMPT_CIVIC_ASSISTANT).toContain(t);
-    }
-  });
-
-  it("SYSTEM_PROMPT_CIVIC_ASSISTANT mentions site navigation", () => {
-    expect(SYSTEM_PROMPT_CIVIC_ASSISTANT).toMatch(/\/harti|\/sesizari|\/bilete/);
   });
 });

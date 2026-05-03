@@ -11,12 +11,12 @@ interface BeforeInstallPromptEvent extends Event {
 const DISMISS_KEY = "civia_install_dismissed";
 const VISIT_COUNT_KEY = "civia_visit_count";
 const UPDATE_DISMISS_KEY = "civia_sw_update_dismissed";
-// Conversion 1.5% (5 din 335 prompts) — prea agresiv. Strategie nouă:
-// nu mai arătăm prompt-ul la prima vizită, doar de la a 3-a încolo, când
-// userul a demonstrat interes real. Acceptarea ar trebui să crească
-// pentru că oamenii „familiar" cu produsul instalează cu convingere.
-const MIN_VISITS_BEFORE_PROMPT = 3;
-const DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// Conversion 0.84% (după bump la 3 vizite). Mai mult zgomot decât
+// instalări — bump la 6 vizite + 60 zile între dismiss-uri. Userii care
+// chiar vor PWA o vor instala oricum manual; restul beneficiază de un
+// site mai liniștit.
+const MIN_VISITS_BEFORE_PROMPT = 6;
+const DISMISS_TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
 
 /** Already running as a standalone PWA — don't show install UI. */
 function isStandalone(): boolean {

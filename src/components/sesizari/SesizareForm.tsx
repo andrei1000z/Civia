@@ -1063,51 +1063,13 @@ ${today}`;
             an earlier funnel attempt and visually dominated the form
             for no real benefit once classification got reliable. */}
 
-        <Field label="Numele tău complet" required>
-          <input
-            type="text"
-            autoComplete="name"
-            autoCapitalize="words"
-            value={data.nume}
-            onChange={(e) => update("nume", e.target.value)}
-            onBlur={() => { if (data.nume) update("nume", capitalizeName(data.nume)); }}
-            placeholder="Maria Popescu"
-            className={inputClass}
-          />
-        </Field>
-
-        <Field label="Adresa ta de domiciliu" required>
-          <input
-            type="text"
-            autoComplete="street-address"
-            autoCapitalize="words"
-            value={data.adresa}
-            onChange={(e) => update("adresa", e.target.value)}
-            onBlur={() => { if (data.adresa) update("adresa", formatAddress(data.adresa)); }}
-            placeholder="Strada, număr (ex: Str. Matei Voievod nr. 12)"
-            className={inputClass}
-          />
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Apare în scrisoarea formală către autoritate — cer prin lege să știe cine face sesizarea.
-          </p>
-        </Field>
-
-        <Field label="Email de contact (opțional)">
-          <input
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            value={data.email}
-            onChange={(e) => update("email", e.target.value)}
-            placeholder="nume@exemplu.ro"
-            className={inputClass}
-          />
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Dacă vrei să primești un email de confirmare cu codul de urmărire și notificări când autoritatea răspunde. Nu apare public.
-          </p>
-        </Field>
-
+        {/* DESCRIERE FIRST — analytics showed 84% of users abandoned the
+            form before selecting tip. Cause: form opened with three
+            personal-info fields (name + address + email) before the
+            user could even describe what they wanted to report. Now
+            the friendly "describe the problem" field is the first
+            thing the user sees; personal info is collected at the end
+            once they're committed. */}
         <Field label="Descrie problema" required>
           <div className="relative">
             <textarea
@@ -1358,8 +1320,66 @@ ${today}`;
           </Field>
         )}
 
-        {/* AI polish button — plasat după fotografii ca să aibă tot contextul
-            (tip + descriere + poze) la momentul click-ului. */}
+        {/* IDENTITATE — collected at the END after the user has invested
+            time describing the problem, attaching photos, picking a
+            location. Asking for name + address up-front made 84% of
+            users abandon. Now they're committed; legal info feels
+            justified. */}
+        <div className="pt-2 mt-4 border-t border-[var(--color-border)]">
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-base mb-1">
+            Cine ești
+          </h3>
+          <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
+            OG 27/2002 obligă autoritățile să răspundă DOAR sesizărilor
+            cu petent identificat. Numele + adresa apar în scrisoarea către
+            primărie, nu pe site (rămân private).
+          </p>
+        </div>
+
+        <Field label="Numele tău complet" required>
+          <input
+            type="text"
+            autoComplete="name"
+            autoCapitalize="words"
+            value={data.nume}
+            onChange={(e) => update("nume", e.target.value)}
+            onBlur={() => { if (data.nume) update("nume", capitalizeName(data.nume)); }}
+            placeholder="Maria Popescu"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="Adresa ta de domiciliu" required>
+          <input
+            type="text"
+            autoComplete="street-address"
+            autoCapitalize="words"
+            value={data.adresa}
+            onChange={(e) => update("adresa", e.target.value)}
+            onBlur={() => { if (data.adresa) update("adresa", formatAddress(data.adresa)); }}
+            placeholder="Strada, număr (ex: Str. Matei Voievod nr. 12)"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="Email de contact (opțional)">
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            value={data.email}
+            onChange={(e) => update("email", e.target.value)}
+            placeholder="nume@exemplu.ro"
+            className={inputClass}
+          />
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            Pentru email de confirmare cu codul de urmărire și notificări când autoritatea răspunde. Nu apare public.
+          </p>
+        </Field>
+
+        {/* Generator text formal — plasat după identitate ca să poată
+            include numele + adresa în signature-ul scrisorii. */}
         <button
           type="button"
           onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
