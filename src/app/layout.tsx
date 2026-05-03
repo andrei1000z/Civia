@@ -154,6 +154,7 @@ export default function RootLayout({
         <link rel="alternate" type="application/rss+xml" title="Sesizări Civia" href="/feed.xml" />
         <link rel="alternate" type="application/rss+xml" title="Întreruperi Civia" href="/intreruperi/rss" />
         <link rel="alternate" type="application/rss+xml" title="Știri Civia" href="/stiri-feed.xml" />
+        <link rel="alternate" type="application/rss+xml" title="Proteste Civia" href="/proteste/feed.xml" />
 
         {/* ── iOS PWA meta tags ────────────────────────────────────────
             Safari doesn't read most of the W3C manifest; it relies on
