@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SITE_NAME } from "@/lib/constants";
 import { CookiePreferencesButton } from "./FooterClientLinks";
 import { FooterFeedback } from "./FooterFeedback";
@@ -91,14 +92,16 @@ export function Footer() {
             <li>
               <span
                 title="eYou (platformă socială europeană, în early-access beta)"
-                className="inline-flex items-center gap-2 h-10 pl-2.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)]"
+                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)]"
               >
-                <span
+                <Image
+                  src="/eyou.webp"
+                  alt=""
+                  width={28}
+                  height={28}
                   aria-hidden="true"
-                  className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 grid place-items-center text-white text-[11px] font-bold font-[family-name:var(--font-sora)]"
-                >
-                  e
-                </span>
+                  className="w-7 h-7 rounded-full object-contain bg-white"
+                />
                 <span className="text-sm">
                   <span className="font-semibold text-[var(--color-text)]">eYou</span>
                   <span className="text-[var(--color-text-muted)]"> · @civia</span>
@@ -109,8 +112,9 @@ export function Footer() {
                 vor fi create. */}
           </ul>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
-            eYou e noua platformă socială europeană, momentan în early-access.
-            Când iese public, link-ul devine activ.
+            Postăm acolo despre platformă, proteste, petițiile noi și altele.
+            eYou e noua rețea socială europeană, momentan în early-access —
+            când iese public, link-ul devine activ.
           </p>
         </div>
 
