@@ -69,7 +69,7 @@ export async function extractArticleBody(url: string): Promise<string | null> {
   //    <noscript>, <iframe>, comments, nav, header, footer, aside,
   //    forms. Done up-front so the container search later doesn't
   //    accidentally pick up a sidebar widget.
-  let cleaned = html
+  const cleaned = html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<(script|style|noscript|iframe|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
     .replace(/<(nav|header|footer|aside|form)\b[^>]*>[\s\S]*?<\/\1>/gi, "");

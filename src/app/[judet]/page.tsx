@@ -42,7 +42,7 @@ import {
 } from "@/data/intreruperi";
 import { CountyStatCards, aqiColor } from "@/components/county/CountyStatCards";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
-import { SITE_URL, STATUS_COLORS, STATUS_LABELS, SOURCE_COLORS, sourceTextColor } from "@/lib/constants";
+import { SITE_URL, STATUS_COLORS, STATUS_LABELS, sourceTextColor } from "@/lib/constants";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function generateStaticParams() {
@@ -379,7 +379,6 @@ function RecentStiriColumn({
       ) : (
         <ul className="space-y-2">
           {rows.map((s) => {
-            const tint = SOURCE_COLORS[s.source] ?? "#64748b";
             const textTint = sourceTextColor(s.source);
             return (
               <li key={s.id}>
@@ -387,23 +386,30 @@ function RecentStiriColumn({
                   href={`/stiri/${s.id}`}
                   className="flex items-start gap-3 bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 rounded-[var(--radius-xs)] p-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 >
-                  {s.image_url ? (
-                    <Image
-                      src={s.image_url}
-                      alt=""
-                      width={56}
-                      height={56}
-                      className="w-14 h-14 rounded-[var(--radius-xs)] object-cover shrink-0"
-                    />
-                  ) : (
+                  {/* Thumbnail container — visible neutral bg + Newspaper
+                      icon ca fallback. unoptimized bypassează /_next/image
+                      proxy (eșua pentru anumite feed-uri externe → black box).
+                      Vechiul cod folosea source-color la 10% alpha care era
+                      invizibil pe dark mode pentru surse near-black (G4Media). */}
+                  <div className="relative w-14 h-14 rounded-[var(--radius-xs)] overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-700">
                     <div
-                      className="w-14 h-14 rounded-[var(--radius-xs)] grid place-items-center shrink-0"
-                      style={{ backgroundColor: `${tint}1a`, color: textTint }}
+                      className="absolute inset-0 grid place-items-center"
+                      style={{ color: textTint }}
                       aria-hidden="true"
                     >
-                      <Newspaper size={18} />
+                      <Newspaper size={20} className="opacity-80" />
                     </div>
-                  )}
+                    {s.image_url && (
+                      <Image
+                        src={s.image_url}
+                        alt=""
+                        fill
+                        sizes="56px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span
