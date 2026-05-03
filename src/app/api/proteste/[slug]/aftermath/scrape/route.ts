@@ -139,21 +139,41 @@ export async function POST(
 
   const userPrompt = `PROTESTUL: "${p.title}"\nDATA: ${protestDate}\n\nARTICOLELE DE PRESĂ:\n\n${articles}\n\nReturnează DOAR JSON conform schemei.`;
 
-  // 3. AI call chain. 4 modele Gemini (fiecare cu quota proprie pe zi
-  // — vezi src/lib/ai/gemini.ts) + 2 Groq (quota separată). Total
-  // ≈ 6× capacitate pe zi față de un singur provider.
-  // SKIP gemma-3-27b-it: nu suportă „developer instructions" prin compat
-  // layer (returnează 400 când messages include role:"system").
+  // 3. AI call chain — 7 candidați, fiecare cu quota separată.
+  // Verificat empiric 5/3/2026 după ce user-ul a raportat „toate cotele
+  // epuizate": Gemini Flash variants (4) returnează 429 pe payload-uri
+  // de 5k+ tokens, dar gemma-3-27b-it și Groq aveau quota disponibilă
+  // în același moment.
+  //
+  // gemma-3-27b-it: NU acceptă role:"system" (compat layer returnează
+  // 400) și NU suportă response_format=json_object. Workaround:
+  // flatten system+user într-un single user message + strip markdown
+  // code fences din output (gemma wrappuiește uneori JSON în
+  // ```json...```). Pus PRIMUL în chain — cel mai stabil sub load.
+  //
+  // Groq: TPD 500k/zi, quota separată complet de Google. Last resort.
   const messages = [
     { role: "system" as const, content: AFTERMATH_SYSTEM_PROMPT },
     { role: "user" as const, content: userPrompt },
   ];
+  const flatPrompt = `${AFTERMATH_SYSTEM_PROMPT}\n\n---\n\n${userPrompt}`;
   const max_tokens = 1800; // narativ ~3-6 paragrafe + restul câmpurilor încap
 
   type Candidate = { provider: string; model: string; run: () => Promise<string> };
   const geminiRun = (model: string) => async () =>
     (await callGemini({ messages, model, temperature: 0.4, max_tokens, response_format: { type: "json_object" } })) ?? "";
+  // gemma nu acceptă system + nu suportă response_format=json_object
+  // prin compat layer. Trebuie să cerem JSON în prompt + să curățăm fences.
+  const gemmaRun = async () =>
+    (await callGemini({
+      messages: [{ role: "user" as const, content: flatPrompt }],
+      model: "gemma-3-27b-it",
+      temperature: 0.4,
+      max_tokens,
+    })) ?? "";
   const candidates: Candidate[] = [
+    // gemma PRIMUL — quota separată, neepuizabilă în testare normală.
+    { provider: "gemini", model: "gemma-3-27b-it", run: gemmaRun },
     { provider: "gemini", model: GEMINI_MODEL, run: geminiRun(GEMINI_MODEL) },
     { provider: "gemini", model: GEMINI_MODEL_FAST, run: geminiRun(GEMINI_MODEL_FAST) },
     { provider: "gemini", model: "gemini-flash-latest", run: geminiRun("gemini-flash-latest") },
@@ -220,9 +240,17 @@ export async function POST(
     );
   }
 
+  // Strip markdown code fences — gemma-3-27b-it wrappuiește uneori JSON
+  // în ```json ... ``` chiar dacă instruim explicit "doar JSON".
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/i, "")
+    .replace(/\n?```\s*$/i, "")
+    .trim();
+
   let parsedJson: unknown;
   try {
-    parsedJson = JSON.parse(raw);
+    parsedJson = JSON.parse(cleaned);
   } catch {
     return NextResponse.json(
       { error: "AI a returnat răspuns invalid (nu JSON)." },
