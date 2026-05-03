@@ -11,6 +11,7 @@ import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
 import { AiSummary } from "./AiSummary";
 import { NewsArticleJsonLd } from "@/components/JsonLd";
 import { ReadingProgress } from "@/components/stiri/ReadingProgress";
+import { NATIONAL_SOURCES } from "@/lib/stiri/sources";
 
 const SOURCE_LOGOS: Record<string, string> = {
   "Digi24": "/images/sources/digi24.png",
@@ -59,13 +60,26 @@ type RelatedStireRow = Pick<
 
 async function getRelatedArticles(stire: StireRow): Promise<RelatedStireRow[]> {
   try {
-    const { data } = await getSupabase()
+    // Pentru articole din surse naționale (Digi24, HotNews, G4Media, PressOne...),
+    // related arăta și „Stiri de Cluj"/„Ziarul de Iași" (local sources) — confuz,
+    // pentru că contextul citirii e național. Dacă articolul curent e din NATIONAL_SOURCES,
+    // restrângem related la NATIONAL_SOURCES. Articolele locale arată mix oricum
+    // (păstrăm cross-pollination doar dintr-o direcție).
+    const isCurrentNational = (NATIONAL_SOURCES as readonly string[]).includes(stire.source);
+
+    let query = getSupabase()
       .from("stiri_cache")
       .select("id,title,source,category,published_at,image_url")
       .neq("id", stire.id)
       .eq("category", stire.category)
       .order("published_at", { ascending: false })
       .limit(4);
+
+    if (isCurrentNational) {
+      query = query.in("source", [...NATIONAL_SOURCES]);
+    }
+
+    const { data } = await query;
     return (data ?? []) as RelatedStireRow[];
   } catch {
     return [];

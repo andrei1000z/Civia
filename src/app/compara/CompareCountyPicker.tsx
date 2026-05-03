@@ -2,13 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shuffle, Zap } from "lucide-react";
 
 interface CountyOption {
   id: string;
   name: string;
   slug: string;
 }
+
+// Quick-pick preset-uri — combinații populare pe care user-ii le caută
+// constant. Scutesc 2 click-uri pe dropdown-uri.
+const PRESETS: { label: string; a: string; b: string; emoji: string }[] = [
+  { label: "București vs Cluj", a: "b", b: "cj", emoji: "🏙️" },
+  { label: "Cluj vs Iași", a: "cj", b: "is", emoji: "🎓" },
+  { label: "Constanța vs Brașov", a: "ct", b: "bv", emoji: "🏖️" },
+  { label: "Timișoara vs Cluj", a: "tm", b: "cj", emoji: "💼" },
+  { label: "Sibiu vs Brașov", a: "sb", b: "bv", emoji: "⛰️" },
+  { label: "Iași vs Galați", a: "is", b: "gl", emoji: "🌊" },
+];
 
 export function CompareCountyPicker({ counties }: { counties: CountyOption[] }) {
   const [a, setA] = useState<string>(counties[0]?.slug ?? "b");
@@ -95,6 +106,49 @@ export function CompareCountyPicker({ counties }: { counties: CountyOption[] }) 
           Alege două județe diferite pentru comparație.
         </p>
       )}
+
+      {/* Quick presets — combinații populare ca să sari direct */}
+      <div className="mt-6 pt-6 border-t border-[var(--color-border)]">
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-1.5">
+          <Zap size={11} aria-hidden="true" /> Populare
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {PRESETS.map((p) => (
+            <Link
+              key={`${p.a}-${p.b}`}
+              href={`/compara/${p.a}/${p.b}`}
+              prefetch={false}
+              className="group flex items-center gap-2 px-3 py-2.5 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5 transition-colors text-xs"
+            >
+              <span aria-hidden="true">{p.emoji}</span>
+              <span className="font-medium group-hover:text-[var(--color-primary)] transition-colors">
+                {p.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        {/* „Surprinde-mă" — random pair, util pentru jurnaliști care
+            caută inspirație. Folosește Math.random() la click-time
+            ca server-ul să livreze SSR consistent. */}
+        <button
+          type="button"
+          onClick={() => {
+            const i = Math.floor(Math.random() * counties.length);
+            let j = Math.floor(Math.random() * counties.length);
+            while (j === i) j = Math.floor(Math.random() * counties.length);
+            const aSlug = counties[i]?.slug;
+            const bSlug = counties[j]?.slug;
+            if (aSlug && bSlug) {
+              window.location.href = `/compara/${aSlug}/${bSlug}`;
+            }
+          }}
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+        >
+          <Shuffle size={12} aria-hidden="true" />
+          Surprinde-mă cu o pereche aleatorie
+        </button>
+      </div>
     </div>
   );
 }

@@ -18,11 +18,18 @@ interface HomepageStire {
 }
 
 /**
- * Top 6 most recent national articles, picked across the full
- * NATIONAL_SOURCES list. Lives on the homepage as a "what's
- * happening right now" rail. Server component, no JS to client.
+ * Top 6 articole — diversificate cross-source ca să nu apară toate
+ * de la o singură sursă (PressOne saturate widget-ul în 2026-05).
  *
- * Limited to 6 columns × ~250 B per row payload — light footprint.
+ * Strategie:
+ * 1. Fetch ~40 articole cele mai recente din NATIONAL_SOURCES
+ * 2. Round-robin pick: maxim 1 per sursă în primul tour, apoi 1 încă
+ *    până ajungem la 6
+ * 3. Limit final = 6, păstrând ordinea de freshness în interiorul
+ *    fiecărui slot
+ *
+ * Cost: tot un singur SELECT, doar limit mai mare (40 vs 6).
+ * Payload: ~10 KB vs 1.5 KB înainte — neglijabil.
  */
 async function fetchTopStiri(): Promise<HomepageStire[]> {
   try {
@@ -32,8 +39,30 @@ async function fetchTopStiri(): Promise<HomepageStire[]> {
       .select("id,title,source,category,excerpt,image_url,published_at")
       .in("source", [...NATIONAL_SOURCES])
       .order("published_at", { ascending: false })
-      .limit(6);
-    return (data as HomepageStire[] | null) ?? [];
+      .limit(40);
+    const all = (data as HomepageStire[] | null) ?? [];
+    if (all.length <= 6) return all;
+
+    // Round-robin selection: max 1 per source în pass 1, apoi pass 2 dacă
+    // mai e loc. Garantează diversitate maximă pentru topul 6.
+    const bySource = new Map<string, HomepageStire[]>();
+    for (const s of all) {
+      const arr = bySource.get(s.source) ?? [];
+      arr.push(s);
+      bySource.set(s.source, arr);
+    }
+    const picked: HomepageStire[] = [];
+    const sourcesOrdered = [...bySource.keys()];
+    let pass = 0;
+    while (picked.length < 6 && pass < 5) {
+      for (const src of sourcesOrdered) {
+        if (picked.length >= 6) break;
+        const arr = bySource.get(src)!;
+        if (arr.length > pass) picked.push(arr[pass]!);
+      }
+      pass++;
+    }
+    return picked.slice(0, 6);
   } catch {
     return [];
   }

@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Circle } from "react-leaflet";
+import { Circle, useMap } from "react-leaflet";
 
 /**
  * Air-quality heatmap masked to Bucharest admin boundary.
  *
- * Strategy: 50x50 grid across the bbox, point-in-polygon filter against
- * the real OSM city boundary, IDW interpolation from 6 sector "stations".
+ * Strategy: grid adaptat la zoom-ul curent (50→200 cells), point-in-polygon
+ * filter against the real OSM city boundary, IDW interpolation from
+ * 6 sector "stations".
+ *
+ * Update mai 2026 (user feedback „totul verde la zoom"):
+ * - Grid size ridicat dynamic cu zoom-ul (50 → 200 cells la zoom 14+)
+ * - Cell radius reduce proporțional ca să pixel-eze frumos
+ * - Inel exterior subtil în jurul fiecărui senzor cu bandă AQI vizuală
  */
 
 interface Polygon {
@@ -29,7 +35,17 @@ const STATIONS: { lat: number; lng: number; sector: string }[] = [
   { lat: 44.45, lng: 26.02, sector: "S6" },
 ];
 
-const GRID_SIZE = 50;
+// Grid size adaptat dinamic la zoom (vezi useEffect mai jos).
+const GRID_SIZE_BY_ZOOM: Record<number, number> = {
+  10: 40,
+  11: 50,
+  12: 80,
+  13: 130,
+  14: 180,
+  15: 220,
+  16: 240,
+};
+const DEFAULT_GRID_SIZE = 50;
 const LAT_MIN = 44.33;
 const LAT_MAX = 44.56;
 const LNG_MIN = 25.98;
@@ -90,8 +106,12 @@ function pointInBorder(lat: number, lng: number, border: BorderFeature | null): 
 }
 
 export function AqiHeatmapLayer() {
+  const map = useMap();
   const [stations, setStations] = useState<StationReading[]>([]);
   const [border, setBorder] = useState<BorderFeature | null>(null);
+  // Zoom curent — folosit ca să crească densitatea grilei la zoom mare,
+  // ca să nu mai vadă userul „totul verde" când se uită aproape.
+  const [zoom, setZoom] = useState<number>(map.getZoom());
 
   // Load border once
   useEffect(() => {
@@ -100,6 +120,13 @@ export function AqiHeatmapLayer() {
       .then((j: BorderFeature) => setBorder(j))
       .catch(() => setBorder(null));
   }, []);
+
+  // Listen pe zoom — când se schimbă, re-randăm cu grid mai dens.
+  useEffect(() => {
+    const onZoom = () => setZoom(map.getZoom());
+    map.on("zoomend", onZoom);
+    return () => { map.off("zoomend", onZoom); };
+  }, [map]);
 
   // Load AQI readings, refresh every 10 min
   useEffect(() => {
@@ -128,12 +155,17 @@ export function AqiHeatmapLayer() {
 
   if (stations.length === 0) return null;
 
+  // Grid size dinamic în funcție de zoom — la zoom 14+ avem 180+ celule
+  // pe latură (vs 50 implicit), deci cell-urile sunt mult mai mici și
+  // pixel-ează frumos diferențele de AQI între cartiere.
+  const gridSize = GRID_SIZE_BY_ZOOM[zoom] ?? DEFAULT_GRID_SIZE;
+
   // Build dense grid masked to Bucharest border
   const cells: { lat: number; lng: number; aqi: number }[] = [];
-  const latStep = (LAT_MAX - LAT_MIN) / GRID_SIZE;
-  const lngStep = (LNG_MAX - LNG_MIN) / GRID_SIZE;
-  for (let i = 0; i < GRID_SIZE; i++) {
-    for (let j = 0; j < GRID_SIZE; j++) {
+  const latStep = (LAT_MAX - LAT_MIN) / gridSize;
+  const lngStep = (LNG_MAX - LNG_MIN) / gridSize;
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
       const lat = LAT_MIN + (i + 0.5) * latStep;
       const lng = LNG_MIN + (j + 0.5) * lngStep;
       if (!pointInBorder(lat, lng, border)) continue;
@@ -141,9 +173,20 @@ export function AqiHeatmapLayer() {
     }
   }
 
-  // Radius ≈ half the diagonal of a cell, so neighbors overlap
-  const cellSizeKm = ((LAT_MAX - LAT_MIN) / GRID_SIZE) * 111;
+  // Radius ≈ half the diagonal of a cell, so neighbors overlap.
+  // La zoom mare cell-ul e mic → radius-ul e proporțional mai mic →
+  // pixel-ii sunt vizibili individual, nu se varsă unii peste alții.
+  const cellSizeKm = ((LAT_MAX - LAT_MIN) / gridSize) * 111;
   const radius = cellSizeKm * 1000 * 0.65;
+
+  // Opacitate ajustată pe zoom: la zoom mare reduc puțin opacitatea
+  // ca tile-ul OSM (străzile) să rămână citibil sub heatmap.
+  const fillOpacity = zoom >= 14 ? 0.22 : 0.28;
+
+  // Inel exterior în jurul fiecărei stații — apare doar la zoom mare,
+  // dă o aură vizuală ca user-ul să vadă „aici e senzorul, valoarea
+  // e X". Răspunde la cererea „să arate în jurul fiecărui senzor cum e".
+  const showStationHalo = zoom >= 13;
 
   return (
     <>
@@ -155,9 +198,25 @@ export function AqiHeatmapLayer() {
           pathOptions={{
             color: aqiColor(c.aqi),
             fillColor: aqiColor(c.aqi),
-            fillOpacity: 0.28,
+            fillOpacity,
             weight: 0,
             stroke: false,
+          }}
+        />
+      ))}
+      {/* Halo în jurul fiecărui senzor — vizibil la zoom 13+ */}
+      {showStationHalo && stations.map((s, i) => (
+        <Circle
+          key={`halo-${i}`}
+          center={[s.lat, s.lng]}
+          radius={1200}
+          pathOptions={{
+            color: aqiColor(s.aqi),
+            fillColor: aqiColor(s.aqi),
+            fillOpacity: 0.08,
+            weight: 1,
+            opacity: 0.4,
+            dashArray: "4 4",
           }}
         />
       ))}

@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/stiri" },
 };
 
+// ISR 30 minute — paired cu cron-ul zilnic + self-healing fetch pe trafic.
+// Pagina re-randează la max 30 min, dar conținutul e mai fresh: când userul
+// deschide pagina, /api/stiri/route.ts trigger-uiește background fetch
+// dacă a trecut > 5 min de la ultima rulare (Redis lock). Combinația dă
+// retenție foarte fresh fără să stresăm Supabase pentru fiecare visit.
+export const revalidate = 1800;
+
 export default function StiriPage() {
   return (
     <div className="container-narrow py-8 md:py-12">
