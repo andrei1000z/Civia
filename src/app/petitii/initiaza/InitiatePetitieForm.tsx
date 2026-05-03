@@ -43,12 +43,20 @@ export function InitiatePetitieForm({ userEmail }: Props) {
   return (
     <form
       action={formAction}
-      className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 md:p-7 space-y-7"
+      className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-3)] ring-1 ring-purple-500/5 p-6 md:p-8 space-y-10 md:space-y-12"
     >
-      {/* Banner top — Logged-in confirmation */}
-      <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] -mb-3">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" aria-hidden="true" />
-        Conectat ca <span className="font-mono text-[var(--color-text)]">{userEmail ?? "anonim"}</span>
+      {/* Banner top — Logged-in confirmation. Wrapped într-un container
+          cu border-bottom + padding clar ca să nu existe overlap cu prima
+          secțiune (bug fix: înainte avea -mb-3 care trăgea section sus). */}
+      <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] pb-4 border-b border-[var(--color-border)]">
+        <span
+          className="w-2 h-2 rounded-full bg-emerald-500 motion-safe:animate-pulse shrink-0"
+          aria-hidden="true"
+        />
+        <span>
+          Conectat ca{" "}
+          <span className="font-mono text-[var(--color-text)]">{userEmail ?? "anonim"}</span>
+        </span>
       </div>
 
       {/* SECTION 1 — Titlu (the hook) */}
@@ -173,24 +181,57 @@ Câteva propoziții despre impact + cifre dacă ai (cu sursă).`}
           Câte semnături vrei să strângi? Bara de progres se calculează raportat la ținta
           asta. Alege realist — un target prea mare descurajează semnatarii când văd 2%.
         </p>
-        <fieldset className="grid grid-cols-2 sm:grid-cols-5 gap-2" aria-label="Target semnături">
+        <fieldset className="grid grid-cols-2 sm:grid-cols-5 gap-2.5" aria-label="Target semnături">
           {TARGETS.map((t) => (
             <label
               key={t.value}
-              className="cursor-pointer relative bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 text-center hover:border-purple-500/40 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-500/10 has-[:checked]:shadow-[var(--shadow-2)] transition-all"
+              className="
+                group cursor-pointer relative
+                bg-[var(--color-bg)]
+                border-2 border-[var(--color-border)]
+                rounded-[var(--radius-md)]
+                p-3.5 text-center
+                transition-all duration-200
+                hover:border-purple-500/50 hover:bg-purple-500/[0.03]
+                hover:scale-[1.02] hover:shadow-[var(--shadow-1)]
+                has-[:checked]:border-purple-500
+                has-[:checked]:bg-gradient-to-br has-[:checked]:from-purple-500/15 has-[:checked]:to-indigo-500/5
+                has-[:checked]:shadow-[0_4px_16px_-4px_rgba(168,85,247,0.4)]
+                has-[:checked]:scale-[1.02]
+                has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-purple-500/60 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-[var(--color-surface)]
+                motion-reduce:hover:scale-100 motion-reduce:has-[:checked]:scale-100
+              "
             >
               <input
                 type="radio"
                 name="target_signatures"
                 value={t.value}
                 defaultChecked={t.value === 1000}
-                className="sr-only"
+                className="sr-only peer"
                 required
               />
-              <div className="font-[family-name:var(--font-sora)] font-extrabold text-lg text-[var(--color-text)] tabular-nums">
+              {/* Checkmark vizibil pe selected — apare doar când radio-ul e checked.
+                  Folosim sibling-selector via peer-checked. */}
+              <span
+                aria-hidden="true"
+                className="
+                  absolute top-1.5 right-1.5
+                  w-5 h-5 rounded-full
+                  bg-purple-500 text-white
+                  text-[10px] font-bold
+                  grid place-items-center
+                  shadow-md
+                  opacity-0 scale-50
+                  peer-checked:opacity-100 peer-checked:scale-100
+                  transition-all duration-200
+                "
+              >
+                ✓
+              </span>
+              <div className="font-[family-name:var(--font-sora)] font-extrabold text-lg md:text-xl text-[var(--color-text)] tabular-nums tracking-tight">
                 {t.label}
               </div>
-              <div className="text-[10px] text-[var(--color-text-muted)] leading-tight mt-0.5">
+              <div className="text-[10px] text-[var(--color-text-muted)] leading-tight mt-1 peer-checked:text-purple-600 peer-checked:dark:text-purple-300 peer-checked:font-medium transition-colors">
                 {t.desc}
               </div>
             </label>
@@ -264,11 +305,17 @@ function SubmitButton() {
 // ============================================================
 
 const inputCls = (hasError: boolean) =>
-  `w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${
-    hasError
-      ? "border-rose-500 dark:border-rose-400"
-      : "border-[var(--color-border)]"
-  }`;
+  `w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border text-sm
+   transition-all duration-150
+   placeholder:text-[var(--color-text-muted)]
+   hover:border-[var(--color-text-muted)]/40
+   focus:outline-none focus:ring-2 focus:ring-purple-500/60 focus:border-purple-500
+   focus-visible:ring-2 focus-visible:ring-purple-500/60 focus-visible:border-purple-500
+   ${
+     hasError
+       ? "border-rose-500 dark:border-rose-400 focus:ring-rose-500/60 focus:border-rose-500"
+       : "border-[var(--color-border)]"
+   }`;
 
 function Field({
   label,
@@ -283,21 +330,25 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-[var(--color-text)] mb-1.5">
+      <span className="block text-xs font-semibold text-[var(--color-text)] mb-2">
         {label}
       </span>
       {children}
       {hint && !error && (
-        <span className="block text-[10px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+        // Contrast urcat la text-base muted (vs text-[10px] anterior care
+        // se pierdea pe dark mode). Plus „pl-0.5" pt aliniere subtilă cu
+        // input-ul. Prefix bullet • ca să fie clar că e hint, nu eroare.
+        <span className="block text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed pl-0.5">
           {hint}
         </span>
       )}
       {error && (
         <span
           role="alert"
-          className="block text-[11px] text-rose-600 dark:text-rose-400 mt-1 leading-relaxed font-medium"
+          className="flex items-start gap-1 text-[11px] text-rose-600 dark:text-rose-400 mt-1.5 leading-relaxed font-medium pl-0.5"
         >
-          {error}
+          <span aria-hidden="true">⚠</span>
+          <span>{error}</span>
         </span>
       )}
     </label>
@@ -314,10 +365,18 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="space-y-3">
-      <legend className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base inline-flex items-center gap-2 mb-1">
-        <Icon size={14} className="text-purple-600 dark:text-purple-400" aria-hidden="true" />
-        {title}
+    <fieldset className="space-y-4">
+      {/* Header secțiune cu icon-chip mai prominent + numerotare implicită
+          via flex. mb-2 explicit (nu doar space-y de la parent) ca să fie
+          clar că header-ul e detașat de primul câmp. */}
+      <legend className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base inline-flex items-center gap-2.5 mb-2 w-full">
+        <span
+          className="w-7 h-7 rounded-[var(--radius-xs)] bg-purple-500/10 grid place-items-center shrink-0"
+          aria-hidden="true"
+        >
+          <Icon size={14} className="text-purple-600 dark:text-purple-400" />
+        </span>
+        <span>{title}</span>
       </legend>
       {children}
     </fieldset>
