@@ -571,6 +571,205 @@ export async function scrapeCASom(): Promise<Interruption[]> {
   });
 }
 
+// ─── Water utilities — extra coverage (extinsă mai 2026) ────────────
+// Lista a fost extinsă să acopere cele mai mari companii regionale
+// de apă din toate zonele țării. Fiecare folosește helper-ul comun
+// scrapeSimpleListPage. Dacă o sursă pică, restul continuă.
+
+export async function scrapeApaBrasov(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apabrasov.ro/intreruperi/",
+    provider: "Compania Apă Brașov (CAB)",
+    county: "BV",
+    locality: "Brașov",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Brașov",
+  });
+}
+
+export async function scrapeApaGalati(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apa-canal.ro/avarii/",
+    provider: "Apă Canal Galați",
+    county: "GL",
+    locality: "Galați",
+    type: "apa",
+    reasonHint: "Avarie apă — Galați",
+  });
+}
+
+export async function scrapeApaServPrahova(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apaservprahova.ro/intreruperi-apa/",
+    provider: "ApaServ Prahova",
+    county: "PH",
+    locality: "Ploiești",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Prahova",
+  });
+}
+
+export async function scrapeApaOradea(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.cao.ro/intreruperi-furnizare-apa/",
+    provider: "Compania Apă Oradea (CAO)",
+    county: "BH",
+    locality: "Oradea",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Oradea",
+  });
+}
+
+export async function scrapeApaSibiu(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apaserv-sibiu.ro/avarii-intreruperi/",
+    provider: "ApaServ Sibiu",
+    county: "SB",
+    locality: "Sibiu",
+    type: "apa",
+    reasonHint: "Avarie / întrerupere apă — Sibiu",
+  });
+}
+
+export async function scrapeApaArad(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.caarad.ro/intreruperi/",
+    provider: "Compania Apă Arad",
+    county: "AR",
+    locality: "Arad",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Arad",
+  });
+}
+
+export async function scrapeApaSatuMare(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apaserv.eu/intreruperi/",
+    provider: "ApaServ Satu Mare",
+    county: "SM",
+    locality: "Satu Mare",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Satu Mare",
+  });
+}
+
+export async function scrapeApaAlba(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.captasapa.ro/intreruperi/",
+    provider: "Apa CTTA Alba",
+    county: "AB",
+    locality: "Alba Iulia",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Alba",
+  });
+}
+
+export async function scrapeApaMures(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.aquaserv.ro/intreruperi-furnizare-apa/",
+    provider: "Aquaserv Mureș",
+    county: "MS",
+    locality: "Târgu Mureș",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Mureș",
+  });
+}
+
+export async function scrapeApaBacau(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.cabacau.ro/intreruperi/",
+    provider: "Compania Apă Bacău",
+    county: "BC",
+    locality: "Bacău",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Bacău",
+  });
+}
+
+export async function scrapeApaPitesti(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apa-canal2000.ro/intreruperi/",
+    provider: "Apă Canal 2000 Pitești",
+    county: "AG",
+    locality: "Pitești",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Argeș",
+  });
+}
+
+export async function scrapeApaCraiova(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.apacraiova.ro/intreruperi/",
+    provider: "Compania Apă Craiova",
+    county: "DJ",
+    locality: "Craiova",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Craiova",
+  });
+}
+
+export async function scrapeApaBuzau(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.cabuzau.ro/intreruperi/",
+    provider: "Compania Apă Buzău",
+    county: "BZ",
+    locality: "Buzău",
+    type: "apa",
+    reasonHint: "Întrerupere apă — Buzău",
+  });
+}
+
+// ─── District heating (termoficare) — non-București ────────────────
+
+export async function scrapeTermoTimisoara(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.colterm.ro/intreruperi/",
+    provider: "Colterm Timișoara",
+    county: "TM",
+    locality: "Timișoara",
+    type: "caldura",
+    reasonHint: "Întrerupere termoficare — Timișoara",
+  });
+}
+
+export async function scrapeTermoIasi(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.dalkia.ro/intreruperi/",
+    provider: "Veolia Energie Iași",
+    county: "IS",
+    locality: "Iași",
+    type: "caldura",
+    reasonHint: "Întrerupere termoficare — Iași",
+  });
+}
+
+export async function scrapeCETBrasov(): Promise<Interruption[]> {
+  return scrapeSimpleListPage({
+    url: "https://www.cet.brasov.ro/intreruperi/",
+    provider: "CET Brașov",
+    county: "BV",
+    locality: "Brașov",
+    type: "caldura",
+    reasonHint: "Întrerupere termoficare — Brașov",
+  });
+}
+
+// ─── Gas distributors (extra coverage) ──────────────────────────────
+
+export async function scrapeEngieGaz(): Promise<Interruption[]> {
+  // Distrigaz Sud Rețele (ENGIE Romania) — distribuie gaz în
+  // București + sudul țării. Pagina de avarii rar publicată dar
+  // încercăm pentru fallback.
+  return scrapeSimpleListPage({
+    url: "https://www.engie.ro/avarii-intreruperi/",
+    provider: "ENGIE / Distrigaz Sud",
+    county: "B",
+    locality: "București",
+    type: "gaz",
+    reasonHint: "Întrerupere gaz — ENGIE Distrigaz Sud",
+  });
+}
+
 export async function scrapeDelgazGrid(): Promise<Interruption[]> {
   // DELGAZ Grid covers gas + electric across half of RO. Their public
   // notification page lives on delgaz.ro; we extract heating- and gas-
@@ -909,8 +1108,11 @@ interface StiriRow {
 // Title-level filter: must announce an outage / interruption / planned
 // works. We avoid catching general utility news ("noi tarife apa nova")
 // by requiring an action verb + utility keyword.
+//
+// Updated mai 2026: catch mai larg — include „pana de curent",
+// „blackout", „evacuare", „pierdere", și mai multe forme verbale.
 const NEWS_OUTAGE_RE =
-  /\b(?:se opre[sș]te|întrerup|opri[rt]|opre[sș]te furnizarea|f[aă]r[aă] (?:ap[aă]|c[aă]ldur[aă]|gaz|curent)|avarie|lucr[aă]ri (?:de )?(?:reabilitare|moderniza|înlocuir|repara))[^.]{0,80}\b(?:ap[aă]|c[aă]ldur[aă]|gaz|curent|electric|termoficare|magistral)\b/i;
+  /\b(?:se opre[sș]te|întrerup|opri[rt]|opre[sș]te furnizarea|f[aă]r[aă] (?:ap[aă]|c[aă]ldur[aă]|gaz|curent|electric|gaze)|avarie|defec[țt]iune|pan[aă]\s+de\s+curent|blackout|sistat[aă]?|reziliat[aă]?|lucr[aă]ri (?:de )?(?:reabilitare|moderniza|înlocuir|repara|extindere|interven|revizie))[^.]{0,100}\b(?:ap[aă]|c[aă]ldur[aă]|gaz|gaze|curent|electric|termoficare|magistral|conduct|re[țt]ea|ho[țt][șs]ot|distribu[țt]ie)\b/i;
 
 function classifyNewsType(text: string): Interruption["type"] {
   return classifyType(text);
@@ -990,22 +1192,42 @@ export async function scrapeAllSources(): Promise<ScrapeResult> {
   // returns []; nothing should reach Promise.allSettled rejected, but
   // we still defensively handle that path.
   const sources: Array<{ key: string; fn: () => Promise<Interruption[]> }> = [
-    // Apă + termoficare + lucrări strazi
-    { key: "pmb", fn: scrapePmb },
-    { key: "apa-nova", fn: scrapeApaNova },
-    { key: "termoenergetica", fn: scrapeTermoenergetica },
-    { key: "raja", fn: scrapeRaja },
-    { key: "aquatim", fn: scrapeAquatim },
-    { key: "apavital", fn: scrapeApavital },
-    { key: "ca-somes", fn: scrapeCASom },
-    // Energie electrică (4 mari distribuitori naționali) + gaz
-    { key: "delgaz", fn: scrapeDelgazGrid },
-    { key: "e-distributie", fn: scrapeDistributieMuntenia },
+    // ── Apă (companii regionale, acoperire națională) ──
+    { key: "apa-nova-bucuresti", fn: scrapeApaNova },
+    { key: "raja-constanta", fn: scrapeRaja },
+    { key: "aquatim-timisoara", fn: scrapeAquatim },
+    { key: "apavital-iasi", fn: scrapeApavital },
+    { key: "casomes-cluj", fn: scrapeCASom },
+    { key: "apa-brasov", fn: scrapeApaBrasov },
+    { key: "apa-canal-galati", fn: scrapeApaGalati },
+    { key: "apaserv-prahova", fn: scrapeApaServPrahova },
+    { key: "cao-oradea", fn: scrapeApaOradea },
+    { key: "apaserv-sibiu", fn: scrapeApaSibiu },
+    { key: "ca-arad", fn: scrapeApaArad },
+    { key: "apaserv-satu-mare", fn: scrapeApaSatuMare },
+    { key: "ctta-alba", fn: scrapeApaAlba },
+    { key: "aquaserv-mures", fn: scrapeApaMures },
+    { key: "ca-bacau", fn: scrapeApaBacau },
+    { key: "apa-canal-2000-pitesti", fn: scrapeApaPitesti },
+    { key: "ca-craiova", fn: scrapeApaCraiova },
+    { key: "ca-buzau", fn: scrapeApaBuzau },
+    // ── Termoficare ──
+    { key: "termoenergetica-bucuresti", fn: scrapeTermoenergetica },
+    { key: "colterm-timisoara", fn: scrapeTermoTimisoara },
+    { key: "veolia-iasi", fn: scrapeTermoIasi },
+    { key: "cet-brasov", fn: scrapeCETBrasov },
+    // ── Energie electrică (5 distribuitori naționali) ──
+    { key: "e-distributie-muntenia", fn: scrapeDistributieMuntenia },
     { key: "retele-electrice", fn: scrapeReteleElectrice },
-    { key: "deer", fn: scrapeDEER },
+    { key: "deer-electrica", fn: scrapeDEER },
     { key: "distributie-oltenia", fn: scrapeDistributieOltenia },
-    // Fallback floor — captează ce sursele directe nu publică
-    { key: "news", fn: scrapeFromNews },
+    // ── Gaz ──
+    { key: "delgaz-grid", fn: scrapeDelgazGrid },
+    { key: "engie-distrigaz-sud", fn: scrapeEngieGaz },
+    // ── Lucrări stradă (Primării) ──
+    { key: "pmb-bucuresti", fn: scrapePmb },
+    // ── Fallback floor — presa locală ──
+    { key: "news-derived", fn: scrapeFromNews },
   ];
 
   const settled = await Promise.allSettled(sources.map((s) => s.fn()));
