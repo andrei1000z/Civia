@@ -72,8 +72,10 @@ export default async function JudetePage() {
         tagline={`${totalCounties} de județe · ${totalPopulation.toLocaleString("ro-RO")} locuitori · sesizările, hărțile, calitatea aerului și știrile se filtrează automat după județul ales`}
       />
 
-      {/* Live signal strip — pulled from production data so the page feels alive */}
-      <div className="grid grid-cols-3 gap-3 mb-8 -mt-2">
+      {/* Live signal strip — pulled from production data so the page feels alive.
+          Mobile (360px): grid-cols-3 strângea text-ul prea tare → 1 col mobile,
+          3 col de la sm (640px+). */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 -mt-2">
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
           <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
             Județe pe Civia

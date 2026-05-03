@@ -233,10 +233,21 @@ body {
    when rendered at hero font sizes. `overflow-wrap: anywhere` lets the
    browser proactively break inside words rather than only at spaces
    — fixes the "text cut off on the right edge" reports on every page
-   without affecting wider viewports. */
-h1, h2, h3, h4, p, li {
+   without affecting wider viewports.
+   Update mai 2026: adăugat code/pre/kbd ca să prindem URL-uri lungi
+   în <code> (ex: API endpoints citate inline) — semnalat pe Reddit
+   ca „dau pe afară" pe mobile narrow. */
+h1, h2, h3, h4, p, li, code, pre, kbd, a {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Defensive: orice img/video/iframe să nu poată depăși container-ul
+   său. Cazuri ca embed-uri externe sau imagini cu attribute width/
+   height hardcoded nu mai forțează horizontal scroll pe mobile. */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Mobile-first: tap targets min 44px, smooth scrolling */
