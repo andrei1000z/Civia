@@ -119,18 +119,17 @@ export async function StiriWidget() {
                   href={`/stiri/${s.id}`}
                   className="group flex items-start gap-3 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-1)] transition-all"
                 >
-                  {/* Container cu bg neutru + Newspaper icon ca fallback
-                      vizibil pe dark mode. Vechiul cod folosea bg cu
-                      culoarea sursei la 10% alpha — pentru G4Media
-                      (#0A0A0A near-black) era invizibil. Acum surface-2
-                      (gri vizibil) + icon colorat cu source text color. */}
-                  <div className="relative w-16 h-16 rounded-[var(--radius-xs)] overflow-hidden shrink-0 bg-[var(--color-surface-2)]">
+                  {/* Thumbnail container — guaranteed-visible neutral bg
+                      cu icon colorat fallback. `unoptimized` bypassează
+                      /_next/image proxy (care eșua silent pentru anumite
+                      URL-uri de imagine din feed-uri externe → black box). */}
+                  <div className="relative w-16 h-16 rounded-[var(--radius-xs)] overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-700">
                     <div
                       className="absolute inset-0 grid place-items-center"
                       style={{ color: sourceTextColor(s.source) }}
                       aria-hidden="true"
                     >
-                      <Newspaper size={20} />
+                      <Newspaper size={22} className="opacity-80" />
                     </div>
                     {s.image_url && (
                       <Image
@@ -138,6 +137,7 @@ export async function StiriWidget() {
                         alt=""
                         fill
                         sizes="64px"
+                        unoptimized
                         className="object-cover"
                       />
                     )}
