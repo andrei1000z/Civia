@@ -594,28 +594,31 @@ function AftermathSection({ protest }: { protest: Protest }) {
         </div>
       )}
 
-      {/* Images gallery */}
+      {/* Images gallery — masonry CSS columns ca să păstrăm aspect-
+          ratio natural al fiecărei poze (unele sunt landscape, altele
+          portrait, altele pătrate). object-cover + aspect-square crop-uia
+          exact ce voiai să vezi din poză. */}
       {images.length > 0 && (
         <div>
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
             <Camera size={14} aria-hidden="true" />
             Galerie ({images.length})
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="columns-2 sm:columns-3 gap-2 [column-fill:_balance]">
             {images.map((img, i) => (
               <a
                 key={i}
                 href={img.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative aspect-square overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
+                className="group relative block mb-2 break-inside-avoid overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={img.url}
                   alt={img.caption ?? `Foto ${i + 1}`}
                   loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-auto block group-hover:opacity-90 transition-opacity duration-300"
                 />
                 {img.credit && (
                   <span className="absolute bottom-0 inset-x-0 px-2 py-1 text-[9px] text-white bg-gradient-to-t from-black/80 to-transparent">

@@ -64,6 +64,19 @@ export async function extractArticleBody(url: string): Promise<string | null> {
   }
 
   if (!html || html.length < 500) return null;
+  return extractBodyFromHtml(html);
+}
+
+/**
+ * Body-from-HTML extraction split out so callers that have already
+ * fetched the HTML (e.g. aftermath/scrape, which also wants <meta>
+ * tags from the same page) can avoid a duplicate network round-trip.
+ *
+ * Returns null if the page doesn't contain enough usable text to
+ * synthesize from (paywall, error page, single-line listing, etc.).
+ */
+export function extractBodyFromHtml(html: string): string | null {
+  if (!html || html.length < 500) return null;
 
   // 1. Strip stuff that always pollutes content: <script>, <style>,
   //    <noscript>, <iframe>, comments, nav, header, footer, aside,

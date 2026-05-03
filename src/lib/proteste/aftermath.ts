@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { extractArticleBody } from "@/lib/stiri/extract-body";
+import { extractBodyFromHtml } from "@/lib/stiri/extract-body";
 
 // ============================================================
 // Types
@@ -89,7 +89,7 @@ export const aftermathDataSchema = z.object({
   outcome: z.string().trim().max(4000).default(""),
   images: z.array(aftermathImageSchema).max(40).default([]),
   videos: z.array(aftermathVideoSchema).max(20).default([]),
-  sources: z.array(aftermathSourceSchema).max(15).default([]),
+  sources: z.array(aftermathSourceSchema).max(20).default([]),
 });
 
 // ============================================================
@@ -109,8 +109,8 @@ Returnezi DOAR JSON valid în formatul EXACT de mai jos:
 {
   "attendance_estimate": număr întreg sau null — estimarea participanților dacă apare în CEL PUȚIN un articol. Dacă mai multe articole dau cifre diferite, alege MEDIANA. Dacă nimic, null.,
   "narrative": "string — 3-6 paragrafe (max 1500 chars total) care povestește cum a decurs protestul: atmosfera, traseul, momentele importante, reacția participanților și autorităților. Stil jurnalistic neutru, NU partizan. Folosește diacritice corecte.",
-  "chants": ["array de string-uri — sloganurile efectiv scandate, citate textual din articole. Max 12 elemente. Dacă nu apar sloganuri menționate explicit, ARRAY GOL []."],
-  "key_moments": ["array de momente cronologice scurte (max 8). Format: 'HH:MM — descriere scurtă' SAU 'descriere scurtă'. Ex: '17:30 — pornire marș de la Universitate', 'discurs reprezentant Greenpeace'. Doar momente menționate explicit în articole."],
+  "chants": ["array de string-uri — TOATE sloganurile, scandările, mesajele de pe pancarte și textele de pe bannere menționate în articole. Citate textual, fără ghilimele incluse. Caută în articole expresii precum „au scandat", „au strigat", „pe bannere scria", „pancarte cu mesajul", „au cerut". Extrage MULTE — minimum 4-6 dacă articolele le conțin, până la 20. Dacă articolele NU menționează NIMIC scandat, ARRAY GOL []."],
+  "key_moments": ["array de momente cronologice (4-12 elemente dacă articolele permit). Format: 'HH:MM — Descriere' SAU 'Descriere'. Prima literă MAJUSCULĂ obligatoriu. Ex: '17:30 — Pornire marș de la Universitate', 'Discurs reprezentant societate civilă', 'Sosire în Piața Victoriei'. Caută în articole momente precum: ora începerii, ora încheierii, traseul marșului, discursuri, intervenții oficiale, sosiri/plecări notabile, incidente, intervenții jandarmerie. Doar momente menționate explicit."],
   "outcome": "string — ce a urmat după protest (max 800 chars): declarații oficiale, decizii, promisiuni ale autorităților, reacția politică. Dacă articolele nu menționează nimic post-eveniment, șir gol \\"\\".",
   "images_found": ["array de URL-uri ABSOLUTE (cu https://) către imagini din articole — caută în corpul textual referințe la URL-uri de tip .jpg/.jpeg/.png/.webp. Max 10. Dacă nu sunt evidente, ARRAY GOL."],
   "videos_found": ["array de URL-uri ABSOLUTE către videoclipuri menționate (YouTube, TikTok, Facebook video, direct .mp4). Max 5. Doar dacă sunt menționate în text."]
@@ -122,7 +122,8 @@ REGULI STRICTE:
 - NU pune text înainte/după JSON.
 - Atribuie cifre/declarații DOAR dacă apar în articole. Mai bine null decât invenție.
 - Dacă articolele se contrazic, prioritizează sursele oficiale (HotNews, Digi24, G4Media, Adevărul) > tabloide > Facebook.
-- NU adăuga opinii proprii sau interpretări politice. Doar fapte.`;
+- NU adăuga opinii proprii sau interpretări politice. Doar fapte.
+- Pentru chants și key_moments: fii GENEROS. Articolele relatează un eveniment public, sigur sunt mai multe decât 2-3 elemente. Citește toate articolele cap-coadă înainte să returnezi.`;
 
 // ============================================================
 // Scrape multiple URLs in parallel + return enriched sources
@@ -139,15 +140,21 @@ export interface ScrapedArticle {
   error?: string;
 }
 
-const FETCH_TIMEOUT_MS = 6000;
+const FETCH_TIMEOUT_MS = 12000; // 12s — unele site-uri rom încărcă lent
+// UA cât mai aproape de un browser real. Bot UA-uri primesc 403 pe
+// Newsweek/Cotidianul/etc. Renunțăm la self-identification — politicos
+// dar nepractic când scopul e citate de presă pentru cetățeni.
 const UA =
-  "Mozilla/5.0 (compatible; CiviaBot/1.0; +https://civia.ro) " +
-  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 /**
- * Pull title + OG image + first 200 chars of body from an article URL.
- * Used both for AI synthesis input AND for displaying source cards on
- * the public aftermath section.
+ * Pull title + OG image + body text from an article URL.
+ * SINGLE fetch — returnează atât metadata din <head> cât și body-ul,
+ * fără a face un al doilea HTTP roundtrip.
+ *
+ * Failure modes graceful: ok=false dar dacă avem măcar title-ul,
+ * articolul rămâne útil pentru sources card chiar dacă body=null.
  */
 export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
   const fetchedAt = new Date().toISOString();
@@ -156,19 +163,26 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
   }
 
   let html = "";
+  let httpStatus = 0;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url, {
       headers: {
         "User-Agent": UA,
-        Accept: "text/html,application/xhtml+xml",
-        "Accept-Language": "ro-RO,ro;q=0.9,en;q=0.5",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.7,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
       },
       signal: ctrl.signal,
       cache: "no-store",
+      redirect: "follow",
     });
     clearTimeout(timer);
+    httpStatus = res.status;
     if (!res.ok) {
       return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: `HTTP ${res.status}` };
     }
@@ -179,20 +193,23 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
   }
 
   if (!html || html.length < 200) {
-    return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: "html prea scurt" };
+    return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: `html prea scurt (HTTP ${httpStatus}, ${html.length} bytes)` };
   }
 
   // Title — preferă OG title, fallback la <title>
-  const ogTitle = html.match(/<meta\s+(?:property|name)=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1];
+  const ogTitle = matchMeta(html, "og:title");
   const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
-  const title = (ogTitle ?? titleTag ?? "").trim().slice(0, 400) || null;
+  const title = decodeEntities((ogTitle ?? titleTag ?? "").trim()).slice(0, 400) || null;
 
   // OG image
-  const ogImage = html.match(/<meta\s+(?:property|name)=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1] ?? null;
+  const ogImage = matchMeta(html, "og:image");
+
+  // OG description — folosit ca fallback când body extraction eșuează
+  const ogDescription = matchMeta(html, "og:description") ?? matchMeta(html, "description");
 
   // Site name → publication
-  const ogSite = html.match(/<meta\s+(?:property|name)=["']og:site_name["']\s+content=["']([^"']+)["']/i)?.[1];
-  let publication = ogSite?.trim().slice(0, 120) ?? null;
+  const ogSite = matchMeta(html, "og:site_name");
+  let publication = ogSite ? decodeEntities(ogSite).slice(0, 120) : null;
   if (!publication) {
     try {
       publication = new URL(url).hostname.replace(/^www\./, "");
@@ -201,12 +218,42 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
     }
   }
 
-  // Body — folosim extractor-ul existent, dar pe HTML-ul deja fetch-uit
-  // ar fi un duplicate fetch. Pentru MVP lasăm extractor-ul să refacă
-  // request-ul (cache la nivel de fetch HTTP poate să-l prindă).
-  const body = await extractArticleBody(url);
+  // Body — extragem din HTML-ul deja descărcat. Dacă extractor-ul nu
+  // găsește container suficient de bogat, cădem pe OG description (poate
+  // 200-400 chars dar e mai bun decât null pentru AI synthesis).
+  let body = extractBodyFromHtml(html);
+  if (!body && ogDescription) {
+    body = decodeEntities(ogDescription);
+  }
 
-  return { url, title, publication, body, ogImage, fetchedAt, ok: true };
+  return { url, title, publication, body, ogImage, fetchedAt, ok: !!(title || body) };
+}
+
+/** Extract <meta property|name="X" content="Y"> Y. Robust to attribute order. */
+function matchMeta(html: string, name: string): string | null {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Try property/name=NAME ... content=VAL  (most common)
+  const m1 = html.match(
+    new RegExp(`<meta\\s+(?:property|name)=["']${escaped}["'][^>]*?content=["']([^"']+)["']`, "i"),
+  );
+  if (m1?.[1]) return m1[1];
+  // Try content=VAL ... property/name=NAME (less common but spec-legal)
+  const m2 = html.match(
+    new RegExp(`<meta\\s+content=["']([^"']+)["'][^>]*?(?:property|name)=["']${escaped}["']`, "i"),
+  );
+  return m2?.[1] ?? null;
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&hellip;/g, "…")
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)));
 }
 
 export async function scrapeMultiple(urls: string[]): Promise<ScrapedArticle[]> {
@@ -246,17 +293,24 @@ export function sanitizeAiResponse(
   const outcome = typeof r.outcome === "string" ? r.outcome.trim().slice(0, 4000) : "";
 
   const chants = Array.isArray(r.chants)
-    ? r.chants
-        .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-        .map((x) => x.trim().slice(0, 280))
-        .slice(0, 12)
+    ? Array.from(
+        new Set(
+          r.chants
+            .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+            // Strip ghilimele lăsate de model (deși am cerut fără) ca să nu
+            // se dubleze cu „..." din UI.
+            .map((x) => x.trim().replace(/^[„"'«»]+|[„"'«»]+$/g, "").trim())
+            .filter((x) => x.length > 0)
+            .map((x) => x.slice(0, 280)),
+        ),
+      ).slice(0, 20)
     : [];
 
   const key_moments = Array.isArray(r.key_moments)
     ? r.key_moments
         .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-        .map((x) => x.trim().slice(0, 400))
-        .slice(0, 8)
+        .map((x) => capitalizeMoment(x.trim().slice(0, 400)))
+        .slice(0, 12)
     : [];
 
   // Images: combine AI-found with OG images from scraped sources, dedup.
@@ -295,6 +349,27 @@ export function sanitizeAiResponse(
     videos,
     sources,
   };
+}
+
+/**
+ * Capitalize-first-letter pentru momentele cheie. Două forme posibile:
+ * - „HH:MM — descriere" → capitalizează după em-dash/dash
+ * - „descriere simplă"  → capitalizează prima literă
+ *
+ * Diacriticele românești (ă, â, î, ș, ț) au .toUpperCase() corect în JS V8.
+ */
+function capitalizeMoment(s: string): string {
+  // Caz 1: începe cu HH:MM (cu sau fără spații, urmat de —, –, -, sau :)
+  const timeMatch = s.match(/^(\s*\d{1,2}[:.]?\d{0,2}\s*[—–\-:]\s*)(.+)$/);
+  if (timeMatch && timeMatch[1] && timeMatch[2]) {
+    return timeMatch[1] + capitalize(timeMatch[2]);
+  }
+  return capitalize(s);
+}
+
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toLocaleUpperCase("ro-RO") + s.slice(1);
 }
 
 function detectVideoSource(url: string): string {

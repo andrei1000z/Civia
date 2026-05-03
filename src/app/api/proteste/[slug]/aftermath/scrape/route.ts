@@ -130,9 +130,10 @@ export async function POST(
   const articles = okScraped
     .map((s, i) => {
       const head = `## Articol ${i + 1}\nURL: ${s.url}\nTitlu: ${s.title ?? "(n/a)"}\nPublicație: ${s.publication ?? "(n/a)"}\n\n`;
-      // Trim body agresiv ca să încapă în TPD-ul Groq (500k/zi).
-      // 1500 chars/articol × 10 = 15k chars input ≈ 4k tokens.
-      const body = (s.body ?? "").slice(0, 1500);
+      // 2200 chars/articol × 10 = 22k chars input ≈ 6k tokens. Sub
+      // bugetul TPD-ului Groq (500k/zi) cu loc de 80+ apeluri/zi.
+      // Mai mult material → AI extrage mai multe sloganuri și momente.
+      const body = (s.body ?? "").slice(0, 2200);
       return head + body;
     })
     .join("\n\n---\n\n");
