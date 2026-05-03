@@ -48,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/compara`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/autoritati`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
   ];
 
   // Per-county pages: 42 counties × 8 pages = 336 URLs
@@ -102,12 +103,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // Dynamic sesizari + stiri (both pulled in parallel)
+  // Dynamic sesizari + stiri + proteste (all pulled in parallel)
   let sesizariRoutes: MetadataRoute.Sitemap = [];
   let stiriRoutes: MetadataRoute.Sitemap = [];
+  let protesteRoutes: MetadataRoute.Sitemap = [];
   try {
     const admin = createSupabaseAdmin();
-    const [sesResp, stiriResp] = await Promise.all([
+    const [sesResp, stiriResp, protesteResp] = await Promise.all([
       admin
         .from("sesizari")
         .select("code, updated_at")
@@ -119,6 +121,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .from("stiri_cache")
         .select("id, published_at, fetched_at")
         .order("published_at", { ascending: false })
+        .limit(200),
+      admin
+        .from("proteste")
+        .select("slug, updated_at, start_at")
+        .eq("visibility", "publica")
+        .order("start_at", { ascending: false })
         .limit(200),
     ]);
     if (sesResp.data) {
@@ -144,6 +152,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           };
         });
     }
+    if (protesteResp.data) {
+      protesteRoutes = (protesteResp.data as { slug: string; updated_at: string; start_at: string }[])
+        .map((p) => ({
+          url: `${base}/proteste/${p.slug}`,
+          lastModified: new Date(p.updated_at ?? p.start_at),
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        }));
+    }
   } catch {}
 
   return [
@@ -155,5 +172,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...intreruperiRoutes,
     ...sesizariRoutes,
     ...stiriRoutes,
+    ...protesteRoutes,
   ];
 }

@@ -79,6 +79,7 @@ export const NAV_LINKS = [
 export const NAV_MORE = [
   { href: "/statistici", label: "Statistici", icon: "📊" },
   { href: "/intreruperi", label: "Întreruperi programate", icon: "⚠️" },
+  { href: "/proteste", label: "Proteste programate", icon: "✊", nationalOnly: true },
   { href: "/compara", label: "Compară județe", icon: "⚖️", nationalOnly: true },
   { href: "/cum-functioneaza", label: "Cum funcționează administrația", icon: "❓" },
   { href: "/bilete", label: "Bilete și abonamente transport", icon: "🎫", countyOnly: true },
