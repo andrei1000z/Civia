@@ -694,8 +694,14 @@ export default async function CountyHomePage({
   const prefectura = PREFECTURI[county.id];
   const politialocala = POLITIA_LOCALA_JUDET[county.id];
 
+  // Preload hero photo dacă există pentru oraș — LCP boost ~200-500ms.
+  const heroPhoto = HERO_PHOTO_BY_SLUG[judet];
+
   return (
     <>
+      {heroPhoto && (
+        <link rel="preload" as="image" href={heroPhoto} />
+      )}
       <BreadcrumbJsonLd
         items={[
           { name: "Acasă", url: SITE_URL },

@@ -20,6 +20,16 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      {/* Preload hero background image — browserul începe să-l descarce
+          în paralel cu HTML parsing, nu așteaptă să întâlnească CSS-ul
+          care îl referă. ~200-500ms LCP improvement pe primul paint.
+          Next 15+ hoistează automat <link> elements la <head>. */}
+      <link
+        rel="preload"
+        as="image"
+        href="/images/home/hero-national.jpg"
+        // fetchPriority high — bate restul resursele non-critical
+      />
       {/* HERO — `-mt-16` cancels body's pt-16 (compensare pentru navbar-ul
           fixed h-16 = 64px) ca gradient-ul să înceapă la y=0 viewport,
           iar navbar-ul să plutească pe el cu backdrop-blur.

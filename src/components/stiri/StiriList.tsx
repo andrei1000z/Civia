@@ -307,6 +307,10 @@ export function StiriList() {
                       src={featured.image_url}
                       alt={featured.title}
                       className="absolute inset-0 w-full h-full object-cover opacity-90"
+                      // LCP candidate pe /stiri — eager + fetchpriority high
+                      // ca să se descarce în primul bath de resurse
+                      loading="eager"
+                      fetchPriority="high"
                       onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                   )}
