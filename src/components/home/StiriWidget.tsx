@@ -119,26 +119,29 @@ export async function StiriWidget() {
                   href={`/stiri/${s.id}`}
                   className="group flex items-start gap-3 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-1)] transition-all"
                 >
-                  {s.image_url ? (
-                    <Image
-                      src={s.image_url}
-                      alt=""
-                      width={64}
-                      height={64}
-                      className="w-16 h-16 rounded-[var(--radius-xs)] object-cover shrink-0"
-                    />
-                  ) : (
+                  {/* Container cu bg neutru + Newspaper icon ca fallback
+                      vizibil pe dark mode. Vechiul cod folosea bg cu
+                      culoarea sursei la 10% alpha — pentru G4Media
+                      (#0A0A0A near-black) era invizibil. Acum surface-2
+                      (gri vizibil) + icon colorat cu source text color. */}
+                  <div className="relative w-16 h-16 rounded-[var(--radius-xs)] overflow-hidden shrink-0 bg-[var(--color-surface-2)]">
                     <div
-                      className="w-16 h-16 rounded-[var(--radius-xs)] grid place-items-center shrink-0"
-                      style={{
-                        background: (SOURCE_COLORS[s.source] ?? "#64748b") + "1a",
-                        color: sourceTextColor(s.source),
-                      }}
+                      className="absolute inset-0 grid place-items-center"
+                      style={{ color: sourceTextColor(s.source) }}
                       aria-hidden="true"
                     >
                       <Newspaper size={20} />
                     </div>
-                  )}
+                    {s.image_url && (
+                      <Image
+                        src={s.image_url}
+                        alt=""
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-1">
                       <span
