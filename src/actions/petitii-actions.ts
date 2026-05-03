@@ -28,7 +28,10 @@ import { PETITIE_CATEGORII } from "@/lib/constants";
 // ============================================================
 
 const VALID_CATEGORIES = PETITIE_CATEGORII.map((c) => c.value) as readonly string[];
-const VALID_TARGETS = [500, 1000, 5000, 10000, 50000] as const;
+// Target valid: 5 trepte numerice + 0 = sentinel pentru „nelimitat"
+// (transformat în NULL la insert, ca progress-bar-ul să afișeze
+// „Fără limită" în loc de procent imposibil).
+const VALID_TARGETS = [500, 1000, 5000, 10000, 50000, 100000] as const;
 
 const createSchema = z.object({
   title: z
@@ -49,10 +52,12 @@ const createSchema = z.object({
     .trim()
     .min(150, "Descrierea detaliată trebuie să aibă minim 150 caractere ca să fie credibilă")
     .max(20000, "Descrierea nu poate depăși 20.000 caractere"),
+  // 0 = sentinel pentru nelimitat (transformat în NULL la insert).
+  // Restul valorilor: din lista predefinită.
   target_signatures: z.coerce
     .number()
     .int()
-    .refine((n) => (VALID_TARGETS as readonly number[]).includes(n), {
+    .refine((n) => n === 0 || (VALID_TARGETS as readonly number[]).includes(n), {
       message: "Target invalid — alege una din opțiunile predefinite",
     }),
   county_code: z
@@ -60,6 +65,15 @@ const createSchema = z.object({
     .trim()
     .toUpperCase()
     .max(4)
+    .optional()
+    .or(z.literal("")),
+  // Cover image — URL produs de /api/upload (Supabase Storage public bucket).
+  // Optional ca să nu blocăm petițiile fără imagine. Validare URL strictă
+  // ca să nu putem injecta orice payload în html-ul ulterior.
+  image_url: z
+    .string()
+    .url("URL imagine invalid")
+    .max(500)
     .optional()
     .or(z.literal("")),
 });
@@ -149,6 +163,7 @@ export async function createPetitie(
     body: formData.get("body"),
     target_signatures: formData.get("target_signatures"),
     county_code: formData.get("county_code"),
+    image_url: formData.get("image_url"),
   };
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) {
@@ -192,9 +207,12 @@ export async function createPetitie(
     title: data.title,
     summary: data.summary,
     body: data.body,
-    target_signatures: data.target_signatures,
+    // 0 = sentinel pentru „nelimitat" → DB NULL (constraint allows null,
+    // default fallback la 1000 nu se aplică pentru NULL explicit).
+    target_signatures: data.target_signatures === 0 ? null : data.target_signatures,
     category: data.category,
     county_code: data.county_code || null,
+    image_url: data.image_url || null,
     status: "draft",
     is_user_initiated: true,
     moderation_status: "pending",
