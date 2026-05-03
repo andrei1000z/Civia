@@ -315,10 +315,26 @@ export function AnalyticsDashboard() {
     }
   }, []);
 
+  // Auto-refresh la 30 secunde (era 5s — prea agresiv, request waste).
+  // User poate trigger manual refresh prin tasta R sau butonul refresh.
+  // 30s e sweet spot între freshness și economie request count.
   useEffect(() => {
     load();
-    const i = setInterval(load, 5000);
+    const i = setInterval(load, 30_000);
     return () => clearInterval(i);
+  }, [load]);
+
+  // Keyboard shortcut: R pentru manual refresh (skip pe inputs).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "r" && e.key !== "R") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      if (e.ctrlKey || e.metaKey) return; // ctrl+R reload normal
+      load();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [load]);
 
   if (loading && !data) {
