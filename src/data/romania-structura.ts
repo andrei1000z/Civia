@@ -1,5 +1,13 @@
 /**
- * Structura administrativă a României — snapshot 2026.
+ * Structura administrativă a României — snapshot mai 2026.
+ *
+ * Last update: 2026-05-03 — PSD s-a retras din coaliția guvernamentală;
+ * cabinetul Bolojan continuă cu miniștri PNL + USR + UDMR. Portofoliile
+ * vacante (cele deținute anterior de PSD) sunt acoperite cu interimari
+ * desemnați din rândul actualilor miniștri (uzual prim-ministrul +
+ * vice-premierii preiau temporar). Coaliția guvernamentală e acum
+ * minoritară parlamentar — caută sprijin caz cu caz pentru voturi.
+ *
  * Se actualizează manual după alegeri, remanieri guvernamentale sau
  * schimbări în conducerea instituțiilor centrale.
  *
@@ -45,6 +53,9 @@ export interface MinisterInfo {
   portofoliu: string;
   partid?: string;
   website: string;
+  /** Setat true pentru miniștrii interimari (acoperă vacante post-retragere
+   *  PSD din coaliție). Apare cu badge „Interimar" pe pagina publică. */
+  interimar?: boolean;
 }
 
 export interface GuvernInfo {
@@ -61,11 +72,14 @@ export interface GuvernInfo {
 export const GUVERN: GuvernInfo = {
   primMinistru: "Ilie Bolojan",
   primMinistruPartid: "PNL",
-  coalitieGuvernamentala: ["PSD", "PNL", "UDMR", "Minorități"],
+  // Coaliție post-mai 2026: PSD s-a retras, USR a fost integrată oficial
+  // după ce avea deja miniștri (Transporturi, Externe, Apărare). Guvernul
+  // continuă ca minoritar — sub pragul majorității în ambele camere.
+  coalitieGuvernamentala: ["PNL", "USR", "UDMR", "Minorități"],
   numarMinisteri: 16,
   website: "https://gov.ro",
   rolGeneral:
-    "Implementează politica internă și externă a țării, coordonează administrația publică și elaborează proiecte de lege.",
+    "Implementează politica internă și externă a țării, coordonează administrația publică și elaborează proiecte de lege. După retragerea PSD din coaliție (mai 2026), cabinetul funcționează cu interimari pe portofoliile vacante și negociază voturi caz cu caz în Parlament.",
   atributii: [
     "Asigură executarea legilor și a ordonanțelor",
     "Conduce politica internă și externă a țării",

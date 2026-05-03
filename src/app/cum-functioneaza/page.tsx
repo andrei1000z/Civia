@@ -228,6 +228,30 @@ export default function CumFunctioneazaPage() {
           </div>
         </div>
 
+        {/* Banner explicativ — schimbare politică majoră (mai 2026).
+            Apare deasupra listei de miniștri ca user-ul să înțeleagă
+            de ce sunt interimari în unele portofolii. */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] p-4 mb-5 flex items-start gap-3 text-sm">
+          <span
+            className="w-8 h-8 rounded-[var(--radius-xs)] bg-amber-500/15 text-amber-700 dark:text-amber-300 grid place-items-center shrink-0"
+            aria-hidden="true"
+          >
+            <Brain size={14} />
+          </span>
+          <div className="flex-1 leading-relaxed">
+            <p className="font-semibold text-[var(--color-text)] mb-1">
+              Update mai 2026 — PSD a ieșit din coaliție
+            </p>
+            <p className="text-[var(--color-text-muted)] text-xs">
+              Cabinetul Bolojan continuă cu PNL + USR + UDMR. Portofoliile
+              vacante (foste PSD) sunt acoperite de <strong>miniștri interimari</strong>{" "}
+              (marcați cu badge mai jos) până la o remaniere oficială sau alegeri
+              anticipate. Guvernul e minoritar parlamentar — caută sprijin caz cu
+              caz pentru voturi majore.
+            </p>
+          </div>
+        </div>
+
         <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-[var(--color-text-muted)]">
           Miniștri cheie
         </h3>
@@ -241,8 +265,13 @@ export default function CumFunctioneazaPage() {
               className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-md)] transition-all flex items-center justify-between"
             >
               <div className="min-w-0">
-                <div className="font-semibold text-sm truncate group-hover:text-[var(--color-primary)] transition-colors">
-                  {m.nume}
+                <div className="font-semibold text-sm truncate group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-1.5 flex-wrap">
+                  <span className="truncate">{m.nume}</span>
+                  {m.interimar && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-bold uppercase tracking-wider border border-amber-500/40 shrink-0">
+                      Interimar
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-[var(--color-text-muted)] truncate">
                   {m.portofoliu}
