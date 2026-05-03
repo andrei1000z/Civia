@@ -32,7 +32,7 @@ create table if not exists public.sesizari (
   user_id uuid references public.profiles(id) on delete set null,
   author_name text not null,
   author_email text,
-  tip text not null check (tip in ('groapa','trotuar','iluminat','copac','gunoi','parcare','stalpisori','canalizare','semafor','pietonal','graffiti','mobilier','zgomot','animale','transport','altele')),
+  tip text not null check (tip in ('groapa','trotuar','iluminat','copac','gunoi','parcare','stalpisori','canalizare','semafor','pietonal','graffiti','mobilier','zgomot','animale','transport','afisaj','altele')),
   titlu text not null,
   locatie text not null,
   sector text not null check (sector in ('S1','S2','S3','S4','S5','S6')),
