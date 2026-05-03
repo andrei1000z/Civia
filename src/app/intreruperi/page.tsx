@@ -147,19 +147,24 @@ export default async function IntreruperiPage() {
           /intreruperi catalog ALSO scrapes lucrari-strazi (street
           works), and the count there is often non-trivial — surfacing
           it in the stat row matches what the filter chips offer. */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+      {/* Mobile: 3 cols (compact, 5 carduri = 3+2 layout natural).
+          Tablet+: 5 col equal. Pe iPhone narrow (360px), grid-cols-2
+          forța text-ul "Electricitate" / "Lucrări la stradă" peste
+          marginea card-ului. Trecut și label la break-words ca
+          "Lucrări la stradă" să se rupă pe 2 linii. */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-8">
         {(["apa", "caldura", "gaz", "electricitate", "lucrari-strazi"] as const).map((t) => {
           const count = all.filter((i) => i.type === t).length;
           return (
             <div
               key={t}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4"
+              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-3 md:p-4 min-w-0"
             >
-              <div className="text-2xl mb-1">{TYPE_ICONS[t]}</div>
-              <div className="text-2xl font-bold text-[var(--color-primary)] font-[family-name:var(--font-sora)] tabular-nums">
+              <div className="text-xl md:text-2xl mb-1">{TYPE_ICONS[t]}</div>
+              <div className="text-xl md:text-2xl font-bold text-[var(--color-primary)] font-[family-name:var(--font-sora)] tabular-nums">
                 {count}
               </div>
-              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+              <div className="text-[10px] md:text-xs text-[var(--color-text-muted)] mt-0.5 leading-tight break-words">
                 {TYPE_LABELS[t]}
               </div>
             </div>
