@@ -1484,6 +1484,22 @@ function ListGroup({
                   >
                     <ExternalLink size={13} />
                   </Link>
+                  {/* „Cum a fost" — doar pentru proteste care s-au
+                      desfășurat (start_at în trecut). Click → editor AI
+                      cu scrape + sintetizare automată din 1-10 link-uri. */}
+                  {new Date(r.start_at) < new Date() &&
+                    r.moderation_status === "approved" &&
+                    r.visibility === "publica" && (
+                      <Link
+                        href={`/proteste/${r.slug}/cum-a-fost/edit`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1 h-9 px-2.5 rounded-[var(--radius-xs)] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                        title="Documentează „Cum a fost” cu AI"
+                      >
+                        <Sparkles size={12} />
+                        Cum a fost
+                      </Link>
+                    )}
                   <button
                     type="button"
                     onClick={() => onEdit(r)}

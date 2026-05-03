@@ -11,6 +11,7 @@ import {
   callGemini,
   isGeminiConfigured,
   GEMINI_MODEL,
+  GEMINI_MODEL_FAST,
 } from "@/lib/ai/gemini";
 import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 
@@ -129,37 +130,37 @@ export async function POST(
   const articles = okScraped
     .map((s, i) => {
       const head = `## Articol ${i + 1}\nURL: ${s.url}\nTitlu: ${s.title ?? "(n/a)"}\nPublicație: ${s.publication ?? "(n/a)"}\n\n`;
-      // Trim body — AI context budget. 2000 chars per article × 10 = 20k.
-      const body = (s.body ?? "").slice(0, 2500);
+      // Trim body agresiv ca să încapă în TPD-ul Groq (500k/zi).
+      // 1500 chars/articol × 10 = 15k chars input ≈ 4k tokens.
+      const body = (s.body ?? "").slice(0, 1500);
       return head + body;
     })
     .join("\n\n---\n\n");
 
   const userPrompt = `PROTESTUL: "${p.title}"\nDATA: ${protestDate}\n\nARTICOLELE DE PRESĂ:\n\n${articles}\n\nReturnează DOAR JSON conform schemei.`;
 
-  // 3. AI call chain — Gemini Flash cu fallback la Groq.
+  // 3. AI call chain. 4 modele Gemini (fiecare cu quota proprie pe zi
+  // — vezi src/lib/ai/gemini.ts) + 2 Groq (quota separată). Total
+  // ≈ 6× capacitate pe zi față de un singur provider.
   // SKIP gemma-3-27b-it: nu suportă „developer instructions" prin compat
   // layer (returnează 400 când messages include role:"system").
   const messages = [
     { role: "system" as const, content: AFTERMATH_SYSTEM_PROMPT },
     { role: "user" as const, content: userPrompt },
   ];
+  const max_tokens = 1800; // narativ ~3-6 paragrafe + restul câmpurilor încap
 
   type Candidate = { provider: string; model: string; run: () => Promise<string> };
+  const geminiRun = (model: string) => async () =>
+    (await callGemini({ messages, model, temperature: 0.4, max_tokens, response_format: { type: "json_object" } })) ?? "";
   const candidates: Candidate[] = [
-    {
-      provider: "gemini",
-      model: GEMINI_MODEL,
-      run: async () => (await callGemini({ messages, model: GEMINI_MODEL, temperature: 0.4, max_tokens: 2500, response_format: { type: "json_object" } })) ?? "",
-    },
-    {
-      provider: "gemini",
-      model: "gemini-flash-latest",
-      run: async () => (await callGemini({ messages, model: "gemini-flash-latest", temperature: 0.4, max_tokens: 2500, response_format: { type: "json_object" } })) ?? "",
-    },
+    { provider: "gemini", model: GEMINI_MODEL, run: geminiRun(GEMINI_MODEL) },
+    { provider: "gemini", model: GEMINI_MODEL_FAST, run: geminiRun(GEMINI_MODEL_FAST) },
+    { provider: "gemini", model: "gemini-flash-latest", run: geminiRun("gemini-flash-latest") },
+    { provider: "gemini", model: "gemini-flash-lite-latest", run: geminiRun("gemini-flash-lite-latest") },
   ];
 
-  // Adaugă Groq ca ultim fallback (independent quota).
+  // Adaugă Groq ca fallback (independent quota — TPD 500k/zi).
   if (process.env.GROQ_API_KEY) {
     const groq = getGroqClient();
     const groqRun = (model: string) => async () => {
@@ -167,7 +168,7 @@ export async function POST(
         model,
         messages,
         temperature: 0.4,
-        max_tokens: 2500,
+        max_tokens,
         response_format: { type: "json_object" },
       });
       return c.choices[0]?.message?.content?.trim() ?? "";
@@ -181,26 +182,37 @@ export async function POST(
   let raw: string | null = null;
   let lastErr: unknown = null;
   let lastModelTried = "n/a";
+  let allRateLimited = candidates.length > 0;
   for (const cand of candidates) {
     try {
       const out = await cand.run();
       if (out && out.length > 20) {
         raw = out;
+        allRateLimited = false;
         break;
       }
+      // Răspuns gol / prea scurt — nu e rate limit, doar model gunoi.
+      allRateLimited = false;
     } catch (e) {
       lastErr = e;
       lastModelTried = `${cand.provider}/${cand.model}`;
       const status = (e as { status?: number }).status;
-      // 401/403 = key issue — bail on whole provider chain
-      if (status === 401 || status === 403) {
-        // skip remaining of same provider
-        continue;
-      }
+      if (status !== 429) allRateLimited = false;
+      // 401/403 = key issue — skip remaining candidates, surface fast.
+      if (status === 401 || status === 403) break;
     }
   }
 
   if (!raw) {
+    if (allRateLimited) {
+      return NextResponse.json(
+        {
+          error:
+            "Toate cotele AI (Gemini + Groq) sunt epuizate pentru azi. Încearcă din nou peste 15-20 minute, sau completează manual câmpurile.",
+        },
+        { status: 429 },
+      );
+    }
     const errMsg = lastErr instanceof Error ? lastErr.message : "AI nu a răspuns.";
     return NextResponse.json(
       { error: `AI eșec (ultimul model: ${lastModelTried}). ${errMsg}` },
