@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Copy, Check, ExternalLink, Smartphone } from "lucide-react";
+import { Mail, Copy, Check, ExternalLink, Smartphone, Paperclip, Loader2, X, Info } from "lucide-react";
 import {
   buildMailtoLink,
   buildGmailLink,
@@ -10,6 +10,10 @@ import {
   buildEmailPayload,
   type MailtoInput,
 } from "@/lib/sesizari/mailto";
+import {
+  canShareWithFiles,
+  shareSesizareWithAttachments,
+} from "@/lib/sesizari/share-attachments";
 
 interface Props {
   input: MailtoInput;
@@ -37,14 +41,27 @@ export function EmailChoicePanel({ input, compact }: Props) {
   // Default "desktop" for SSR-safe first paint; flip to mobile after mount.
   // Avoids hydration mismatch on the conditional button order.
   const [platform, setPlatform] = useState<Platform>("desktop");
+  // Web Share API support — checked post-mount (SSR-safe).
+  // Folosim un signal `null` (necunoscut) pe server ca să nu randăm butonul
+  // de share decât după ce hidratarea a confirmat suportul real.
+  const [shareSupported, setShareSupported] = useState<boolean | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+  const [showShareHint, setShowShareHint] = useState(false);
 
   useEffect(() => {
     // setState in effect e intenționat — citim window post-mount, server n-are.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(detectPlatform());
+    setShareSupported(canShareWithFiles());
   }, []);
 
   const payload = buildEmailPayload(input);
+  const hasPhotos = (input.imagini?.length ?? 0) > 0;
+  // Butonul „cu poze atașate" apare doar dacă: (a) avem poze, (b) browser-ul
+  // suportă Web Share cu files. Pe desktop Chrome/Edge cu suport — apare;
+  // pe Firefox / Chrome Linux — nu apare deloc, fallback transparent.
+  const canShareAttachments = hasPhotos && shareSupported === true;
 
   const copyAll = async () => {
     const text = `Către: ${payload.to.join(", ")}\nCC: ${payload.cc.join(", ")}\nSubiect: ${payload.subject}\n\n${payload.body}`;
@@ -77,6 +94,56 @@ export function EmailChoicePanel({ input, compact }: Props) {
     }
   };
 
+  /**
+   * Trimite cu pozele atașate REAL — folosește Web Share API.
+   * Înainte de share, copiază destinatarii în clipboard ca user să-i lipească
+   * în câmpul „Către:" după ce se deschide aplicația de mail (Web Share nu
+   * suportă pre-fill pentru câmpul To: separat — limitare de protocol).
+   *
+   * Adăugăm la începutul body-ului o secțiune „DESTINATARI" cu emailurile,
+   * ca dublă siguranță: și dacă userul nu lipește din clipboard, oricum vede
+   * destinatarii în corpul mailului și-i poate copia de acolo.
+   */
+  const sendWithAttachments = async () => {
+    if (!hasPhotos || sharing) return;
+    setSharing(true);
+    setShareToast(null);
+
+    const recipients = [...payload.to, ...payload.cc];
+    // Body augmentat cu lista de destinatari proeminentă la început, ca user
+    // să o vadă ușor în compositorul de mail dacă paste-ul în „Către" eșuează.
+    const augmentedBody = `📋 DESTINATARI (lipește în câmpul „Către:"):
+${recipients.join(", ")}
+
+────────────────────────────────────────────
+
+${payload.body}`;
+
+    const result = await shareSesizareWithAttachments({
+      imageUrls: input.imagini ?? [],
+      subject: payload.subject,
+      body: augmentedBody,
+      recipients,
+    });
+
+    setSharing(false);
+
+    if (result.ok) {
+      // Share sheet s-a deschis cu succes. Userul probabil deja vede composer-ul.
+      // Afișăm un toast scurt cu reminder-ul de paste, dispare în 6s.
+      setShareToast('Pozele sunt atașate. Lipește destinatarii (Ctrl+V) în „Către" și trimite.');
+      setTimeout(() => setShareToast(null), 6000);
+    } else if (result.reason === "user-cancelled") {
+      // User a închis share sheet — nu e eroare, nu afișăm nimic.
+    } else if (result.reason === "fetch-failed") {
+      setShareToast("N-am putut descărca pozele. Folosește butonul clasic + atașează manual din mail.");
+      setTimeout(() => setShareToast(null), 8000);
+    } else {
+      setShareToast("Browser-ul nu suportă atașarea automată. Folosește butonul clasic.");
+      setTimeout(() => setShareToast(null), 8000);
+    }
+  };
+
   // On mobile, the primary CTA becomes the OS-default mail app (mailto:).
   // Gmail web link is demoted to secondary because it opens Chrome with a
   // login wall instead of the user's actual email app.
@@ -84,6 +151,94 @@ export function EmailChoicePanel({ input, compact }: Props) {
 
   return (
     <div className={compact ? "" : "space-y-3"}>
+      {/* PRIMARY (Web Share API) — apare doar dacă există poze ȘI browser-ul
+          suportă navigator.share({ files }). Pe iOS/Android/Edge/Chrome desktop
+          apare; pe Firefox / Chrome Linux nu apare deloc — utilizatorul vede
+          doar fluxul clasic de mai jos (mailto cu URL-uri). */}
+      {canShareAttachments && (
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={sendWithAttachments}
+            disabled={sharing}
+            className="w-full inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-gradient-to-br from-[var(--color-primary)] to-emerald-700 text-white font-semibold hover:brightness-110 shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
+            title='Deschide aplicația ta de email cu pozele DEJA atașate ca fișiere reale. Destinatarii sunt copiați în clipboard — îi lipești în câmpul „Către:".'
+          >
+            {sharing ? (
+              <Loader2 size={18} className="motion-safe:animate-spin" aria-hidden="true" />
+            ) : (
+              <Paperclip size={18} aria-hidden="true" />
+            )}
+            {sharing
+              ? "Se pregătesc pozele..."
+              : `Trimite cu pozele atașate (${input.imagini?.length ?? 0})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowShareHint((v) => !v)}
+            className="w-full text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] inline-flex items-center justify-center gap-1 transition-colors"
+            aria-expanded={showShareHint}
+          >
+            <Info size={11} aria-hidden="true" />
+            {showShareHint ? "Ascunde explicația" : "Cum funcționează — explicație în 3 pași"}
+          </button>
+          {showShareHint && (
+            <div className="bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/30 rounded-[var(--radius-xs)] p-3 text-[11px] leading-relaxed text-[var(--color-text)] space-y-1.5">
+              <p>
+                <strong>1.</strong> Apesi butonul → se deschide share-ul telefonului/PC-ului
+                cu lista de aplicații (Mail, Gmail, Outlook etc.).
+              </p>
+              <p>
+                <strong>2.</strong> Alegi aplicația de mail → composer-ul apare cu pozele
+                <strong> deja atașate ca fișiere</strong> + subiect + textul formal.
+              </p>
+              <p>
+                <strong>3.</strong> Câmpul „Către:" e gol — apesi <kbd className="px-1 py-0.5 bg-[var(--color-surface-2)] rounded font-mono text-[10px]">Ctrl+V</kbd> /
+                long-press paste (destinatarii sunt deja copiați în clipboard) și dai trimite.
+                Asta e singurul pas manual.
+              </p>
+              <p className="text-[var(--color-text-muted)] pt-1">
+                De ce așa? Standardul web (RFC 6068) nu permite ca un site să
+                pre-completeze și destinatarii ȘI să atașeze fișiere în același timp.
+                Trebuie să alegem una. Tu vrei pozele atașate ca dovezi reale,
+                nu link-uri — așa că destinatarii merg via clipboard.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Toast efemer — feedback după share. Dispare automat. */}
+      {shareToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/40 rounded-[var(--radius-xs)] p-3 text-xs flex items-start gap-2"
+        >
+          <Paperclip size={13} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+          <span className="flex-1">{shareToast}</span>
+          <button
+            type="button"
+            onClick={() => setShareToast(null)}
+            className="shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            aria-label="Închide notificarea"
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* Separator semantic când avem și buton Web Share + clasic */}
+      {canShareAttachments && (
+        <div className="flex items-center gap-3 py-1">
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
+          <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+            sau metoda clasică (poze ca link-uri în text)
+          </span>
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+      )}
+
       {/* Big primary buttons — mobile prefers OS default mail app */}
       <div className={isMobile ? "grid gap-2" : "grid sm:grid-cols-2 gap-2"}>
         {isMobile ? (
