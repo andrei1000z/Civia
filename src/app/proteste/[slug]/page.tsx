@@ -12,12 +12,23 @@ import {
   Mail,
   Hash,
   Building2,
+  Quote,
+  ListChecks,
+  Newspaper,
+  Camera,
+  Video as VideoIcon,
+  Sparkles,
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { UpdateBody } from "@/app/updateuri/UpdateBody";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
+import type {
+  AftermathImage,
+  AftermathVideo,
+  AftermathSource,
+} from "@/lib/proteste/aftermath";
 
 export const revalidate = 600;
 
@@ -49,6 +60,18 @@ interface Protest {
   featured: boolean;
   color_theme: string;
   visibility: "publica" | "draft";
+  // Aftermath fields (migration 034) — optional, only populated after a
+  // moderator approves a submitted aftermath.
+  aftermath_attendance_estimate: number | null;
+  aftermath_narrative: string | null;
+  aftermath_chants: string[] | null;
+  aftermath_key_moments: string[] | null;
+  aftermath_outcome: string | null;
+  aftermath_images: AftermathImage[] | null;
+  aftermath_videos: AftermathVideo[] | null;
+  aftermath_sources: AftermathSource[] | null;
+  aftermath_moderation_status: "none" | "pending" | "approved" | "rejected";
+  aftermath_published_at: string | null;
 }
 
 const STATUS_META: Record<
@@ -336,6 +359,11 @@ export default async function ProtestDetailPage({
             </section>
           )}
 
+          {/* AFTERMATH — vizibil DOAR dacă protestul a avut loc + aftermath e
+              aprobat. Altfel, dacă a avut loc dar nu există aftermath, arătăm
+              CTA-ul de „Adaugă cum a fost". */}
+          <AftermathSection protest={p} />
+
           {/* Disclaimer */}
           <aside className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] p-4 text-xs text-[var(--color-text)] leading-relaxed">
             <p className="font-semibold text-amber-700 dark:text-amber-300 mb-1">
@@ -464,5 +492,278 @@ function DetailRow({
         <div className="text-sm text-[var(--color-text)] leading-snug">{children}</div>
       </div>
     </div>
+  );
+}
+
+// ============================================================
+// Aftermath section — "Cum a fost"
+// ============================================================
+function AftermathSection({ protest }: { protest: Protest }) {
+  const isPast = new Date(protest.start_at) < new Date();
+  if (!isPast) return null;
+
+  const status = protest.aftermath_moderation_status;
+  const hasContent = status === "approved";
+
+  // CTA — protestul a avut loc dar nu există aftermath aprobat.
+  if (!hasContent) {
+    const isPending = status === "pending";
+    return (
+      <section className="rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-primary)]/40 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent p-5 md:p-6">
+        <div className="flex items-start gap-3">
+          <Sparkles
+            size={22}
+            className="text-[var(--color-primary)] shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <div className="flex-1 min-w-0">
+            <h2 className="font-[family-name:var(--font-sora)] font-bold text-base md:text-lg mb-1.5">
+              {isPending ? "Aftermath în curs de moderare" : `Adaugă „Cum a fost”`}
+            </h2>
+            <p className="text-sm text-[var(--color-text-muted)] mb-4 leading-relaxed">
+              {isPending
+                ? "Cineva a trimis deja documentarea protestului. Echipa Civia o verifică și o publică în 24-48h."
+                : "Ai fost la protest? Documentează ce s-a întâmplat — câți au fost, ce s-a scandat, momente cheie. AI-ul citește automat 1-10 articole de presă și completează totul."}
+            </p>
+            {!isPending && (
+              <Link
+                href={`/proteste/${protest.slug}/cum-a-fost/edit`}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold px-4 py-2.5 text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
+              >
+                <Sparkles size={14} aria-hidden="true" />
+                Documentează cu AI
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Approved aftermath — render full
+  const images = protest.aftermath_images ?? [];
+  const videos = protest.aftermath_videos ?? [];
+  const sources = protest.aftermath_sources ?? [];
+  const chants = protest.aftermath_chants ?? [];
+  const moments = protest.aftermath_key_moments ?? [];
+
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.04] to-transparent p-5 md:p-6 space-y-6">
+      <header className="flex items-start gap-3 pb-3 border-b border-[var(--color-border)]">
+        <span
+          className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-emerald-500/15 grid place-items-center"
+          aria-hidden="true"
+        >
+          <Megaphone size={18} className="text-emerald-600 dark:text-emerald-400" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-[family-name:var(--font-sora)] font-extrabold text-lg md:text-xl">
+            Cum a fost
+          </h2>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+            Documentat după ce protestul a avut loc, pe baza{" "}
+            {sources.length > 0
+              ? `${sources.length} ${sources.length === 1 ? "sursă de presă" : "surse de presă"}`
+              : "observațiilor participanților"}
+            .
+          </p>
+        </div>
+        {protest.aftermath_attendance_estimate != null && (
+          <div className="shrink-0 text-right">
+            <p className="text-2xl md:text-3xl font-[family-name:var(--font-sora)] font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums leading-none">
+              ~{protest.aftermath_attendance_estimate.toLocaleString("ro-RO")}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mt-1">
+              participanți
+            </p>
+          </div>
+        )}
+      </header>
+
+      {/* Narrative */}
+      {protest.aftermath_narrative && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+            Cronologie
+          </h3>
+          <UpdateBody markdown={protest.aftermath_narrative} />
+        </div>
+      )}
+
+      {/* Key moments */}
+      {moments.length > 0 && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
+            <ListChecks size={14} aria-hidden="true" />
+            Momente cheie
+          </h3>
+          <ol className="space-y-2 border-l-2 border-emerald-500/40 pl-4">
+            {moments.map((m, i) => (
+              <li key={i} className="text-sm text-[var(--color-text)] leading-relaxed relative">
+                <span
+                  className="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--color-bg)]"
+                  aria-hidden="true"
+                />
+                {m}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Chants */}
+      {chants.length > 0 && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
+            <Quote size={14} aria-hidden="true" />
+            Sloganuri scandate
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {chants.map((c, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-3 py-1.5 rounded-[var(--radius-pill)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs md:text-sm font-medium text-[var(--color-text)]"
+              >
+                „{c}"
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Images gallery */}
+      {images.length > 0 && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
+            <Camera size={14} aria-hidden="true" />
+            Galerie ({images.length})
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {images.map((img, i) => (
+              <a
+                key={i}
+                href={img.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.url}
+                  alt={img.caption ?? `Foto ${i + 1}`}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                {img.credit && (
+                  <span className="absolute bottom-0 inset-x-0 px-2 py-1 text-[9px] text-white bg-gradient-to-t from-black/80 to-transparent">
+                    Foto: {img.credit}
+                  </span>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Videos */}
+      {videos.length > 0 && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
+            <VideoIcon size={14} aria-hidden="true" />
+            Video ({videos.length})
+          </h3>
+          <ul className="space-y-2">
+            {videos.map((v, i) => (
+              <li key={i}>
+                <a
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors group"
+                >
+                  <span
+                    className="shrink-0 w-9 h-9 rounded-full bg-rose-500/15 grid place-items-center"
+                    aria-hidden="true"
+                  >
+                    <VideoIcon size={14} className="text-rose-500" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                      {v.title ?? v.url}
+                    </p>
+                    {v.source && (
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mt-0.5">
+                        {v.source}
+                      </p>
+                    )}
+                  </div>
+                  <ExternalLink
+                    size={13}
+                    className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] shrink-0"
+                    aria-hidden="true"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Outcome */}
+      {protest.aftermath_outcome && (
+        <div>
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+            Ce a urmat
+          </h3>
+          <p className="text-sm text-[var(--color-text)] leading-relaxed whitespace-pre-line">
+            {protest.aftermath_outcome}
+          </p>
+        </div>
+      )}
+
+      {/* Sources */}
+      {sources.length > 0 && (
+        <div className="pt-4 border-t border-[var(--color-border)]">
+          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
+            <Newspaper size={14} aria-hidden="true" />
+            Surse presă ({sources.length})
+          </h3>
+          <ul className="space-y-2">
+            {sources.map((s, i) => (
+              <li key={i}>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
+                >
+                  {s.publication && (
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-primary)] mb-1">
+                      {s.publication}
+                    </p>
+                  )}
+                  <p className="text-sm font-medium text-[var(--color-text)] leading-snug">
+                    {s.title ?? s.url}
+                  </p>
+                  {s.snippet && (
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1.5 line-clamp-2">
+                      {s.snippet}
+                    </p>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="text-[10px] text-[var(--color-text-muted)] text-center pt-2 border-t border-[var(--color-border)]">
+        Aftermath documentat de un cetățean, verificat de Civia. Vezi vreo greșeală?{" "}
+        <a href="#footer-feedback" className="text-[var(--color-primary)] hover:underline">
+          Raportează
+        </a>
+        .
+      </p>
+    </section>
   );
 }
