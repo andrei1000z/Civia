@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/intreruperi/refresh",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/newsletter/digest",
