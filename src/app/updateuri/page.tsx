@@ -4,10 +4,11 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { UpdateBody } from "./UpdateBody";
 
-// Updates list barely changes — we add an entry maybe once per
-// release. 30 min ISR is plenty fresh and keeps origin cost zero
-// for the typical traffic pattern.
-export const revalidate = 1800;
+// Force fresh render — ISR cache pe Vercel a rămas blocat pe HTML
+// pre-fix (data fără oră). force-dynamic bypass-ază cache și
+// regenerează pe fiecare cerere. După ce confirmăm că ora apare
+// corect și entry-urile vechi sunt OK, restaurăm revalidate=1800.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Update-uri și changelog",
