@@ -1,12 +1,20 @@
 /**
  * Structura administrativă a României — snapshot mai 2026.
  *
- * Last update: 2026-05-03 — PSD s-a retras din coaliția guvernamentală;
- * cabinetul Bolojan continuă cu miniștri PNL + USR + UDMR. Portofoliile
- * vacante (cele deținute anterior de PSD) sunt acoperite cu interimari
- * desemnați din rândul actualilor miniștri (uzual prim-ministrul +
- * vice-premierii preiau temporar). Coaliția guvernamentală e acum
- * minoritară parlamentar — caută sprijin caz cu caz pentru voturi.
+ * Last update: 2026-05-03.
+ *
+ * Context politic: pe 23 aprilie 2026, cei 6 miniștri PSD + vicepremier
+ * Marian Neacșu și-au depus demisiile, la cererea conducerii partidului.
+ * PSD s-a retras oficial din coaliția guvernamentală. Decretele
+ * prezidențiale de eliberare + numire interimari publicate în Monitorul
+ * Oficial pe 24 aprilie. Interimatele funcționează constituțional
+ * 45 de zile — până în 8 iunie 2026 — după care PM Bolojan trebuie să
+ * propună miniștri plini pe portofoliile respective.
+ *
+ * Cabinetul rămas: PNL + USR + UDMR (minoritar parlamentar). Portofoliile
+ * vacante au fost acoperite de actualii miniștri care dețin acum două
+ * mandate: unul primar + unul interimar (vezi `interimar: true` la
+ * intrările din ministeriCheie).
  *
  * Se actualizează manual după alegeri, remanieri guvernamentale sau
  * schimbări în conducerea instituțiilor centrale.
@@ -88,18 +96,25 @@ export const GUVERN: GuvernInfo = {
     "Coordonează ministerele, agențiile centrale și prefecturile",
     "Răspunde politic în fața Parlamentului (moțiune de cenzură)",
   ],
+  // Lista miniștrilor reflectă cabinetul Bolojan după demisia PSD din
+  // 23 aprilie 2026. Intrările cu interimar:true au fost asignate temporar
+  // de premier până la o remaniere oficială (deadline constituțional:
+  // 8 iunie 2026). Miniștrii care dețin DOUĂ portofolii (unul primar +
+  // unul interimar) apar de două ori — o dată cu rolul lor original și o
+  // dată cu badge „Interimar" pe portofoliul preluat.
   ministeriCheie: [
+    // ── PRIMARI (rol stabil pre + post retragere PSD) ────────────────
     {
       nume: "Cătălin Predoiu",
-      portofoliu: "Internele",
+      portofoliu: "Afaceri Interne",
       partid: "PNL",
       website: "https://www.mai.gov.ro",
     },
     {
-      nume: "Alexandru Rogobete",
-      portofoliu: "Sănătatea",
-      partid: "PNL",
-      website: "https://www.ms.ro",
+      nume: "Cseke Attila",
+      portofoliu: "Dezvoltare & Administrație",
+      partid: "UDMR",
+      website: "https://www.mdlpa.ro",
     },
     {
       nume: "Daniel David",
@@ -114,28 +129,79 @@ export const GUVERN: GuvernInfo = {
       website: "https://mfinante.gov.ro",
     },
     {
-      nume: "Mihai Jurca",
-      portofoliu: "Transporturile",
-      partid: "USR",
-      website: "https://www.mt.ro",
-    },
-    {
-      nume: "Cseke Attila",
-      portofoliu: "Dezvoltare & Administrație",
-      partid: "UDMR",
-      website: "https://www.mdlpa.ro",
-    },
-    {
       nume: "Oana Țoiu",
       portofoliu: "Afacerile Externe",
       partid: "USR",
       website: "https://www.mae.ro",
     },
     {
-      nume: "Ionuț Moșteanu",
-      portofoliu: "Apărarea",
+      nume: "Radu Miruță",
+      portofoliu: "Apărarea (vicepremier)",
       partid: "USR",
       website: "https://www.mapn.ro",
+    },
+    {
+      nume: "Tánczos Barna",
+      portofoliu: "Vicepremier (Mediu inițial)",
+      partid: "UDMR",
+      website: "https://gov.ro",
+    },
+    {
+      nume: "Dragoș Pîslaru",
+      portofoliu: "Investiții și Proiecte Europene",
+      partid: "USR",
+      website: "https://mfe.gov.ro",
+    },
+    // ── INTERIMARI (preiau portofoliile lăsate de PSD) ────────────────
+    // Decret prezidențial 24 aprilie 2026 → 45 zile → expiră 8 iunie 2026.
+    {
+      nume: "Cătălin Predoiu",
+      portofoliu: "Justiția (interim)",
+      partid: "PNL",
+      website: "https://www.just.ro",
+      interimar: true,
+    },
+    {
+      nume: "Cseke Attila",
+      portofoliu: "Sănătatea (interim)",
+      partid: "UDMR",
+      website: "https://www.ms.ro",
+      interimar: true,
+    },
+    {
+      nume: "Tánczos Barna",
+      portofoliu: "Agricultura (interim)",
+      partid: "UDMR",
+      website: "https://www.madr.ro",
+      interimar: true,
+    },
+    {
+      nume: "Dragoș Pîslaru",
+      portofoliu: "Munca și Solidaritatea Socială (interim)",
+      partid: "USR",
+      website: "https://mmuncii.ro",
+      interimar: true,
+    },
+    {
+      nume: "Radu Miruță",
+      portofoliu: "Transporturi (interim)",
+      partid: "USR",
+      website: "https://www.mt.ro",
+      interimar: true,
+    },
+    {
+      nume: "Ilie Bolojan",
+      portofoliu: "Energia (interim)",
+      partid: "PNL",
+      website: "https://energie.gov.ro",
+      interimar: true,
+    },
+    {
+      nume: "Oana Gheorghiu",
+      portofoliu: "Vicepremier (interim, locul Marian Neacșu)",
+      partid: "PNL",
+      website: "https://gov.ro",
+      interimar: true,
     },
   ],
 };

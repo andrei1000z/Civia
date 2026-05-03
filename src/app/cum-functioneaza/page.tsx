@@ -240,14 +240,17 @@ export default function CumFunctioneazaPage() {
           </span>
           <div className="flex-1 leading-relaxed">
             <p className="font-semibold text-[var(--color-text)] mb-1">
-              Update mai 2026 — PSD a ieșit din coaliție
+              Criza politică aprilie–mai 2026 — PSD a ieșit din coaliție
             </p>
             <p className="text-[var(--color-text-muted)] text-xs">
-              Cabinetul Bolojan continuă cu PNL + USR + UDMR. Portofoliile
-              vacante (foste PSD) sunt acoperite de <strong>miniștri interimari</strong>{" "}
-              (marcați cu badge mai jos) până la o remaniere oficială sau alegeri
-              anticipate. Guvernul e minoritar parlamentar — caută sprijin caz cu
-              caz pentru voturi majore.
+              Pe <strong>23 aprilie 2026</strong> cei 6 miniștri PSD + vicepremierul
+              Marian Neacșu și-au depus demisiile. Decretele de eliberare + numire
+              interimari publicate în Monitorul Oficial pe 24 aprilie. Cabinetul
+              Bolojan continuă cu <strong>PNL + USR + UDMR</strong> (minoritar
+              parlamentar). 7 portofolii vacante sunt acoperite de actualii miniștri
+              cu mandat dublu (badge <strong>„Interimar"</strong> mai jos). Termenul
+              constituțional pentru remaniere completă: <strong>8 iunie 2026</strong>{" "}
+              (45 zile de la decret).
             </p>
           </div>
         </div>
