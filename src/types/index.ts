@@ -20,6 +20,7 @@ export type SesizareTip =
   | "zgomot"
   | "animale"
   | "transport"
+  | "afisaj"
   | "altele";
 
 export interface Sesizare {

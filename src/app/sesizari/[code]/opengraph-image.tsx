@@ -36,6 +36,7 @@ const TIP_ICONS: Record<string, string> = {
   zgomot: "🔊",
   animale: "🐾",
   transport: "🚌",
+  afisaj: "📢",
   altele: "📝",
 };
 

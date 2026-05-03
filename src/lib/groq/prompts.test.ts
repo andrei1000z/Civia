@@ -22,11 +22,12 @@ describe("Groq system prompts", () => {
     expect(SYSTEM_PROMPT_FORMAL).toContain("Mă numesc");
   });
 
-  it("SYSTEM_PROMPT_CLASSIFIER lists all 16 types", () => {
+  it("SYSTEM_PROMPT_CLASSIFIER lists all 17 types", () => {
     const types = [
       "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
       "stalpisori", "canalizare", "semafor", "pietonal",
-      "graffiti", "mobilier", "zgomot", "animale", "transport", "altele",
+      "graffiti", "mobilier", "zgomot", "animale", "transport",
+      "afisaj", "altele",
     ];
     for (const t of types) {
       expect(SYSTEM_PROMPT_CLASSIFIER).toContain(t);

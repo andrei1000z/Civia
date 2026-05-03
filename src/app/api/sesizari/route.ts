@@ -19,6 +19,7 @@ const VALID_TIPURI = [
   "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
   "stalpisori", "canalizare", "semafor", "pietonal",
   "graffiti", "mobilier", "zgomot", "animale", "transport",
+  "afisaj",
   "altele",
 ] as const;
 

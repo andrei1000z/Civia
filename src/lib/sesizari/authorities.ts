@@ -248,6 +248,16 @@ export function getAuthoritiesFor(
       addTo(AUTH.pmb);
       break;
 
+    case "afisaj":
+      // Afișaj/publicitate ilegală: Poliția Locală constată contravenția,
+      // primăria emite autorizații + dispune înlăturarea, PMB pe domeniul
+      // public general. Mash-publicitate pe stâlpi/copaci/garduri intră
+      // tot aici.
+      addTo(AUTH.politiaLocalaBuc);
+      if (sectorPrimarie) addTo(sectorPrimarie);
+      addTo(AUTH.pmb);
+      break;
+
     case "altele":
     default:
       addTo(AUTH.pmb);
@@ -307,9 +317,9 @@ function getCountyAuthorities(
         ...(city.phone ? { phone: city.phone } : {}),
       });
     }
-    // For parcare/zgomot/graffiti, add city's Poliția Locală if available
+    // For parcare/zgomot/graffiti/afisaj, add city's Poliția Locală if available
     if (
-      ["parcare", "zgomot", "graffiti"].includes(tip) &&
+      ["parcare", "zgomot", "graffiti", "afisaj"].includes(tip) &&
       city.politieLocala?.email
     ) {
       primary.unshift({
@@ -334,9 +344,9 @@ function getCountyAuthorities(
       });
     }
 
-    // For parcare/zgomot/graffiti/mobilier/gunoi, Poliția Locală takes the
-    // TO slot; IPJ falls to CC (they only intervene on criminal matters).
-    const plTags = new Set(["parcare", "zgomot", "graffiti", "mobilier", "gunoi"]);
+    // For parcare/zgomot/graffiti/afisaj/mobilier/gunoi, Poliția Locală takes
+    // the TO slot; IPJ falls to CC (they only intervene on criminal matters).
+    const plTags = new Set(["parcare", "zgomot", "graffiti", "afisaj", "mobilier", "gunoi"]);
     if (plTags.has(tip) && politiaLocala?.email) {
       primary.unshift({
         id: `pl-${countyCode}`,

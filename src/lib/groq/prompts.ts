@@ -95,16 +95,17 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "canalizare" — inundație, capace lipsă, gură canal înfundată
 - "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere
 - "pietonal" — traversare periculoasă, zebră ștearsă, lipsă trecere pietoni
-- "graffiti" — vandalism grafică, pictură ilegală, afișe sălbatice
+- "graffiti" — vandalism grafică, pictură ilegală, tagging pe pereți (NU afișe — alege "afisaj")
 - "mobilier" — bancă stricată, coșuri de gunoi lipsă, fântâni nefuncționale
 - "zgomot" — zgomot excesiv, deranj, construcții noaptea, muzică tare
 - "animale" — câini comunitari periculoși, haite, cuiburi de șobolani
 - "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație
+- "afisaj" — afișe sălbatice, panouri publicitare ilegale, bannere fără autorizație, mash-publicitate pe stâlpi/copaci/garduri, billboard-uri neautorizate, reclame stradale ilegale
 - "altele" — orice nu se încadrează în lista de mai sus
 
 RĂSPUNDE DOAR CU JSON VALID în formatul EXACT:
 {"tip": "..."}
 
-Unde "..." e UNUL dintre cele 16 tipuri de mai sus (lowercase, fără diacritice).
+Unde "..." e UNUL dintre cele 17 tipuri de mai sus (lowercase, fără diacritice).
 NU adăuga text înainte/după. NU folosi markdown. NU include alte câmpuri în obiectul JSON.`;
 

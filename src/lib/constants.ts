@@ -128,6 +128,7 @@ export const SESIZARE_TIPURI = [
   { value: "zgomot", label: "Zgomot excesiv/deranj", short: "Zgomot", icon: "🔊" },
   { value: "animale", label: "Câini periculoși/animale", short: "Animale", icon: "🐕" },
   { value: "transport", label: "Problemă transport public", short: "Transport", icon: "🚌" },
+  { value: "afisaj", label: "Afișaj/publicitate ilegală", short: "Afișaj", icon: "📢" },
   { value: "altele", label: "Altele", short: "Altele", icon: "📝" },
 ] as const;
 

@@ -532,6 +532,39 @@ export const SESIZARI_GUIDES: SesizareGuide[] = [
       "Accident de transport public, incendiu în vehicul sau persoană rănită — sună 112. Șofer care conduce periculos = sună Poliția.",
   },
 
+  // ── afisaj ──────────────────────────────────────────────────
+  {
+    tip: "afisaj",
+    label: "Afișaj/publicitate ilegală",
+    icon: "📢",
+    quickFields: [
+      "Adresă exactă",
+      "Tip: afiș sălbatic / panou / banner / mash pe stâlp",
+      "Poză cu obiectul publicitar și locul",
+    ],
+    fullFields: [
+      "Beneficiarul reclamei (nume firmă/produs/eveniment vizibil)",
+      "Suport: stâlp / copac / gard / clădire / spațiu public",
+      "Existența unui număr de autorizație vizibil (de obicei lipsește)",
+      "Mai multe afișe identice în zonă (campanie ilegală)",
+    ],
+    tips: [
+      "Fotografiază DOUĂ cadre: una zoom pe afișul/panoul ilegal (ca să se vadă beneficiarul) și una larg (ca să se vadă locul — domeniu public, stâlp, copac).",
+      "Legea 185/2013 interzice afișajul fără autorizație pe domeniul public. Sancțiunile sunt 1.000-10.000 lei pentru beneficiarul reclamei (NU pentru lipitor).",
+      "Notează numele firmei/produsului/evenimentului din afiș — Poliția Locală îl identifică prin CUI și aplică amenda direct beneficiarului.",
+      "Mash-publicitate pe stâlpi de iluminat / copaci = degradare suplimentară a infrastructurii. Menționează asta în sesizare.",
+      "Panourile mari (billboards) fără autorizație = sesizare la Direcția Urbanism a primăriei + Poliția Locală. Au alt regim decât afișele mici.",
+      "Afișe electorale după campanie: trebuie ridicate în 30 zile de la alegeri (Legea 334/2006). Dacă persistă, sesizare.",
+    ],
+    destinatari: [
+      "Poliția Locală (constată contravenția conform L185/2013)",
+      "Primăria sectorului / localității (autorizare + dispune înlăturarea)",
+      "PMB / DGAB (pe domeniul public general)",
+    ],
+    urgenta:
+      "Nu e urgență. Termen legal de răspuns: 30 zile (OG 27/2002). Înlăturarea efectivă durează mai mult — Poliția Locală notifică beneficiarul și impune termen.",
+  },
+
   // ── altele ──────────────────────────────────────────────────
   {
     tip: "altele",

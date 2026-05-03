@@ -14,7 +14,8 @@ const schema = z.object({
 const VALID_TIPURI = [
   "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
   "stalpisori", "canalizare", "semafor", "pietonal",
-  "graffiti", "mobilier", "zgomot", "animale", "transport", "altele",
+  "graffiti", "mobilier", "zgomot", "animale", "transport",
+  "afisaj", "altele",
 ] as const;
 
 export async function POST(req: Request) {

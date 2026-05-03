@@ -74,6 +74,10 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     problema_ghid: "o problemă la transportul public (întârzieri, vehicule nefuncționale, stații deteriorate, linii suprasolicitate)",
     propunere: "analiza STB/Metrorex și ajustarea programului, după caz înlocuirea vehiculelor defecte",
   },
+  afisaj: {
+    problema_ghid: "afișaj/publicitate ilegală pe domeniul public (afișe sălbatice pe stâlpi/copaci/garduri, panouri publicitare fără autorizație, bannere stradale neavizate) care încalcă Legea 185/2013 privind amplasarea mijloacelor de publicitate",
+    propunere: "constatarea contravenției de către Poliția Locală, identificarea beneficiarilor reclamei și înlăturarea materialelor în regim de urgență",
+  },
   altele: {
     problema_ghid: "o situație care necesită intervenția autorităților locale",
     propunere: "verificarea situației la fața locului și luarea măsurilor corespunzătoare",
