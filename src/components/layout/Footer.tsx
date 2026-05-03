@@ -94,12 +94,15 @@ export function Footer() {
                 title="eYou (platformă socială europeană, în early-access beta)"
                 className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)]"
               >
+                {/* unoptimized — e deja un .webp mic (2.5 KB) static din
+                    public/. Bypassăm /_next/image proxy ca să apară instant
+                    fără round-trip la optimizer. */}
                 <Image
                   src="/eyou.webp"
-                  alt=""
+                  alt="eYou"
                   width={28}
                   height={28}
-                  aria-hidden="true"
+                  unoptimized
                   className="w-7 h-7 rounded-full object-contain bg-white"
                 />
                 <span className="text-sm">
