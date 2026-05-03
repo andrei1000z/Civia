@@ -29,6 +29,9 @@ import {
   Mail,
   MessageSquare,
   ShieldX,
+  ShieldCheck,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -69,6 +72,9 @@ interface ProtestRow {
   submitter_email: string | null;
   submitter_note: string | null;
   rejected_reason: string | null;
+  // Organizer self-claim (migration 031)
+  is_organizer_submission: boolean;
+  organizer_proof_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -210,6 +216,8 @@ export default function AdminProtestePage() {
   const [tagsInput, setTagsInput] = useState("");
   const [filter, setFilter] = useState<FilterTab>("pending");
   const [moderating, setModerating] = useState<string | null>(null);
+  const [aiFilling, setAiFilling] = useState(false);
+  const [aiFilledKeys, setAiFilledKeys] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -231,6 +239,7 @@ export default function AdminProtestePage() {
     });
     setDemandsInput("");
     setTagsInput("");
+    setAiFilledKeys(new Set());
     setShowForm(true);
   };
 
@@ -238,6 +247,7 @@ export default function AdminProtestePage() {
     setDraft(rowToDraft(row));
     setDemandsInput("");
     setTagsInput("");
+    setAiFilledKeys(new Set());
     setShowForm(true);
   };
 
@@ -303,6 +313,79 @@ export default function AdminProtestePage() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const aiFill = async () => {
+    if (draft.title.trim().length < 5) {
+      toast("Scrie întâi titlul (min 5 caractere) ca AI să aibă context.", "error");
+      return;
+    }
+    setAiFilling(true);
+    try {
+      const res = await fetch("/api/admin/proteste/ai-fill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: draft.title.trim(),
+          description: draft.description.trim() || undefined,
+          location_name: draft.location_name.trim() || undefined,
+          city: draft.city.trim() || undefined,
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "Eroare AI");
+      const fill = j.data as {
+        subtitle?: string;
+        cause?: string;
+        demands?: string[];
+        tags?: string[];
+        hashtag?: string;
+        color_theme?: string;
+      };
+      // Politica „nu suprascrie": AI completează DOAR câmpurile goale.
+      const filled = new Set<string>();
+      setDraft((d) => {
+        const next = { ...d };
+        if (fill.subtitle && !d.subtitle.trim()) {
+          next.subtitle = fill.subtitle;
+          filled.add("subtitle");
+        }
+        if (fill.cause && !d.cause.trim()) {
+          next.cause = fill.cause;
+          filled.add("cause");
+        }
+        if (fill.demands && fill.demands.length > 0 && d.demands.length === 0) {
+          next.demands = fill.demands;
+          filled.add("demands");
+        }
+        if (fill.tags && fill.tags.length > 0 && d.tags.length === 0) {
+          next.tags = fill.tags;
+          filled.add("tags");
+        }
+        if (fill.hashtag && !d.hashtag.trim()) {
+          next.hashtag = fill.hashtag;
+          filled.add("hashtag");
+        }
+        // color_theme are default „warning" — îl considerăm „gol" doar
+        // dacă admin-ul nu l-a schimbat manual. Aici nu putem distinge,
+        // deci-l aplicăm doar dacă e diferit de current.
+        if (fill.color_theme && fill.color_theme !== d.color_theme) {
+          next.color_theme = fill.color_theme;
+          filled.add("color_theme");
+        }
+        return next;
+      });
+      setAiFilledKeys(filled);
+      if (filled.size === 0) {
+        toast("AI nu a găsit nimic nou de completat. Toate câmpurile par OK.", "success");
+      } else {
+        toast(`AI a completat ${filled.size} câmpuri. Verifică și ajustează.`, "success");
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Eroare AI", "error");
+    } finally {
+      setAiFilling(false);
     }
   };
 
@@ -560,19 +643,64 @@ export default function AdminProtestePage() {
       {/* FORM */}
       {showForm && (
         <div className="bg-[var(--color-surface)] border-2 border-[var(--color-primary)]/40 rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6 space-y-6">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <h2 className="font-[family-name:var(--font-sora)] font-bold text-base">
               {draft.editingId ? "Editează protest" : "Protest nou"}
             </h2>
-            <button
-              type="button"
-              onClick={cancelForm}
-              className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-bg)] transition-colors"
-              aria-label="Închide formularul"
-            >
-              <X size={14} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={aiFill}
+                disabled={aiFilling || draft.title.trim().length < 5}
+                title={
+                  draft.title.trim().length < 5
+                    ? "Scrie întâi titlul (min 5 caractere)"
+                    : "AI completează subtitlu, cauza, revendicări, hashtag, tag-uri din ce ai scris"
+                }
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-600 to-indigo-700 text-white text-xs font-semibold hover:from-purple-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[var(--shadow-1)]"
+              >
+                {aiFilling ? (
+                  <Loader2 size={12} className="motion-safe:animate-spin" />
+                ) : (
+                  <Sparkles size={12} />
+                )}
+                {aiFilling ? "AI lucrează..." : "Completează cu AI"}
+              </button>
+              <button
+                type="button"
+                onClick={cancelForm}
+                className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-bg)] transition-colors"
+                aria-label="Închide formularul"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
+
+          {/* AI hint banner — apare DOAR după ce AI a completat câmpuri,
+              pentru o vizită. Cresc încrederea și încurajez verificarea. */}
+          {aiFilledKeys.size > 0 && (
+            <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-xs)] p-3 flex items-start gap-2.5 text-xs">
+              <Sparkles size={14} className="text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                <p className="font-semibold text-[var(--color-text)] mb-0.5">
+                  AI a completat {aiFilledKeys.size} {aiFilledKeys.size === 1 ? "câmp" : "câmpuri"}
+                </p>
+                <p className="text-[var(--color-text-muted)] leading-relaxed">
+                  Verifică și ajustează unde e nevoie. AI nu suprascrie ce ai scris deja —
+                  doar umple golurile.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiFilledKeys(new Set())}
+                className="shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                aria-label="Închide notificarea AI"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
 
           {/* SECTION 1 — Identitate */}
           <Section title="Identitate" icon={Megaphone}>
@@ -1269,6 +1397,11 @@ function ListGroup({
                         <Users size={10} className="text-[var(--color-text-muted)]" aria-hidden="true" />
                         Trimis de <strong>{r.submitter_name ?? "necunoscut"}</strong>
                       </span>
+                      {r.is_organizer_submission && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/30">
+                          <ShieldCheck size={9} /> Organizator declarat
+                        </span>
+                      )}
                       {r.submitter_email && (
                         <a
                           href={`mailto:${r.submitter_email}`}
@@ -1276,6 +1409,17 @@ function ListGroup({
                         >
                           <Mail size={10} aria-hidden="true" />
                           {r.submitter_email}
+                        </a>
+                      )}
+                      {r.organizer_proof_url && (
+                        <a
+                          href={r.organizer_proof_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 hover:underline font-semibold"
+                        >
+                          <FileText size={10} aria-hidden="true" />
+                          Vezi dovada
                         </a>
                       )}
                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import {
   Loader2,
@@ -14,6 +14,9 @@ import {
   Building2,
   Hash,
   ChevronDown,
+  ShieldCheck,
+  Upload,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -39,6 +42,9 @@ interface Form {
   expected_attendance: string;
   demands: string[];
   submitter_note: string;
+  // Organizer self-claim
+  is_organizer_submission: boolean;
+  organizer_proof_url: string;
 }
 
 const EMPTY: Form = {
@@ -60,6 +66,8 @@ const EMPTY: Form = {
   expected_attendance: "",
   demands: [],
   submitter_note: "",
+  is_organizer_submission: false,
+  organizer_proof_url: "",
 };
 
 function inputDateTimeToIso(local: string): string {
@@ -75,8 +83,31 @@ export function ProteSubmitForm() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const proofInputRef = useRef<HTMLInputElement>(null);
 
   const update = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
+
+  const uploadProof = async (file: File) => {
+    setUploadingProof(true);
+    try {
+      const fd = new FormData();
+      fd.append("files", file);
+      // kind=document permite și PDF (până la 15 MB), nu doar imagini
+      const res = await fetch("/api/upload?kind=document", { method: "POST", body: fd });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "Eroare upload");
+      const url = j.data?.urls?.[0];
+      if (!url) throw new Error("Nu am primit URL");
+      setF((d) => ({ ...d, organizer_proof_url: url }));
+      toast("Dovada încărcată cu succes.", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Eroare upload", "error");
+    } finally {
+      setUploadingProof(false);
+      if (proofInputRef.current) proofInputRef.current.value = "";
+    }
+  };
 
   const addDemand = () => {
     const v = demandInput.trim();
@@ -122,6 +153,10 @@ export function ProteSubmitForm() {
       setError("Email valid necesar pentru contact.");
       return;
     }
+    if (f.is_organizer_submission && !f.organizer_proof_url) {
+      setError("Atașează dovada de organizator (aprobare primărie sau document oficial).");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -148,6 +183,10 @@ export function ProteSubmitForm() {
       }
       if (f.demands.length > 0) payload.demands = f.demands;
       if (f.submitter_note.trim()) payload.submitter_note = f.submitter_note.trim();
+      if (f.is_organizer_submission) {
+        payload.is_organizer_submission = true;
+        payload.organizer_proof_url = f.organizer_proof_url;
+      }
 
       const res = await fetch("/api/proteste/submit", {
         method: "POST",
@@ -347,6 +386,87 @@ export function ProteSubmitForm() {
             className={`${inputCls} resize-y`}
           />
         </Field>
+      </Section>
+
+      {/* SECTION 3.5 — Organizer self-claim (with proof requirement) */}
+      <Section
+        title="Ești organizatorul protestului?"
+        subtitle='Dacă da, atașează aprobarea de la primărie sau alt document oficial. Apare cu badge „Verificat" pe site.'
+        icon={ShieldCheck}
+      >
+        <label className="flex items-start gap-2.5 p-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-bg)] cursor-pointer border border-[var(--color-border)] transition-colors">
+          <input
+            type="checkbox"
+            checked={f.is_organizer_submission}
+            onChange={(e) => update("is_organizer_submission", e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-[var(--color-primary)] cursor-pointer shrink-0"
+          />
+          <span className="text-sm leading-relaxed">
+            <strong>Da, sunt organizator</strong> (sau reprezint oficial organizatorul)
+            și dovedesc cu document oficial.
+          </span>
+        </label>
+
+        {f.is_organizer_submission && (
+          <div className="space-y-3 pl-1">
+            <p className="text-xs text-amber-700 dark:text-amber-300 inline-flex items-start gap-1.5 leading-relaxed">
+              <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+              Atașarea dovezii e obligatorie pentru statutul de organizator.
+              Acceptăm: aprobare primărie, autorizație, document oficial cu antet.
+            </p>
+
+            {f.organizer_proof_url ? (
+              <div className="bg-emerald-500/5 border border-emerald-500/30 rounded-[var(--radius-xs)] p-3 flex items-center gap-3">
+                <FileText size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                <a
+                  href={f.organizer_proof_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-emerald-700 dark:text-emerald-300 hover:underline truncate flex-1 min-w-0 font-mono"
+                >
+                  Dovadă încărcată — vezi
+                </a>
+                <button
+                  type="button"
+                  onClick={() => update("organizer_proof_url", "")}
+                  className="shrink-0 text-rose-500 hover:text-rose-700"
+                  aria-label="Elimină dovada"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => proofInputRef.current?.click()}
+                disabled={uploadingProof}
+                className="w-full border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 text-center hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors flex flex-col items-center gap-1.5 disabled:opacity-50"
+              >
+                {uploadingProof ? (
+                  <Loader2 size={20} className="text-[var(--color-primary)] motion-safe:animate-spin" />
+                ) : (
+                  <Upload size={20} className="text-[var(--color-text-muted)]" />
+                )}
+                <p className="text-sm font-semibold">
+                  {uploadingProof ? "Se încarcă..." : "Atașează dovada"}
+                </p>
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  PDF, JPG, PNG. Maxim 15 MB.
+                </p>
+              </button>
+            )}
+            <input
+              ref={proofInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadProof(file);
+              }}
+            />
+          </div>
+        )}
       </Section>
 
       {/* SECTION 4 — Optional toggle */}

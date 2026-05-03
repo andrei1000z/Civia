@@ -34,6 +34,11 @@ const submitSchema = z.object({
   expected_attendance: z.number().int().min(0).max(10_000_000).optional(),
   demands: z.array(z.string().trim().min(1).max(500)).max(30).optional(),
   submitter_note: z.string().trim().max(2000).optional(),
+
+  // Organizer self-identification (introduced in 031)
+  is_organizer_submission: z.boolean().optional(),
+  // URL produs de /api/upload?kind=document (image sau PDF)
+  organizer_proof_url: z.string().url().max(500).optional().or(z.literal("")),
 });
 
 function emptyToNull<T extends Record<string, unknown>>(obj: T): T {
@@ -80,6 +85,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Dacă utilizatorul declară că e organizator, dovada e obligatorie.
+    // Altfel verificarea ar fi imposibilă — oricine ar putea ștampila
+    // statutul de „organizator" în admin fără probă.
+    if (parsed.is_organizer_submission && !parsed.organizer_proof_url) {
+      return NextResponse.json(
+        { error: "Pentru statutul de organizator, atașează dovada (aprobare primărie sau document oficial)." },
+        { status: 400 },
+      );
+    }
+
     // Slug temporar — admin-ul îl ajustează la moderare dacă vrea.
     const baseSlug = (slugify(parsed.title).slice(0, 100) || "protest");
     const admin = createSupabaseAdmin();
@@ -108,6 +123,8 @@ export async function POST(req: Request) {
       submitter_name: parsed.submitter_name,
       submitter_email: parsed.submitter_email,
       submitter_note: parsed.submitter_note ?? null,
+      is_organizer_submission: parsed.is_organizer_submission ?? false,
+      organizer_proof_url: parsed.organizer_proof_url || null,
       // CHEILE de stare — submission întotdeauna pending + draft.
       status: "planificat",
       visibility: "draft",
