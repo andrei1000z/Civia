@@ -134,26 +134,18 @@ export async function generateMetadata(
       description,
       images: stire.image_url ? [stire.image_url] : undefined,
     },
-    // SPLIT-INDEXING strategy (decis 2026-05-03 după observații user):
-    // - Google: noindex de la început. Civia e agregator, nu sursă primară;
-    //   user-ii care caută o știre pe Google merg oricum pe sursa originală
-    //   (Digi24 / HotNews / G4Media etc.). Ne scutește 100% de stale results
-    //   în Google după ce articolul e șters la 3 zile — articolul nici n-a
-    //   intrat vreodată în index-ul Google.
-    // - Bing / Yandex / Seznam / DuckDuckGo: indexare normală în cele 3 zile.
-    //   Au IndexNow protocol, deci la cleanup pinguim instant deindex.
-    //   Restul motoarelor sunt OK cu lag de câteva zile post-deletion.
-    //
-    // Tehnic: meta robots general = index, follow → tot ce nu e Google.
-    // Meta `googlebot` = noindex, follow → Google specific. Google respectă
-    // directiva crawler-specifică pentru bot-ul lui (Googlebot).
-    // Follow rămâne ca să nu pierdem PageRank prin link-urile interne.
+    // News-specific signals for Google + Bingbot. Robots default is
+    // index/follow; max-image-preview=large unlocks the big-image
+    // Google News carousel card.
     robots: {
       index: true,
       follow: true,
       googleBot: {
-        index: false,
+        index: true,
         follow: true,
+        "max-snippet": -1,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
       },
     },
   };
