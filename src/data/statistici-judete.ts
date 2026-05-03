@@ -10,7 +10,8 @@
 //   - Operatori transport: site-uri oficiale operatori, 2024-2025
 //   - Populație: INS Recensământ 2021 (ediția finală publicată 2023)
 //
-// ULTIMA VERIFICARE: 2026-04-26
+// ULTIMA VERIFICARE: 2026-05-03 (update Bistrița: Gabriel Lazany / PSD,
+// după ce Ioan Turc / PNL a pierdut cu 8 voturi în alegerile locale 2024).
 // Pentru update primari sau alte câmpuri, actualizează DATE_VERIFIED și adaugă
 // commit cu sursa (link BEC / comunicat oficial primărie).
 //
@@ -20,7 +21,7 @@
 // cunoscute au coeficienți mai mari. Valorile exacte se actualizează când DRPCIV
 // publică detaliile pe județ.
 
-export const DATE_VERIFIED = "2026-04-26";
+export const DATE_VERIFIED = "2026-05-03";
 
 export interface MonthlyValue {
   month: string;
@@ -266,8 +267,12 @@ const COUNTY_DATA: Record<string, CountyStats> = {
     populatie: 277861,
     suprafataKmp: 5355,
     densitate: Math.round(277861 / 5355),
-    primarName: "Ioan Turc",
-    primarPartid: "PNL",
+    // Update mai 2026: Gabriel Lazany (PSD) a câștigat alegerile locale
+    // 2024 cu o diferență de DOAR 8 voturi față de Ioan Turc (PNL,
+    // primar 2020-2024). Jurământul depus pe 22 oct 2024.
+    // Sursa: rasunetul.ro, bistriteanul.ro, radiosomes.ro.
+    primarName: "Gabriel Lazany",
+    primarPartid: "PSD",
   },
 
   // ===================== BOTOȘANI =====================
