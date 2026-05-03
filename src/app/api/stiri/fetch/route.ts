@@ -4,6 +4,7 @@ import { fetchAllFeedsWithDiag } from "@/lib/stiri/rss";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { pingIndexNowDeleted } from "@/lib/seo/indexnow";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -94,12 +95,36 @@ export async function POST(req: Request) {
 
     const supabase = createSupabaseAdmin();
 
-    // Delete articles older than 24h to keep content fresh
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Delete articles older than 3 days. Înainte era 24h, dar:
+    // (a) useri reveneau a doua zi după ce semnaseră o petiție / postaseră
+    //     pe Reddit și nu mai găseau articolul referit
+    // (b) Google indexează lent — articole live <24h erau deindexate
+    //     înainte să apuce să fie crawl-uite ca lume
+    // 3 zile = sweet spot între freshness și retenție utilă.
+    //
+    // Captăm URL-urile șterse înainte de delete pentru a notifica IndexNow
+    // (Bing/Yandex/Seznam) — acestea suportă deindex instant via protocol.
+    // Google NU suportă IndexNow; pe el se bazează pe X-Robots-Tag noindex
+    // + sitemap-ul care exclude automat articolele șterse + 410 Gone.
+    const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: aboutToDelete } = await supabase
+      .from("stiri_cache")
+      .select("id")
+      .lt("published_at", cutoff);
+    const deletedIds = (aboutToDelete ?? []).map((r) => (r as { id: string }).id);
+
     const { count: deleted } = await supabase
       .from("stiri_cache")
       .delete({ count: "exact" })
       .lt("published_at", cutoff);
+
+    // Ping IndexNow (Bing + Yandex + Seznam) pentru deindex instant.
+    // Best-effort — nu blocăm cleanup-ul dacă pică.
+    if (deletedIds.length > 0) {
+      pingIndexNowDeleted(deletedIds).catch((e) => {
+        console.warn("[stiri-fetch] IndexNow ping failed:", e);
+      });
+    }
 
     // Insert new articles (include counties array)
     const rows = articles.map((a) => ({
