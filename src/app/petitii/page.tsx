@@ -148,11 +148,6 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
       externalHost = null;
     }
   }
-  // Progress towards target. We cap at 100% display-side even if the
-  // count exceeds (rare but happens when external sources backfill
-  // signatures). target_signatures defaults to 1000 in the DB.
-  const target = Math.max(1, p.target_signatures);
-  const pct = Math.min(100, Math.round((p.signature_count / target) * 100));
   return (
     <Link
       href={`/petitii/${p.slug}`}
@@ -196,29 +191,10 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
         <p className="text-sm text-[var(--color-text-muted)] line-clamp-3 mb-4 leading-relaxed">
           {p.summary}
         </p>
-        {/* Signature progress — visual proof the petition is moving.
-            Empty bar at 0 still gives users a "fill the bar" mental
-            target, more motivating than no bar. */}
-        <div className="mb-3" aria-label={`${p.signature_count.toLocaleString("ro-RO")} din ${target.toLocaleString("ro-RO")} semnături`}>
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="text-xs font-bold text-[var(--color-text)] tabular-nums">
-              {p.signature_count.toLocaleString("ro-RO")}
-              <span className="text-[var(--color-text-muted)] font-normal">
-                {" / "}
-                {target.toLocaleString("ro-RO")}
-              </span>
-            </span>
-            <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 tabular-nums">
-              {pct}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-[var(--color-surface-2)] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700 transition-[width] duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </div>
+        {/* Signature progress — scos pe carduri pentru că Civia nu are
+            count real (semnăturile se colectează pe site-ul extern), iar
+            "0 / 1 · 0%" arăta deceptiv. Progress-ul rămâne doar pe pagina
+            de detaliu, când avem cifre reale. */}
         <div className="mt-auto flex items-center justify-between text-xs">
           {externalHost && (
             <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
