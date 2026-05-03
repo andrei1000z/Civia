@@ -596,7 +596,7 @@ async function handleSummary() {
     formAbandon,
     copyEvents,
     pwaEvents,
-    ...vitalsAll
+    ...vitalsAndExtras
   ] = await Promise.all([
     analyticsRedis.hgetall<Record<string, string>>(KEY.total),
     analyticsRedis.hgetall<Record<string, string>>(KEY.routes),
@@ -635,6 +635,11 @@ async function handleSummary() {
       r.hgetall<Record<string, string>>(KEY.vitalRating(v)),
       r.lrange(KEY.vitalSamples(v), 0, -1),
     ]),
+    // Insights noi (mai 2026) — agregate la nivel path pentru
+    // a permite secțiuni „Top X pe path" în dashboard:
+    analyticsRedis.hgetall<Record<string, string>>(KEY.rageClicksPerRoute),
+    // LCP per route — cel mai relevant vital pentru speed perception
+    analyticsRedis.hgetall<Record<string, string>>(KEY.vitalPerRoute("LCP")),
   ]);
 
   // Feedback messages + newsletter subscribers — stored in separate
@@ -686,6 +691,14 @@ async function handleSummary() {
   }
 
   // Compute p50/p75/p95 from the sampled values for each vital
+  // Split vitalsAndExtras: primele VITALS.length*2 sunt vitalele
+  // (ratings + samples), apoi 2 entries pentru rage-per-route + LCP-per-route.
+  const vitalsAll = vitalsAndExtras.slice(0, VITALS.length * 2);
+  const rageClicksPerRoute =
+    (vitalsAndExtras[VITALS.length * 2] as Record<string, string> | null) ?? {};
+  const lcpPerRoute =
+    (vitalsAndExtras[VITALS.length * 2 + 1] as Record<string, string> | null) ?? {};
+
   const vitals: Record<string, {
     p50: number;
     p75: number;
@@ -789,6 +802,13 @@ async function handleSummary() {
     copyEvents: copyEvents || {},
     pwaEvents: pwaEvents || {},
     funnels: funnelData,
+    // Insights noi (mai 2026):
+    // - rageClicksPerRoute: chei „path|label", values count → top
+    //   pages cu cei mai mulți rage clicks
+    // - lcpPerRoute: chei „path|rating", values count → cele mai
+    //   lente pagini după proporția de „poor" LCP
+    rageClicksPerRoute: rageClicksPerRoute || {},
+    lcpPerRoute: lcpPerRoute || {},
     feedback,
     feedbackCounts: feedbackCounts || {},
     newsletter,

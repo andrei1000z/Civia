@@ -71,6 +71,11 @@ interface Summary {
     country: string | null;
   }>;
   newsletterCounts: Record<string, string | number>;
+  // Insights noi (mai 2026):
+  // rageClicksPerRoute: chei „path|label" → count (ex: „/sesizari|Trimite"=12)
+  // lcpPerRoute: chei „path|rating" → count (ex: „/harti|poor"=47)
+  rageClicksPerRoute?: Record<string, string | number>;
+  lcpPerRoute?: Record<string, string | number>;
   serverTime: number;
 }
 
@@ -561,17 +566,132 @@ export function AnalyticsDashboard() {
 
       {/* Rage clicks — frustration */}
       {sum(data.rageClicks) > 0 && (
-        <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Frown size={16} className="text-amber-500" />
-            <h3 className="font-semibold text-sm">Rage clicks · semnale de frustrare</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Frown size={16} className="text-amber-500" />
+              <h3 className="font-semibold text-sm">Rage clicks · pe label</h3>
+            </div>
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">
+              3+ click-uri în aceeași zonă în &lt;1s → butonul pare nefuncțional.
+            </p>
+            <BreakdownList title="" icon={Frown} data={data.rageClicks} max={10} />
           </div>
-          <p className="text-xs text-[var(--color-text-muted)] mb-3">
-            3+ click-uri în aceeași zonă în &lt;1s → butonul pare nefuncțional sau reacția e lentă.
-          </p>
-          <BreakdownList title="" icon={Frown} data={data.rageClicks} max={10} />
+
+          {/* B1 NOU: Top pagini cu rage clicks (per route).
+              Scopul: vezi exact ce pagină are UX bug, nu doar ce label. */}
+          {data.rageClicksPerRoute && Object.keys(data.rageClicksPerRoute).length > 0 && (
+            <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Frown size={16} className="text-amber-500" />
+                <h3 className="font-semibold text-sm">Top pagini cu rage clicks</h3>
+              </div>
+              <p className="text-xs text-[var(--color-text-muted)] mb-3">
+                Pagina + butonul exact unde users se enervează. Click-trough la pagină pentru context.
+              </p>
+              <ul className="space-y-1.5">
+                {Object.entries(data.rageClicksPerRoute)
+                  .map(([k, v]) => ({ k, v: Number(v) }))
+                  .sort((a, b) => b.v - a.v)
+                  .slice(0, 10)
+                  .map(({ k, v }) => {
+                    const [path, label] = k.split("|");
+                    return (
+                      <li key={k} className="flex items-start gap-2 text-xs">
+                        <span className="inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold tabular-nums shrink-0">
+                          {v}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <a
+                            href={path ?? "/"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-[10px] text-[var(--color-primary)] hover:underline truncate block"
+                          >
+                            {path ?? "(unknown)"}
+                          </a>
+                          <span className="text-[var(--color-text-muted)] truncate block">
+                            {label ?? "(no label)"}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
+          )}
         </div>
       )}
+
+      {/* B5 NOU: Cele mai lente pagini după LCP rating.
+          lcpPerRoute conține chei „path|rating" (good/needs-improvement/poor).
+          Sortăm pagini după proporția de "poor" — astea sunt cele care fac
+          users să plece înainte să vadă conținutul. */}
+      {data.lcpPerRoute && Object.keys(data.lcpPerRoute).length > 0 && (() => {
+        // Aggregate per path
+        const perPath: Record<string, { good: number; ni: number; poor: number; total: number }> = {};
+        for (const [k, v] of Object.entries(data.lcpPerRoute)) {
+          const [path, rating] = k.split("|");
+          if (!path || !rating) continue;
+          const n = Number(v);
+          perPath[path] ??= { good: 0, ni: 0, poor: 0, total: 0 };
+          if (rating === "good") perPath[path].good += n;
+          else if (rating === "needs-improvement") perPath[path].ni += n;
+          else if (rating === "poor") perPath[path].poor += n;
+          perPath[path].total += n;
+        }
+        const sorted = Object.entries(perPath)
+          .filter(([, s]) => s.total >= 3) // ignore noise (path-uri cu < 3 măsurători)
+          .sort((a, b) => (b[1].poor / b[1].total) - (a[1].poor / a[1].total))
+          .slice(0, 10);
+        if (sorted.length === 0) return null;
+        return (
+          <div className="bg-[var(--color-surface)] border border-rose-500/30 rounded-[var(--radius-md)] p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity size={16} className="text-rose-500" />
+              <h3 className="font-semibold text-sm">Cele mai lente pagini · după LCP rating</h3>
+            </div>
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">
+              Pagini cu cel mai mare procent de „poor" LCP (&gt; 4 secunde). User-ii pleacă înainte să vadă conținutul.
+            </p>
+            <ul className="space-y-2">
+              {sorted.map(([path, s]) => {
+                const pctPoor = Math.round((s.poor / s.total) * 100);
+                const pctGood = Math.round((s.good / s.total) * 100);
+                return (
+                  <li key={path} className="text-xs">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <a
+                        href={path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-[10px] text-[var(--color-primary)] hover:underline truncate"
+                      >
+                        {path}
+                      </a>
+                      <span className="text-[10px] tabular-nums text-[var(--color-text-muted)] shrink-0">
+                        {s.total} măsurători
+                      </span>
+                    </div>
+                    {/* Stacked bar: good (green) | ni (amber) | poor (red) */}
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-[var(--color-surface-2)]">
+                      <span style={{ width: `${pctGood}%` }} className="bg-emerald-500" />
+                      <span style={{ width: `${Math.round((s.ni / s.total) * 100)}%` }} className="bg-amber-500" />
+                      <span style={{ width: `${pctPoor}%` }} className="bg-rose-500" />
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5 text-[10px] text-[var(--color-text-muted)] tabular-nums">
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                        {pctPoor}% poor
+                      </span>
+                      <span>{pctGood}% good</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div className="grid md:grid-cols-2 gap-4">
