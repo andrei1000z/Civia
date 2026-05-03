@@ -9,10 +9,10 @@ import {
   Download,
 } from "lucide-react";
 import {
-  getActiveInterruptions,
   TYPE_ICONS,
   TYPE_LABELS,
 } from "@/data/intreruperi";
+import { loadInterruptions } from "@/lib/intreruperi/store";
 import { SITE_URL } from "@/lib/constants";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
@@ -63,7 +63,32 @@ export const metadata: Metadata = {
 export const revalidate = 1800;
 
 export default async function IntreruperiPage() {
-  const all = await getActiveInterruptions();
+  const { items, scrapedCount, lastSeenAt, source } = await loadInterruptions();
+  // Filter active (same logic ca getActiveInterruptions ca să nu se schimbe
+  // comportamentul vechi, dar acum avem și metadata pentru hero).
+  // eslint-disable-next-line react-hooks/purity -- ISR Server Component, Date.now() captured per regeneration
+  const now = Date.now();
+  const all = items
+    .filter((i) => {
+      if (i.status === "anulat" || i.status === "finalizat") return false;
+      return new Date(i.endAt).getTime() > now;
+    })
+    .sort((a, b) => {
+      if (a.status === "in-desfasurare" && b.status !== "in-desfasurare") return -1;
+      if (a.status !== "in-desfasurare" && b.status === "in-desfasurare") return 1;
+      return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+    });
+
+  const lastUpdateLabel = lastSeenAt
+    ? new Date(lastSeenAt).toLocaleString("ro-RO", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Bucharest",
+      })
+    : null;
 
   // Dataset JSON-LD pentru Google (catalog utilitar)
   const jsonLd = {
@@ -97,13 +122,24 @@ export default async function IntreruperiPage() {
         gradient={HERO_GRADIENT.warning}
         description={
           <>
-            Află din timp când ți se oprește apa, caldura, gazul sau curentul + lucrările de
-            stradă în curs. Agregat din surse oficiale (<strong>Apa Nova</strong>,{" "}
-            <strong>Termoenergetica</strong>, <strong>Distrigaz</strong>,{" "}
-            <strong>E-Distribuție</strong>, <strong>PMB</strong>, <strong>RADP</strong>).
+            Află din timp când ți se oprește apa, caldura, gazul sau curentul + lucrările
+            de stradă în curs. Agregat automat din <strong>30 de surse oficiale</strong>{" "}
+            naționale (Apa Nova, RAJA, Aquatim, DEER, REE, ENGIE, PMB ș.a.) la fiecare
+            12 ore.
           </>
         }
-        tagline={`${all.length} ${all.length === 1 ? "întrerupere activă" : "întreruperi active"} în catalog · subscribe RSS / iCal pentru update automat`}
+        tagline={
+          <>
+            {all.length} {all.length === 1 ? "întrerupere activă" : "întreruperi active"}
+            {scrapedCount > 0 && ` · ${scrapedCount} entry scrapuite în ultimele 7 zile`}
+            {lastUpdateLabel && (
+              <>
+                {" · ultima actualizare "}<strong>{lastUpdateLabel}</strong>
+              </>
+            )}
+            {source === "seed-only" && " · folosim catalogul de seed până când scraper-ul rulează prima dată"}
+          </>
+        }
       />
 
       {/* Stats quick — five real categories instead of four. The
@@ -226,60 +262,139 @@ export default async function IntreruperiPage() {
 
       <section className="mt-6 bg-[var(--color-primary-soft)] rounded-[var(--radius-md)] p-6">
         <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-2 flex items-center gap-2">
-          <MapPin size={18} aria-hidden="true" /> Surse oficiale
+          <MapPin size={18} aria-hidden="true" /> 30 surse oficiale
         </h2>
-        <p className="text-sm text-[var(--color-text-muted)] mb-4">
-          Fiecare întrerupere provine dintr-un anunț public al unuia dintre
-          operatorii de mai jos. Click să mergi la pagina lor originală.
+        <p className="text-sm text-[var(--color-text-muted)] mb-5">
+          Fiecare întrerupere provine dintr-un anunț public al unuia dintre operatorii
+          de mai jos. Scraper-ul Civia rulează automat la 12 ore. Click pe oricare
+          → pagina originală cu detaliile complete.
         </p>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-          <li>
-            <a
-              href="https://www.apanovabucuresti.ro/intreruperi"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[var(--color-primary)] hover:underline"
-            >
-              <ExternalLink size={12} aria-hidden="true" /> Apa Nova București
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://www.termoenergetica.ro/lista-avarii"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[var(--color-primary)] hover:underline"
-            >
-              <ExternalLink size={12} aria-hidden="true" /> Termoenergetica
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://distrigazsud-retele.ro/avarii"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[var(--color-primary)] hover:underline"
-            >
-              <ExternalLink size={12} aria-hidden="true" /> Distrigaz Sud Rețele
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://sesizari.edistributie.com/harta-avarii"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[var(--color-primary)] hover:underline"
-            >
-              <ExternalLink size={12} aria-hidden="true" /> E-Distribuție Muntenia
-            </a>
-          </li>
-        </ul>
-        <p className="text-xs text-[var(--color-text-muted)] mt-4">
-          Vrei să adăugăm mai multe surse (Apavital Iași, RAJA, Aquatim, Colterm,
-          etc.)? Folosește formularul „Știi o întrerupere?" de mai sus să ne
-          spui despre operatorul tău local — îl adăugăm la următorul update.
+
+        <div className="space-y-5">
+          <SourceGroup
+            icon="💧"
+            title="Apă (18 companii)"
+            sources={[
+              { name: "Apa Nova București", url: "https://apanovabucuresti.ro/intreruperi", county: "B" },
+              { name: "RAJA Constanța", url: "https://www.rajac.ro/avarii/", county: "CT" },
+              { name: "Aquatim Timișoara", url: "https://www.aquatim.ro/avarii-curente/", county: "TM" },
+              { name: "Apavital Iași", url: "https://www.apavital.ro/intreruperi/", county: "IS" },
+              { name: "CASom Cluj-Napoca", url: "https://www.casomes.ro/intreruperi-furnizare-apa/", county: "CJ" },
+              { name: "CAB Brașov", url: "https://www.apabrasov.ro/intreruperi/", county: "BV" },
+              { name: "Apă Canal Galați", url: "https://www.apa-canal.ro/avarii/", county: "GL" },
+              { name: "ApaServ Prahova", url: "https://www.apaservprahova.ro/intreruperi-apa/", county: "PH" },
+              { name: "CAO Oradea", url: "https://www.cao.ro/intreruperi-furnizare-apa/", county: "BH" },
+              { name: "ApaServ Sibiu", url: "https://www.apaserv-sibiu.ro/avarii-intreruperi/", county: "SB" },
+              { name: "CA Arad", url: "https://www.caarad.ro/intreruperi/", county: "AR" },
+              { name: "ApaServ Satu Mare", url: "https://www.apaserv.eu/intreruperi/", county: "SM" },
+              { name: "CTTA Alba", url: "https://www.captasapa.ro/intreruperi/", county: "AB" },
+              { name: "Aquaserv Mureș", url: "https://www.aquaserv.ro/intreruperi-furnizare-apa/", county: "MS" },
+              { name: "CA Bacău", url: "https://www.cabacau.ro/intreruperi/", county: "BC" },
+              { name: "AC 2000 Pitești", url: "https://www.apa-canal2000.ro/intreruperi/", county: "AG" },
+              { name: "CA Craiova", url: "https://www.apacraiova.ro/intreruperi/", county: "DJ" },
+              { name: "CA Buzău", url: "https://www.cabuzau.ro/intreruperi/", county: "BZ" },
+            ]}
+          />
+
+          <SourceGroup
+            icon="🔥"
+            title="Termoficare (4 sisteme)"
+            sources={[
+              { name: "Termoenergetica București", url: "https://www.cmteb.ro/", county: "B" },
+              { name: "Colterm Timișoara", url: "https://www.colterm.ro/", county: "TM" },
+              { name: "Veolia Energie Iași", url: "https://www.dalkia.ro/", county: "IS" },
+              { name: "CET Brașov", url: "https://www.cet.brasov.ro/", county: "BV" },
+            ]}
+          />
+
+          <SourceGroup
+            icon="⚡"
+            title="Electricitate (4 distribuitori naționali)"
+            sources={[
+              { name: "E-Distribuție Muntenia", url: "https://www.e-distributie.com/clienti/lucrari-planificate.html", county: "B" },
+              { name: "Rețele Electrice România (REE)", url: "https://www.retele-electrice.ro/", county: "multi" },
+              { name: "DEER (Electrica)", url: "https://www.distributie-energie.ro/", county: "multi" },
+              { name: "Distribuție Oltenia", url: "https://www.distributieoltenia.ro/", county: "multi" },
+            ]}
+          />
+
+          <SourceGroup
+            icon="🛢️"
+            title="Gaz (2 distribuitori)"
+            sources={[
+              { name: "DELGAZ Grid", url: "https://www.delgaz.ro/comunicate-presa/", county: "multi" },
+              { name: "ENGIE / Distrigaz Sud", url: "https://www.engie.ro/avarii-intreruperi/", county: "B + sud" },
+            ]}
+          />
+
+          <SourceGroup
+            icon="🚧"
+            title="Lucrări strazi (1)"
+            sources={[
+              { name: "Primăria Municipiului București (PMB API)", url: "https://www.pmb.ro/anunturi-lucrari", county: "B" },
+            ]}
+          />
+
+          <SourceGroup
+            icon="📰"
+            title="Fallback floor (presa locală)"
+            sources={[
+              { name: "30+ surse de presă agregate de Civia", url: "/stiri", county: "național" },
+            ]}
+          />
+        </div>
+
+        <p className="text-xs text-[var(--color-text-muted)] mt-5 leading-relaxed pt-4 border-t border-[var(--color-border)]">
+          Lipsește operatorul tău local? Spune-ne via formularul „Știi o întrerupere?"
+          de mai sus, sau direct la <Link href="/#footer-feedback" className="text-[var(--color-primary)] hover:underline">feedback footer</Link> — îl adăugăm la
+          următorul update.
         </p>
       </section>
+    </div>
+  );
+}
+
+interface SourceGroupItem {
+  name: string;
+  url: string;
+  county: string;
+}
+
+function SourceGroup({
+  icon,
+  title,
+  sources,
+}: {
+  icon: string;
+  title: string;
+  sources: SourceGroupItem[];
+}) {
+  return (
+    <div>
+      <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm mb-2.5 inline-flex items-center gap-1.5">
+        <span aria-hidden="true">{icon}</span>
+        {title}
+      </h3>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 text-xs">
+        {sources.map((s) => (
+          <li key={s.url}>
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-bg)] transition-colors"
+            >
+              <ExternalLink size={10} className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] shrink-0" aria-hidden="true" />
+              <span className="truncate flex-1 group-hover:text-[var(--color-primary)] transition-colors">
+                {s.name}
+              </span>
+              <span className="text-[9px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider shrink-0">
+                {s.county}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

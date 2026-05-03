@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { IntreruperiSubmissions } from "./IntreruperiSubmissions";
+import { RefreshScrapeButton } from "./RefreshScrapeButton";
 
 export const metadata = {
   title: "Submisii întreruperi — Admin",
@@ -58,6 +59,12 @@ export default async function AdminIntreruperiPage() {
           Verifică, apoi marchează ca „publicat", „respins" sau „duplicat".
         </p>
       </div>
+
+      {/* Refresh scrape acum — trigger manual al cron-ului. Util pentru
+          debug + când aștepți o întrerupere mare în interval-ul dintre
+          cron-uri (12h). */}
+      <RefreshScrapeButton />
+
       <IntreruperiSubmissions rows={rows} />
     </div>
   );
