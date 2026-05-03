@@ -79,6 +79,8 @@ export async function StiriWidget() {
                   fill
                   sizes="(max-width: 1024px) 100vw, 60vw"
                   className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                  priority
+                  unoptimized
                 />
               ) : (
                 <div className="absolute inset-0 grid place-items-center text-[var(--color-text-muted)]">
