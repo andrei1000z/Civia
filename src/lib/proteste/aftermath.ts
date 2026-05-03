@@ -394,6 +394,93 @@ function capitalize(s: string): string {
   return s.charAt(0).toLocaleUpperCase("ro-RO") + s.slice(1);
 }
 
+/**
+ * Verifică dacă un URL de media (poză sau video) e accesibil + are
+ * content-type corect. Folosit ca să filtrăm AI hallucinations + URL-uri
+ * sparte ÎNAINTE de a le pune în DB (admin nu vede „Foto 4" pe pagină
+ * publică pentru că poza nu există).
+ *
+ * Returnează true dacă HEAD întoarce 200 OK cu Content-Type image/* sau
+ * video/* (sau dacă HEAD nu e suportat și GET cu Range 0-1024 reușește).
+ *
+ * Timeout 4s — preferăm să fals-pozitivăm un URL valid dar lent decât
+ * să blocăm 30 sec pe AI hallucinations.
+ */
+const VALIDATE_TIMEOUT_MS = 4000;
+const VALIDATE_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+export async function validateMediaUrl(
+  url: string,
+  kind: "image" | "video",
+): Promise<boolean> {
+  if (!/^https?:\/\//i.test(url)) return false;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), VALIDATE_TIMEOUT_MS);
+  try {
+    // HEAD primul — ieftin, majoritatea CDN-urilor îl suportă
+    let res = await fetch(url, {
+      method: "HEAD",
+      headers: { "User-Agent": VALIDATE_UA },
+      signal: ctrl.signal,
+      redirect: "follow",
+    });
+    // Dacă HEAD e 405/501 (method not allowed/not implemented), încearcă GET
+    if (res.status === 405 || res.status === 501) {
+      res = await fetch(url, {
+        method: "GET",
+        headers: { "User-Agent": VALIDATE_UA, Range: "bytes=0-1024" },
+        signal: ctrl.signal,
+        redirect: "follow",
+      });
+    }
+    if (!res.ok && res.status !== 206) return false;
+    const ct = (res.headers.get("content-type") ?? "").toLowerCase();
+    if (kind === "image") {
+      // Accept image/*, plus application/octet-stream pentru CDN-uri zgârcite
+      // care nu setează ct corect. Refuzăm clar text/html (404 page sau HTML
+      // returnat în loc de imagine — exact ce vedem în screenshot user).
+      if (ct.startsWith("text/") || ct.includes("html")) return false;
+      return ct.startsWith("image/") || ct.includes("octet-stream") || ct === "";
+    }
+    // video
+    if (ct.startsWith("text/") || ct.includes("html")) return false;
+    return (
+      ct.startsWith("video/") ||
+      ct.includes("octet-stream") ||
+      ct === "" ||
+      // YouTube/TikTok/Facebook sunt embed-uri — nu sunt direct media URLs
+      // dar pagina lor există. Le acceptăm fără content-type check.
+      /(?:youtube\.com|youtu\.be|tiktok\.com|facebook\.com|fb\.watch|instagram\.com)/i.test(url)
+    );
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Filtru paralel pentru image/video URLs — păstrează doar cele care trec
+ * `validateMediaUrl`. Aplicat după sanitize, înainte de save în DB.
+ */
+export async function filterValidMedia(
+  images: AftermathImage[],
+  videos: AftermathVideo[],
+): Promise<{ images: AftermathImage[]; videos: AftermathVideo[] }> {
+  const imgChecks = await Promise.all(
+    images.map((img) => validateMediaUrl(img.url, "image")),
+  );
+  const vidChecks = await Promise.all(
+    videos.map((vid) => validateMediaUrl(vid.url, "video")),
+  );
+  return {
+    images: images.filter((_, i) => imgChecks[i]),
+    videos: videos.filter((_, i) => vidChecks[i]),
+  };
+}
+
 function detectVideoSource(url: string): string {
   try {
     const u = new URL(url);

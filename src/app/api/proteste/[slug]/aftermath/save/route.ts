@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { aftermathDataSchema } from "@/lib/proteste/aftermath";
+import { aftermathDataSchema, filterValidMedia } from "@/lib/proteste/aftermath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -102,6 +102,13 @@ export async function POST(
   }
   // Admin poate suprascrie aftermath existent (corecții).
 
+  // Validare finală media URLs — în caz că admin a editat manual lista
+  // sau a pastat URL-uri broken. Same logică ca în scrape route.
+  const { images: validImages, videos: validVideos } = await filterValidMedia(
+    a.images,
+    a.videos,
+  );
+
   // Update via admin client (bypass RLS). Admin = autoritate, publică direct
   // ca approved (nu mai trecem prin pending). Auto-published_at = now.
   const nowIso = new Date().toISOString();
@@ -114,8 +121,8 @@ export async function POST(
       aftermath_messages: a.messages,
       aftermath_key_moments: a.key_moments,
       aftermath_outcome: a.outcome || null,
-      aftermath_images: a.images,
-      aftermath_videos: a.videos,
+      aftermath_images: validImages,
+      aftermath_videos: validVideos,
       aftermath_sources: a.sources,
       aftermath_submitted_by: auth.userId,
       aftermath_submitted_at: nowIso,

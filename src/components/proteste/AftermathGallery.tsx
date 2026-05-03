@@ -13,35 +13,56 @@ interface Props {
  * Gallery client component. Masonry CSS columns ca să păstrăm aspect-
  * ratio-ul natural al fiecărei poze + ImageLightbox la click (la fel
  * ca pe sesizari) cu navigare săgeți + Esc pentru închidere.
+ *
+ * Safety net: dacă o poză eșuează la load (404, hotlink-protect, CDN
+ * down etc.), o ascundem complet din UI și o eliminăm și din lightbox-
+ * ul navigabil. Validarea de pe server (filterValidMedia) ar trebui să
+ * prindă majoritatea, dar URL-urile vechi din DB pre-validare pot fi
+ * încă acolo, plus că hotlink-protection se poate schimba în orice
+ * moment fără ca noi să fim notificați.
  */
 export function AftermathGallery({ images }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [brokenUrls, setBrokenUrls] = useState<Set<string>>(new Set());
 
-  if (images.length === 0) return null;
+  const visibleImages = images.filter((img) => !brokenUrls.has(img.url));
 
-  const urls = images.map((img) => img.url);
+  if (visibleImages.length === 0) return null;
+
+  const urls = visibleImages.map((img) => img.url);
+
+  function handleError(url: string) {
+    setBrokenUrls((s) => {
+      const next = new Set(s);
+      next.add(url);
+      return next;
+    });
+    // Dacă lightbox-ul era deschis pe poza spartă, închide-l (URL-ul nu
+    // mai există în lista filtrată). React va re-render automat.
+  }
 
   return (
     <>
       <div>
         <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
           <Camera size={14} aria-hidden="true" />
-          Galerie ({images.length})
+          Galerie ({visibleImages.length})
         </h3>
         <div className="columns-2 sm:columns-3 gap-2 [column-fill:_balance]">
-          {images.map((img, i) => (
+          {visibleImages.map((img, i) => (
             <button
-              key={i}
+              key={img.url}
               type="button"
               onClick={() => setLightboxIndex(i)}
               className="group relative block w-full mb-2 break-inside-avoid overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              aria-label={`Deschide poza ${i + 1} din ${images.length}`}
+              aria-label={`Deschide poza ${i + 1} din ${visibleImages.length}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.url}
                 alt={img.caption ?? `Foto ${i + 1}`}
                 loading="lazy"
+                onError={() => handleError(img.url)}
                 className="w-full h-auto block group-hover:opacity-90 transition-opacity duration-300"
               />
               {img.credit && (
@@ -54,7 +75,7 @@ export function AftermathGallery({ images }: Props) {
         </div>
       </div>
 
-      {lightboxIndex !== null && (
+      {lightboxIndex !== null && lightboxIndex < urls.length && (
         <ImageLightbox
           urls={urls}
           initialIndex={lightboxIndex}

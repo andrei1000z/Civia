@@ -6,6 +6,7 @@ import {
   AFTERMATH_SYSTEM_PROMPT,
   sanitizeAiResponse,
   scrapeMultiple,
+  filterValidMedia,
 } from "@/lib/proteste/aftermath";
 import {
   callGemini,
@@ -263,6 +264,16 @@ export async function POST(
   }
 
   const aftermath = sanitizeAiResponse(parsedJson, scraped);
+
+  // Validare media URLs — drop poze/video-uri care 404 sau returnează HTML
+  // în loc de imagine. AI poate halucina URL-uri (ex: video .mp4 inventat
+  // pe baza titlului articolului). Mai bine 0 poze decât 12 broken links.
+  const { images: validImages, videos: validVideos } = await filterValidMedia(
+    aftermath.images,
+    aftermath.videos,
+  );
+  aftermath.images = validImages;
+  aftermath.videos = validVideos;
 
   return NextResponse.json({
     data: aftermath,
