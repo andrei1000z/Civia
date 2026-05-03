@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Megaphone, ArrowRight, ExternalLink } from "lucide-react";
+import { Megaphone, ArrowRight, ExternalLink, Plus } from "lucide-react";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
@@ -43,10 +43,10 @@ export default async function PetitiiPage() {
         gradient={HERO_GRADIENT.petition}
         description={
           <>
-            Curate de Civia. Click pe petiție → vezi argumentele, sinteza
-            și sursa oficială (Declic / Avaaz / petitie.civica.ro) unde
-            semnezi. Spre deosebire de o sesizare individuală, petiția adună{" "}
-            <strong>multe voci pentru aceeași cauză</strong>.
+            Curate de Civia + inițiate de comunitate. Click pe petiție → vezi
+            argumentele și sinteza, apoi semnezi pe site (sau pe sursa oficială
+            când e agregată din Declic / Avaaz). Petiția adună <strong>multe
+            voci pentru aceeași cauză</strong>.
           </>
         }
         tagline={
@@ -56,6 +56,31 @@ export default async function PetitiiPage() {
           </>
         }
       />
+
+      {/* CTA — utilizatorii pot iniția propriile petiții */}
+      <div className="mb-8 bg-gradient-to-br from-purple-500/10 via-[var(--color-surface)] to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
+        <div
+          className="w-10 h-10 rounded-[var(--radius-xs)] bg-purple-500/15 grid place-items-center shrink-0"
+          aria-hidden="true"
+        >
+          <Plus size={18} className="text-purple-600 dark:text-purple-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base mb-0.5">
+            Ai o cauză pe care vrei să o promovezi?
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            Inițiază propria petiție pe Civia — verificare în 1-2 ore, apoi e publică.
+          </p>
+        </div>
+        <Link
+          href="/petitii/initiaza"
+          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+        >
+          <Plus size={14} aria-hidden="true" />
+          Inițiază petiție
+        </Link>
+      </div>
 
       {petitii.length === 0 ? (
         <EmptyState />
