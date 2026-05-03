@@ -270,16 +270,81 @@ export default function AdminUpdatesPage() {
 
           <div className="grid sm:grid-cols-[120px_1fr] gap-3 mb-4">
             <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] sm:text-sm sm:font-medium sm:normal-case sm:tracking-normal sm:flex sm:items-center">
-              Data
+              Data și ora
             </label>
-            <input
-              type="datetime-local"
-              value={draft.published_at}
-              onChange={(e) =>
-                setDraft({ ...draft, published_at: e.target.value })
-              }
-              className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            />
+            <div className="space-y-1.5">
+              <input
+                type="datetime-local"
+                value={draft.published_at}
+                onChange={(e) =>
+                  setDraft({ ...draft, published_at: e.target.value })
+                }
+                step="60"
+                className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-full sm:w-auto"
+              />
+              {/* Confirmation umană — user-ul vede în clar ce setează,
+                  pentru că datetime-local e UI-ul native al browser-ului
+                  și formatul diferă pe Chrome vs Safari vs mobile. */}
+              <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+                {draft.published_at
+                  ? `Va apărea ca: ${new Date(draft.published_at).toLocaleString("ro-RO", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Europe/Bucharest",
+                    })}`
+                  : "Lasă gol pentru ora curentă (acum)."}
+              </p>
+              <div className="flex gap-1.5 flex-wrap pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const pad = (n: number) => String(n).padStart(2, "0");
+                    setDraft({
+                      ...draft,
+                      published_at: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`,
+                    });
+                  }}
+                  className="text-[11px] px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+                >
+                  Acum
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    d.setHours(9, 0, 0, 0);
+                    const pad = (n: number) => String(n).padStart(2, "0");
+                    setDraft({
+                      ...draft,
+                      published_at: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T09:00`,
+                    });
+                  }}
+                  className="text-[11px] px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+                >
+                  Ieri 09:00
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setHours(d.getHours() + 1, 0, 0, 0);
+                    const pad = (n: number) => String(n).padStart(2, "0");
+                    setDraft({
+                      ...draft,
+                      published_at: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`,
+                    });
+                  }}
+                  className="text-[11px] px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+                >
+                  Următoarea oră
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mb-5">
