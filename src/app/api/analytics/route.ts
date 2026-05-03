@@ -558,6 +558,14 @@ async function handleSummary() {
   const m = monthKey();
   const w = weekKey();
 
+  // E3 — last 7 days for DAU sparkline. KEY.dau(date) e un Set cu vid-uri
+  // unice per zi; scard ne dă numărul de vizitatori unici. TTL 90 zile,
+  // așa că 7 zile sunt mereu disponibile.
+  const last7Dates: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    last7Dates.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
+  }
+
   const VITALS = ["LCP", "INP", "CLS", "FCP", "TTFB"] as const;
   // Capture the non-null reference so the flatMap closure below keeps
   // the narrowed type (TS widens back to possibly-null inside callbacks).
@@ -807,13 +815,24 @@ async function handleSummary() {
     //   pages cu cei mai mulți rage clicks
     // - lcpPerRoute: chei „path|rating", values count → cele mai
     //   lente pagini după proporția de „poor" LCP
+    // - trendDau7d: ultimele 7 zile DAU pentru sparkline (vechi → recent)
     rageClicksPerRoute: rageClicksPerRoute || {},
     lcpPerRoute: lcpPerRoute || {},
+    trendDau7d: await Promise.all(
+      last7Dates.map(async (date) => Number((await analyticsRedis!.scard(KEY.dau(date))) ?? 0)),
+    ),
     feedback,
     feedbackCounts: feedbackCounts || {},
     newsletter,
     newsletterCounts: newsletterCounts || {},
     serverTime: Date.now(),
+  }, {
+    // E1 — short-term private cache. Auto-refresh dashboard la 30s
+    // poate hit cache-ul browser timp de 20s între request-uri ca să
+    // economisim un fetch/min. private = doar admin browser, nu CDN.
+    headers: {
+      "Cache-Control": "private, max-age=20, stale-while-revalidate=10",
+    },
   });
 }
 

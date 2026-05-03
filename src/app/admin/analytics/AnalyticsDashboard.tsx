@@ -8,6 +8,7 @@ import {
   Frown, Search, Bot, LogIn, Copy, Download, ExternalLink,
   MessageSquareMore, Mail,
 } from "lucide-react";
+import { Sparkline } from "@/components/analytics/Sparkline";
 
 interface Vitals {
   p50: number;
@@ -74,8 +75,10 @@ interface Summary {
   // Insights noi (mai 2026):
   // rageClicksPerRoute: chei „path|label" → count (ex: „/sesizari|Trimite"=12)
   // lcpPerRoute: chei „path|rating" → count (ex: „/harti|poor"=47)
+  // trendDau7d: ultimele 7 zile DAU (vechi → recent) pentru sparkline
   rageClicksPerRoute?: Record<string, string | number>;
   lcpPerRoute?: Record<string, string | number>;
+  trendDau7d?: number[];
   serverTime: number;
 }
 
@@ -135,16 +138,23 @@ function timeAgo(ts: number): string {
 }
 
 function StatCard({
-  icon: Icon, label, value, sub, accent = "#2563EB",
+  icon: Icon, label, value, sub, accent = "#2563EB", sparkline,
 }: {
   icon: React.ElementType;
   label: string;
   value: string | number;
   sub?: string;
   accent?: string;
+  /** Optional 7-day trend visualization in top-right corner. */
+  sparkline?: { data: number[]; variant?: "primary" | "success" | "danger" | "warning"; title?: string };
 }) {
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 relative">
+      {sparkline && (
+        <div className="absolute top-3 right-3" aria-hidden="true">
+          <Sparkline {...sparkline} />
+        </div>
+      )}
       <Icon size={18} style={{ color: accent }} className="mb-2" />
       <p className="text-3xl font-bold" style={{ color: accent }}>{value}</p>
       <p className="text-xs text-[var(--color-text-muted)] mt-1">{label}</p>
@@ -406,6 +416,15 @@ export function AnalyticsDashboard() {
           value={fmt(data.today.dau)}
           sub={`ieri: ${data.yesterday.dau} (${dauDelta >= 0 ? "+" : ""}${dauDelta})`}
           accent="#2563EB"
+          sparkline={
+            data.trendDau7d && data.trendDau7d.length > 0
+              ? {
+                  data: data.trendDau7d,
+                  variant: dauDelta >= 0 ? "success" : "danger",
+                  title: `DAU ultimele 7 zile: ${data.trendDau7d.join(" → ")}`,
+                }
+              : undefined
+          }
         />
         <StatCard icon={Activity} label="WAU" value={fmt(data.wau)} accent="#8B5CF6" />
         <StatCard

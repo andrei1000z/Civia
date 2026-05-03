@@ -13,7 +13,10 @@
 
 // Bump CACHE_VERSION whenever the precache list or strategy changes
 // — old caches get dropped on activate.
-const CACHE_VERSION = "v6";
+// v7 (mai 2026): adăugat /petitii, /proteste, /stiri, /cum-functioneaza
+// la precache (high-traffic post launch). PWA users primesc instant
+// aceste pagini la a doua deschidere.
+const CACHE_VERSION = "v7";
 const STATIC_CACHE = `civia-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `civia-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `civia-images-${CACHE_VERSION}`;
@@ -31,9 +34,13 @@ const STATIC_ASSETS = [
   "/apple-touch-icon.png",
   // Top entry points — likely first-click destinations from the home screen
   "/sesizari",
+  "/petitii",
+  "/proteste",
+  "/stiri",
   "/harti",
   "/intreruperi",
   "/ghiduri",
+  "/cum-functioneaza",
   // Emergency-critical guides — must be readable when there's no signal
   "/ghiduri/ghid-cutremur",
   "/ghiduri/ghid-vara",
