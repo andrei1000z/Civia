@@ -38,16 +38,16 @@ async function fetchUpdates(): Promise<UpdateRow[]> {
 }
 
 function formatRoDate(iso: string): string {
-  // Arată data + ora dacă ora nu e 00:00 (default „doar data" la
-  // entry-uri vechi). Așa user-ii care setează publicare la o oră
-  // specifică (ex: 14:30) văd ora exactă în timeline.
-  const d = new Date(iso);
-  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
-  return d.toLocaleString("ro-RO", {
+  // Arată mereu data + ora în timezone Romania. Conditional-ul vechi
+  // de „skip time dacă e 00:00" era buggy: getHours() folosea timezone
+  // server-ului (UTC pe Vercel), nu Romania, deci 03:00 RO (= 00:00 UTC)
+  // era marcat fals ca „fără oră".
+  return new Date(iso).toLocaleString("ro-RO", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    ...(hasTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: "Europe/Bucharest",
   });
 }
