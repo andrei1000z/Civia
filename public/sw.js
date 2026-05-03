@@ -13,10 +13,10 @@
 
 // Bump CACHE_VERSION whenever the precache list or strategy changes
 // — old caches get dropped on activate.
-// v7 (mai 2026): adăugat /petitii, /proteste, /stiri, /cum-functioneaza
-// la precache (high-traffic post launch). PWA users primesc instant
-// aceste pagini la a doua deschidere.
-const CACHE_VERSION = "v7";
+// v8 (mai 2026): force cache invalidation după mobile fixes pe
+// /intreruperi (grid-cols-3, hero size, gaz card lipsea). PWA users
+// pe v7 vedeau HTML pre-fix din runtime cache.
+const CACHE_VERSION = "v8";
 const STATIC_CACHE = `civia-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `civia-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `civia-images-${CACHE_VERSION}`;

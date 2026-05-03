@@ -65,7 +65,7 @@ export function PageHero({
         </Link>
       )}
       <header
-        className={`relative mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
+        className={`relative mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
       >
         <div
           className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
@@ -95,7 +95,7 @@ export function PageHero({
             <Icon size={22} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight mb-2">
+            <h1 className="font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-4xl font-extrabold leading-tight mb-2 break-words">
               {title}
             </h1>
             {description && (
