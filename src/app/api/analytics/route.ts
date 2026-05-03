@@ -66,13 +66,61 @@ async function isAdmin(): Promise<boolean> {
   return u?.role === "admin";
 }
 
-async function handleTrack(req: NextRequest, body: Record<string, unknown>) {
+/**
+ * handleTrackBatch — primește un array de evenimente (acum până la
+ * 30 per batch) și le procesează unul câte unul prin handleTrack.
+ * Trimis de client după 2s buffer (vezi CiviaTracker.flushBatch).
+ *
+ * Beneficiu vs un eveniment per request:
+ * - 1 request HTTP în loc de 30 → mai puțin cost rețea + Vercel
+ * - Rate limit aplicat pe batch (1 hit), nu per eveniment (30 hits)
+ * - Origin check + auth check rulează o singură dată
+ */
+async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>) {
   if (!analyticsRedis) return NextResponse.json({ ok: true, noop: true });
 
-  // Rate limit per IP — generous (allows SPA nav bursts) but blocks abuse.
   const ip = getClientIp(req);
-  const rl = await rateLimitAsync(`analytics:${ip}`, { limit: 60, windowMs: 60_000 });
+  // Rate limit pe batch — un user activ poate trimite max 60 batches/min.
+  // Cu 30 evenimente per batch înseamnă max 1800 events/min/IP, suficient
+  // pentru SPA navigation agresivă; blochează scrape abuse.
+  const rl = await rateLimitAsync(`analytics-batch:${ip}`, { limit: 60, windowMs: 60_000 });
   if (!rl.success) return NextResponse.json({ ok: false, rateLimited: true }, { status: 429 });
+
+  const events = body.events;
+  if (!Array.isArray(events)) {
+    return NextResponse.json({ error: "events must be array" }, { status: 400 });
+  }
+  // Cap defensiv pe server: 50 evenimente max (clientul trimite max 30)
+  const limited = events.slice(0, 50);
+
+  let ok = 0;
+  let failed = 0;
+  for (const ev of limited) {
+    if (typeof ev !== "object" || ev === null) {
+      failed++;
+      continue;
+    }
+    try {
+      // Reuse handleTrack — pasăm flag _batched ca să sară peste rate-limit
+      // (deja verificat o dată la nivel batch).
+      await handleTrack(req, ev as Record<string, unknown>, true);
+      ok++;
+    } catch {
+      failed++;
+    }
+  }
+  return NextResponse.json({ ok: true, processed: ok, failed });
+}
+
+async function handleTrack(req: NextRequest, body: Record<string, unknown>, _batched = false) {
+  if (!analyticsRedis) return NextResponse.json({ ok: true, noop: true });
+
+  // Rate limit per IP — sărit pentru evenimente batch (deja verificat).
+  if (!_batched) {
+    const ip = getClientIp(req);
+    const rl = await rateLimitAsync(`analytics:${ip}`, { limit: 60, windowMs: 60_000 });
+    if (!rl.success) return NextResponse.json({ ok: false, rateLimited: true }, { status: 429 });
+  }
 
   const visitorId = sanitizeId(body.visitorId);
   if (!visitorId) return NextResponse.json({ ok: true });
@@ -938,6 +986,7 @@ export async function POST(req: NextRequest) {
   const action = sanitizeStr(body.action, 20);
   try {
     if (action === "track") return await handleTrack(req, body);
+    if (action === "track-batch") return await handleTrackBatch(req, body);
     if (action === "summary") return await handleSummary();
     if (action === "user") return await handleUser(body);
     if (action === "exclude") return await handleExclude(body);

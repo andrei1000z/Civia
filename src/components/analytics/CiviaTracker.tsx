@@ -91,9 +91,30 @@ interface TrackPayload {
   [k: string]: string | number | undefined;
 }
 
-async function send(payload: TrackPayload): Promise<void> {
+// ─── Batching layer ────────────────────────────────────────────────
+//
+// Înainte: fiecare eveniment trimitea propriul request → 100+ requests
+// per sesiune activă. Costuri Vercel + scrieri Redis enormous.
+//
+// Acum: buffer evenimentele 2 secunde (BATCH_FLUSH_MS), trimite-le
+// împreună într-un singur POST. Pe pagehide/visibilitychange flush-uim
+// imediat ca să nu pierdem ultimele evenimente. Pentru evenimente
+// critice (js-error, web-vital la flush), trimitem direct fără buffer.
+const BATCH_FLUSH_MS = 2000;
+const BATCH_MAX_SIZE = 30;
+let batchBuffer: TrackPayload[] = [];
+let batchTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function flushBatch(): Promise<void> {
+  if (batchBuffer.length === 0) return;
+  const events = batchBuffer;
+  batchBuffer = [];
+  if (batchTimer) {
+    clearTimeout(batchTimer);
+    batchTimer = null;
+  }
   try {
-    const body = JSON.stringify(payload);
+    const body = JSON.stringify({ action: "track-batch", events });
     if (navigator.sendBeacon) {
       navigator.sendBeacon("/api/analytics", new Blob([body], { type: "application/json" }));
       return;
@@ -105,8 +126,30 @@ async function send(payload: TrackPayload): Promise<void> {
       keepalive: true,
     });
   } catch {
-    /* silent */
+    /* silent — events lost is acceptable, network down */
   }
+}
+
+async function send(payload: TrackPayload): Promise<void> {
+  batchBuffer.push(payload);
+  // Flush early dacă ne apropiem de limita batch-ului
+  if (batchBuffer.length >= BATCH_MAX_SIZE) {
+    flushBatch();
+    return;
+  }
+  // Schedule flush dacă nu există unul activ
+  if (!batchTimer) {
+    batchTimer = setTimeout(flushBatch, BATCH_FLUSH_MS);
+  }
+}
+
+// Flush la pagehide / visibilitychange ca să nu pierdem evenimente
+// când userul închide tab-ul. Înregistrat o singură dată per pagină.
+if (typeof window !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushBatch();
+  });
+  window.addEventListener("pagehide", flushBatch);
 }
 
 export function trackCustomEvent(eventType: string, extra: Record<string, string | number> = {}): void {
@@ -438,11 +481,42 @@ export function CiviaTracker(): null {
     };
   }, []);
 
-  // Click tracking — captures buttons, links, [role=button]. Outbound
-  // links get a separate eventType so the dashboard can show them.
+  // Click tracking + Rage clicks UNIFIED — un singur listener pentru
+  // ambele (înainte erau 2 listeners pe document.click — runtime dublu
+  // pentru fiecare click). Logica:
+  // 1. Detectăm rage (3+ click-uri în 1s, în 40×40 px)
+  // 2. În același handler facem click tracking normal
   useEffect(() => {
     if (isExcluded()) return;
+    let recent: ClickRecord[] = [];
+
     const onClick = (e: MouseEvent) => {
+      // ─── RAGE DETECTION ───
+      const now = Date.now();
+      recent = recent.filter((r) => now - r.t < 1000);
+      const nearby = recent.filter(
+        (r) => Math.abs(r.x - e.clientX) < 40 && Math.abs(r.y - e.clientY) < 40,
+      );
+      recent.push({ x: e.clientX, y: e.clientY, t: now });
+      if (nearby.length >= 2) {
+        recent = recent.filter((r) => !nearby.includes(r));
+        const tEl = e.target as HTMLElement | null;
+        const rageEl = tEl?.closest("a, button, [role=button]") as HTMLElement | null;
+        const rageLabel =
+          (rageEl?.getAttribute("aria-label") || rageEl?.textContent || rageEl?.tagName || "body")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 40);
+        send({
+          action: "track",
+          visitorId: getVisitorId(),
+          eventType: "rage-click",
+          label: rageLabel,
+          pathname: pathnameRef.current,
+        });
+      }
+
+      // ─── REGULAR CLICK TRACKING ───
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const el = target.closest("a, button, [role=button]") as HTMLElement | null;
@@ -497,38 +571,9 @@ export function CiviaTracker(): null {
     return () => document.removeEventListener("click", onClick, { capture: true });
   }, []);
 
-  // Rage clicks — 3+ clicks within 1s in a 40×40 px window
-  useEffect(() => {
-    if (isExcluded()) return;
-    let recent: ClickRecord[] = [];
-    const onClick = (e: MouseEvent) => {
-      const now = Date.now();
-      recent = recent.filter((r) => now - r.t < 1000);
-      const nearby = recent.filter(
-        (r) => Math.abs(r.x - e.clientX) < 40 && Math.abs(r.y - e.clientY) < 40,
-      );
-      recent.push({ x: e.clientX, y: e.clientY, t: now });
-      if (nearby.length >= 2) {
-        recent = recent.filter((r) => !nearby.includes(r));
-        const target = e.target as HTMLElement | null;
-        const el = target?.closest("a, button, [role=button]") as HTMLElement | null;
-        const label =
-          (el?.getAttribute("aria-label") || el?.textContent || el?.tagName || "body")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 40);
-        send({
-          action: "track",
-          visitorId: getVisitorId(),
-          eventType: "rage-click",
-          label,
-          pathname: pathnameRef.current,
-        });
-      }
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
+  // Rage clicks: integrate în click handler (vezi mai sus, secțiunea
+  // RAGE DETECTION). Acest useEffect a fost eliminat ca să economisim
+  // un listener pe document.click.
 
   // Copy events — what content users copy (indicates value)
   useEffect(() => {
