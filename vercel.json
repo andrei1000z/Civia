@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/intreruperi/refresh",
-      "schedule": "0 4 * * *"
+      "schedule": "0 */12 * * *"
     },
     {
       "path": "/api/newsletter/digest",
@@ -15,9 +15,6 @@
     }
   ],
   "functions": {
-    "src/app/api/ai/chat/route.ts": {
-      "maxDuration": 30
-    },
     "src/app/api/ai/classify/route.ts": {
       "maxDuration": 15
     },

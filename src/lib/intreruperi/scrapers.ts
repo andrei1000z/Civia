@@ -598,6 +598,295 @@ export async function scrapeDistributieMuntenia(): Promise<Interruption[]> {
   });
 }
 
+// ─── DEER — Distribuție Energie Electrică Romania ───────────────────
+//
+// DEER (subsidiar Electrica) acoperă Transilvania Sud + Nord +
+// Muntenia Nord. Site oficial: distributie-energie.ro. Pagina
+// `intreruperi-programate` listează lucrări programate per județ.
+// Multi-county provider — county per row depinde de adresă; păstrăm
+// ca fallback "AB" (HQ Alba) pentru entry-urile fără hint, dar
+// extragem cod județ din text când posibil.
+
+const DEER_COUNTY_HINT_RE =
+  /\b(Alba|Bra[șs]ov|Cluj|Sibiu|Mure[șs]|Hunedoara|Bistri[țt]a|S[ăa]laj|Maramure[șs]|Satu Mare|Bihor|Harghita|Covasna|Bac[ăa]u|Boto[șs]ani|Suceava|Neam[țt]|Ia[șs]i|Vaslui|Vrancea|Gala[țt]i|Br[ăa]ila|Buz[ăa]u|Dâmbovi[țt]a|Prahova|Arge[șs]|Teleorman|Giurgiu|C[ăa]l[ăa]ra[șs]i|Ialomi[țt]a|Constan[țt]a|Tulcea)\b/i;
+
+const COUNTY_NAME_TO_CODE: Record<string, string> = {
+  alba: "AB", brasov: "BV", brașov: "BV", cluj: "CJ", sibiu: "SB",
+  mures: "MS", mureș: "MS", hunedoara: "HD", bistrita: "BN", bistrița: "BN",
+  salaj: "SJ", sălaj: "SJ", maramures: "MM", maramureș: "MM",
+  "satu mare": "SM", bihor: "BH", harghita: "HR", covasna: "CV",
+  bacau: "BC", bacău: "BC", botosani: "BT", botoșani: "BT",
+  suceava: "SV", neamt: "NT", neamț: "NT", iasi: "IS", iași: "IS",
+  vaslui: "VS", vrancea: "VN", galati: "GL", galați: "GL",
+  braila: "BR", brăila: "BR", buzau: "BZ", buzău: "BZ",
+  dambovita: "DB", dâmbovița: "DB", prahova: "PH", arges: "AG", argeș: "AG",
+  teleorman: "TR", giurgiu: "GR", calarasi: "CL", călărași: "CL",
+  ialomita: "IL", ialomița: "IL", constanta: "CT", constanța: "CT",
+  tulcea: "TL", dolj: "DJ", mehedinti: "MH", mehedinți: "MH",
+  olt: "OT", valcea: "VL", vâlcea: "VL", gorj: "GJ",
+  arad: "AR", caras: "CS", caraș: "CS", "caraș-severin": "CS", timis: "TM", timiș: "TM",
+};
+
+function extractCountyFromText(text: string, fallback: string): string {
+  const m = text.match(DEER_COUNTY_HINT_RE);
+  if (m) {
+    const code = COUNTY_NAME_TO_CODE[m[1]!.toLowerCase()];
+    if (code) return code;
+  }
+  return fallback;
+}
+
+export async function scrapeDEER(): Promise<Interruption[]> {
+  // DEER publică multiple sub-pagini pentru zonele lor de operare.
+  // Încercăm URL-urile cunoscute; dacă vreuna pică, restul continuă.
+  const DEER_URLS = [
+    "https://www.distributie-energie.ro/intreruperi-programate/",
+    "https://www.distributie-energie.ro/intreruperi-programate-transilvania-sud/",
+    "https://www.distributie-energie.ro/intreruperi-programate-transilvania-nord/",
+    "https://www.distributie-energie.ro/intreruperi-programate-muntenia-nord/",
+  ];
+  const out: Interruption[] = [];
+  const seen = new Set<string>();
+
+  for (const url of DEER_URLS) {
+    let html: string;
+    try {
+      const res = await fetch(url, {
+        headers: BROWSER_HEADERS,
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.includes("Just a moment") || text.includes("cf-challenge")) continue;
+      html = text;
+    } catch {
+      continue;
+    }
+
+    // DEER folosește tabele cu coloane: Județ, Localitate, Adresă, Data,
+    // Interval orar, Motiv. Extragem fiecare <tr> cu min 4 celule.
+    const rows = html.match(/<tr[\s\S]*?<\/tr>/gi) ?? [];
+    for (const row of rows) {
+      const text = stripHtml(row);
+      if (text.length < 30) continue;
+      // Skip header rows (au cuvinte gen "Județ" sau "Adresă" fără număr)
+      if (/^(jude|locali|adres|data|interval|motiv)\s/i.test(text)) continue;
+      if (!/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.test(text)) continue;
+
+      const dateMatch = text.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+      const startAt = parseRoDate(dateMatch?.[0] ?? "") ?? new Date();
+      const endAt = new Date(startAt);
+      // Default interval pentru lucrări planificate: 8h (08:00-16:00 local).
+      // Citim interval explicit dacă apare ("08:00-16:00")
+      const hourRange = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/);
+      if (hourRange) {
+        startAt.setUTCHours(+hourRange[1]! - 3, +hourRange[2]!); // -3 = UTC offset RO
+        endAt.setTime(startAt.getTime());
+        endAt.setUTCHours(+hourRange[3]! - 3, +hourRange[4]!);
+      } else {
+        endAt.setHours(endAt.getHours() + 8);
+      }
+
+      const addresses = extractAddresses(text);
+      if (addresses.length === 0) {
+        // DEER pune adesea „Localitatea X, str. Y" — fallback simplificat
+        const localityMatch = text.match(/^([A-ZȘȚÂÎĂ][a-zșțâîă\s-]{3,40})/);
+        if (localityMatch) addresses.push(localityMatch[1]!.trim());
+        else continue;
+      }
+
+      const county = extractCountyFromText(text, "AB");
+      const id = `deer-${slugify(`${addresses[0]}-${startAt.toISOString().slice(0, 10)}-${(text.match(/\d+/) ?? ["x"])[0]}`)}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+
+      out.push({
+        id,
+        externalId: id,
+        type: "electricitate",
+        status: endAt > new Date() ? "programat" : "finalizat",
+        provider: "DEER (Distribuție Energie Electrică Romania)",
+        sourceUrl: url,
+        reason: "Lucrări planificate — DEER",
+        addresses,
+        county,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        excerpt: text.length > 220 ? text.slice(0, 217) + "..." : text,
+      });
+    }
+  }
+  return out;
+}
+
+// ─── Distribuție Oltenia ────────────────────────────────────────────
+//
+// Acoperă Dolj, Mehedinți, Olt, Vâlcea, Gorj, Argeș, Teleorman.
+// Site: distributieoltenia.ro. Pagina „lucrari-planificate" listează
+// întreruperile pe județ + localitate + adresă + interval orar.
+
+export async function scrapeDistributieOltenia(): Promise<Interruption[]> {
+  const OLTENIA_URLS = [
+    "https://www.distributieoltenia.ro/ro/intreruperi-planificate",
+    "https://www.distributieoltenia.ro/ro/intreruperi/intreruperi-planificate",
+  ];
+  const out: Interruption[] = [];
+  const seen = new Set<string>();
+
+  for (const url of OLTENIA_URLS) {
+    let html: string;
+    try {
+      const res = await fetch(url, {
+        headers: BROWSER_HEADERS,
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.includes("Just a moment") || text.includes("cf-challenge")) continue;
+      html = text;
+    } catch {
+      continue;
+    }
+
+    // Oltenia folosește layout cu blocuri de articole/items per județ
+    const blocks =
+      html.match(/<(?:tr|article|li|div\s+class=["'][^"']*(?:lucrar|intrerup|item)[^"']*["'])[\s\S]*?<\/(?:tr|article|li|div)>/gi) ?? [];
+
+    for (const block of blocks) {
+      const text = stripHtml(block);
+      if (text.length < 30) continue;
+      if (/^(jude|locali|adres|data|interval|motiv)\s/i.test(text)) continue;
+      if (!/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.test(text)) continue;
+
+      const dateMatch = text.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+      const startAt = parseRoDate(dateMatch?.[0] ?? "") ?? new Date();
+      const endAt = new Date(startAt);
+
+      const hourRange = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/);
+      if (hourRange) {
+        startAt.setUTCHours(+hourRange[1]! - 3, +hourRange[2]!);
+        endAt.setTime(startAt.getTime());
+        endAt.setUTCHours(+hourRange[3]! - 3, +hourRange[4]!);
+      } else {
+        endAt.setHours(endAt.getHours() + 8);
+      }
+
+      const addresses = extractAddresses(text);
+      if (addresses.length === 0) {
+        const localityMatch = text.match(/^([A-ZȘȚÂÎĂ][a-zșțâîă\s-]{3,40})/);
+        if (localityMatch) addresses.push(localityMatch[1]!.trim());
+        else continue;
+      }
+
+      // Default DJ (Dolj — HQ Craiova) dacă nu se identifică altul.
+      const county = extractCountyFromText(text, "DJ");
+      const id = `oltenia-${slugify(`${addresses[0]}-${startAt.toISOString().slice(0, 10)}-${(text.match(/\d+/) ?? ["x"])[0]}`)}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+
+      out.push({
+        id,
+        externalId: id,
+        type: "electricitate",
+        status: endAt > new Date() ? "programat" : "finalizat",
+        provider: "Distribuție Energie Oltenia",
+        sourceUrl: url,
+        reason: "Lucrări planificate — Distribuție Oltenia",
+        addresses,
+        county,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        excerpt: text.length > 220 ? text.slice(0, 217) + "..." : text,
+      });
+    }
+  }
+  return out;
+}
+
+// ─── Rețele Electrice România (rebrand din Enel/E-Distribuție) ──────
+//
+// În 2024, PPC Group a achiziționat operațiunile Enel din România;
+// E-Distribuție Banat / Dobrogea / Muntenia s-au reorganizat sub umbrela
+// „Rețele Electrice România" (REE). Site nou: retele-electrice.ro.
+// Pagina veche e-distributie.com încă răspunde dar redirect la noul brand
+// pentru content-uri noi. Scrape-uim noul URL — dacă pică, vechiul scraper
+// scrapeDistributieMuntenia rămâne ca backup.
+
+export async function scrapeReteleElectrice(): Promise<Interruption[]> {
+  const RE_URLS = [
+    "https://www.retele-electrice.ro/clienti/intreruperi-planificate.html",
+    "https://www.retele-electrice.ro/intreruperi-planificate",
+    "https://www.retele-electrice.ro/intreruperi",
+  ];
+  const out: Interruption[] = [];
+  const seen = new Set<string>();
+
+  for (const url of RE_URLS) {
+    let html: string;
+    try {
+      const res = await fetch(url, {
+        headers: BROWSER_HEADERS,
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.includes("Just a moment") || text.includes("cf-challenge")) continue;
+      html = text;
+    } catch {
+      continue;
+    }
+
+    const blocks =
+      html.match(/<(?:tr|article|li)[\s\S]*?<\/(?:tr|article|li)>/gi) ?? [];
+
+    for (const block of blocks) {
+      const text = stripHtml(block);
+      if (text.length < 30) continue;
+      if (/^(jude|locali|adres|data|interval|motiv)\s/i.test(text)) continue;
+      if (!/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.test(text)) continue;
+
+      const dateMatch = text.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+      const startAt = parseRoDate(dateMatch?.[0] ?? "") ?? new Date();
+      const endAt = new Date(startAt);
+
+      const hourRange = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/);
+      if (hourRange) {
+        startAt.setUTCHours(+hourRange[1]! - 3, +hourRange[2]!);
+        endAt.setTime(startAt.getTime());
+        endAt.setUTCHours(+hourRange[3]! - 3, +hourRange[4]!);
+      } else {
+        endAt.setHours(endAt.getHours() + 8);
+      }
+
+      const addresses = extractAddresses(text);
+      if (addresses.length === 0) continue;
+
+      // Default B (București — REE acoperă Banat/Dobrogea/Muntenia,
+      // dar majoritatea entry-urilor sunt din Banat/București).
+      const county = extractCountyFromText(text, "B");
+      const id = `ree-${slugify(`${addresses[0]}-${startAt.toISOString().slice(0, 10)}-${(text.match(/\d+/) ?? ["x"])[0]}`)}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+
+      out.push({
+        id,
+        externalId: id,
+        type: "electricitate",
+        status: endAt > new Date() ? "programat" : "finalizat",
+        provider: "Rețele Electrice România",
+        sourceUrl: url,
+        reason: "Lucrări planificate — Rețele Electrice",
+        addresses,
+        county,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        excerpt: text.length > 220 ? text.slice(0, 217) + "..." : text,
+      });
+    }
+  }
+  return out;
+}
+
 // ─── News-derived outage source ─────────────────────────────────────
 //
 // When a utility's website is WAF-dark we can still surface outages
@@ -701,6 +990,7 @@ export async function scrapeAllSources(): Promise<ScrapeResult> {
   // returns []; nothing should reach Promise.allSettled rejected, but
   // we still defensively handle that path.
   const sources: Array<{ key: string; fn: () => Promise<Interruption[]> }> = [
+    // Apă + termoficare + lucrări strazi
     { key: "pmb", fn: scrapePmb },
     { key: "apa-nova", fn: scrapeApaNova },
     { key: "termoenergetica", fn: scrapeTermoenergetica },
@@ -708,8 +998,13 @@ export async function scrapeAllSources(): Promise<ScrapeResult> {
     { key: "aquatim", fn: scrapeAquatim },
     { key: "apavital", fn: scrapeApavital },
     { key: "ca-somes", fn: scrapeCASom },
+    // Energie electrică (4 mari distribuitori naționali) + gaz
     { key: "delgaz", fn: scrapeDelgazGrid },
     { key: "e-distributie", fn: scrapeDistributieMuntenia },
+    { key: "retele-electrice", fn: scrapeReteleElectrice },
+    { key: "deer", fn: scrapeDEER },
+    { key: "distributie-oltenia", fn: scrapeDistributieOltenia },
+    // Fallback floor — captează ce sursele directe nu publică
     { key: "news", fn: scrapeFromNews },
   ];
 
