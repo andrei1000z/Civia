@@ -179,7 +179,7 @@ export default function RootLayout({
             LCP on the homepage + county pages. Next font already fingerprints
             it so cache hits are immediate. */}
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--color-bg)]">
+      <body className="min-h-full flex flex-col bg-[var(--color-bg)] pt-16">
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         <Analytics />

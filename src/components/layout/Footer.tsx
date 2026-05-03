@@ -79,6 +79,44 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Urmărește Civia — social row. Pentru moment doar eYou (noua
+            platformă socială europeană unde echipa e activă). Vor fi
+            adăugate alte rețele când conturile vor fi gata. */}
+        <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
+          <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
+            Urmărește Civia
+          </h4>
+          <ul className="flex flex-wrap items-center gap-2">
+            <li>
+              <a
+                href="https://eyou.com/civia"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Civia pe eYou — @civia"
+                title="eYou (platformă socială europeană)"
+                className="group inline-flex items-center gap-2 h-10 pl-2.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 grid place-items-center text-white text-[11px] font-bold font-[family-name:var(--font-sora)]"
+                >
+                  e
+                </span>
+                <span className="text-sm">
+                  <span className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">eYou</span>
+                  <span className="text-[var(--color-text-muted)]"> · @civia</span>
+                </span>
+              </a>
+            </li>
+            {/* Aici vor fi adăugate Facebook / Instagram / X când conturile
+                vor fi create. Pattern-ul de mai sus e refolosibil. */}
+          </ul>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+            eYou e o platformă socială europeană cu accent pe confidențialitate.
+            Postăm acolo update-uri scurte despre platformă și petițiile noi.
+          </p>
+        </div>
+
         {/* Feedback + newsletter */}
         <FooterFeedback />
 

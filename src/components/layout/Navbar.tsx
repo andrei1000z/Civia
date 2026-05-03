@@ -75,7 +75,11 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "sticky top-0 z-50 transition-all duration-300",
+          // FIXED (not sticky) — `sticky` cădea la scroll-depth pe browsere
+          // unde body avea overflow-x: hidden (creează scroll container și
+          // anulează sticky). Body's pt-16 din layout creează spațiul
+          // ocupat anterior de sticky în normal flow.
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           // Always-glass: tinted backdrop-blur over whatever is behind
           // (green hero at top, page bg further down). When scrolled past
           // the hero we strengthen the border + shadow so the navbar

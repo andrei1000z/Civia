@@ -220,7 +220,10 @@ body {
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  /* overflow-x ESTE setat la `clip` mai jos (line ~275), nu `hidden`.
+     `hidden` făcea body un scroll-container în unele browsere, ceea ce
+     anula position:sticky pe navbar la depth mare. `clip` previne
+     overflow-ul lateral fără side-effect. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

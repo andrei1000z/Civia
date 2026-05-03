@@ -133,7 +133,9 @@ export function AlertBanner() {
 
   return (
     <div
-      className={`${style.bg} ${style.text} sticky top-0 z-[var(--z-banner)] shadow-md`}
+      // FIXED top-16 — sits direct sub navbar-ul fixed (h-16 = 64px).
+      // z higher than nav (z-50) ca să nu fie acoperit de glass blur.
+      className={`${style.bg} ${style.text} fixed top-16 left-0 right-0 z-[var(--z-banner)] shadow-md`}
       role={alert.severity === "critical" ? "alert" : "status"}
       aria-live={alert.severity === "critical" ? "assertive" : "polite"}
     >

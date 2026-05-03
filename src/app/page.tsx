@@ -20,8 +20,9 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      {/* HERO — `-mt-16` bleeds the gradient up under the sticky navbar
-          (h-16 = 64px) so the page-bg black bar disappears behind it.
+      {/* HERO — `-mt-16` cancels body's pt-16 (compensare pentru navbar-ul
+          fixed h-16 = 64px) ca gradient-ul să înceapă la y=0 viewport,
+          iar navbar-ul să plutească pe el cu backdrop-blur.
           Inner padding adds back the 16 so visible content stays in
           the same place. Two CTAs only — sesizare (primary action) +
           petiții (secondary). The "alege-ți județul" link removed
