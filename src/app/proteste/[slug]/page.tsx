@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { UpdateBody } from "@/app/updateuri/UpdateBody";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -30,7 +31,9 @@ import type {
   AftermathSource,
 } from "@/lib/proteste/aftermath";
 
-export const revalidate = 600;
+// Force-dynamic ca să putem detecta admin status per-request pentru CTA-ul
+// admin pe AftermathSection. Pagină rar accesată, cost minim.
+export const dynamic = "force-dynamic";
 
 interface Protest {
   id: string;
@@ -191,13 +194,29 @@ function countyLabel(slug: string | null): string | null {
   return ALL_COUNTIES.find((c) => c.slug === slug)?.name ?? null;
 }
 
+async function isCurrentUserAdmin(): Promise<boolean> {
+  try {
+    const supa = await createSupabaseServer();
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return false;
+    const { data: profile } = await supa
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    return (profile as { role?: string } | null)?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+
 export default async function ProtestDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const p = await fetchProtest(slug);
+  const [p, isAdmin] = await Promise.all([fetchProtest(slug), isCurrentUserAdmin()]);
   if (!p) notFound();
 
   const status = STATUS_META[p.status];
@@ -359,10 +378,9 @@ export default async function ProtestDetailPage({
             </section>
           )}
 
-          {/* AFTERMATH — vizibil DOAR dacă protestul a avut loc + aftermath e
-              aprobat. Altfel, dacă a avut loc dar nu există aftermath, arătăm
-              CTA-ul de „Adaugă cum a fost". */}
-          <AftermathSection protest={p} />
+          {/* AFTERMATH — vizibil DOAR dacă protestul a avut loc + aftermath
+              e aprobat. CTA-ul „documentează" apare doar pentru admin loged-in. */}
+          <AftermathSection protest={p} showAdminCta={isAdmin} />
 
           {/* Disclaimer */}
           <aside className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] p-4 text-xs text-[var(--color-text)] leading-relaxed">
@@ -497,43 +515,47 @@ function DetailRow({
 
 // ============================================================
 // Aftermath section — "Cum a fost"
+// Public-facing: render NUMAI dacă aftermath e approved. Niciun CTA
+// pentru users obișnuiți (feature mutat în admin).
 // ============================================================
-function AftermathSection({ protest }: { protest: Protest }) {
+function AftermathSection({
+  protest,
+  showAdminCta,
+}: {
+  protest: Protest;
+  showAdminCta: boolean;
+}) {
   const isPast = new Date(protest.start_at) < new Date();
   if (!isPast) return null;
 
-  const status = protest.aftermath_moderation_status;
-  const hasContent = status === "approved";
+  const hasContent = protest.aftermath_moderation_status === "approved";
 
-  // CTA — protestul a avut loc dar nu există aftermath aprobat.
+  // Pe public: dacă nu e aftermath aprobat, NIMIC. Pe admin loged-in:
+  // mic CTA discret către pagina de admin de edit.
   if (!hasContent) {
-    const isPending = status === "pending";
+    if (!showAdminCta) return null;
     return (
-      <section className="rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-primary)]/40 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent p-5 md:p-6">
+      <section className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-primary)]/40 bg-[var(--color-surface)] p-4">
         <div className="flex items-start gap-3">
           <Sparkles
-            size={22}
+            size={18}
             className="text-[var(--color-primary)] shrink-0 mt-0.5"
             aria-hidden="true"
           />
           <div className="flex-1 min-w-0">
-            <h2 className="font-[family-name:var(--font-sora)] font-bold text-base md:text-lg mb-1.5">
-              {isPending ? "Aftermath în curs de moderare" : `Adaugă „Cum a fost”`}
-            </h2>
-            <p className="text-sm text-[var(--color-text-muted)] mb-4 leading-relaxed">
-              {isPending
-                ? "Cineva a trimis deja documentarea protestului. Echipa Civia o verifică și o publică în 24-48h."
-                : "Ai fost la protest? Documentează ce s-a întâmplat — câți au fost, ce s-a scandat, momente cheie. AI-ul citește automat 1-10 articole de presă și completează totul."}
+            <p className="text-xs font-semibold text-[var(--color-text)] mb-1">
+              Admin: documentează „Cum a fost"
             </p>
-            {!isPending && (
-              <Link
-                href={`/proteste/${protest.slug}/cum-a-fost/edit`}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold px-4 py-2.5 text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
-              >
-                <Sparkles size={14} aria-hidden="true" />
-                Documentează cu AI
-              </Link>
-            )}
+            <p className="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
+              Lipești 1-10 link-uri presă, AI sintetizează automat. Doar tu vezi acest CTA.
+            </p>
+            <Link
+              href={`/proteste/${protest.slug}/cum-a-fost/edit`}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)] text-white font-semibold px-3 py-1.5 text-xs hover:bg-[var(--color-primary-hover)] transition-colors"
+            >
+              <Sparkles size={12} aria-hidden="true" />
+              Deschide editor admin
+            </Link>
           </div>
         </div>
       </section>

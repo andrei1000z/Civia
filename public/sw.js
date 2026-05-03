@@ -13,10 +13,12 @@
 
 // Bump CACHE_VERSION whenever the precache list or strategy changes
 // — old caches get dropped on activate.
-// v8 (mai 2026): force cache invalidation după mobile fixes pe
-// /intreruperi (grid-cols-3, hero size, gaz card lipsea). PWA users
-// pe v7 vedeau HTML pre-fix din runtime cache.
-const CACHE_VERSION = "v8";
+// v9 (mai 2026): skipWaiting() unconditional + clients.claim() — vechi
+// SW-uri (v6/v7) așteptau tab close ca să cedeze controlul, ceea ce
+// însemna că user-ii vedeau HTML din cache zile întregi. Acum noul SW
+// preia INSTANT la următoarea navigare. Trade-off: paginile vechi
+// rămase deschise pot rămâne pe assets vechi până la refresh.
+const CACHE_VERSION = "v9";
 const STATIC_CACHE = `civia-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `civia-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `civia-images-${CACHE_VERSION}`;
@@ -67,14 +69,12 @@ self.addEventListener("install", (event) => {
           }),
         ),
       );
-      // Don't auto-activate — let the client decide when to apply the
-      // update. The client will postMessage("SKIP_WAITING") after the
-      // user acknowledges. Falls back to immediate activation if no
-      // client is around to ack (first install).
-      const allClients = await self.clients.matchAll({ includeUncontrolled: true });
-      if (allClients.length === 0) {
-        await self.skipWaiting();
-      }
+      // Auto-activate INSTANT pe v9+ — vechiul flow (wait for client ack)
+      // făcea ca utilizatorii să rămână blocați pe versiuni cached zile
+      // întregi (vezi feedback Reddit mai 2026). Acum la fiecare navigare
+      // după update, browser-ul detectează SW-ul nou, install → skipWaiting
+      // → activate → clients.claim. User-ul vede UI-ul curent imediat.
+      await self.skipWaiting();
     })(),
   );
 });

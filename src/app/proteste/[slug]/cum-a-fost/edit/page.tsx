@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { AftermathForm } from "./AftermathForm";
 
@@ -47,6 +48,21 @@ export default async function AftermathEditPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  // Admin-only — feature scos din public, mutat în admin pentru a evita
+  // spam + moderare manuală. Admin publică direct ca approved.
+  const supa = await createSupabaseServer();
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) redirect(`/cont?next=/proteste/${slug}/cum-a-fost/edit`);
+  const { data: profile } = await supa
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if ((profile as { role?: string } | null)?.role !== "admin") {
+    notFound();
+  }
+
   const protest = await fetchProtest(slug);
   if (!protest) notFound();
   if (protest.visibility !== "publica" || protest.moderation_status !== "approved") {
@@ -55,16 +71,9 @@ export default async function AftermathEditPage({
 
   const isInFuture = new Date(protest.start_at) > new Date();
   if (isInFuture) {
-    // Nu permite aftermath pentru proteste care nu s-au întâmplat încă —
-    // redirect spre detail page cu mesaj.
     redirect(`/proteste/${protest.slug}?aftermath=too-early`);
   }
-  if (
-    protest.aftermath_moderation_status === "pending" ||
-    protest.aftermath_moderation_status === "approved"
-  ) {
-    redirect(`/proteste/${protest.slug}?aftermath=exists`);
-  }
+  // Admin poate suprascrie aftermath existent — fără block pe „exists".
 
   const protestDate = new Date(protest.start_at).toLocaleDateString("ro-RO", {
     day: "numeric",
@@ -76,9 +85,9 @@ export default async function AftermathEditPage({
   return (
     <div className="container-narrow py-8 md:py-12">
       <PageHero
-        title="Cum a fost"
-        icon={Megaphone}
-        gradient={HERO_GRADIENT.success}
+        title="Cum a fost (admin)"
+        icon={ShieldCheck}
+        gradient={HERO_GRADIENT.authority}
         backHref={`/proteste/${protest.slug}`}
         backLabel="Înapoi la protest"
         description={
@@ -88,7 +97,7 @@ export default async function AftermathEditPage({
             câmpurile, sau scrie tu manual.
           </>
         }
-        tagline="Submisia intră în coada de moderare. Echipa Civia verifică și publică în 24-48h."
+        tagline="Admin-only. Submisia se publică direct, fără moderare suplimentară."
       />
 
       <AftermathForm slug={protest.slug} protestTitle={protest.title} />
@@ -96,22 +105,22 @@ export default async function AftermathEditPage({
       <div className="mt-10 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-xs text-[var(--color-text-muted)] leading-relaxed space-y-2">
         <p>
           <strong className="text-[var(--color-text)]">Cum funcționează AI-ul:</strong>{" "}
-          adaugi link-urile spre articole care relatează protestul (Digi24, HotNews, G4Media, etc).
-          Apăsăm „Completează cu AI", citim corpul fiecărui articol și sintetizăm un raport
-          structurat (atmosferă, momente, sloganuri, declarații). Tu corectezi tot ce vrei
-          înainte de „Trimite".
+          lipești 1-10 link-uri spre articole (Digi24, HotNews, G4Media, etc), apeși
+          „Completează cu AI", backend-ul citește corpul fiecărui articol și sintetizează
+          un raport structurat (estimare participanți, atmosferă, momente, sloganuri,
+          declarații). Verifici, corectezi, salvezi.
         </p>
         <p>
-          <strong className="text-[var(--color-text)]">Sursele rămân vizibile</strong> pe pagina
-          publică ca link-uri „Citește mai multe", deci cititorul poate verifica fiecare
-          afirmație. AI nu inventează — dacă un articol nu menționează o cifră, câmpul rămâne gol.
+          <strong className="text-[var(--color-text)]">Publicare directă:</strong> ca admin,
+          conținutul devine public imediat. Sursele rămân vizibile ca link-uri „Citește mai
+          multe" pe pagina protestului.
         </p>
         <p>
           <Link
-            href="/legal/comunitate"
+            href="/admin/proteste"
             className="text-[var(--color-primary)] hover:underline"
           >
-            Reguli comunitate Civia →
+            ← Toate protestele (admin)
           </Link>
         </p>
       </div>

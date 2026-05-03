@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import {
   AFTERMATH_SYSTEM_PROMPT,
   sanitizeAiResponse,
@@ -11,12 +11,27 @@ import {
   callGemini,
   isGeminiConfigured,
   GEMINI_MODEL,
-  GEMINI_MODEL_BACKUPS,
 } from "@/lib/ai/gemini";
+import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+async function requireAdmin() {
+  const supa = await createSupabaseServer();
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return { ok: false as const, status: 401, error: "Trebuie să fii autentificat." };
+  const { data: profile } = await supa
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if ((profile as { role?: string } | null)?.role !== "admin") {
+    return { ok: false as const, status: 403, error: "Doar administratorii pot folosi această funcție." };
+  }
+  return { ok: true as const };
+}
 
 const inputSchema = z.object({
   // 1-10 link-uri către articole de presă scrise după protest.
@@ -31,19 +46,12 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const ip = getClientIp(req);
 
-  // Rate limit agresiv — scrape-ul e scump (10 fetch-uri externe + 1 AI call).
-  // 3 încercări / 10 min / IP e suficient pentru un user real.
-  const rl = await rateLimitAsync(`proteste-aftermath-scrape:${ip}`, {
-    limit: 3,
-    windowMs: 10 * 60_000,
-  });
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: "Prea multe încercări. Încearcă din nou peste câteva minute." },
-      { status: 429 },
-    );
+  // Admin-only — feature mutat din public în admin pentru a evita spam +
+  // moderare manuală. Admin-ul publică direct ce trimite, fără queue.
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   if (!isGeminiConfigured()) {
@@ -129,33 +137,75 @@ export async function POST(
 
   const userPrompt = `PROTESTUL: "${p.title}"\nDATA: ${protestDate}\n\nARTICOLELE DE PRESĂ:\n\n${articles}\n\nReturnează DOAR JSON conform schemei.`;
 
-  // 3. Chemă Gemini, cu fallback la modele backup.
-  const models = [GEMINI_MODEL, ...GEMINI_MODEL_BACKUPS];
-  let raw: string | null = null;
-  let lastErr: unknown = null;
-  for (const model of models) {
-    try {
-      raw = await callGemini({
-        messages: [
-          { role: "system", content: AFTERMATH_SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
+  // 3. AI call chain — Gemini Flash cu fallback la Groq.
+  // SKIP gemma-3-27b-it: nu suportă „developer instructions" prin compat
+  // layer (returnează 400 când messages include role:"system").
+  const messages = [
+    { role: "system" as const, content: AFTERMATH_SYSTEM_PROMPT },
+    { role: "user" as const, content: userPrompt },
+  ];
+
+  type Candidate = { provider: string; model: string; run: () => Promise<string> };
+  const candidates: Candidate[] = [
+    {
+      provider: "gemini",
+      model: GEMINI_MODEL,
+      run: async () => (await callGemini({ messages, model: GEMINI_MODEL, temperature: 0.4, max_tokens: 2500, response_format: { type: "json_object" } })) ?? "",
+    },
+    {
+      provider: "gemini",
+      model: "gemini-flash-latest",
+      run: async () => (await callGemini({ messages, model: "gemini-flash-latest", temperature: 0.4, max_tokens: 2500, response_format: { type: "json_object" } })) ?? "",
+    },
+  ];
+
+  // Adaugă Groq ca ultim fallback (independent quota).
+  if (process.env.GROQ_API_KEY) {
+    const groq = getGroqClient();
+    const groqRun = (model: string) => async () => {
+      const c = await groq.chat.completions.create({
         model,
+        messages,
         temperature: 0.4,
         max_tokens: 2500,
         response_format: { type: "json_object" },
       });
-      if (raw) break;
+      return c.choices[0]?.message?.content?.trim() ?? "";
+    };
+    candidates.push(
+      { provider: "groq", model: GROQ_MODEL, run: groqRun(GROQ_MODEL) },
+      { provider: "groq", model: GROQ_MODEL_FAST, run: groqRun(GROQ_MODEL_FAST) },
+    );
+  }
+
+  let raw: string | null = null;
+  let lastErr: unknown = null;
+  let lastModelTried = "n/a";
+  for (const cand of candidates) {
+    try {
+      const out = await cand.run();
+      if (out && out.length > 20) {
+        raw = out;
+        break;
+      }
     } catch (e) {
       lastErr = e;
+      lastModelTried = `${cand.provider}/${cand.model}`;
       const status = (e as { status?: number }).status;
-      if (status === 401 || status === 403) break;
+      // 401/403 = key issue — bail on whole provider chain
+      if (status === 401 || status === 403) {
+        // skip remaining of same provider
+        continue;
+      }
     }
   }
 
   if (!raw) {
-    const msg = lastErr instanceof Error ? lastErr.message : "AI nu a răspuns.";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    const errMsg = lastErr instanceof Error ? lastErr.message : "AI nu a răspuns.";
+    return NextResponse.json(
+      { error: `AI eșec (ultimul model: ${lastModelTried}). ${errMsg}` },
+      { status: 502 },
+    );
   }
 
   let parsedJson: unknown;

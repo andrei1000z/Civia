@@ -51,8 +51,6 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
 
   // ----- Form state -----
   const [data, setData] = useState<AftermathData>(EMPTY_AFTERMATH);
-  const [submitterName, setSubmitterName] = useState("");
-  const [submitterEmail, setSubmitterEmail] = useState("");
 
   // ----- Submission state -----
   const [submitting, setSubmitting] = useState(false);
@@ -118,11 +116,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       const res = await fetch(`/api/proteste/${slug}/aftermath/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          aftermath: data,
-          submitter_name: submitterName,
-          submitter_email: submitterEmail,
-        }),
+        body: JSON.stringify({ aftermath: data }),
       });
       const json: SaveResponse = await res.json();
       if (!res.ok) {
@@ -131,8 +125,8 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       }
       setSubmitOk(true);
       startTransition(() => {
-        // Redirect after a short pause so user sees the success state
-        setTimeout(() => router.push(`/proteste/${slug}?aftermath=submitted`), 1500);
+        // Redirect to public detail page so admin vede aftermath-ul publicat
+        setTimeout(() => router.push(`/proteste/${slug}?aftermath=published`), 1200);
       });
     } catch {
       setSubmitError("Eroare de rețea. Încearcă din nou.");
@@ -183,10 +177,10 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       <div className="rounded-[var(--radius-lg)] border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-3">
         <CheckCircle2 size={48} className="mx-auto text-emerald-500" aria-hidden />
         <h2 className="font-[family-name:var(--font-sora)] font-bold text-xl">
-          Aftermath trimis cu succes!
+          Aftermath publicat!
         </h2>
         <p className="text-sm text-[var(--color-text-muted)]">
-          Echipa Civia verifică în 24-48h și publică pe pagina protestului. Mulțumim!
+          Conținutul e LIVE pe pagina protestului. Te redirecționez...
         </p>
       </div>
     );
@@ -502,40 +496,6 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         </Field>
       </section>
 
-      {/* Submitter info */}
-      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6 space-y-4">
-        <h2 className="font-[family-name:var(--font-sora)] font-bold text-base">
-          Despre tine
-        </h2>
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Email-ul rămâne intern (nu apare public). Folosit doar dacă echipa
-          Civia are întrebări la moderare.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Nume" required>
-            <input
-              type="text"
-              required
-              minLength={2}
-              maxLength={120}
-              value={submitterName}
-              onChange={(e) => setSubmitterName(e.target.value)}
-              className="w-full rounded-[var(--radius-sm)] bg-[var(--color-bg)] border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-            />
-          </Field>
-          <Field label="Email" required>
-            <input
-              type="email"
-              required
-              maxLength={200}
-              value={submitterEmail}
-              onChange={(e) => setSubmitterEmail(e.target.value)}
-              className="w-full rounded-[var(--radius-sm)] bg-[var(--color-bg)] border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-            />
-          </Field>
-        </div>
-      </section>
-
       {/* Submit */}
       <div className="space-y-3">
         {submitError && (
@@ -546,18 +506,18 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         )}
         <button
           type="submit"
-          disabled={submitting || !submitterName || !submitterEmail}
+          disabled={submitting}
           className="w-full inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold py-3.5 text-sm hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {submitting ? (
             <>
               <Loader2 size={16} className="animate-spin" aria-hidden />
-              Se trimite...
+              Se publică...
             </>
           ) : (
             <>
               <Send size={15} aria-hidden />
-              Trimite pentru moderare
+              Publică direct (admin)
             </>
           )}
         </button>

@@ -2,37 +2,40 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { aftermathDataSchema } from "@/lib/proteste/aftermath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Admin-only: nu mai cerem submitter info, contul admin = autoritate.
 const saveSchema = z.object({
-  // Aftermath body — all fields validated by shared schema
   aftermath: aftermathDataSchema,
-  // Submitter contact (anti-abuse + ca să răspundem la moderare)
-  submitter_name: z.string().trim().min(2, "Numele tău").max(120),
-  submitter_email: z.string().trim().email("Email invalid").max(200),
 });
+
+async function requireAdmin() {
+  const supa = await createSupabaseServer();
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return { ok: false as const, status: 401, error: "Trebuie să fii autentificat.", userId: null };
+  const { data: profile } = await supa
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if ((profile as { role?: string } | null)?.role !== "admin") {
+    return { ok: false as const, status: 403, error: "Doar administratorii pot publica aftermath.", userId: null };
+  }
+  return { ok: true as const, userId: user.id };
+}
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const ip = getClientIp(req);
 
-  // 2 submisii / oră / IP — moderation queue absorbs spam.
-  const rl = await rateLimitAsync(`proteste-aftermath-save:${ip}`, {
-    limit: 2,
-    windowMs: 60 * 60_000,
-  });
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: "Prea multe submisii de aftermath. Așteaptă o oră." },
-      { status: 429 },
-    );
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   let body: unknown;
@@ -90,35 +93,17 @@ export async function POST(
   if (p.visibility !== "publica" || p.moderation_status !== "approved") {
     return NextResponse.json({ error: "Protestul nu e public." }, { status: 403 });
   }
-  if (new Date(p.start_at).getTime() > Date.now()) {
+  if (new Date(p.start_at) > new Date()) {
     return NextResponse.json(
       { error: "Protestul nu a avut loc încă. Așteaptă să se desfășoare." },
       { status: 400 },
     );
   }
-  if (p.aftermath_moderation_status === "pending" || p.aftermath_moderation_status === "approved") {
-    return NextResponse.json(
-      {
-        error:
-          p.aftermath_moderation_status === "approved"
-            ? "Există deja un aftermath aprobat. Pentru corecții, contactează echipa Civia."
-            : "Un aftermath e deja în coada de moderare. Așteaptă aprobarea.",
-      },
-      { status: 409 },
-    );
-  }
+  // Admin poate suprascrie aftermath existent (corecții).
 
-  // Dacă user-ul e logat, prindem și uid-ul.
-  let submittedBy: string | null = null;
-  try {
-    const supa = await createSupabaseServer();
-    const { data: { user } } = await supa.auth.getUser();
-    submittedBy = user?.id ?? null;
-  } catch {
-    submittedBy = null;
-  }
-
-  // Update via admin client (bypass RLS) — am validat manual deja.
+  // Update via admin client (bypass RLS). Admin = autoritate, publică direct
+  // ca approved (nu mai trecem prin pending). Auto-published_at = now.
+  const nowIso = new Date().toISOString();
   const { error: updateErr } = await admin
     .from("proteste")
     .update({
@@ -130,11 +115,10 @@ export async function POST(
       aftermath_images: a.images,
       aftermath_videos: a.videos,
       aftermath_sources: a.sources,
-      aftermath_submitter_name: parsed.data.submitter_name,
-      aftermath_submitter_email: parsed.data.submitter_email,
-      aftermath_submitted_by: submittedBy,
-      aftermath_submitted_at: new Date().toISOString(),
-      aftermath_moderation_status: "pending",
+      aftermath_submitted_by: auth.userId,
+      aftermath_submitted_at: nowIso,
+      aftermath_moderation_status: "approved",
+      aftermath_published_at: nowIso,
     })
     .eq("id", p.id);
 
@@ -142,5 +126,5 @@ export async function POST(
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, status: "pending_moderation" });
+  return NextResponse.json({ ok: true, status: "published" });
 }
