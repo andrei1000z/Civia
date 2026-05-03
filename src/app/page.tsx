@@ -28,6 +28,15 @@ export default function HomePage() {
           petiții (secondary). The "alege-ți județul" link removed
           from hero — the picker section right below is the entry. */}
       <section className="relative overflow-hidden -mt-16 bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] text-white">
+        {/* Background photo — hero-national. mix-blend-overlay + opacity
+            păstrează lizibilitatea text-ului + identitatea cromatică
+            verde-Civia, dar adaugă textură reală (peisaj România) în
+            locul gradient-ului plat. */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity"
+          style={{ backgroundImage: "url('/images/home/hero-national.jpg')" }}
+          aria-hidden="true"
+        />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),transparent)]" />
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/80 via-transparent to-transparent" />

@@ -53,6 +53,18 @@ export async function generateStaticParams() {
 // the page fresh without ballooning Vercel function-invocation costs.
 export const revalidate = 300;
 
+// Hero photo per oraș mare. Fallback gradient pur pentru județele
+// fără poză custom (codul condiționează existența cheii în map).
+// Adăugare poză nouă: drop fișier în public/images/home/ + adaugă
+// cheia aici (slug → cale relativă).
+const HERO_PHOTO_BY_SLUG: Record<string, string> = {
+  b: "/images/home/hero-bucuresti.webp",
+  cj: "/images/home/hero-cluj.webp",
+  bv: "/images/home/hero-brasov.webp",
+  tm: "/images/home/hero-timisoara.webp",
+  ct: "/images/home/hero-constanta.webp",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -694,6 +706,15 @@ export default async function CountyHomePage({
       {/* ─── HERO ─── (gradient pinned to design tokens — same as
           the national homepage hero so they read as one product). */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] text-white">
+        {/* City-specific hero photo background (5 orașe mari).
+            Fallback la gradient pur pentru județele fără poză custom. */}
+        {HERO_PHOTO_BY_SLUG[judet] && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity"
+            style={{ backgroundImage: `url('${HERO_PHOTO_BY_SLUG[judet]}')` }}
+            aria-hidden="true"
+          />
+        )}
         <div
           className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),transparent)]"
           aria-hidden="true"

@@ -171,3 +171,38 @@ describe("randomInt", () => {
     expect(Number.isInteger(result)).toBe(true);
   });
 });
+
+// ── Edge cases pentru slugify (folosit pentru petiții + proteste) ──
+describe("slugify — Civia edge cases", () => {
+  it("handles empty string gracefully", () => {
+    expect(slugify("")).toBe("");
+  });
+  it("handles only-punctuation input", () => {
+    expect(slugify("!!!???")).toBe("");
+  });
+  it("collapses multiple consecutive spaces", () => {
+    expect(slugify("Hello    World")).toBe("hello-world");
+  });
+  it("strips ALL Romanian diacritics in any combination", () => {
+    expect(slugify("Tărâmul Înțelepților Cășcădărdarvedanței")).toBe(
+      "taramul-inteleptilor-cascadardarvedantei",
+    );
+  });
+  it("handles long titles by not breaking output", () => {
+    const long = "Vrem ca primăria să demareze imediat lucrările de modernizare a infrastructurii de transport public din întregul oraș";
+    const result = slugify(long);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).not.toMatch(/[^a-z0-9-]/);
+  });
+  it("handles emojis and unicode by stripping them", () => {
+    expect(slugify("Cluj 🎉 cool 🌟")).toMatch(/^cluj-cool$|^cluj--cool$/);
+  });
+  it("handles real petiție titles end-to-end", () => {
+    expect(slugify("„Vrem piste de bicicletă continue în Cluj-Napoca"))
+      .toBe("vrem-piste-de-bicicleta-continue-in-cluj-napoca");
+  });
+  it("handles real protest titles end-to-end", () => {
+    expect(slugify("Marș #FaraCorupție în Piața Victoriei"))
+      .toBe("mars-faracoruptie-in-piata-victoriei");
+  });
+});

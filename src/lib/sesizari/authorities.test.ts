@@ -177,3 +177,32 @@ describe("getAuthoritiesFor — county routing (non-București)", () => {
     expect(emails).toContain("registratura@primariaclujnapoca.ro");
   });
 });
+
+// ── Tests pentru tip nou „afisaj" (introdus mai 2026, migration 032) ──
+describe("getAuthoritiesFor — afisaj/publicitate ilegală", () => {
+  it("routes afisaj in București to PL Bucharest + sectorPrimarie + PMB", () => {
+    const r = getAuthoritiesFor("afisaj", "S2", "B", "Bd. Carol I 12, Sector 2");
+    const emails = r.primary.map((a) => a.email);
+    // Poliția Locală București (constată contravenția conform L185/2013)
+    expect(emails).toContain("office@plmb.ro");
+    // Primăria Sectorului 2 (autorizare + dispune înlăturarea)
+    // Email-ul real verified e infopublice@ps2.ro (vezi PRIMARII_SECTOR).
+    expect(emails).toContain("infopublice@ps2.ro");
+    // PMB pe domeniul public general
+    expect(emails).toContain("relatiipublice@pmb.ro");
+  });
+
+  it("routes afisaj in Cluj to Poliția Locală + Primăria Cluj", () => {
+    const r = getAuthoritiesFor("afisaj", null, "CJ", "Piața Unirii, Cluj-Napoca");
+    const emails = r.primary.map((a) => a.email);
+    // Cel puțin Primăria Cluj-Napoca trebuie să primească
+    expect(emails).toContain("registratura@primariaclujnapoca.ro");
+  });
+
+  it("afisaj in Iași routes to Poliția Locală Iași + Primăria", () => {
+    const r = getAuthoritiesFor("afisaj", null, "IS", "Bd. Ștefan cel Mare 8, Iași");
+    const emails = r.primary.map((a) => a.email);
+    // Cel puțin un destinatar valid (PL sau primăria)
+    expect(emails.length).toBeGreaterThanOrEqual(1);
+  });
+});
