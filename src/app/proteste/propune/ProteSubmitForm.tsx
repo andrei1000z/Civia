@@ -178,7 +178,7 @@ export function ProteSubmitForm() {
           Submisie trimisă, mulțumim!
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed mb-4">
-          Echipa Civia verifică propunerea ta în <strong>24–48h</strong>. Dacă protestul
+          Echipa Civia verifică propunerea ta în <strong>1–2 ore</strong>. Dacă protestul
           îndeplinește criteriile (eveniment public, anunțat, pașnic), va apărea
           la <Link href="/proteste" className="text-[var(--color-primary)] hover:underline">/proteste</Link>.
           Te contactăm pe <strong>{f.submitter_email}</strong> dacă avem nevoie de clarificări.

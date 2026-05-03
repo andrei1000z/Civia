@@ -22,7 +22,7 @@ export default function PropuneProtestPage() {
         description={
           <>
             Anunță un protest, miting sau marș civic public. Echipa Civia verifică
-            submisia (de obicei în <strong>24–48h</strong>) înainte să apară pe site.
+            submisia (de obicei în <strong>1–2 ore</strong>) înainte să apară pe site.
           </>
         }
         tagline="6 câmpuri obligatorii. Restul, opționale — admin-ul completează la moderare."

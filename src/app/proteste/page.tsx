@@ -155,7 +155,7 @@ export default async function ProtestePage() {
             Cunoști un protest care nu e listat?
           </p>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-            Trimite-l aici. Verificăm și publicăm de obicei în 24–48h.
+            Trimite-l aici. Verificăm și publicăm de obicei în 1–2 ore.
           </p>
         </div>
         <Link
