@@ -87,22 +87,45 @@ export function extractBodyFromHtml(html: string): string | null {
     .replace(/<(script|style|noscript|iframe|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
     .replace(/<(nav|header|footer|aside|form)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
 
-  // 2. Find the most likely content container. Order matters — the
-  //    first match wins, so put more-specific selectors before more-
-  //    generic ones. Most Romanian news CMSes use one of these.
+  // 2. Caută TOȚI candidații de container și alege pe cel cu cea mai
+  //    multă text utilă după strip HTML. Strategie veche „primul match
+  //    câștigă" eșua pe site-uri ca jurnalul.ro, unde <article> conține
+  //    doar header/thumb iar articolul real e în <p> tag-uri exterioare.
+  //
+  //    Candidați: schema.org itemprop, class-based containers cunoscute,
+  //    id-based, <article>, <main>, ȘI un fallback agregat <p>-uri lungi.
+  const candidates: string[] = [];
   const containerPatterns = [
-    /<article\b[^>]*>([\s\S]*?)<\/article>/i,
-    /<main\b[^>]*>([\s\S]*?)<\/main>/i,
-    /<div\b[^>]*\bclass="[^"]*\b(?:article-body|article-content|article__body|article__content|story-body|story-content|entry-content|post-content|post-body|content-body|main-content)\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /<div\b[^>]*\bid="(?:article-body|article-content|story-body|main-content|post-content)"[^>]*>([\s\S]*?)<\/div>/i,
+    /<[a-z]+\b[^>]*\bitemprop="articleBody"[^>]*>([\s\S]*?)<\/[a-z]+>/gi,
+    /<div\b[^>]*\bclass="[^"]*\b(?:article-body|article-content|article__body|article__content|story-body|story-content|entry-content|post-content|post-body|content-body|main-content|single-content|content__body|article-text|content-area|TheContent|td-post-content|elementor-widget-theme-post-content)\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<div\b[^>]*\bid="(?:article-body|article-content|story-body|main-content|post-content|content)"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<section\b[^>]*\bclass="[^"]*\b(?:article-body|article-content|story-body|entry-content)\b[^"]*"[^>]*>([\s\S]*?)<\/section>/gi,
+    /<article\b[^>]*>([\s\S]*?)<\/article>/gi,
+    /<main\b[^>]*>([\s\S]*?)<\/main>/gi,
   ];
-
-  let container: string | null = null;
   for (const re of containerPatterns) {
-    const m = cleaned.match(re);
-    if (m && m[1] && m[1].length > 200) {
-      container = m[1];
-      break;
+    for (const m of cleaned.matchAll(re)) {
+      if (m[1] && m[1].length > 100) candidates.push(m[1]);
+    }
+  }
+
+  // Adăugăm și agregarea tuturor <p> tag-urilor lungi din document — util
+  // când container-ele lipsesc sau conțin doar boilerplate.
+  const paragraphs = Array.from(cleaned.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi))
+    .map((m) => m[1])
+    .filter((p): p is string => !!p && p.replace(/<[^>]+>/g, "").trim().length > 80);
+  if (paragraphs.length >= 2) {
+    candidates.push(paragraphs.join("\n\n"));
+  }
+
+  // Alegem candidatul cu cea mai multă text utilă (după strip HTML).
+  let container: string | null = null;
+  let bestTextLen = 0;
+  for (const c of candidates) {
+    const textLen = c.replace(/<[^>]+>/g, "").trim().length;
+    if (textLen > bestTextLen) {
+      bestTextLen = textLen;
+      container = c;
     }
   }
   // Fallback: use whole <body> if no specific container matched.
@@ -148,10 +171,10 @@ export function extractBodyFromHtml(html: string): string | null {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  // 4. Quality check. Below ~500 chars after extraction the page is
-  //    probably a paywall, error page, or single-line list — useless
-  //    for synthesis.
-  if (text.length < 500) return null;
+  // 4. Quality check. Threshold redus 500 → 200 chars: vrem să prindem
+  //    și site-uri cu conținut scurt sau paywall partial. Dacă e prea
+  //    scurt, AI cuplat cu OG description tot poate sintetiza ceva.
+  if (text.length < 200) return null;
 
   // 5. Strip common boilerplate that survives the container filter
   //    on Romanian news sites: share buttons, "Citește și", related

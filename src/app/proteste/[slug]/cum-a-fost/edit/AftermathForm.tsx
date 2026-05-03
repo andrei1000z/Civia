@@ -27,9 +27,17 @@ interface Props {
   protestTitle: string;
 }
 
+interface ScrapedUrlStatus {
+  url: string;
+  ok: boolean;
+  title?: string | null;
+  error?: string;
+}
+
 interface ScrapeResponse {
   data?: AftermathData;
   scraped_summary?: { total: number; ok: number; failed: number };
+  scraped_details?: ScrapedUrlStatus[];
   error?: string;
 }
 
@@ -48,6 +56,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
   const [scraping, setScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [scrapeSummary, setScrapeSummary] = useState<string | null>(null);
+  const [scrapeDetails, setScrapeDetails] = useState<ScrapedUrlStatus[]>([]);
 
   // ----- Form state -----
   const [data, setData] = useState<AftermathData>(EMPTY_AFTERMATH);
@@ -64,6 +73,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
   async function handleScrape() {
     setScrapeError(null);
     setScrapeSummary(null);
+    setScrapeDetails([]);
 
     const urls = urlsRaw
       .split(/[\n,\s]+/)
@@ -96,10 +106,11 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         const { total, ok, failed } = json.scraped_summary;
         setScrapeSummary(
           failed > 0
-            ? `Citite ${ok}/${total} link-uri (${failed} au eșuat — verifică-le manual).`
+            ? `Citite ${ok}/${total} link-uri (${failed} au eșuat — vezi detalii mai jos).`
             : `Citite cu succes ${ok}/${total} link-uri. Verifică câmpurile mai jos.`,
         );
       }
+      if (json.scraped_details) setScrapeDetails(json.scraped_details);
     } catch {
       setScrapeError("Eroare de rețea. Încearcă din nou.");
     } finally {
@@ -141,6 +152,12 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
     patch({ chants: data.chants.map((x, idx) => (idx === i ? v : x)) });
   const removeChant = (i: number) =>
     patch({ chants: data.chants.filter((_, idx) => idx !== i) });
+
+  const addMessage = () => patch({ messages: [...data.messages, ""] });
+  const updateMessage = (i: number, v: string) =>
+    patch({ messages: data.messages.map((x, idx) => (idx === i ? v : x)) });
+  const removeMessage = (i: number) =>
+    patch({ messages: data.messages.filter((_, idx) => idx !== i) });
 
   const addMoment = () => patch({ key_moments: [...data.key_moments, ""] });
   const updateMoment = (i: number, v: string) =>
@@ -230,6 +247,48 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
           </div>
         )}
 
+        {/* Per-URL diagnostic — utility pentru admin să vadă exact care
+            link-uri au fost citite cu succes și care au eșuat (și de ce). */}
+        {scrapeDetails.length > 0 && (
+          <ul className="space-y-1.5 text-xs">
+            {scrapeDetails.map((d, i) => (
+              <li
+                key={i}
+                className={`flex items-start gap-2 ${
+                  d.ok
+                    ? "text-emerald-700 dark:text-emerald-400"
+                    : "text-rose-700 dark:text-rose-400"
+                }`}
+              >
+                {d.ok ? (
+                  <CheckCircle2 size={12} className="shrink-0 mt-0.5" aria-hidden />
+                ) : (
+                  <AlertCircle size={12} className="shrink-0 mt-0.5" aria-hidden />
+                )}
+                <span className="break-all flex-1">
+                  <span className="font-mono opacity-80">
+                    {(() => {
+                      try {
+                        return new URL(d.url).hostname.replace(/^www\./, "");
+                      } catch {
+                        return d.url.slice(0, 40);
+                      }
+                    })()}
+                  </span>
+                  {d.ok && d.title && (
+                    <span className="ml-2 text-[var(--color-text)] opacity-80">
+                      {d.title.slice(0, 80)}
+                    </span>
+                  )}
+                  {!d.ok && d.error && (
+                    <span className="ml-2 italic">— {d.error}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <button
           type="button"
           onClick={handleScrape}
@@ -291,10 +350,10 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
           </p>
         </Field>
 
-        {/* Chants */}
+        {/* Chants — ce au strigat efectiv în cor */}
         <Field
           label="Sloganuri scandate"
-          hint={`Câte unul per câmp. Ex: „Nu vrem dictatură”, „Justiție pentru victime”.`}
+          hint={`Doar ce s-a strigat în cor. Ex: „Justiție pentru victime", „Nu vrem dictatură".`}
         >
           <ListEditor
             items={data.chants}
@@ -303,14 +362,30 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
             onRemove={removeChant}
             placeholder="Slogan scandat..."
             addLabel="Adaugă slogan"
-            maxItems={12}
+            maxItems={20}
+          />
+        </Field>
+
+        {/* Messages — pe pancarte / declarații / banner-e */}
+        <Field
+          label="Mesaje transmise"
+          hint={`Mesaje de pe pancarte, citate din discursuri, declarații publice. Diferit de scandări.`}
+        >
+          <ListEditor
+            items={data.messages}
+            onAdd={addMessage}
+            onUpdate={updateMessage}
+            onRemove={removeMessage}
+            placeholder={`ex: „Susținem reformele lui Bolojan!"`}
+            addLabel="Adaugă mesaj"
+            maxItems={25}
           />
         </Field>
 
         {/* Key moments */}
         <Field
           label="Momente cheie"
-          hint={`Cronologic. Ex: „17:30 — pornire marș”, „discurs reprezentant cetățeni”.`}
+          hint={`Cronologic. Ex: „17:30 — pornire marș", „discurs reprezentant cetățeni".`}
         >
           <ListEditor
             items={data.key_moments}
@@ -319,7 +394,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
             onRemove={removeMoment}
             placeholder="ex: 18:00 — sosire în Piața Victoriei"
             addLabel="Adaugă moment"
-            maxItems={8}
+            maxItems={12}
           />
         </Field>
 

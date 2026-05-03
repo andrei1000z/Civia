@@ -35,6 +35,9 @@ export interface AftermathData {
   attendance_estimate: number | null;
   narrative: string;
   chants: string[];
+  /** Mesaje de pe pancarte / banner-e / declarații publice făcute la
+   *  protest. Diferit de chants (care e CE S-A STRIGAT). */
+  messages: string[];
   key_moments: string[];
   outcome: string;
   images: AftermathImage[];
@@ -46,6 +49,7 @@ export const EMPTY_AFTERMATH: AftermathData = {
   attendance_estimate: null,
   narrative: "",
   chants: [],
+  messages: [],
   key_moments: [],
   outcome: "",
   images: [],
@@ -85,6 +89,7 @@ export const aftermathDataSchema = z.object({
     .nullable(),
   narrative: z.string().trim().max(8000).default(""),
   chants: z.array(z.string().trim().min(1).max(280)).max(40).default([]),
+  messages: z.array(z.string().trim().min(1).max(400)).max(40).default([]),
   key_moments: z.array(z.string().trim().min(1).max(400)).max(20).default([]),
   outcome: z.string().trim().max(4000).default(""),
   images: z.array(aftermathImageSchema).max(40).default([]),
@@ -96,22 +101,23 @@ export const aftermathDataSchema = z.object({
 // AI Prompt — aftermath synthesis from scraped news article bodies
 // ============================================================
 
-export const AFTERMATH_SYSTEM_PROMPT = `Ești un asistent care sintetizează ce s-a întâmplat la un protest civic românesc, pe baza articolelor de presă agregate.
+export const AFTERMATH_SYSTEM_PROMPT = `Ești un asistent care sintetizează ce s-a întâmplat la un protest civic românesc SPECIFIC, pe baza articolelor de presă agregate.
 
 Primești:
 - Titlul și data protestului (context)
 - 1-10 articole de presă scrise DUPĂ protest (corpul textual extras + URL-ul sursei)
 
-Sarcina ta: extragi DOAR fapte verificabile din articole, le centralizezi într-un raport structurat. NU INVENTA informații care nu sunt în input.
+Sarcina ta: extragi DOAR fapte verificabile despre ACEST protest din articole, le centralizezi într-un raport structurat. NU INVENTA informații care nu sunt în input. NU genera un rezumat generic de știri — vorbește DESPRE acest eveniment concret: cine a fost acolo, ce au făcut, ce au strigat, ce era pe pancarte, ce s-a întâmplat în timp.
 
 Returnezi DOAR JSON valid în formatul EXACT de mai jos:
 
 {
   "attendance_estimate": număr întreg sau null — estimarea participanților dacă apare în CEL PUȚIN un articol. Dacă mai multe articole dau cifre diferite, alege MEDIANA. Dacă nimic, null.,
-  "narrative": "string — 3-6 paragrafe (max 1500 chars total) care povestește cum a decurs protestul: atmosfera, traseul, momentele importante, reacția participanților și autorităților. Stil jurnalistic neutru, NU partizan. Folosește diacritice corecte.",
-  "chants": ["array de string-uri — TOATE sloganurile, scandările, mesajele de pe pancarte și textele de pe bannere menționate în articole. Citate textual, fără ghilimele incluse. Caută în articole expresii precum „au scandat", „au strigat", „pe bannere scria", „pancarte cu mesajul", „au cerut". Extrage MULTE — minimum 4-6 dacă articolele le conțin, până la 20. Dacă articolele NU menționează NIMIC scandat, ARRAY GOL []."],
-  "key_moments": ["array de momente cronologice (4-12 elemente dacă articolele permit). Format: 'HH:MM — Descriere' SAU 'Descriere'. Prima literă MAJUSCULĂ obligatoriu. Ex: '17:30 — Pornire marș de la Universitate', 'Discurs reprezentant societate civilă', 'Sosire în Piața Victoriei'. Caută în articole momente precum: ora începerii, ora încheierii, traseul marșului, discursuri, intervenții oficiale, sosiri/plecări notabile, incidente, intervenții jandarmerie. Doar momente menționate explicit."],
-  "outcome": "string — ce a urmat după protest (max 800 chars): declarații oficiale, decizii, promisiuni ale autorităților, reacția politică. Dacă articolele nu menționează nimic post-eveniment, șir gol \\"\\".",
+  "narrative": "string — 3-5 paragrafe (max 1500 chars total) DESPRE ACEST PROTEST CONCRET. Începe cu locul + numărul de participanți + atmosfera. Continuă cu detalii specifice: cine a venit (categorii — tineri, familii, pensionari etc.), cu ce au venit (drapele, pancarte, fluiere), ce au scandat sau cerut, dacă au mers în marș și pe unde, dacă au fost discursuri și ale cui. Termină cu cum s-a încheiat (ora, dacă au fost incidente, declarații finale). Stil jurnalistic neutru, NU partizan. NU rezumat de știri (evită „protestul a avut loc, mai mulți participanți au strigat"). VORBEȘTE DESPRE acest eveniment particular cu detalii concrete extrase din articole. Folosește diacritice corecte.",
+  "chants": ["array de string-uri — DOAR ce s-a STRIGAT efectiv (scandat în cor) la protest. Citate textual, fără ghilimele incluse. Caută expresii precum „au scandat", „au strigat", „strigau", „au repetat la unison". Extrage TOATE — minimum 3-5 dacă articolele le conțin, până la 20. Dacă articolele NU menționează NIMIC scandat, ARRAY GOL []. NU INCLUDE aici mesaje de pe pancarte sau declarații — alea merg în 'messages'."],
+  "messages": ["array de string-uri — Mesaje TRANSMISE altfel decât prin scandări: ce era scris pe pancarte / banner-e / drapele, ce au declarat oamenii intervievați, citate scurte din discursuri rostite la microfon. Citate textual, fără ghilimele. Caută expresii precum „pe pancarte scria", „cu banner-e pe care era scris", „un participant a declarat", „a luat cuvântul X care a spus", „banner mare cu mesajul". Extrage 3-15 mesaje distincte. ARRAY GOL [] dacă nu apar."],
+  "key_moments": ["array de momente cronologice (4-12 elemente). Format: 'HH:MM — Descriere' SAU 'Descriere'. Prima literă MAJUSCULĂ obligatoriu. Ex: '17:30 — Pornire marș de la Universitate', 'Discurs reprezentant societate civilă', 'Sosire în Piața Victoriei'. Caută: ora începerii, ora încheierii, traseul marșului, discursuri, intervenții oficiale, sosiri/plecări notabile, incidente, intervenții jandarmerie. Doar momente menționate explicit."],
+  "outcome": "string — ce a urmat după protest (max 800 chars): declarații oficiale ulterioare, decizii, promisiuni ale autorităților, reacția politică, mențiune dacă protestul a continuat sau s-a repetat. Dacă articolele nu menționează nimic post-eveniment, șir gol \\"\\".",
   "images_found": ["array de URL-uri ABSOLUTE (cu https://) către imagini din articole — caută în corpul textual referințe la URL-uri de tip .jpg/.jpeg/.png/.webp. Max 10. Dacă nu sunt evidente, ARRAY GOL."],
   "videos_found": ["array de URL-uri ABSOLUTE către videoclipuri menționate (YouTube, TikTok, Facebook video, direct .mp4). Max 5. Doar dacă sunt menționate în text."]
 }
@@ -123,7 +129,8 @@ REGULI STRICTE:
 - Atribuie cifre/declarații DOAR dacă apar în articole. Mai bine null decât invenție.
 - Dacă articolele se contrazic, prioritizează sursele oficiale (HotNews, Digi24, G4Media, Adevărul) > tabloide > Facebook.
 - NU adăuga opinii proprii sau interpretări politice. Doar fapte.
-- Pentru chants și key_moments: fii GENEROS. Articolele relatează un eveniment public, sigur sunt mai multe decât 2-3 elemente. Citește toate articolele cap-coadă înainte să returnezi.`;
+- DIFERENȚA chants vs messages: chants = strigate în cor (3-5 cuvinte tipic, repetate). messages = scrise pe pancarte sau rostite în discurs (pot fi propoziții întregi, nu se repetă).
+- Pentru toate listele: fii GENEROS. Articolele relatează un eveniment public real cu sute/mii de participanți, sigur conțin multe detalii. Citește toate articolele cap-coadă.`;
 
 // ============================================================
 // Scrape multiple URLs in parallel + return enriched sources
@@ -272,6 +279,7 @@ interface AiAftermathResponse {
   attendance_estimate?: number | null;
   narrative?: string;
   chants?: string[];
+  messages?: string[];
   key_moments?: string[];
   outcome?: string;
   images_found?: string[];
@@ -292,19 +300,8 @@ export function sanitizeAiResponse(
   const narrative = typeof r.narrative === "string" ? r.narrative.trim().slice(0, 8000) : "";
   const outcome = typeof r.outcome === "string" ? r.outcome.trim().slice(0, 4000) : "";
 
-  const chants = Array.isArray(r.chants)
-    ? Array.from(
-        new Set(
-          r.chants
-            .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-            // Strip ghilimele lăsate de model (deși am cerut fără) ca să nu
-            // se dubleze cu „..." din UI.
-            .map((x) => x.trim().replace(/^[„"'«»]+|[„"'«»]+$/g, "").trim())
-            .filter((x) => x.length > 0)
-            .map((x) => x.slice(0, 280)),
-        ),
-      ).slice(0, 20)
-    : [];
+  const chants = sanitizeQuoteList(r.chants, 280, 20);
+  const messages = sanitizeQuoteList(r.messages, 400, 25);
 
   const key_moments = Array.isArray(r.key_moments)
     ? r.key_moments
@@ -343,12 +340,37 @@ export function sanitizeAiResponse(
     attendance_estimate: attendance,
     narrative,
     chants,
+    messages,
     key_moments,
     outcome,
     images,
     videos,
     sources,
   };
+}
+
+/**
+ * Curăță o listă de citate text (chants sau messages):
+ * - elimină string-uri non-string sau goale
+ * - strip ghilimele lăsate de model („...", „..."), evită dublarea cu UI-ul
+ * - dedup pe text exact (case-insensitive — „Bolojan" și „BOLOJAN" colaps)
+ * - clamp la maxLen char + maxItems elemente
+ */
+function sanitizeQuoteList(arr: unknown, maxLen: number, maxItems: number): string[] {
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of arr) {
+    if (typeof x !== "string") continue;
+    const cleaned = x.trim().replace(/^[„"'«»]+|[„"'«»]+$/g, "").trim();
+    if (!cleaned) continue;
+    const key = cleaned.toLocaleLowerCase("ro-RO");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(cleaned.slice(0, maxLen));
+    if (out.length >= maxItems) break;
+  }
+  return out;
 }
 
 /**

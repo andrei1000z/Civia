@@ -44,6 +44,7 @@ interface Protest {
   hashtag: string | null;
   color_theme: string;
   tags: string[];
+  aftermath_moderation_status: "none" | "pending" | "approved" | "rejected" | null;
 }
 
 const STATUS_META: Record<
@@ -78,7 +79,7 @@ async function fetchProteste(): Promise<Protest[]> {
     const { data } = await admin
       .from("proteste")
       .select(
-        "id,slug,title,subtitle,cause,description,start_at,end_at,location_name,city,county_slug,organizer,expected_attendance,status,featured,cover_image_url,external_url,hashtag,color_theme,tags",
+        "id,slug,title,subtitle,cause,description,start_at,end_at,location_name,city,county_slug,organizer,expected_attendance,status,featured,cover_image_url,external_url,hashtag,color_theme,tags,aftermath_moderation_status",
       )
       .eq("visibility", "publica")
       .eq("moderation_status", "approved")
@@ -115,10 +116,33 @@ function countyLabel(slug: string | null): string | null {
   return ALL_COUNTIES.find((c) => c.slug === slug)?.name ?? null;
 }
 
+/**
+ * Derived live status (matches /[slug]/page.tsx). Folosit ca să evităm
+ * bug-ul „protest de ieri afișat ca «Programat»" când admin n-a marcat
+ * încă manual statusul.
+ */
+function deriveStatus(p: Protest): Protest["status"] {
+  if (p.status === "anulat") return "anulat";
+  const now = Date.now();
+  const start = new Date(p.start_at).getTime();
+  const end = p.end_at ? new Date(p.end_at).getTime() : start + 4 * 60 * 60 * 1000;
+  if (now < start) return "planificat";
+  if (now <= end) return "in_desfasurare";
+  return "incheiat";
+}
+
 export default async function ProtestePage() {
   const proteste = await fetchProteste();
-  const upcoming = proteste.filter((p) => p.status === "planificat" || p.status === "in_desfasurare");
-  const past = proteste.filter((p) => p.status === "incheiat" || p.status === "anulat");
+  // Filtrăm prin derived status — așa proteste din trecut migrează automat
+  // la „past" chiar dacă DB-ul încă spune „planificat".
+  const upcoming = proteste.filter((p) => {
+    const s = deriveStatus(p);
+    return s === "planificat" || s === "in_desfasurare";
+  });
+  const past = proteste.filter((p) => {
+    const s = deriveStatus(p);
+    return s === "incheiat" || s === "anulat";
+  });
 
   return (
     <div className="container-narrow py-8 md:py-12">
@@ -249,8 +273,9 @@ function EmptyState() {
 }
 
 function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
-  const status = STATUS_META[p.status];
+  const status = STATUS_META[deriveStatus(p)];
   const county = countyLabel(p.county_slug);
+  const hasAftermath = p.aftermath_moderation_status === "approved";
   return (
     <li>
       <Link
@@ -271,12 +296,19 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
                 Featured
               </span>
             )}
-            <span
-              className={`absolute top-3 right-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-pill)] border text-[10px] font-semibold backdrop-blur-sm bg-white/80 dark:bg-black/50 ${status.chip}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
-              {status.label}
-            </span>
+            <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-pill)] border text-[10px] font-semibold backdrop-blur-sm bg-white/80 dark:bg-black/50 ${status.chip}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
+                {status.label}
+              </span>
+              {hasAftermath && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] bg-emerald-500/90 text-white text-[10px] font-semibold backdrop-blur-sm">
+                  ✓ Documentat
+                </span>
+              )}
+            </div>
           </div>
         ) : (
           <div className="px-5 pt-4 flex items-center justify-between gap-2">
@@ -285,12 +317,19 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
                 Featured
               </span>
             )}
-            <span
-              className={`ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[var(--radius-pill)] border text-[10px] font-semibold ${status.chip}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
-              {status.label}
-            </span>
+            <div className="ml-auto flex items-center gap-1.5">
+              {hasAftermath && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold">
+                  ✓ Documentat
+                </span>
+              )}
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[var(--radius-pill)] border text-[10px] font-semibold ${status.chip}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
+                {status.label}
+              </span>
+            </div>
           </div>
         )}
 

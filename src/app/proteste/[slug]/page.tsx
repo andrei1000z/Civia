@@ -13,9 +13,9 @@ import {
   Hash,
   Building2,
   Quote,
+  MessageSquare,
   ListChecks,
   Newspaper,
-  Camera,
   Video as VideoIcon,
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -23,6 +23,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { UpdateBody } from "@/app/updateuri/UpdateBody";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
+import { AftermathGallery } from "@/components/proteste/AftermathGallery";
 import type {
   AftermathImage,
   AftermathVideo,
@@ -64,6 +65,7 @@ interface Protest {
   aftermath_attendance_estimate: number | null;
   aftermath_narrative: string | null;
   aftermath_chants: string[] | null;
+  aftermath_messages: string[] | null;
   aftermath_key_moments: string[] | null;
   aftermath_outcome: string | null;
   aftermath_images: AftermathImage[] | null;
@@ -109,6 +111,24 @@ const GRADIENT_BY_THEME: Record<string, string> = {
   authority: HERO_GRADIENT.authority,
   health: HERO_GRADIENT.health,
 };
+
+/**
+ * Derived live status. DB-ul ține `status` static (setat admin la creare),
+ * dar pentru afișaj public vrem ca după ce trece data + durata estimată,
+ * protestul să apară automat „Încheiat" — fără să cerem admin-ului să
+ * marcheze manual fiecare. Excepție: dacă admin-ul a marcat „anulat",
+ * păstrăm acea decizie indiferent de timp.
+ */
+function deriveStatus(p: Protest): Protest["status"] {
+  if (p.status === "anulat") return "anulat";
+  const now = Date.now();
+  const start = new Date(p.start_at).getTime();
+  // Default 4h durată dacă end_at lipsește (proteste tipice 2-4h).
+  const end = p.end_at ? new Date(p.end_at).getTime() : start + 4 * 60 * 60 * 1000;
+  if (now < start) return "planificat";
+  if (now <= end) return "in_desfasurare";
+  return "incheiat";
+}
 
 async function fetchProtest(slug: string): Promise<Protest | null> {
   try {
@@ -199,7 +219,12 @@ export default async function ProtestDetailPage({
   const p = await fetchProtest(slug);
   if (!p) notFound();
 
-  const status = STATUS_META[p.status];
+  // Derived status — DB-ul ține `status` static (setat manual de admin).
+  // Pe pagina publică derivăm din timp: dacă protestul e în trecut și
+  // nu e marcat „anulat", afișăm „Încheiat" indiferent ce zice DB-ul.
+  // Asta evită bug-ul „protest de ieri afișat ca «Programat»".
+  const derivedStatus = deriveStatus(p);
+  const status = STATUS_META[derivedStatus];
   const county = countyLabel(p.county_slug);
   const gradient = GRADIENT_BY_THEME[p.color_theme] ?? HERO_GRADIENT.warning;
 
@@ -211,7 +236,7 @@ export default async function ProtestDetailPage({
     startDate: p.start_at,
     ...(p.end_at ? { endDate: p.end_at } : {}),
     eventStatus:
-      p.status === "anulat"
+      derivedStatus === "anulat"
         ? "https://schema.org/EventCancelled"
         : "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -446,7 +471,7 @@ export default async function ProtestDetailPage({
             </a>
           )}
 
-          {p.status === "in_desfasurare" && p.start_at && (
+          {derivedStatus === "in_desfasurare" && p.start_at && (
             <p className="text-[10px] text-rose-600 dark:text-rose-400 text-center">
               Începe acum, la ora <strong>{formatTime(p.start_at)}</strong>
             </p>
@@ -508,6 +533,7 @@ function AftermathSection({ protest }: { protest: Protest }) {
   const videos = protest.aftermath_videos ?? [];
   const sources = protest.aftermath_sources ?? [];
   const chants = protest.aftermath_chants ?? [];
+  const messages = protest.aftermath_messages ?? [];
   const moments = protest.aftermath_key_moments ?? [];
 
   return (
@@ -543,17 +569,17 @@ function AftermathSection({ protest }: { protest: Protest }) {
         )}
       </header>
 
-      {/* Narrative */}
+      {/* Narrative — secțiune principală despre cum a decurs protestul */}
       {protest.aftermath_narrative && (
         <div>
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-            Cronologie
+            Cum a decurs
           </h3>
           <UpdateBody markdown={protest.aftermath_narrative} />
         </div>
       )}
 
-      {/* Key moments */}
+      {/* Key moments — cronologie */}
       {moments.length > 0 && (
         <div>
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
@@ -574,7 +600,7 @@ function AftermathSection({ protest }: { protest: Protest }) {
         </div>
       )}
 
-      {/* Chants */}
+      {/* Chants — ce s-a strigat efectiv în cor */}
       {chants.length > 0 && (
         <div>
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
@@ -585,7 +611,7 @@ function AftermathSection({ protest }: { protest: Protest }) {
             {chants.map((c, i) => (
               <span
                 key={i}
-                className="inline-flex items-center px-3 py-1.5 rounded-[var(--radius-pill)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs md:text-sm font-medium text-[var(--color-text)]"
+                className="inline-flex items-center px-3 py-1.5 rounded-[var(--radius-pill)] bg-emerald-500/10 border border-emerald-500/30 text-xs md:text-sm font-medium text-[var(--color-text)]"
               >
                 „{c}"
               </span>
@@ -594,42 +620,28 @@ function AftermathSection({ protest }: { protest: Protest }) {
         </div>
       )}
 
-      {/* Images gallery — masonry CSS columns ca să păstrăm aspect-
-          ratio natural al fiecărei poze (unele sunt landscape, altele
-          portrait, altele pătrate). object-cover + aspect-square crop-uia
-          exact ce voiai să vezi din poză. */}
-      {images.length > 0 && (
+      {/* Messages — pe pancarte / declarații / mesaje publice */}
+      {messages.length > 0 && (
         <div>
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
-            <Camera size={14} aria-hidden="true" />
-            Galerie ({images.length})
+            <MessageSquare size={14} aria-hidden="true" />
+            Mesaje transmise
           </h3>
-          <div className="columns-2 sm:columns-3 gap-2 [column-fill:_balance]">
-            {images.map((img, i) => (
-              <a
+          <ul className="space-y-2">
+            {messages.map((m, i) => (
+              <li
                 key={i}
-                href={img.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative block mb-2 break-inside-avoid overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
+                className="text-sm text-[var(--color-text)] leading-relaxed pl-3 border-l-2 border-[var(--color-border)] italic"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={img.caption ?? `Foto ${i + 1}`}
-                  loading="lazy"
-                  className="w-full h-auto block group-hover:opacity-90 transition-opacity duration-300"
-                />
-                {img.credit && (
-                  <span className="absolute bottom-0 inset-x-0 px-2 py-1 text-[9px] text-white bg-gradient-to-t from-black/80 to-transparent">
-                    Foto: {img.credit}
-                  </span>
-                )}
-              </a>
+                „{m}"
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
+
+      {/* Galerie — client component cu lightbox + masonry aspect-ratio natural */}
+      <AftermathGallery images={images} />
 
       {/* Videos */}
       {videos.length > 0 && (

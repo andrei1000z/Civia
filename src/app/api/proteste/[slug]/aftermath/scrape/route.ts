@@ -108,7 +108,10 @@ export async function POST(
 
   // 1. Scrape URL-urile în paralel.
   const scraped = await scrapeMultiple(parsed.data.source_urls);
-  const okScraped = scraped.filter((s) => s.ok && s.body && s.body.length > 200);
+  // Acceptăm orice articol cu body >= 100 chars (înainte 200 era prea
+  // strict — sites cu paywall sau JS-only render dau OG description scurtă
+  // dar tot utilă pentru AI). Sub 100 chars nu e suficient nici pentru AI.
+  const okScraped = scraped.filter((s) => s.ok && s.body && s.body.length >= 100);
   if (okScraped.length === 0) {
     return NextResponse.json(
       {
@@ -268,5 +271,13 @@ export async function POST(
       ok: okScraped.length,
       failed: scraped.length - okScraped.length,
     },
+    // Per-URL diagnostic — admin vede în UI exact care link a fost citit
+    // și care a eșuat (cu motivul). Nu expun body-ul (poate fi mare).
+    scraped_details: scraped.map((s) => ({
+      url: s.url,
+      ok: !!(s.ok && s.body && s.body.length >= 100),
+      title: s.title ?? null,
+      error: s.error,
+    })),
   });
 }

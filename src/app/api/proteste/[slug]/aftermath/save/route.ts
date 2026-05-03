@@ -60,6 +60,7 @@ export async function POST(
     !!a.narrative.trim() ||
     a.attendance_estimate !== null ||
     a.chants.length > 0 ||
+    a.messages.length > 0 ||
     a.images.length > 0 ||
     a.videos.length > 0 ||
     a.sources.length > 0;
@@ -110,6 +111,7 @@ export async function POST(
       aftermath_attendance_estimate: a.attendance_estimate,
       aftermath_narrative: a.narrative || null,
       aftermath_chants: a.chants,
+      aftermath_messages: a.messages,
       aftermath_key_moments: a.key_moments,
       aftermath_outcome: a.outcome || null,
       aftermath_images: a.images,
