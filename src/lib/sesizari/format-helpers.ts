@@ -65,6 +65,67 @@ export function appendGdprClause(text: string): string {
   return [...before, "", GDPR_CLAUSE, "", ...after].join("\n");
 }
 
+/**
+ * Repară leaks observate în audit-ul DB (5/4/2026, 17 sesizări):
+ * - „Subsemnatul/Subsemnata X, domiciliat..." apare în 29% din output-uri
+ *   chiar dacă promptul interzice. Prompt-ul singur nu e suficient — AI-ul
+ *   îl ignoră în ~1 din 3 cazuri pe Groq Llama 70B.
+ * - „Vă sesizez cu privire la" apare în 18%.
+ * - Placeholder-uri {ADRESA} / [NUMELE] copiate literal din template apar
+ *   ocazional când AI-ul nu primește nume/adresă (utilizator anonim).
+ *
+ * Aplicat ÎNAINTE de normalizeFormatting + appendGdprClause în pipeline.
+ * Idempotent — re-run pe text deja reparat e no-op.
+ */
+export function repairSesizareLeaks(text: string): string {
+  if (!text) return text;
+  let t = text;
+
+  // 1. „Subsemnatul/Subsemnata" → „Mă numesc"
+  //    Pereche cu „domiciliat/domiciliată în" → „și locuiesc în"
+  t = t.replace(/\bSubsemnat(?:ul|a)\b/g, "Mă numesc");
+  // Captează cazul „Subsemnatul, ..." (litera mică după)
+  t = t.replace(/\bsubsemnat(?:ul|a)\b/g, "mă numesc");
+  // Re-match „, domiciliat[uă]? în" → „ și locuiesc în" doar dacă există
+  // cuvântul „Mă numesc" în text (ca să nu strice paragrafe care nu au
+  // structura înlocuită).
+  if (/\bM[ăa]\s+numesc\b/i.test(t)) {
+    t = t.replace(/,\s*domiciliat[uă]?\s+în\b/gi, " și locuiesc în");
+    t = t.replace(/,\s*domiciliat[uă]?\s+pe\b/gi, " și locuiesc pe");
+    t = t.replace(/,\s*cu\s+domiciliul\s+în\b/gi, " și locuiesc în");
+  }
+
+  // 2. „Vă sesizez cu privire la" → „doresc să vă aduc la cunoștință o
+  //    problemă care afectează"
+  t = t.replace(
+    /\bVă\s+sesizez\s+cu\s+privire\s+la\b/g,
+    "doresc să vă aduc la cunoștință o problemă care afectează",
+  );
+  t = t.replace(
+    /\bvă\s+sesizez\s+cu\s+privire\s+la\b/g,
+    "doresc să vă aduc la cunoștință o problemă care afectează",
+  );
+
+  // 3. Placeholder-uri ne-substituite: {NUMELE}, [ADRESA], {LOCAȚIA}, etc.
+  //    Strategie: dacă apare „domiciliat în [ADRESA]" sau similar, scoatem
+  //    fraza întreagă. Altfel, înlocuim placeholder-ul cu spațiu gol +
+  //    curățăm punctuația rămasă.
+  // Patterns gen „Mă numesc X, locuiesc în [ADRESA]" → „Mă numesc X"
+  t = t.replace(
+    /,\s*(?:locuiesc|domiciliat[uă]?|cu\s+domiciliul)\s+(?:în|pe)\s*[\[{][A-ZĂÂÎȘȚ_ ]+[\]}]\s*/g,
+    "",
+  );
+  // Generic: orice {TOKEN} sau [TOKEN] cu litere mari → strip
+  t = t.replace(/[\[{][A-ZĂÂÎȘȚ_ ]{2,}[\]}]/g, "");
+  // Curăță „, ," sau „, ." rezidual de la replace-uri
+  t = t.replace(/,\s*,/g, ",");
+  t = t.replace(/,\s*\./g, ".");
+  // Spațiu dublu între cuvinte (lăsat de strip-uri)
+  t = t.replace(/[ \t]{2,}/g, " ");
+
+  return t;
+}
+
 /** Capitalize each word: "ion POPESCU" → "Ion Popescu". */
 export function capitalizeName(name: string): string {
   return name

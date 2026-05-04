@@ -5,6 +5,7 @@ import {
   normalizeRoLocation,
   appendGdprClause,
   GDPR_CLAUSE,
+  repairSesizareLeaks,
 } from "./format-helpers";
 
 describe("capitalizeName", () => {
@@ -176,5 +177,68 @@ Ion Popescu
     expect(clauseIdx).toBeGreaterThan(0);
     expect(lines[clauseIdx - 1]).toBe(""); // blank before
     expect(lines[clauseIdx + 1]).toBe(""); // blank after
+  });
+});
+
+describe("repairSesizareLeaks", () => {
+  it("rescrie 'Subsemnatul X, domiciliat în Y' → 'Mă numesc X și locuiesc în Y'", () => {
+    const input = "Bună ziua, Subsemnatul Eduard Mușat, domiciliat în Strada Novaci, vă rog...";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/Subsemnatul/i);
+    expect(out).not.toMatch(/domiciliat în/i);
+    expect(out).toContain("Mă numesc Eduard Mușat și locuiesc în Strada Novaci");
+  });
+
+  it("rescrie 'Subsemnata X, domiciliată în Y' (feminin)", () => {
+    const input = "Subsemnata Maria Popescu, domiciliată în București, vă rog...";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/Subsemnata/i);
+    expect(out).toContain("Mă numesc Maria Popescu și locuiesc în București");
+  });
+
+  it("rescrie 'Vă sesizez cu privire la X' (capitalized + lowercase)", () => {
+    const input1 = "Vă sesizez cu privire la lipsa stâlpișorilor pe Bulevardul Decebal.";
+    const input2 = "În acest sens, vă sesizez cu privire la gropi în asfalt.";
+    const out1 = repairSesizareLeaks(input1);
+    const out2 = repairSesizareLeaks(input2);
+    expect(out1).toContain("doresc să vă aduc la cunoștință o problemă care afectează lipsa stâlpișorilor");
+    expect(out2).toContain("doresc să vă aduc la cunoștință o problemă care afectează gropi");
+    expect(out1 + out2).not.toMatch(/sesizez cu privire la/i);
+  });
+
+  it("strip-uiește placeholder-uri ne-substituite [ADRESA] / {NUMELE}", () => {
+    const input = "Mă numesc Eduard, locuiesc în [ADRESA], doresc să...";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toContain("[ADRESA]");
+    // Cu strip-ul, structura devine „Mă numesc Eduard, doresc să..."
+    expect(out).toMatch(/Mă numesc Eduard,?\s+doresc/);
+  });
+
+  it("strip-uiește placeholder generic { TOKEN } în corpul textului", () => {
+    const input = "Pe {LOCAȚIA_PROBLEMEI} a apărut o groapă.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toContain("{LOCAȚIA_PROBLEMEI}");
+    expect(out).toContain("Pe");
+    expect(out).toContain("a apărut o groapă");
+  });
+
+  it("este idempotent (re-run = no-op pe text deja reparat)", () => {
+    const input = "Subsemnatul Ion, domiciliat în București, vă sesizez cu privire la gunoi.";
+    const once = repairSesizareLeaks(input);
+    const twice = repairSesizareLeaks(once);
+    expect(twice).toBe(once);
+  });
+
+  it("nu strică text fără leaks", () => {
+    const clean =
+      "Bună ziua,\n\nMă numesc Ion și locuiesc pe strada Tei. Doresc să vă aduc la cunoștință o problemă.\n\nCu stimă,\nIon";
+    expect(repairSesizareLeaks(clean)).toBe(clean);
+  });
+
+  it("curăță virgule duble / spații duble lăsate de strip-uri", () => {
+    const input = "Mă numesc Ion, locuiesc în [ADRESA], doresc să raportez.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/,\s*,/);
+    expect(out).not.toMatch(/  /);
   });
 });

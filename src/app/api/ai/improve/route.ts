@@ -7,7 +7,7 @@ import { getTemplate } from "@/lib/groq/templates";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { isProd } from "@/lib/env";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from "@/lib/ai/gemini";
-import { appendGdprClause } from "@/lib/sesizari/format-helpers";
+import { appendGdprClause, repairSesizareLeaks } from "@/lib/sesizari/format-helpers";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -305,6 +305,13 @@ Răspunde JSON:
     parsed.formal_text = parsed.formal_text
       .replace(/\+\s*\(?\s*new\s+Date\s*\([^)]*\)[^,\n"]*\)?/gi, todayRo)
       .replace(/\$\{[^}]*new\s+Date[^}]*\}/gi, todayRo);
+
+    // Audit DB pe sesizări reale (5/4/2026) a arătat că prompt-ul singur
+    // nu e suficient: 29% conțineau „Subsemnatul" / „domiciliat în",
+    // 18% începeau cu „Vă sesizez cu privire la", 6% aveau placeholder
+    // [ADRESA] copiat literal. Reparăm post-AI determinist înainte de
+    // normalizeFormatting (care pe urmă curăță whitespace-urile lăsate).
+    parsed.formal_text = repairSesizareLeaks(parsed.formal_text);
 
     parsed.formal_text = normalizeFormatting(parsed.formal_text);
 
