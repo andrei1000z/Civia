@@ -344,13 +344,28 @@ create policy "stiri_read_all" on public.stiri_cache for select using (true);
 -- ============================================================
 -- 9. STORAGE BUCKET
 -- ============================================================
+-- Bucket-ul găzduiește atât poze sesizare (5 MB tipic), cât și
+-- aftermath proteste (poze + video până la 50 MB) + PDF-uri pentru
+-- evidence-uri admin. Am folosit un singur bucket pentru simplitate
+-- în RLS și storage management — distincția e făcută la nivel de
+-- folder (`public/`) și de aplicație (validare client + filterValidMedia
+-- la save).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'sesizari-photos',
   'sesizari-photos',
   true,
-  5242880,  -- 5 MB
-  array['image/jpeg','image/png','image/webp','image/gif']
+  52428800,  -- 50 MB (era 5 MB; bumped pentru video uploads aftermath)
+  array[
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'video/mp4',
+    'video/webm',
+    'video/quicktime',
+    'application/pdf'
+  ]
 )
 on conflict (id) do update set
   public = excluded.public,
