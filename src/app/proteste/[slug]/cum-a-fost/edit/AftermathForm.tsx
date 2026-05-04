@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
 import {
   Sparkles,
   Plus,
@@ -190,22 +191,57 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
   async function handleImageUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploadError(null);
-    setUploadingImages(true);
-    try {
-      const fd = new FormData();
-      // /api/upload acceptă maxim 5 fișiere per call
-      Array.from(files).slice(0, 5).forEach((f) => fd.append("files", f));
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const json = (await res.json()) as { data?: { urls: string[] }; error?: string };
-      if (!res.ok || !json.data) {
-        setUploadError(json.error ?? "Upload eșuat.");
+
+    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const MAX = 10 * 1024 * 1024; // 10 MB după compresie tipic safe; iPhone HEIC poate veni mare
+    const filesArr = Array.from(files).slice(0, 5);
+    for (const f of filesArr) {
+      if (!ALLOWED.includes(f.type)) {
+        setUploadError(`Format imagine nesuportat: ${f.type}. Folosește JPG, PNG, WebP sau GIF.`);
         return;
       }
-      patch({
-        images: [...data.images, ...json.data.urls.map((url) => ({ url }))].slice(0, 12),
-      });
-    } catch {
-      setUploadError("Eroare de rețea la upload.");
+      if (f.size > MAX) {
+        setUploadError(`Imaginea „${f.name}" e prea mare (${(f.size / 1024 / 1024).toFixed(1)} MB). Max 10 MB.`);
+        return;
+      }
+    }
+
+    setUploadingImages(true);
+    try {
+      // Upload DIRECT la Supabase din browser pentru a bypass-ăui Vercel
+      // body limit 4.5MB (Hobby plan). iPhone photos pot fi 4-7MB.
+      const supabase = createSupabaseBrowser();
+      const uploaded: string[] = [];
+      for (const f of filesArr) {
+        const extMap: Record<string, string> = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+          "image/gif": "gif",
+        };
+        const ext = extMap[f.type] ?? "jpg";
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const path = `public/${filename}`;
+        const { error: upErr } = await supabase.storage
+          .from("sesizari-photos")
+          .upload(path, f, { contentType: f.type, cacheControl: "3600" });
+        if (upErr) {
+          setUploadError(`Upload eșuat „${f.name}": ${upErr.message}`);
+          break;
+        }
+        const { data: pub } = supabase.storage
+          .from("sesizari-photos")
+          .getPublicUrl(path);
+        if (pub?.publicUrl) uploaded.push(pub.publicUrl);
+      }
+      if (uploaded.length > 0) {
+        patch({
+          images: [...data.images, ...uploaded.map((url) => ({ url }))].slice(0, 12),
+        });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Eroare necunoscută";
+      setUploadError(`Eroare la upload: ${msg}`);
     } finally {
       setUploadingImages(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -217,24 +253,56 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
     const file = files[0];
     if (!file) return;
     setUploadError(null);
+
+    // Validare CLIENT-side înainte de upload — Vercel Hobby plan are
+    // body limit 4.5MB pentru serverless functions, deci /api/upload nu
+    // poate primi video > 4.5MB. Soluția: upload DIRECT la Supabase
+    // Storage din browser (anon key + RLS allows public uploads la
+    // bucketul sesizari-photos), bypass complet routerul Vercel.
+    const ALLOWED = ["video/mp4", "video/webm", "video/quicktime"];
+    if (!ALLOWED.includes(file.type)) {
+      setUploadError(`Format video nesuportat: ${file.type}. Folosește MP4, WebM sau MOV.`);
+      return;
+    }
+    const MAX = 50 * 1024 * 1024;
+    if (file.size > MAX) {
+      setUploadError(`Fișier prea mare (${(file.size / 1024 / 1024).toFixed(1)} MB). Maxim 50 MB.`);
+      return;
+    }
+
     setUploadingVideo(true);
     try {
-      const fd = new FormData();
-      fd.append("files", file);
-      const res = await fetch("/api/upload?kind=video", { method: "POST", body: fd });
-      const json = (await res.json()) as { data?: { urls: string[] }; error?: string };
-      if (!res.ok || !json.data) {
-        setUploadError(json.error ?? "Upload video eșuat.");
+      const supabase = createSupabaseBrowser();
+      const ext =
+        file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : "mov";
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const path = `public/${filename}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("sesizari-photos")
+        .upload(path, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+        });
+
+      if (upErr) {
+        setUploadError(`Upload eșuat: ${upErr.message}`);
         return;
       }
-      const url = json.data.urls[0];
-      if (url) {
-        patch({
-          videos: [...data.videos, { url, source: "direct", title: file.name }].slice(0, 8),
-        });
+      const { data: pub } = supabase.storage
+        .from("sesizari-photos")
+        .getPublicUrl(path);
+      const url = pub?.publicUrl;
+      if (!url) {
+        setUploadError("Nu am putut obține URL-ul fișierului uploadat.");
+        return;
       }
-    } catch {
-      setUploadError("Eroare de rețea la upload video.");
+      patch({
+        videos: [...data.videos, { url, source: "direct", title: file.name }].slice(0, 8),
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Eroare necunoscută";
+      setUploadError(`Eroare la upload video: ${msg}`);
     } finally {
       setUploadingVideo(false);
       if (videoInputRef.current) videoInputRef.current.value = "";
