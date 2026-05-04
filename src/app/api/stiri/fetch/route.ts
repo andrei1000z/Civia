@@ -5,9 +5,18 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { pingIndexNowDeleted } from "@/lib/seo/indexnow";
+import { pickTopCivic } from "@/lib/stiri/civic-relevance";
+import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
+import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 min — pre-gen 20× AI summaries
+
+/** Câte articole păstrăm per refresh — top civic-relevance score. */
+const TOP_CIVIC_PER_RUN = 20;
+/** Concurrency pre-gen AI summaries — evităm să blow rate-limit-urile
+ *  Gemini/Groq trimițând toate 20 în paralel.  3 e un sweet spot. */
+const PREGEN_CONCURRENCY = 3;
 
 /**
  * Authorize the RSS refresh trigger.
@@ -126,8 +135,16 @@ export async function POST(req: Request) {
       });
     }
 
-    // Insert new articles (include counties array)
-    const rows = articles.map((a) => ({
+    // FILTRARE CIVIC-RELEVANCE — păstrăm doar top 20 din toate articolele
+    // RSS aduse. Civia e platformă civică; nu vrem rețete + horoscop +
+    // showbiz care apar în feed-urile mainstream. Heuristic determinist
+    // bazat pe keyword + sursă + categorie.
+    const { kept, discarded } = pickTopCivic(articles, TOP_CIVIC_PER_RUN);
+
+    // Insert new articles (top civic only). Include counties array.
+    // Onconflict=url + ignoreDuplicates → re-runs nu strică nimic, dacă
+    // articolul deja există (din run-ul precedent) îl skipuim.
+    const rows = kept.map((a) => ({
       url: a.url,
       title: a.title,
       excerpt: a.excerpt,
@@ -145,12 +162,64 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
+    // PRE-GENERATE AI SUMMARIES pentru cele 20 articole selectate, ca
+    // user-ul să vadă sinteza instant când deschide articolul (înainte
+    // pagina /stiri/[id] aștepta inline 30-120 sec până se genera AI).
+    // Concurrency 3 ca să nu blow rate-limit-urile Gemini/Groq.
+    //
+    // Re-fetch DUPĂ insert — avem nevoie de id-uri DB ca să persistăm
+    // ai_summary cu aceleași records pe care tocmai le-am salvat.
+    const { data: insertedRows } = await supabase
+      .from("stiri_cache")
+      .select("id, url, title, excerpt, content, source, ai_summary, ai_summary_version")
+      .in("url", kept.map((a) => a.url));
+
+    const toGenerate = (insertedRows ?? []).filter((r) => {
+      const row = r as { ai_summary: string | null; ai_summary_version: number | null };
+      // Skip cele care deja au summary la versiunea curentă.
+      return !(
+        row.ai_summary &&
+        row.ai_summary.length > 20 &&
+        (row.ai_summary_version ?? 0) >= AI_SUMMARY_VERSION
+      );
+    });
+
+    let preGenerated = 0;
+    let preGenFailed = 0;
+    if (toGenerate.length > 0) {
+      // Worker-pool simplu cu concurrency limit. `getOrGenerateAiSummary`
+      // persistă singur în DB după generare.
+      const queue = [...toGenerate];
+      const worker = async () => {
+        while (queue.length > 0) {
+          const next = queue.shift();
+          if (!next) break;
+          try {
+            const result = await getOrGenerateAiSummary(
+              next as Parameters<typeof getOrGenerateAiSummary>[0],
+            );
+            if (result) preGenerated++;
+            else preGenFailed++;
+          } catch {
+            preGenFailed++;
+          }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(PREGEN_CONCURRENCY, toGenerate.length) }, worker),
+      );
+    }
+
     return NextResponse.json({
       data: {
         total: articles.length,
+        kept: kept.length,
+        discarded,
         inserted: count ?? 0,
         deleted: deleted ?? 0,
-        sources: [...new Set(articles.map((a) => a.source))],
+        pre_generated: preGenerated,
+        pre_gen_failed: preGenFailed,
+        sources: [...new Set(kept.map((a) => a.source))],
         perFeed,
       },
     });

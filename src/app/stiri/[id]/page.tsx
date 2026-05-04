@@ -7,7 +7,7 @@ import { createSupabaseAnon } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/Badge";
 import { SOURCE_COLORS, SITE_URL, readableTextColor, sourceTextColor } from "@/lib/constants";
 import { formatDateTime } from "@/lib/utils";
-import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
+import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { AiSummary } from "./AiSummary";
 import { NewsArticleJsonLd } from "@/components/JsonLd";
 import { ReadingProgress } from "@/components/stiri/ReadingProgress";
@@ -174,11 +174,19 @@ export default async function StireDetailPage({
   const stire = await getStire(id);
   if (!stire) notFound();
 
-  // Generate (or read cached) AI summary on the server so the first user
-  // to open the article pays the Groq cost and every subsequent visitor
-  // gets the summary pre-rendered in the initial HTML — no client fetch,
-  // no flicker, no duplicate API calls.
-  const aiSummary = await getOrGenerateAiSummary(stire);
+  // Pre-render summary DOAR dacă e cached + la versiunea curentă. Înainte
+  // făceam `getOrGenerateAiSummary(stire)` aici, care bloca render-ul 30-
+  // 120 sec dacă providers AI erau lente sau rate-limited (user a raportat
+  // „pagina se încarcă în 2 minute"). Acum generarea trăiește 100% în
+  // client component AiSummary care apelează /api/stiri/[id]/synthesize
+  // pe mount, afișând spinner „Se generează sinteza…" în loc de pagină
+  // albă. Cache hits rămân instant — nu se schimbă nimic pentru ele.
+  const aiSummary =
+    stire.ai_summary &&
+    stire.ai_summary.length > 20 &&
+    (stire.ai_summary_version ?? 0) >= AI_SUMMARY_VERSION
+      ? stire.ai_summary
+      : null;
 
   const related = await getRelatedArticles(stire);
   const sourceColor = SOURCE_COLORS[stire.source] ?? "#64748b";
