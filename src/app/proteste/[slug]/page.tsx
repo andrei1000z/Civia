@@ -681,7 +681,7 @@ function AftermathSection({ protest }: { protest: Protest }) {
                       {s.publication}
                     </p>
                   )}
-                  <p className="text-sm font-medium text-[var(--color-text)] leading-snug">
+                  <p className="text-sm font-medium text-[var(--color-text)] leading-snug break-words">
                     {s.title ?? s.url}
                   </p>
                   {s.snippet && (

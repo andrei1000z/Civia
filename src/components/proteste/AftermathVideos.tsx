@@ -128,6 +128,9 @@ export function AftermathVideos({ videos }: Props) {
             </button>
           </div>
 
+          {/* Prev/next desktop (md+) — overlay pe lateralele video-ului.
+              Pe mobile (<md) ar suprapune controls native ale video-ului
+              și ar reduce zona vizibilă, deci se mută la bottom. */}
           {visible.length > 1 && (
             <>
               <button
@@ -136,7 +139,7 @@ export function AftermathVideos({ videos }: Props) {
                   e.stopPropagation();
                   prev();
                 }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 aria-label="Video anterior (săgeată stânga)"
               >
                 <ChevronLeft size={24} aria-hidden="true" />
@@ -147,7 +150,7 @@ export function AftermathVideos({ videos }: Props) {
                   e.stopPropagation();
                   next();
                 }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 aria-label="Video următor (săgeată dreapta)"
               >
                 <ChevronRight size={24} aria-hidden="true" />
@@ -156,19 +159,45 @@ export function AftermathVideos({ videos }: Props) {
           )}
 
           <div
-            className="relative w-full max-w-5xl"
+            className="relative w-full max-w-5xl px-4 md:px-0"
             onClick={(e) => e.stopPropagation()}
           >
             <VideoPlayer video={current} />
           </div>
 
+          {/* Bottom bar — counter centered + prev/next pe mobile (replaces
+              the side-overlay buttons which n-au loc pe ecran mic). */}
           {visible.length > 1 && (
-            <p
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium backdrop-blur tabular-nums"
-              aria-live="polite"
-            >
-              {(openIdx ?? 0) + 1} / {visible.length}
-            </p>
+            <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-3 px-4">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prev();
+                }}
+                className="md:hidden w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Video anterior"
+              >
+                <ChevronLeft size={20} aria-hidden="true" />
+              </button>
+              <p
+                className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium backdrop-blur tabular-nums"
+                aria-live="polite"
+              >
+                {(openIdx ?? 0) + 1} / {visible.length}
+              </p>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  next();
+                }}
+                className="md:hidden w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Video următor"
+              >
+                <ChevronRight size={20} aria-hidden="true" />
+              </button>
+            </div>
           )}
         </div>
       )}
