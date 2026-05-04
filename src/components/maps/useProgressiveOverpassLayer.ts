@@ -235,7 +235,17 @@ export function useProgressiveOverpassLayer(opts: UseProgressiveLayerOptions): U
       cancelPaint();
       abortRef.current?.abort();
       if (timerRef.current) clearTimeout(timerRef.current);
-      map.removeLayer(layer);
+      // Defensive: dacă layerul a fost deja detașat (componenta s-a
+      // unmount-uit deja când a apărut un re-render rapid), removeLayer
+      // throw-uia „Cannot read properties of undefined (reading
+      // '_leaflet_pos')" — vedem 2× pe săptămână în Sentry.
+      try {
+        if (layer && map && (map as unknown as { hasLayer?: (l: unknown) => boolean }).hasLayer?.(layer)) {
+          map.removeLayer(layer);
+        }
+      } catch {
+        // Layer already removed by Leaflet internals — ignore
+      }
       layerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

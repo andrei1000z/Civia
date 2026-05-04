@@ -180,7 +180,16 @@ export default function RootLayout({
             LCP on the homepage + county pages. Next font already fingerprints
             it so cache hits are immediate. */}
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--color-bg)] pt-16">
+      <body
+        className="min-h-full flex flex-col bg-[var(--color-bg)] pt-16"
+        // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
+        // injectează clase/atribute la body în timpul hydratation. Plus
+        // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)
+        // fac același lucru. Reezultat: 259 erori React #418 pe săptămână
+        // (vezi /admin/analytics). suppressHydrationWarning pe body e
+        // acceptat ca soluție pe site-uri publice cu trafic mobile.
+        suppressHydrationWarning
+      >
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         <Analytics />

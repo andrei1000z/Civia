@@ -381,6 +381,10 @@ export function SesizareForm() {
         if (json.data?.tip) {
           setData((d) => ({ ...d, tip: json.data.tip }));
           setTipDetectedByAI(true);
+          // Track la fel ca selecția manuală — analytics arăta înainte
+          // un drop fals de 87% pe step-ul „tip-selected" pentru că
+          // auto-detect-ul nu trigger-uia eventul. source=auto distinge.
+          trackFunnelStep("sesizare-create", "tip-selected", { tip: json.data.tip, source: "auto" });
         }
       } catch {
         // silent fail
@@ -1119,7 +1123,7 @@ ${today}`;
                 update("tip", e.target.value);
                 setTipDetectedByAI(false);
                 if (e.target.value) {
-                  trackFunnelStep("sesizare-create", "tip-selected", { tip: e.target.value });
+                  trackFunnelStep("sesizare-create", "tip-selected", { tip: e.target.value, source: "manual" });
                 }
               }}
               className={cn(inputClass, "flex-1")}
