@@ -156,7 +156,7 @@ export function AftermathVideos({ videos }: Props) {
           )}
 
           <div
-            className="w-full max-w-5xl max-h-[85vh] flex items-center justify-center"
+            className="relative w-full max-w-5xl"
             onClick={(e) => e.stopPropagation()}
           >
             <VideoPlayer video={current} />
@@ -180,6 +180,14 @@ export function AftermathVideos({ videos }: Props) {
  * Renders the actual player for a video. Direct video files (mp4 / webm /
  * mov) get a native <video> element with controls. Hosted platforms get
  * an embedded iframe with the right embed URL transform.
+ *
+ * Sizing: container e aspect-video (16:9) cu width 100% și max-height
+ * 85vh. Player-ul în interior fill-uiește container-ul cu object-contain
+ * ca să nu strivească video-uri portrait (telefon vertical, e.g. 9:16).
+ *
+ * Autoplay: HTML5 <video autoplay> e blocat de Chrome/Safari dacă nu e
+ * `muted`. Adăugăm `muted` ca să pornească automat la deschidere modal
+ * — user dă unmute din controls dacă vrea sunet.
  */
 function VideoPlayer({ video }: { video: AftermathVideo }) {
   const url = video.url;
@@ -187,13 +195,18 @@ function VideoPlayer({ video }: { video: AftermathVideo }) {
 
   if (embed.kind === "video") {
     return (
-      <video
-        src={embed.src}
-        controls
-        autoPlay
-        playsInline
-        className="max-w-full max-h-[85vh] rounded-[var(--radius-sm)] bg-black"
-      />
+      <div className="w-full aspect-video max-h-[85vh] bg-black rounded-[var(--radius-sm)] overflow-hidden">
+        <video
+          key={embed.src}
+          src={embed.src}
+          controls
+          autoPlay
+          muted
+          playsInline
+          preload="metadata"
+          className="w-full h-full object-contain bg-black"
+        />
+      </div>
     );
   }
   return (
