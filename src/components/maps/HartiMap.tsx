@@ -462,14 +462,18 @@ export function HartiMap({
         {/* Top-center floating switcher with sliding liquid-glass indicator */}
         <MapTopSwitcher tabs={SWITCHER_TABS} active={activeTab} onChange={handleTabChange} />
 
-        {/* Map style switcher */}
+        {/* Map style switcher — pe mobile (sub md) afișează doar icon
+            ca să nu se suprapună cu MapTopSwitcher centered top.
+            Desktop păstrează „Straturi" label. */}
         <div className="absolute top-4 right-4 z-20">
           <button
             onClick={() => setLayersOpen(!layersOpen)}
-            className="h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center gap-2 text-sm font-medium shadow-md hover:bg-[var(--color-surface-2)] transition-colors"
+            className="h-11 w-11 md:w-auto md:px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center md:justify-start gap-2 text-sm font-medium shadow-md hover:bg-[var(--color-surface-2)] transition-colors"
+            aria-label="Straturi"
+            title="Straturi"
           >
             <Layers size={16} />
-            Straturi
+            <span className="hidden md:inline">Straturi</span>
           </button>
           {layersOpen && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-xl p-2">

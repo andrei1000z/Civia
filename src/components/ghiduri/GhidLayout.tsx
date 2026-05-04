@@ -160,8 +160,11 @@ export function GhidLayout({
           </div>
         )}
 
-        {/* Content */}
-        <article className="prose-civic max-w-none">{children}</article>
+        {/* Content — min-w-0 critic ca grid-ul lg să nu intre în
+            overflow pe sidebar/content split. break-words pe orice
+            text descendant ca să acoperim mobile + cuvinte lungi
+            (jurnaliști / nume proprii / link-uri inline). */}
+        <article className="prose-civic max-w-none min-w-0 [&_p]:break-words [&_li]:break-words [&_h1]:break-words [&_h2]:break-words [&_h3]:break-words">{children}</article>
       </div>
     </>
   );

@@ -99,14 +99,14 @@ export function PageHero({
               {title}
             </h1>
             {description && (
-              <div className="text-sm md:text-base text-white/85 leading-relaxed max-w-2xl">
+              <div className="text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words">
                 {description}
               </div>
             )}
             {tagline && (
-              <p className="text-[11px] text-white/70 mt-3 inline-flex items-center gap-1.5">
-                <Sparkles size={11} aria-hidden="true" />
-                {tagline}
+              <p className="text-[11px] text-white/70 mt-3 inline-flex flex-wrap items-start gap-1.5 break-words">
+                <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
+                <span>{tagline}</span>
               </p>
             )}
             {children}

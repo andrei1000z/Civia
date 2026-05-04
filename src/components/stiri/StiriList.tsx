@@ -189,11 +189,13 @@ export function StiriList() {
 
   return (
     <div>
-      {/* Filter bar */}
-      <div className="sticky top-16 z-30 bg-[var(--color-bg)]/95 backdrop-blur py-4 mb-6 border-b border-[var(--color-border)]">
+      {/* Filter bar — non-sticky pe baza preferinței user-ului (sticky
+          mănâncă viewport vertical pe mobile). Chips wrap pe rânduri
+          când nu încap, în loc de horizontal-scroll invizibil. */}
+      <div className="py-4 mb-6 border-b border-[var(--color-border)]">
         <div>
           <div className="flex flex-col lg:flex-row gap-3">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar flex-1" role="tablist" aria-label="Filtre categorie știri">
+            <div className="flex flex-wrap gap-2 flex-1" role="tablist" aria-label="Filtre categorie știri">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -332,12 +334,12 @@ export function StiriList() {
                     <Badge className="bg-black/40 text-white border border-white/20">Featured</Badge>
                   </div>
                 </div>
-                <div className="p-6 md:p-8 flex flex-col">
+                <div className="p-5 md:p-8 flex flex-col min-w-0">
                   <Badge variant="primary" className="w-fit mb-3">{featured.category}</Badge>
-                  <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-3 group-hover:text-[var(--color-primary)] transition-colors">
+                  <h2 className="font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-3xl font-bold mb-3 group-hover:text-[var(--color-primary)] transition-colors break-words">
                     {featured.title}
                   </h2>
-                  <p className="text-[var(--color-text-muted)] mb-4 flex-1 line-clamp-4">{featured.excerpt}</p>
+                  <p className="text-[var(--color-text-muted)] mb-4 flex-1 line-clamp-4 break-words">{featured.excerpt}</p>
                   <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] pt-4 border-t border-[var(--color-border)]">
                     <TimeAgo date={featured.published_at} />
                     <span className="flex items-center gap-1">
@@ -405,11 +407,11 @@ export function StiriList() {
                     </Badge>
                   </div>
                 </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-base mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
+                <div className="p-5 min-w-0">
+                  <h3 className="font-semibold text-base mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors break-words">
                     {stire.title}
                   </h3>
-                  <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-4">{stire.excerpt}</p>
+                  <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-4 break-words">{stire.excerpt}</p>
                   <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] pt-3 border-t border-[var(--color-border)] gap-2 min-w-0">
                     <span className="truncate min-w-0 flex-1">{stire.author ?? "Redacție"}</span>
                     <TimeAgo date={stire.published_at} className="shrink-0 ml-2" />
