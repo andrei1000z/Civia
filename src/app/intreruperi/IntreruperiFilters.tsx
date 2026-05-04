@@ -217,7 +217,7 @@ export function IntreruperiFilters({ items }: { items: Interruption[] }) {
   return (
     <div>
       {/* Filter bar */}
-      <div className="sticky top-16 z-20 bg-[var(--color-bg)]/95 backdrop-blur-sm -mx-4 px-4 py-3 mb-5 border-b border-[var(--color-border)]">
+      <div className="-mx-4 px-4 py-3 mb-5 border-b border-[var(--color-border)]">
         <div className="flex flex-wrap items-center gap-2">
           <div
             role="tablist"
