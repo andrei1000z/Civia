@@ -240,6 +240,51 @@ async function main() {
         withScores: true,
       })) as (string | number)[];
       report.redis.ai_usage = formatZ(aiUsage, 10);
+
+      // ── PER-SESSION DEEP DIVE (top users) ──
+      // Pentru top 10 useri (după pageviews), tragem timeline-ul + meta
+      // ca să identificăm pattern-uri: erori repetate, abandon flows,
+      // sesiuni anormal de scurte, etc.
+      const sessions: Array<{
+        vid: string;
+        pageviews: number;
+        meta?: Record<string, unknown>;
+        topRoutes?: Array<{ key: string; score: number }>;
+        countries?: Array<{ key: string; score: number }>;
+        days?: number;
+      }> = [];
+      for (let i = 0; i < topUsers.length && sessions.length < 10; i += 2) {
+        const vid = topUsers[i] as string;
+        const pageviews = topUsers[i + 1] as number;
+        if (typeof vid !== "string") continue;
+        try {
+          const meta = await redis.hgetall(`civia:analytics:user:${vid}:meta`);
+          const userRoutes = (await redis.zrange(
+            `civia:analytics:user:${vid}:routes`,
+            0,
+            4,
+            { rev: true, withScores: true },
+          )) as (string | number)[];
+          const userCountries = (await redis.zrange(
+            `civia:analytics:user:${vid}:countries`,
+            0,
+            2,
+            { rev: true, withScores: true },
+          )) as (string | number)[];
+          const days = await redis.scard(`civia:analytics:user:${vid}:days`);
+          sessions.push({
+            vid: vid.slice(0, 16) + "…",
+            pageviews,
+            meta: meta as Record<string, unknown>,
+            topRoutes: formatZ(userRoutes, 5),
+            countries: formatZ(userCountries, 3),
+            days: typeof days === "number" ? days : 0,
+          });
+        } catch {
+          /* skip */
+        }
+      }
+      report.redis.top_session_deep_dive = sessions;
     } catch (e) {
       report.redis.error = e instanceof Error ? e.message : "?";
     }
