@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { UpdateBody } from "./UpdateBody";
+import { FeedbackBox } from "@/components/FeedbackBox";
 
 // Updates list barely changes — we add an entry maybe once per
 // release. 30 min ISR is plenty fresh and keeps origin cost zero
@@ -143,16 +144,12 @@ export default async function UpdateuriPage() {
         </ol>
       )}
 
-      <p className="text-center text-xs text-[var(--color-text-muted)] mt-10 leading-relaxed">
-        Ai o idee, un bug, sau ceva ce ai vrea să apară pe Civia?{" "}
-        <a
-          href="#footer-feedback"
-          className="text-[var(--color-primary)] hover:underline"
-        >
-          Trimite feedback din subsol
-        </a>
-        .
-      </p>
+      {/* Inline feedback CTA — pe lângă changelog, întreabă direct
+          dacă mai au idei, bug-uri sau ce ar lipsi. Same form ca
+          în footer dar embed pe pagină ca să nu se piardă scroll-ul. */}
+      <div className="mt-10">
+        <FeedbackBox defaultKind="idea" />
+      </div>
     </div>
   );
 }

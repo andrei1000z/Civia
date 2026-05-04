@@ -97,6 +97,50 @@ export default function AdminPetitiiPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  // Seed data pasat la PetitieForm după import dintr-un URL extern.
+  // Permite admin-ului să PUNĂ DOAR URL-ul, restul (titlu, sumar, conținut,
+  // imagine, categorie, slug) sunt completate de AI scrape, apoi admin
+  // verifică/ajustează în form-ul deschis pre-populat.
+  const [importSeed, setImportSeed] = useState<Partial<FormState> | null>(null);
+  const [quickImportUrl, setQuickImportUrl] = useState("");
+  const [quickImporting, setQuickImporting] = useState(false);
+
+  const handleQuickImport = async () => {
+    const url = quickImportUrl.trim();
+    if (!url || !/^https?:\/\//i.test(url)) {
+      toast("Pune un URL valid (https://...)", "error");
+      return;
+    }
+    setQuickImporting(true);
+    try {
+      const res = await fetch("/api/admin/petitii/scrape-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Scrape eșuat");
+      // Construim seed-ul pentru PetitieForm cu ce a returnat AI-ul.
+      const data = json.data ?? {};
+      setImportSeed({
+        external_url: url,
+        title: data.title ?? "",
+        summary: data.summary ?? "",
+        body: data.body ?? data.content ?? "",
+        image_url: data.image_url ?? "",
+        slug: data.slug ?? "",
+        category: data.category ?? "",
+      });
+      setEditingId(null);
+      setShowForm(true);
+      setQuickImportUrl("");
+      toast("Petiție importată — verifică datele și salvează", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Eroare import", "error");
+    } finally {
+      setQuickImporting(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -145,6 +189,7 @@ export default function AdminPetitiiPage() {
           type="button"
           onClick={() => {
             setEditingId(null);
+            setImportSeed(null);
             setShowForm(true);
           }}
           className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
@@ -154,17 +199,72 @@ export default function AdminPetitiiPage() {
         </button>
       </header>
 
+      {/* Quick-import: admin pune doar URL extern (Declic/Avaaz/Change.org/
+          petitie.civica.ro), AI completează automat titlu, sumar, conținut,
+          imagine, categorie, slug. Apoi se deschide form-ul pentru
+          verificare. Ascuns când form-ul e deja deschis. */}
+      {!showForm && (
+        <div className="mb-6 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:p-5">
+          <div className="flex items-start gap-3 mb-3">
+            <span
+              className="shrink-0 w-9 h-9 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500/15 to-indigo-500/15 grid place-items-center"
+              aria-hidden="true"
+            >
+              <Wand2 size={16} className="text-purple-600 dark:text-purple-400" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm">Adaugă petiție din URL extern</h3>
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mt-0.5">
+                Pune doar link-ul (Declic, Avaaz, Change.org, petitie.civica.ro) — AI extrage automat titlu, sumar, conținut, imagine, categorie. Tu verifici și salvezi.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              value={quickImportUrl}
+              onChange={(e) => setQuickImportUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleQuickImport();
+                }
+              }}
+              placeholder="https://declic.ro/petitii/..."
+              disabled={quickImporting}
+              className="flex-1 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            />
+            <button
+              type="button"
+              onClick={handleQuickImport}
+              disabled={quickImporting || !quickImportUrl.trim()}
+              className="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+            >
+              {quickImporting ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Wand2 size={14} aria-hidden="true" />
+              )}
+              {quickImporting ? "Import..." : "Adaugă din URL"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {showForm && (
         <PetitieForm
           editingId={editingId}
           existing={editingId ? rows.find((r) => r.id === editingId) ?? null : null}
+          seedData={importSeed ?? undefined}
           onClose={() => {
             setShowForm(false);
             setEditingId(null);
+            setImportSeed(null);
           }}
           onSaved={() => {
             setShowForm(false);
             setEditingId(null);
+            setImportSeed(null);
             load();
           }}
         />
@@ -287,11 +387,14 @@ export default function AdminPetitiiPage() {
 function PetitieForm({
   editingId,
   existing,
+  seedData,
   onClose,
   onSaved,
 }: {
   editingId: string | null;
   existing: PetitieRow | null;
+  /** Pre-populate form fields when creating new (e.g. after URL import). */
+  seedData?: Partial<FormState>;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -321,7 +424,7 @@ function PetitieForm({
         county_code: existing.county_code ?? "",
         ends_at: existing.ends_at?.slice(0, 10) ?? "",
       }
-    : EMPTY_FORM;
+    : { ...EMPTY_FORM, ...(seedData ?? {}) };
 
   const [form, setForm] = useState<FormState>(baseForm);
 

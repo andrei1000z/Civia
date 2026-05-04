@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Loader2,
@@ -17,9 +17,16 @@ import {
   ShieldCheck,
   Upload,
   FileText,
+  RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { ALL_COUNTIES } from "@/data/counties";
+
+// Draft persistence key (localStorage). Salvăm formularul de propunere
+// la fiecare schimbare ca user-ul să nu piardă work la refresh / accident.
+// 7 zile retenție — după aia probabil n-a mai apucat să trimită.
+const DRAFT_KEY = "civic_protest_draft";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Form {
   // Required
@@ -85,6 +92,78 @@ export function ProteSubmitForm() {
   const [error, setError] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofInputRef = useRef<HTMLInputElement>(null);
+
+  // Draft state — restore banner shown only when there's a non-trivial
+  // saved draft (>= 30 chars în titlu+descriere+demands).
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  // Restore draft on mount (once). Doar dacă < 7 zile vechime + content
+  // semnificativ. Afișăm banner de restore — utilizatorul alege.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { savedAt: number; data: Form };
+      if (!parsed.savedAt || Date.now() - parsed.savedAt > DRAFT_TTL_MS) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      const meaningful =
+        (parsed.data.title?.length ?? 0) +
+          (parsed.data.description?.length ?? 0) +
+          (parsed.data.demands?.join("").length ?? 0) >=
+        30;
+      if (meaningful) setHasDraft(true);
+    } catch {
+      // bad JSON, ignore
+    }
+  }, []);
+
+  // Save draft on every change (debounced 600ms ca să nu hammer-uim
+  // localStorage la fiecare keystroke).
+  useEffect(() => {
+    const meaningful =
+      f.title.length + f.description.length + f.demands.join("").length >= 10;
+    if (!meaningful) return;
+    const handle = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({ savedAt: Date.now(), data: f }),
+        );
+        setDraftSavedAt(Date.now());
+      } catch {
+        // localStorage full / disabled — nu blocăm form-ul
+      }
+    }, 600);
+    return () => clearTimeout(handle);
+  }, [f]);
+
+  function restoreDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { savedAt: number; data: Form };
+      setF({ ...EMPTY, ...parsed.data });
+      setHasDraft(false);
+      // Dacă au revenit cu cause/demands, deschide secțiunea opțională
+      if (parsed.data.subtitle || parsed.data.cause || parsed.data.demands?.length) {
+        setShowOptional(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function discardDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignore */
+    }
+    setHasDraft(false);
+  }
 
   const update = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
 
@@ -196,6 +275,12 @@ export function ProteSubmitForm() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Eroare server");
       setDone(true);
+      // Submisie reușită → ștergem draft-ul, nu mai are sens
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* ignore */
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Eroare");
@@ -249,6 +334,43 @@ export function ProteSubmitForm() {
       onSubmit={submit}
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 md:p-7 shadow-[var(--shadow-1)] space-y-7"
     >
+      {/* Restore-draft banner — afișat doar dacă există ciornă < 7 zile
+          cu content semnificativ (titlu+descriere+demands ≥ 30 chars). */}
+      {hasDraft && (
+        <div className="flex items-start gap-3 p-3.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30">
+          <RotateCcw size={16} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden />
+          <div className="flex-1 min-w-0 space-y-1">
+            <p className="text-sm font-semibold text-[var(--color-text)]">Ai o propunere salvată din altă sesiune</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              O ciornă cu titlul și detaliile pe care le-ai introdus ultima dată e disponibilă.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={restoreDraft}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+              >
+                <RotateCcw size={12} aria-hidden /> Continuă ciorna
+              </button>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-xs font-semibold hover:bg-[var(--color-border)] transition-colors"
+              >
+                Începe nou
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subtle „salvat" indicator dacă draft a fost scris recent */}
+      {!hasDraft && draftSavedAt && (
+        <p className="text-[10px] text-[var(--color-text-muted)] -mt-3 text-right inline-flex items-center gap-1 justify-end w-full">
+          <CheckCircle2 size={10} aria-hidden /> Salvat ca ciornă local
+        </p>
+      )}
+
       {/* SECTION 1 — Esențiale */}
       <Section
         title="Despre protest"
