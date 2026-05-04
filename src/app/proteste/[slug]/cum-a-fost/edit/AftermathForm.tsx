@@ -235,9 +235,18 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         if (pub?.publicUrl) uploaded.push(pub.publicUrl);
       }
       if (uploaded.length > 0) {
-        patch({
-          images: [...data.images, ...uploaded.map((url) => ({ url }))].slice(0, 12),
-        });
+        // Functional setData ca să evităm stale closure (când user
+        // dă 2 upload-uri rapid în succesiune, `data` e capturat la
+        // momentul primului apel și nu vede primul update).
+        setData((d) => ({
+          ...d,
+          // În plus, scoatem entry-urile cu url="" (placeholder de la
+          // „Lipește URL" rămase goale) ca să nu rămână linii moarte.
+          images: [
+            ...d.images.filter((img) => img.url.trim().length > 0),
+            ...uploaded.map((url) => ({ url })),
+          ].slice(0, 12),
+        }));
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Eroare necunoscută";
@@ -297,9 +306,15 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         setUploadError("Nu am putut obține URL-ul fișierului uploadat.");
         return;
       }
-      patch({
-        videos: [...data.videos, { url, source: "direct", title: file.name }].slice(0, 8),
-      });
+      // Functional setData — race condition fix. Plus scoatem entry-urile
+      // cu URL gol ca să nu rămână rânduri moarte după upload.
+      setData((d) => ({
+        ...d,
+        videos: [
+          ...d.videos.filter((v) => v.url.trim().length > 0),
+          { url, source: "direct", title: file.name },
+        ].slice(0, 8),
+      }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Eroare necunoscută";
       setUploadError(`Eroare la upload video: ${msg}`);
