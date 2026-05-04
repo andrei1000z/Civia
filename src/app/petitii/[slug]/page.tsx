@@ -166,9 +166,20 @@ export default async function PetitiePage({
           </div>
 
           {/* Title */}
-          <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-[1.15] tracking-tight mb-3 md:mb-4">
+          <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-[1.15] tracking-tight mb-3 md:mb-4 break-words">
             {petitie.title}
           </h1>
+
+          {/* Adresant — către cine se adresează petiția. Apare imediat
+              sub titlu ca să fie clar cine ar trebui să răspundă. */}
+          {petitie.addressee && (
+            <p className="text-sm md:text-base text-[var(--color-text)] mb-3 md:mb-4 inline-flex items-start gap-2 break-words">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] shrink-0 mt-0.5">
+                Către
+              </span>
+              <span className="font-medium">{petitie.addressee}</span>
+            </p>
+          )}
 
           {/* Date pill */}
           {petitie.ends_at && (

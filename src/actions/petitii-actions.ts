@@ -76,6 +76,14 @@ const createSchema = z.object({
     .max(500)
     .optional()
     .or(z.literal("")),
+  // Către cine se adresează petiția — Primăria X, Ministerul Y,
+  // Parlamentul, Guvernul, etc. Apare ca subtitle pe card + pe detaliu.
+  addressee: z
+    .string()
+    .trim()
+    .max(200, "Maxim 200 caractere — un singur destinatar e suficient")
+    .optional()
+    .or(z.literal("")),
 });
 
 // ============================================================
@@ -164,6 +172,7 @@ export async function createPetitie(
     target_signatures: formData.get("target_signatures"),
     county_code: formData.get("county_code"),
     image_url: formData.get("image_url"),
+    addressee: formData.get("addressee"),
   };
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) {
@@ -213,6 +222,7 @@ export async function createPetitie(
     category: data.category,
     county_code: data.county_code || null,
     image_url: data.image_url || null,
+    addressee: data.addressee || null,
     status: "draft",
     is_user_initiated: true,
     moderation_status: "pending",

@@ -51,6 +51,7 @@ interface Draft {
   body: string;
   target_signatures: string;
   image_url: string;
+  addressee: string;
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -61,6 +62,7 @@ const EMPTY_DRAFT: Draft = {
   body: "",
   target_signatures: "1000",
   image_url: "",
+  addressee: "",
 };
 
 export function InitiatePetitieForm({ userEmail }: Props) {
@@ -238,6 +240,26 @@ export function InitiatePetitieForm({ userEmail }: Props) {
             </div>
           </Field>
         </div>
+      </Section>
+
+      {/* SECTION 2.5 — Adresant (către cine se adresează petiția) */}
+      <Section title="Către cine te adresezi" icon={Megaphone}>
+        <Field
+          label="Adresant (opțional)"
+          hint='Cui îi ceri să acționeze? Ex: „Primăria Cluj-Napoca", „Ministerul Educației", „Parlamentul României", „Consiliul Județean Timiș". Apare pe cardul petiției ca să știe cititorul cine ar trebui să răspundă.'
+          error={fieldError("addressee")}
+          counter={{ current: draft.addressee.length, max: 200 }}
+        >
+          <input
+            type="text"
+            name="addressee"
+            maxLength={200}
+            placeholder='Ex: „Primăria Municipiului București + Consiliul General"'
+            value={draft.addressee}
+            onChange={(e) => updateDraft("addressee", e.target.value)}
+            className={inputCls(!!fieldError("addressee"))}
+          />
+        </Field>
       </Section>
 
       {/* SECTION 3 — Imagine cover (opțional) */}

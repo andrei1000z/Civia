@@ -21,6 +21,10 @@ export interface PetitieRow {
   /** Version stamp matched against AI_SUMMARY_VERSION; older values
    *  trigger transparent regeneration. NULL on legacy rows. */
   ai_summary_version?: number | null;
+  /** Către cine se adresează petiția — Primăria X, Ministerul Y, etc.
+   *  Setat la creare de inițiator (form /petitii/initiaza). Optional —
+   *  petițiile importate via scrape-url pot fi NULL. */
+  addressee?: string | null;
 }
 
 export interface PetitieWithCount extends PetitieRow {
@@ -40,7 +44,7 @@ export interface PetitieSignatureRow {
  *  (full petition text, can be 5–20 KB) and `ai_summary` (also large)
  *  — both are loaded only on the detail page via getPetitieBySlug. */
 const PETITIE_LIST_COLUMNS =
-  "id,slug,title,summary,image_url,external_url,target_signatures,category,county_code,starts_at,ends_at,status,created_at,signature_count";
+  "id,slug,title,summary,image_url,external_url,target_signatures,category,county_code,starts_at,ends_at,status,created_at,signature_count,addressee";
 
 /** Subset returned by listPetitii — body and ai_summary are stripped
  *  to keep the list payload small. */
