@@ -222,7 +222,7 @@ export function IntreruperiFilters({ items }: { items: Interruption[] }) {
           <div
             role="tablist"
             aria-label="Filtrează după tip"
-            className="inline-flex items-center gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] overflow-x-auto max-w-full no-scrollbar"
+            className="flex flex-wrap items-center gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] max-w-full"
           >
             {TYPE_TABS.map((t) => {
               const count = t.value === "toate"

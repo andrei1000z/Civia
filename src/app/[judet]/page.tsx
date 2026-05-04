@@ -10,7 +10,6 @@ import {
   BookOpen,
   Building2,
   ArrowRight,
-  Ticket,
   AlertTriangle,
   Mail,
   Phone,
@@ -18,8 +17,6 @@ import {
   ShieldCheck,
   Megaphone,
   Users as UsersIcon,
-  TreePine,
-  Car,
   ExternalLink,
   Compass,
 } from "lucide-react";
@@ -166,17 +163,18 @@ function HeroQuickTiles({
   judet,
   totalSesizari,
   intreruperiCount,
-  primarName,
   aqi,
   aqiQuality,
 }: {
   judet: string;
   totalSesizari: number;
   intreruperiCount: number;
-  primarName: string;
   aqi: number;
   aqiQuality: string;
 }) {
+  // Tile-ul „Primar reședință" a fost eliminat — primarul apare deja
+  // ca rol al cardului Primărie din secțiunea „Cu cine vorbești", deci
+  // mai jos. Era duplicat informațional.
   const tiles = [
     {
       href: `/${judet}/aer`,
@@ -202,18 +200,10 @@ function HeroQuickTiles({
       icon: AlertTriangle,
       color: "#F59E0B",
     },
-    {
-      href: `/${judet}/istoric`,
-      label: "Primar reședință",
-      value: primarName,
-      hint: "vezi istoricul",
-      icon: ShieldCheck,
-      color: "#6366F1",
-    },
   ] as const;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {tiles.map((t) => {
         const Icon = t.icon;
         return (
@@ -766,7 +756,6 @@ export default async function CountyHomePage({
             judet={judet}
             totalSesizari={sesizariTotalCount}
             intreruperiCount={activeInterruptions.length}
-            primarName={stats.primarName}
             aqi={stats.aqiMediu}
             aqiQuality={stats.aqiQuality}
           />
@@ -949,80 +938,6 @@ export default async function CountyHomePage({
                 </Link>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── County identity row — facts panel + accidents + green spaces ─── */}
-      <section className="pt-6 pb-10">
-        <div className="container-narrow">
-          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-extrabold mb-5">
-            Profilul județului
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <UsersIcon size={14} className="text-indigo-500" aria-hidden="true" />
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
-                  Populație
-                </p>
-              </div>
-              <p className="text-2xl font-extrabold tabular-nums leading-none">
-                {county.population.toLocaleString("ro-RO")}
-              </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-                locuitori (Recensământ INS 2021)
-              </p>
-            </div>
-            <Link
-              href={`/${judet}/siguranta`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Car size={14} className="text-rose-500" aria-hidden="true" />
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
-                  Accidente 2023
-                </p>
-              </div>
-              <p className="text-2xl font-extrabold tabular-nums leading-none">
-                {stats.accidenteTotal.toLocaleString("ro-RO")}
-              </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-                {stats.accidenteDecedati} decedați · {stats.accidenteRaniti} răniți
-              </p>
-            </Link>
-            <Link
-              href={`/${judet}/aer`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <TreePine size={14} className="text-emerald-500" aria-hidden="true" />
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
-                  Spații verzi
-                </p>
-              </div>
-              <p className="text-2xl font-extrabold tabular-nums leading-none">
-                {stats.spatiiVerziMpPerLocuitor} m²
-              </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-                per locuitor · OMS recomandă 9+
-              </p>
-            </Link>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Ticket size={14} className="text-orange-500" aria-hidden="true" />
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
-                  Transport public
-                </p>
-              </div>
-              <p className="text-base font-extrabold leading-tight truncate" title={stats.transportPublicOperator}>
-                {stats.transportPublicOperator}
-              </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-                {stats.hasMetrou ? "🚇 Cu metrou" : "fără metrou"}
-                {stats.hasSTB ? " · STB" : ""}
-              </p>
-            </div>
           </div>
         </div>
       </section>

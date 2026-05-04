@@ -91,7 +91,7 @@ export function CountyPageHero({
                   <MapPin size={10} aria-hidden="true" />
                   {countyName}
                 </p>
-                <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight">
+                <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight break-words">
                   {title}
                 </h1>
               </div>
@@ -105,13 +105,13 @@ export function CountyPageHero({
           </div>
 
           {description && (
-            <p className="text-white/85 max-w-2xl leading-relaxed text-sm md:text-base mb-3">
+            <p className="text-white/85 max-w-2xl leading-relaxed text-sm md:text-base mb-3 break-words">
               {description}
             </p>
           )}
 
           {tagline && (
-            <p className="inline-flex items-start gap-1.5 text-xs text-white/75 leading-relaxed">
+            <p className="inline-flex items-start gap-1.5 text-xs text-white/75 leading-relaxed break-words">
               <Sparkles size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
               <span>{tagline}</span>
             </p>
