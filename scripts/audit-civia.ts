@@ -144,53 +144,29 @@ async function main() {
     report.supabase.profile_roles_err = e instanceof Error ? e.message : "?";
   }
 
-  // ── REDIS analytics
+  // ── REDIS analytics — toate cheile sunt HASH-uri (hincrby), sortăm
+  // local după cheltuiala numerică din values.
   if (redis) {
     try {
-      const total = await redis.get("civia:analytics:total");
-      report.redis.total_pageviews = total;
+      const totalHash = (await redis.hgetall("civia:analytics:total")) as Record<string, string | number> | null;
+      report.redis.total_pageviews = totalHash;
 
-      const routes = (await redis.zrange("civia:analytics:routes", 0, 19, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_routes = formatZ(routes, 20);
-
-      const referrers = (await redis.zrange("civia:analytics:referrers", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_referrers = formatZ(referrers, 10);
-
-      const countries = (await redis.zrange("civia:analytics:countries", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_countries = formatZ(countries, 10);
-
-      const errors = (await redis.zrange("civia:analytics:errors", 0, 19, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_errors = formatZ(errors, 20);
-
-      const errorPaths = (await redis.zrange("civia:analytics:error-paths", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_error_paths = formatZ(errorPaths, 10);
-
-      const rage = (await redis.zrange("civia:analytics:rage-clicks-per-route", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_rage_routes = formatZ(rage, 10);
-
-      const events = (await redis.zrange("civia:analytics:events", 0, 14, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_events = formatZ(events, 15);
+      report.redis.top_routes = await topHash(redis, "civia:analytics:routes", 20);
+      report.redis.top_referrers = await topHash(redis, "civia:analytics:referrers", 10);
+      report.redis.top_countries = await topHash(redis, "civia:analytics:countries", 10);
+      report.redis.top_cities = await topHash(redis, "civia:analytics:cities", 10);
+      report.redis.top_errors = await topHash(redis, "civia:analytics:errors", 20);
+      report.redis.top_error_paths = await topHash(redis, "civia:analytics:error-paths", 10);
+      report.redis.top_rage_routes = await topHash(redis, "civia:analytics:rage-clicks-per-route", 10);
+      report.redis.top_rage_labels = await topHash(redis, "civia:analytics:rage-clicks", 10);
+      report.redis.top_events = await topHash(redis, "civia:analytics:events", 15);
+      report.redis.top_clicks = await topHash(redis, "civia:analytics:clicks", 20);
+      report.redis.search_terms = await topHash(redis, "civia:analytics:search", 10);
+      report.redis.search_zero = await topHash(redis, "civia:analytics:search-zero", 10);
+      report.redis.outbound = await topHash(redis, "civia:analytics:outbound", 10);
+      report.redis.ai_usage = await topHash(redis, "civia:analytics:ai-usage", 10);
+      report.redis.auth_events = await topHash(redis, "civia:analytics:auth", 10);
+      report.redis.form_abandon = await topHash(redis, "civia:analytics:form-abandon", 10);
 
       // Web Vitals
       for (const v of ["lcp", "inp", "cls", "fcp", "ttfb"]) {
@@ -204,42 +180,26 @@ async function main() {
         }
       }
 
-      // Top users
-      const topUsers = (await redis.zrange("civia:analytics:top-users", 0, 9, {
+      // Top users — civia:analytics:top-users e ZSET (zincrby), spre
+      // diferență de routes/referrers care sunt hash-uri.
+      const topUsersRaw = (await redis.zrange("civia:analytics:top-users", 0, 14, {
         rev: true,
         withScores: true,
       })) as (string | number)[];
-      report.redis.top_users = formatZ(topUsers, 10);
+      const topUsersList = formatZ(topUsersRaw, 15);
+      report.redis.top_users = topUsersList;
 
       // Excluded users count
       const excluded = await redis.scard("civia:analytics:excluded-users");
       report.redis.excluded_users_count = excluded;
 
-      // Form abandonment (top by abandonment count)
-      const abandon = await redis.hgetall("civia:analytics:form-abandon");
-      report.redis.form_abandonment = abandon;
-
-      // Search zero-results (sign of UX problems)
-      const zeroSearches = (await redis.zrange("civia:analytics:search-zero", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.top_zero_search = formatZ(zeroSearches, 10);
-
-      // Funnel data — sesizare submit funnel
+      // Funnel data
       try {
-        const fSesizare = await redis.hgetall("civia:analytics:funnel:sesizare-submit");
-        if (fSesizare) report.redis.funnel_sesizare_submit = fSesizare;
+        const fSesizare = await redis.hgetall("civia:analytics:funnel:sesizare-create");
+        if (fSesizare) report.redis.funnel_sesizare_create = fSesizare;
       } catch {
         /* ignore */
       }
-
-      // AI usage breakdown
-      const aiUsage = (await redis.zrange("civia:analytics:ai-usage", 0, 9, {
-        rev: true,
-        withScores: true,
-      })) as (string | number)[];
-      report.redis.ai_usage = formatZ(aiUsage, 10);
 
       // ── PER-SESSION DEEP DIVE (top users) ──
       // Pentru top 10 useri (după pageviews), tragem timeline-ul + meta
@@ -253,35 +213,25 @@ async function main() {
         countries?: Array<{ key: string; score: number }>;
         days?: number;
       }> = [];
-      for (let i = 0; i < topUsers.length && sessions.length < 10; i += 2) {
-        const vid = topUsers[i] as string;
-        const pageviews = topUsers[i + 1] as number;
-        if (typeof vid !== "string") continue;
+      for (const tu of topUsersList) {
+        if (sessions.length >= 10) break;
+        const vid = tu.key;
         try {
           const meta = await redis.hgetall(`civia:analytics:user:${vid}:meta`);
-          const userRoutes = (await redis.zrange(
-            `civia:analytics:user:${vid}:routes`,
-            0,
-            4,
-            { rev: true, withScores: true },
-          )) as (string | number)[];
-          const userCountries = (await redis.zrange(
-            `civia:analytics:user:${vid}:countries`,
-            0,
-            2,
-            { rev: true, withScores: true },
-          )) as (string | number)[];
-          const days = await redis.scard(`civia:analytics:user:${vid}:days`);
+          const userRoutes = await topHash(redis, `civia:analytics:user:${vid}:routes`, 5);
+          const userCountries = await topHash(redis, `civia:analytics:user:${vid}:countries`, 3);
+          const days = await redis.hlen(`civia:analytics:user:${vid}:days`);
           sessions.push({
-            vid: vid.slice(0, 16) + "…",
-            pageviews,
+            vid: vid.slice(0, 18) + "…",
+            pageviews: tu.score,
             meta: meta as Record<string, unknown>,
-            topRoutes: formatZ(userRoutes, 5),
-            countries: formatZ(userCountries, 3),
+            topRoutes: userRoutes,
+            countries: userCountries,
             days: typeof days === "number" ? days : 0,
           });
-        } catch {
-          /* skip */
+        } catch (err) {
+          // Diagnose dacă o cheie particulară pică
+          console.error(`[audit] session deep-dive fail for ${vid}: ${err instanceof Error ? err.message : err}`);
         }
       }
       report.redis.top_session_deep_dive = sessions;
@@ -336,6 +286,28 @@ function formatZ(arr: (string | number)[], limit: number): Array<{ key: string; 
     }
   }
   return out;
+}
+
+/**
+ * Citește un Redis hash, sortează descrescător după value-ul numeric și
+ * returnează top N. Cheile analytics Civia sunt toate hincrby (hash field
+ * = obiect/etichetă, value = counter integer).
+ */
+async function topHash(
+  redis: Redis,
+  key: string,
+  limit: number,
+): Promise<Array<{ key: string; score: number }>> {
+  try {
+    const data = (await redis.hgetall(key)) as Record<string, string | number> | null;
+    if (!data) return [];
+    return Object.entries(data)
+      .map(([k, v]) => ({ key: k, score: typeof v === "number" ? v : parseInt(String(v), 10) || 0 }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 main().catch((e) => {
