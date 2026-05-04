@@ -14,7 +14,7 @@ export function Footer() {
         {/* Brand + 2 link sections (Despre Civia + Resurse oficiale).
             User a cerut: scoatem complet „Folosește platforma" + „Ghiduri
             practice" — sunt deja accesibile din navbar/Altele dropdown. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
           {/* Column 1 — Brand */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
@@ -45,9 +45,6 @@ export function Footer() {
               <br />
               Făcută cu <span className="text-rose-500" aria-label="dragoste">❤️</span> pentru o Românie ca afară.
             </p>
-            <p className="text-xs text-[var(--color-text-muted)] max-w-xs leading-relaxed italic">
-              Civia.ro nu promovează niciun partid politic, nicio poziționare ideologică. Milităm pentru o țară corectă, modernă și pentru oameni.
-            </p>
           </div>
 
           {/* Column 2 — Despre Civia (legal + about) */}
@@ -56,26 +53,10 @@ export function Footer() {
               Despre Civia
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/impact" className={linkCls}>Ce s-a rezolvat prin Civia</Link></li>
-              <li><Link href="/updateuri" className={linkCls}>Update-uri și changelog</Link></li>
               <li><Link href="/dezvoltatori" className={linkCls}>API public — pentru jurnaliști</Link></li>
-              <li><Link href="/accesibilitate" className={linkCls}>Accesibilitate (WCAG 2.1)</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><CookiePreferencesButton /></li>
-            </ul>
-          </div>
-
-          {/* Column 3 — Resurse oficiale */}
-          <div>
-            <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
-              Resurse oficiale
-            </h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="https://data.gov.ro" target="_blank" rel="noopener noreferrer" className={linkCls}>Portalul datelor publice</a></li>
-              <li><a href="https://www.ghiseul.ro" target="_blank" rel="noopener noreferrer" className={linkCls}>Plăți taxe (Ghișeul.ro)</a></li>
-              <li><a href="https://www.anpm.ro" target="_blank" rel="noopener noreferrer" className={linkCls}>Agenția de Mediu</a></li>
-              <li><a href="https://www.politiaromana.ro" target="_blank" rel="noopener noreferrer" className={linkCls}>Poliția Română</a></li>
             </ul>
           </div>
         </div>

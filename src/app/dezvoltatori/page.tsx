@@ -187,20 +187,6 @@ export default function ApiDocsPage() {
         </pre>
       </section>
 
-      {/* JS example */}
-      <section className="mb-12">
-        <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-4">
-          Exemplu JavaScript
-        </h2>
-        <pre className="bg-[var(--color-surface-2)] border border-[var(--color-border)] sm:rounded-[var(--radius-xs)] p-4 text-xs overflow-x-auto -mx-4 sm:mx-0">
-          <code>{`// Works directly in browser — CORS is open
-const res = await fetch("${SITE_URL}/api/v1/sesizari?county=B&status=rezolvat&limit=10");
-const { meta, data } = await res.json();
-console.log(\`Arătat \${data.length}/\${meta.count} sesizări rezolvate din București\`);
-data.forEach((s) => console.log(\`#\${s.code} — \${s.titlu}\`));`}</code>
-        </pre>
-      </section>
-
       {/* License */}
       <section className="mb-12 p-6 rounded-[var(--radius-card)] bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20">
         <h3 className="font-bold mb-2">Atribuire (CC BY 4.0)</h3>
@@ -213,14 +199,67 @@ data.forEach((s) => console.log(\`#\${s.code} — \${s.titlu}\`));`}</code>
         </p>
       </section>
 
-      <div className="text-center">
+      {/* Endpoint 3 — Lookup individual sesizare după code */}
+      <section className="mb-12">
+        <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-4">
+          GET <code className="text-[var(--color-primary)]">/api/v1/sesizari/&#123;code&#125;</code>
+        </h2>
+        <p className="text-[var(--color-text-muted)] mb-5">
+          Detaliu sesizare după codul ei public (ex: <code>00014</code>). Util pentru
+          articole care referă o sesizare specifică.
+        </p>
+        <pre className="bg-[var(--color-surface-2)] border border-[var(--color-border)] sm:rounded-[var(--radius-xs)] p-4 text-xs overflow-x-auto -mx-4 sm:mx-0">
+          <code>{`curl "${SITE_URL}/api/v1/sesizari/00014"`}</code>
+        </pre>
+      </section>
+
+      {/* Exemple în mai multe limbaje */}
+      <section className="mb-12">
+        <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-4">
+          Exemple
+        </h2>
+
+        <h3 className="font-bold mb-2 mt-5">JavaScript / TypeScript</h3>
+        <pre className="bg-[var(--color-surface-2)] border border-[var(--color-border)] sm:rounded-[var(--radius-xs)] p-4 text-xs overflow-x-auto -mx-4 sm:mx-0">
+          <code>{`// Funcționează direct în browser — CORS deschis
+const res = await fetch("${SITE_URL}/api/v1/sesizari?county=B&status=rezolvat&limit=10");
+const { meta, data } = await res.json();
+console.log(\`\${data.length}/\${meta.count} sesizări rezolvate din București\`);
+data.forEach((s) => console.log(\`#\${s.code} — \${s.titlu}\`));`}</code>
+        </pre>
+
+        <h3 className="font-bold mb-2 mt-5">Python</h3>
+        <pre className="bg-[var(--color-surface-2)] border border-[var(--color-border)] sm:rounded-[var(--radius-xs)] p-4 text-xs overflow-x-auto -mx-4 sm:mx-0">
+          <code>{`import requests
+
+r = requests.get(
+    "${SITE_URL}/api/v1/sesizari",
+    params={"county": "CJ", "status": "rezolvat", "limit": 100},
+)
+payload = r.json()
+print(f"{len(payload['data'])} sesizări rezolvate în Cluj")
+for s in payload["data"]:
+    print(s["code"], s["titlu"])`}</code>
+        </pre>
+
+        <h3 className="font-bold mb-2 mt-5">Bash + jq (CSV pentru spreadsheet)</h3>
+        <pre className="bg-[var(--color-surface-2)] border border-[var(--color-border)] sm:rounded-[var(--radius-xs)] p-4 text-xs overflow-x-auto -mx-4 sm:mx-0">
+          <code>{`# Toate sesizările cu „groapa" în titlu, exportate ca CSV
+curl -s "${SITE_URL}/api/v1/sesizari?tip=groapa&limit=100" \\
+  | jq -r '.data[] | [.code, .county, .locatie, .status, .created_at] | @csv' \\
+  > gropi.csv`}</code>
+        </pre>
+      </section>
+
+      {/* License */}
+      <section className="mb-12">
         <Link
-          href="/impact"
+          href="/sesizari-publice"
           className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline font-medium"
         >
-          Vezi dashboard-ul public <ArrowRight size={16} />
+          Vezi sesizările publice live <ArrowRight size={16} />
         </Link>
-      </div>
+      </section>
     </div>
   );
 }

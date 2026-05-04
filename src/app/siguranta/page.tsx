@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ShieldAlert, ExternalLink } from "lucide-react";
 import { CRIMINALITATE, TOP_SIGURANTA_JUDETE, DATE_PUBLICE_SNAPSHOT } from "@/data/date-publice";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -131,21 +130,6 @@ export default function SigurantaPage() {
           Rata mai mare NU înseamnă neapărat zonă periculoasă. Bucureștiul concentrează mai
           multe tipuri de infracțiuni fiscale, financiare și rutiere decât alte județe.
         </p>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          <span className="text-[var(--color-text-muted)] self-center">Explorează:</span>
-          <Link
-            href="/compara"
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)] hover:opacity-80 transition-opacity"
-          >
-            ⚖️ Compară 2 județe
-          </Link>
-          <Link
-            href="/statistici"
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors"
-          >
-            📊 Statistici naționale
-          </Link>
-        </div>
       </section>
 
       <section className="mb-10">

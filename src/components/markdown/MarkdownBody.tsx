@@ -1,16 +1,21 @@
 /**
- * Tiny markdown subset renderer for changelog entries. Parses:
+ * Tiny markdown subset renderer pentru text scurt (3-5 paragrafe) cu
+ * structură simplă. Parses:
  *   - paragraphs (blank-line separated)
  *   - "## Heading"
  *   - "- bullet" lists
  *   - **bold** spans
  *
- * Server component. No external deps. Same conventions the AI
- * synthesis renderer uses, so authors who write changelog entries
- * can rely on the same vocabulary.
+ * Server component. No external deps. Same conventions used by the AI
+ * synthesis renderer, so admin-written content + AI-generated content
+ * arată la fel.
  *
- * Anything more complex (tables, code blocks, links) currently
- * passes through as plain text — extend if needed.
+ * Folosit pe /proteste/[slug] aftermath narrative. (Anterior trăia în
+ * /app/updateuri/UpdateBody.tsx — mutat aici după ce updateuri page a
+ * fost dezintegrat.)
+ *
+ * Anything more complex (tables, code blocks, links) currently passes
+ * through as plain text — extend if needed.
  */
 
 import { Fragment } from "react";
@@ -87,7 +92,7 @@ function parseBlocks(markdown: string): Block[] {
   return blocks;
 }
 
-export function UpdateBody({ markdown }: Props) {
+export function MarkdownBody({ markdown }: Props) {
   const blocks = parseBlocks(markdown);
   return (
     <div className="space-y-3 text-sm md:text-[15px] text-[var(--color-text)] leading-relaxed">

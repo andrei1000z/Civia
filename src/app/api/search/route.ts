@@ -4,11 +4,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { ghiduri } from "@/data/ghiduri";
 import { evenimente } from "@/data/evenimente";
 import { ALL_COUNTIES } from "@/data/counties";
-import { bilete, linii } from "@/data/bilete";
-import { primari } from "@/data/primari";
-import { DIRECTII, COMPANII, GLOSAR } from "@/data/pmb-structura";
 import { SESIZARI_GUIDES } from "@/data/sesizari-guides";
-import { OPERATORS } from "@/data/transport-operators";
 
 export const revalidate = 60;
 
@@ -23,32 +19,26 @@ interface SearchResult {
 const STATIC_PAGES: SearchResult[] = [
   // Core platform
   { type: "page", title: "Sesizări", url: "/sesizari", excerpt: "Depune sesizări către autorități" },
+  { type: "page", title: "Petiții", url: "/petitii", excerpt: "Petiții civice curate" },
+  { type: "page", title: "Proteste", url: "/proteste", excerpt: "Proteste civice anunțate" },
+  { type: "page", title: "Întreruperi", url: "/intreruperi", excerpt: "Întreruperi planificate utilități (apă, gaz, curent)" },
   { type: "page", title: "Hărți", url: "/harti", excerpt: "Piste bicicletă, drumuri, transport, calitate aer" },
-  { type: "page", title: "Statistici", url: "/statistici", excerpt: "Date naționale: accidente, AQI, populație" },
   { type: "page", title: "Știri", url: "/stiri", excerpt: "Știri civice din surse verificate" },
   { type: "page", title: "Evenimente", url: "/evenimente", excerpt: "Evenimente majore din România" },
   { type: "page", title: "Ghiduri", url: "/ghiduri", excerpt: "Ghiduri practice pentru cetățeni" },
   { type: "page", title: "Calitate aer", url: "/aer", excerpt: "Hartă live cu senzori din toată România" },
-  { type: "page", title: "Bilete transport", url: "/bilete", excerpt: "Tarife transport public București" },
   { type: "page", title: "Sesizări publice", url: "/sesizari-publice", excerpt: "Ce semnalează alți cetățeni" },
   { type: "page", title: "Urmărește sesizarea", url: "/urmareste", excerpt: "Verifică statusul sesizării tale" },
   { type: "page", title: "Contul tău", url: "/cont", excerpt: "Profil + sesizările tale" },
-  { type: "page", title: "Cum funcționează", url: "/cum-functioneaza", excerpt: "Ghid despre administrația publică, CGMB, sesizări" },
   { type: "page", title: "Primari București", url: "/b/istoric", excerpt: "Toți primarii Capitalei din 1990 până azi" },
-  { type: "page", title: "Structura PMB", url: "/b/cum-functioneaza", excerpt: "Direcții, companii municipale, organigrama PMB" },
-  { type: "page", title: "Evenimente civice — istoric", url: "/evenimente", excerpt: "Timeline interactiv al evenimentelor majore din România" },
 
-  // Dashboards de date publice (noi în P2/P3)
-  { type: "page", title: "Impact Civia", url: "/impact", excerpt: "Dashboard public: sesizări rezolvate, primării notificate, cetățeni activi" },
-  { type: "page", title: "Buget național", url: "/buget", excerpt: "Execuție bugetară România: venituri, cheltuieli, deficit" },
+  // Dashboards de date publice
   { type: "page", title: "Siguranță & criminalitate", url: "/siguranta", excerpt: "Statistici oficiale Poliția Română pe tipuri și județe" },
   { type: "page", title: "Educație", url: "/educatie", excerpt: "Promovabilitate BAC, top licee, statistici învățământ" },
   { type: "page", title: "Sănătate", url: "/sanatate", excerpt: "Speranță viață, medici per capita, top spitale publice" },
   { type: "page", title: "Calendar civic", url: "/calendar-civic", excerpt: "Alegeri, taxe, ședințe CGMB, consultări publice" },
-  { type: "page", title: "Compară județele", url: "/compara", excerpt: "Vezi două județe side-by-side: sesizări, populație, stats" },
 
-  // Info / dev
-  { type: "page", title: "Accesibilitate", url: "/accesibilitate", excerpt: "Drepturi L448/2006, facilități, declarație WCAG 2.1 AA" },
+  // Dev
   { type: "page", title: "API public pentru dezvoltatori", url: "/dezvoltatori", excerpt: "API v1 deschis cu CORS, licență CC BY 4.0" },
 ];
 
@@ -149,89 +139,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // Bilete transport
-  for (const b of bilete) {
-    const hay = `${b.nume} ${b.descriere} ${b.operator}`.toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "bilet",
-        title: `${b.nume} (${b.operator.toUpperCase()})`,
-        url: "/bilete",
-        excerpt: `${b.pret} lei · ${b.validitate} — ${b.descriere.slice(0, 80)}`,
-        meta: b.operator.toUpperCase(),
-      });
-    }
-  }
-
-  // Linii transport
-  for (const l of linii) {
-    const hay = `${l.numar} ${l.tip} ${l.traseu.join(" ")}`.toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "linie",
-        title: `${l.tip.charAt(0).toUpperCase() + l.tip.slice(1)} ${l.numar}`,
-        url: "/bilete",
-        excerpt: l.traseu.join(" → "),
-        meta: `${l.frecventa}`,
-      });
-    }
-  }
-
-  // Primari
-  for (const p of primari) {
-    const hay = [p.nume, p.partid, ...p.realizari, ...p.controverse].join(" ").toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "primar",
-        title: `${p.nume} (${p.partid})`,
-        url: "/cum-functioneaza#primari",
-        excerpt: `Primar ${p.perioada} — ${p.realizari[0] ?? ""}`.slice(0, 120),
-        meta: p.perioada,
-      });
-    }
-  }
-
-  // Direcții PMB
-  for (const d of DIRECTII) {
-    const hay = [d.name, d.role, ...d.responsabilitati].join(" ").toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "directie",
-        title: d.name,
-        url: "/cum-functioneaza#structura",
-        excerpt: d.role,
-        meta: d.contact,
-      });
-    }
-  }
-
-  // Companii municipale
-  for (const c of COMPANII) {
-    const hay = `${c.name} ${c.rol}`.toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "companie",
-        title: c.name,
-        url: "/cum-functioneaza#structura",
-        excerpt: `${c.rol} · ${c.buget}`,
-        meta: `${c.angajati} angajați`,
-      });
-    }
-  }
-
-  // Glosar termeni
-  for (const g of GLOSAR) {
-    const hay = `${g.term} ${g.shortForm} ${g.definition}`.toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "glosar",
-        title: `${g.shortForm} — ${g.term}`,
-        url: "/cum-functioneaza#glosar",
-        excerpt: g.definition.slice(0, 120),
-      });
-    }
-  }
-
   // Ghiduri sesizări (tipuri de sesizări)
   for (const sg of SESIZARI_GUIDES) {
     const hay = [sg.label, sg.urgenta, ...sg.tips, ...sg.destinatari].join(" ").toLowerCase();
@@ -242,20 +149,6 @@ export async function GET(req: Request) {
         url: `/sesizari?tip=${sg.tip}`,
         excerpt: `${sg.urgenta} · Destinatari: ${sg.destinatari.slice(0, 2).join(", ")}`.slice(0, 120),
         meta: sg.tip,
-      });
-    }
-  }
-
-  // Operatori transport din țară
-  for (const [, op] of Object.entries(OPERATORS)) {
-    const hay = `${op.name} ${op.coverage} ${op.types.join(" ")} ${op.app ?? ""}`.toLowerCase();
-    if (matchesAll(hay, words)) {
-      results.push({
-        type: "transport",
-        title: op.name,
-        url: "/bilete",
-        excerpt: `${op.coverage} · ${op.types.join(", ")} · ${op.ticketPrice}/călătorie`,
-        meta: op.app ?? "",
       });
     }
   }

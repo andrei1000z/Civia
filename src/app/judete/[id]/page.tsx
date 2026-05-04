@@ -12,7 +12,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  Scale,
   TreePine,
   Users,
   Wind,
@@ -280,15 +279,6 @@ export default async function CountyDetailPage({
               <FileText size={14} aria-hidden="true" />
               Sesizări în {county.name}
             </Link>
-            {fromList && (
-              <Link
-                href={`/compara/${slug}/b`}
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-full)] bg-white/10 text-white border border-white/20 font-semibold hover:bg-white/20 active:scale-[0.97] backdrop-blur-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white text-sm"
-              >
-                <Scale size={14} aria-hidden="true" />
-                Compară cu București
-              </Link>
-            )}
           </div>
         </div>
       </header>
@@ -522,7 +512,6 @@ export default async function CountyDetailPage({
               {[
                 { href: `/${slug}/harti`, label: "Hărți", emoji: "🗺️" },
                 { href: `/${slug}/aer`, label: "Calitate aer", emoji: "🌬️" },
-                { href: `/${slug}/statistici`, label: "Statistici", emoji: "📊" },
                 { href: `/${slug}/stiri`, label: "Știri", emoji: "📰" },
                 { href: `/${slug}/intreruperi`, label: "Întreruperi", emoji: "⚠️" },
                 { href: `/${slug}/autoritati`, label: "Autorități", emoji: "🏛️" },

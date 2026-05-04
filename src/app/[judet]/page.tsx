@@ -10,22 +10,18 @@ import {
   BookOpen,
   Building2,
   ArrowRight,
-  HelpCircle,
   Ticket,
   AlertTriangle,
   Mail,
   Phone,
   Globe,
-  Inbox,
   ShieldCheck,
   Megaphone,
   Users as UsersIcon,
   TreePine,
   Car,
-  Gauge,
   ExternalLink,
   Compass,
-  Scale,
 } from "lucide-react";
 import { ALL_COUNTIES, getCountyBySlug } from "@/data/counties";
 import { getCountyStats } from "@/data/statistici-judete";
@@ -630,20 +626,12 @@ const PRIMARY_SECTIONS = [
   { path: "/stiri", icon: Newspaper, label: "Știri locale", color: "#0EA5E9", prefetch: false },
 ];
 
-// SECONDARY_SECTIONS = "Tot despre {judet}" grid. Round 2026-05-02
-// cleanup: dropped /impact (already prominent on /sesizari), /aer
-// (now lives as a tab on /harti), /autoritati (one click via the
-// in-page authorities panel below + still accessible by URL),
-// /evenimente (renamed → calendar civic, redundant with sesizari
-// timeline), /istoric (merged into /cum-functioneaza which now has
-// a "Mayor history" section). Keeps the grid tight + signal-rich.
+// SECONDARY_SECTIONS = "Tot despre {judet}" grid. Round 2026-05-04:
+// dezintegrat /statistici, /cum-functioneaza, /bilete, /buget, /compara
+// la cererea user-ului. Rămân doar surfacele păstrate.
 const SECONDARY_SECTIONS = [
-  { path: "/statistici", icon: Gauge, label: "Statistici", color: "#8B5CF6" },
   { path: "/intreruperi", icon: AlertTriangle, label: "Întreruperi", color: "#F59E0B" },
   { path: "/ghiduri", icon: BookOpen, label: "Ghiduri", color: "#A855F7" },
-  { path: "/cum-functioneaza", icon: HelpCircle, label: "Cum funcționează", color: "#14B8A6" },
-  { path: "/bilete", icon: Ticket, label: "Bilete & abonamente", color: "#F97316" },
-  { path: "/buget", icon: Inbox, label: "Buget local", color: "#0891B2" },
   { path: "/educatie", icon: BookOpen, label: "Educație", color: "#0EA5E9" },
   { path: "/sanatate", icon: Compass, label: "Sănătate", color: "#E11D48" },
   { path: "/siguranta", icon: ShieldCheck, label: "Siguranță", color: "#4F46E5" },
@@ -972,10 +960,7 @@ export default async function CountyHomePage({
             Profilul județului
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Link
-              href={`/${judet}/statistici`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
-            >
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
               <div className="flex items-center gap-2 mb-1.5">
                 <UsersIcon size={14} className="text-indigo-500" aria-hidden="true" />
                 <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
@@ -988,7 +973,7 @@ export default async function CountyHomePage({
               <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
                 locuitori (Recensământ INS 2021)
               </p>
-            </Link>
+            </div>
             <Link
               href={`/${judet}/siguranta`}
               className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
@@ -1023,10 +1008,7 @@ export default async function CountyHomePage({
                 per locuitor · OMS recomandă 9+
               </p>
             </Link>
-            <Link
-              href={`/${judet}/bilete`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
-            >
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
               <div className="flex items-center gap-2 mb-1.5">
                 <Ticket size={14} className="text-orange-500" aria-hidden="true" />
                 <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
@@ -1040,38 +1022,7 @@ export default async function CountyHomePage({
                 {stats.hasMetrou ? "🚇 Cu metrou" : "fără metrou"}
                 {stats.hasSTB ? " · STB" : ""}
               </p>
-            </Link>
-          </div>
-
-          <div className="mt-6 grid sm:grid-cols-2 gap-3">
-            <Link
-              href={`/${judet}/buget`}
-              className="group flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 transition-colors"
-            >
-              <div>
-                <p className="text-sm font-semibold group-hover:text-[var(--color-primary)] transition-colors">
-                  Bugetul local
-                </p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">
-                  Pe ce se cheltuiesc taxele tale în {county.name}
-                </p>
-              </div>
-              <ArrowRight size={14} className="text-[var(--color-text-muted)] group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
-            <Link
-              href={`/${judet}/cum-functioneaza`}
-              className="group flex items-center justify-between bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 transition-colors"
-            >
-              <div>
-                <p className="text-sm font-semibold group-hover:text-[var(--color-primary)] transition-colors">
-                  Cum funcționează administrația
-                </p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">
-                  Primărie / consiliu județean / prefectură explicate
-                </p>
-              </div>
-              <ArrowRight size={14} className="text-[var(--color-text-muted)] group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -1106,13 +1057,6 @@ export default async function CountyHomePage({
                   <AlertCircle size={16} aria-hidden="true" />
                   Fă o sesizare
                   <ArrowRight size={14} aria-hidden="true" />
-                </Link>
-                <Link
-                  href={`/compara/${judet}/${isBucharest ? "cj" : "b"}`}
-                  className="inline-flex items-center gap-2 h-12 px-5 rounded-[var(--radius-full)] bg-white/10 text-white border border-white/20 font-semibold hover:bg-white/20 active:scale-[0.97] backdrop-blur-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  <Scale size={14} aria-hidden="true" />
-                  Compară cu {isBucharest ? "Cluj" : "București"}
                 </Link>
               </div>
             </div>

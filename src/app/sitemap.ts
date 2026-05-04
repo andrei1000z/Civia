@@ -12,12 +12,12 @@ export const revalidate = 3600; // hourly
 // `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,
 // adaugă slug-ul aici (altfel Google nu-l indexează automat).
 const COUNTY_PAGES = [
-  "", "/sesizari", "/aer", "/harti", "/statistici", "/stiri", "/ghiduri",
-  "/autoritati", "/bilete", "/evenimente", "/istoric", "/cum-functioneaza",
-  "/impact", "/intreruperi",
+  "", "/sesizari", "/aer", "/harti", "/stiri", "/ghiduri",
+  "/autoritati", "/evenimente", "/istoric",
+  "/intreruperi",
   // Sub-pages pentru date publice — au fost adăugate ca pagini per-județ
   // în refactor-ul național dar lipseau din sitemap.
-  "/educatie", "/sanatate", "/siguranta", "/buget",
+  "/educatie", "/sanatate", "/siguranta",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -38,14 +38,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/legal/confidentialitate`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/legal/termeni`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/dezvoltatori`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/accesibilitate`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/updateuri`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
     { url: `${base}/calendar-civic`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${base}/buget`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/siguranta`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/educatie`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/sanatate`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/compara`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/autoritati`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
@@ -68,14 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/harti`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/stiri`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/ghiduri`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${base}/statistici`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${base}/bilete`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/impact`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: `${base}/cum-functioneaza`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/evenimente`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    // /istoric redirects to /b/istoric — no point indexing the
-    // redirect target separately here since /[judet]/istoric
-    // already covers every county.
   ];
 
   // Ghiduri

@@ -57,37 +57,24 @@ export const PETITIE_CATEGORII = [
 // the user has a county selected. Used for routes that don't have a
 // county-scoped counterpart (or where the national view is the only
 // useful one — e.g. /petitii is a national civic petition catalog).
+// Round 2026-05-04: NAV simplificat dramatic la cererea user-ului.
+// Eliminat updateuri/statistici/compara/cum-functioneaza/bilete/
+// accesibilitate/impact (toate pagini dezintegrate). Proteste +
+// Întreruperi promovate din dropdown la top-level. Search scos din
+// navbar (rămâne ⌘K disponibil prin shortcut).
 export const NAV_LINKS = [
   { href: "/sesizari", label: "Sesizări", national: true },
   { href: "/petitii", label: "Petiții", national: true },
+  { href: "/proteste", label: "Proteste", national: true },
+  { href: "/intreruperi", label: "Întreruperi" },
   { href: "/harti", label: "Hărți" },
   { href: "/stiri", label: "Știri" },
   { href: "/ghiduri", label: "Ghiduri", national: true },
 ] as const;
 
-// „Altele" dropdown — items secundare grupate. Fiecare entry poate fi:
-//   - countyOnly: true → ascuns pe homepage național, vizibil doar pe /[judet]
-//   - nationalOnly: true → URL absolut (nu se prepend-ează countySlug)
-//   - default: prepend countySlug dacă e în county-context
-//
-// Round 2026-05-02: deduplicat la cererea user-ului. Calitatea aerului
-// trăiește acum pe tab-ul Aer din /harti; Autoritățile publice rămân
-// accesibile via URL direct dar n-au nevoie de top-nav (Sesizări le
-// alege automat); Calendar civic la fel; Impact local apare pe pagina
-// de Sesizări; Istoricul primarilor a fost mutat ca secțiune în
-// "Cum funcționează administrația" — un singur entry-point.
-export const NAV_MORE = [
-  { href: "/statistici", label: "Statistici", icon: "📊" },
-  { href: "/intreruperi", label: "Întreruperi programate", icon: "⚠️" },
-  { href: "/proteste", label: "Proteste programate", icon: "✊", nationalOnly: true },
-  { href: "/compara", label: "Compară județe", icon: "⚖️", nationalOnly: true },
-  { href: "/cum-functioneaza", label: "Cum funcționează administrația", icon: "❓" },
-  { href: "/bilete", label: "Bilete și abonamente transport", icon: "🎫", countyOnly: true },
-] as const;
-
-// Date publice eliminate din nav — accesibile direct via URL sau din
-// /statistici (county-scoped). Lista rămâne ca export gol pentru
-// compatibilitate cu codul care le importa.
+// Dropdown-ul „Explorează" a fost dezintegrat odată cu paginile pe care
+// le conținea. Exports păstrate goale ca să nu spargă imports legacy.
+export const NAV_MORE: Array<{ href: string; label: string; icon: string; nationalOnly?: boolean; countyOnly?: boolean }> = [];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];
 
 export const GHID_DROPDOWN = [

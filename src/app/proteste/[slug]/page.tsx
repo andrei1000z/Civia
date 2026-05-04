@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
-import { UpdateBody } from "@/app/updateuri/UpdateBody";
+import { MarkdownBody } from "@/components/markdown/MarkdownBody";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
 import { AftermathGallery } from "@/components/proteste/AftermathGallery";
@@ -361,7 +361,7 @@ export default async function ProtestDetailPage({
               <span className="w-1 h-5 rounded bg-[var(--color-primary)]" aria-hidden="true" />
               Despre protest
             </h2>
-            <UpdateBody markdown={p.description} />
+            <MarkdownBody markdown={p.description} />
           </section>
 
           {/* Tags */}
@@ -575,7 +575,7 @@ function AftermathSection({ protest }: { protest: Protest }) {
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
             Cum a decurs
           </h3>
-          <UpdateBody markdown={protest.aftermath_narrative} />
+          <MarkdownBody markdown={protest.aftermath_narrative} />
         </div>
       )}
 

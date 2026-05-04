@@ -170,8 +170,8 @@ export async function GET(req: Request) {
     title: "Săptămâna civică",
     preheader: `${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta pe Civia`,
     body,
-    ctaText: "Vezi dashboard-ul Civia",
-    ctaUrl: `${siteUrl}/impact`,
+    ctaText: "Vezi sesizările publice",
+    ctaUrl: `${siteUrl}/sesizari-publice`,
   });
 
   // Send to all subscribers (sequential with tiny gap — Resend rate limit ~10/s free tier)

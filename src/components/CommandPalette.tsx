@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, FileText, Newspaper, BookOpen, Siren, Hash, Loader2, ArrowRight, X, MapPin, BarChart3, Map as MapIcon, Ticket, Train, User, Building2, Factory, BookA, ShieldAlert, Bus } from "lucide-react";
+import { Search, FileText, Newspaper, BookOpen, Siren, Hash, Loader2, ArrowRight, X, MapPin, Map as MapIcon, User, ShieldAlert, Megaphone, Flag, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
-  type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "bilet" | "linie" | "primar" | "directie" | "companie" | "glosar" | "ghid-sesizare" | "transport";
+  type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "primar" | "ghid-sesizare";
   title: string;
   url: string;
   excerpt?: string;
@@ -20,14 +20,8 @@ const TYPE_ICON: Record<string, React.ElementType> = {
   stire: Newspaper,
   page: Hash,
   judet: MapPin,
-  bilet: Ticket,
-  linie: Train,
   primar: User,
-  directie: Building2,
-  companie: Factory,
-  glosar: BookA,
   "ghid-sesizare": ShieldAlert,
-  transport: Bus,
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -37,14 +31,8 @@ const TYPE_COLOR: Record<string, string> = {
   stire: "text-blue-500",
   page: "text-[var(--color-text-muted)]",
   judet: "text-emerald-500",
-  bilet: "text-orange-500",
-  linie: "text-cyan-500",
   primar: "text-indigo-500",
-  directie: "text-sky-500",
-  companie: "text-teal-500",
-  glosar: "text-lime-600",
   "ghid-sesizare": "text-rose-500",
-  transport: "text-fuchsia-500",
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -54,23 +42,18 @@ const TYPE_LABEL: Record<string, string> = {
   stire: "Știre",
   page: "Pagină",
   judet: "Județ",
-  bilet: "Bilet",
-  linie: "Linie",
   primar: "Primar",
-  directie: "Direcție PMB",
-  companie: "Companie",
-  glosar: "Termen",
   "ghid-sesizare": "Tip sesizare",
-  transport: "Transport",
 };
 
 const QUICK_LINKS = [
   { label: "Sesizări", url: "/sesizari", icon: FileText, color: "text-red-500" },
+  { label: "Petiții", url: "/petitii", icon: Megaphone, color: "text-purple-500" },
+  { label: "Proteste", url: "/proteste", icon: Flag, color: "text-rose-500" },
+  { label: "Întreruperi", url: "/intreruperi", icon: AlertTriangle, color: "text-amber-600" },
   { label: "Hărți", url: "/harti", icon: MapIcon, color: "text-blue-500" },
-  { label: "Statistici", url: "/statistici", icon: BarChart3, color: "text-purple-500" },
   { label: "Știri", url: "/stiri", icon: Newspaper, color: "text-emerald-500" },
   { label: "Ghiduri", url: "/ghiduri", icon: BookOpen, color: "text-amber-500" },
-  { label: "Evenimente", url: "/evenimente", icon: Siren, color: "text-pink-500" },
 ];
 
 export function CommandPalette() {
