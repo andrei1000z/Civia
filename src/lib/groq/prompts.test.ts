@@ -22,6 +22,19 @@ describe("Groq system prompts", () => {
     expect(SYSTEM_PROMPT_FORMAL).toContain("Mă numesc");
   });
 
+  it("SYSTEM_PROMPT_FORMAL requests 30-day response window per OG 27/2002", () => {
+    // Cerință legală OG 27/2002 art. 8 — autoritatea trebuie să răspundă
+    // în 30 de zile. Sesizările trebuie să conțină solicitarea explicită.
+    expect(SYSTEM_PROMPT_FORMAL).toMatch(/30\s+de\s+zile/);
+  });
+
+  it("SYSTEM_PROMPT_FORMAL has context-aware opening variations", () => {
+    // Deschiderea trebuie să se adapteze la context (acum / recent /
+    // recurent), nu să folosească mereu „În ultima perioadă".
+    expect(SYSTEM_PROMPT_FORMAL).toMatch(/Astăzi am observat/);
+    expect(SYSTEM_PROMPT_FORMAL).toMatch(/De câteva zile/);
+  });
+
   it("SYSTEM_PROMPT_CLASSIFIER lists all 17 types", () => {
     const types = [
       "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",

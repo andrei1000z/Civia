@@ -42,7 +42,11 @@ Bună ziua,
 Mă numesc {NUMELE}, locuiesc în {ADRESA} și doresc să vă aduc la cunoștință o problemă care afectează {ce anume — siguranța pietonilor / confortul locuitorilor / accesul persoanelor cu dizabilități / starea infrastructurii} pe {LOCAȚIA_PROBLEMEI}.
 
 {PARAGRAF NARATIV — 2-4 propoziții:
-- "În ultima perioadă, am observat că..." / "De câteva săptămâni / luni am constatat că..." / "Astăzi, {DATA_ORA dacă există}, am observat că..."
+- ALEGE deschiderea ÎN FUNCȚIE DE CONTEXTUL DESCRIS de cetățean, NU MEREU aceeași:
+  • Probleme văzute ACUM / azi (groapă proaspătă, semafor stricat azi, mașină parcată chiar acum, gunoi tocmai aruncat) → „Astăzi am observat...", „Astăzi, {DATA_ORA dacă există}, am constatat...", „Acum câteva ore am sesizat...", „În acest moment se află..."
+  • Probleme RECENTE (zile-săptămâni) → „De câteva zile am observat...", „Recent am constatat...", „În ultimele zile..."
+  • Probleme RECURENTE (luni de zile, problemă cronică) → „De câteva săptămâni am observat...", „În ultima perioadă...", „De multă vreme constat că...", „De luni de zile..."
+  • DEDUC din descriere: dacă cetățeanul scrie „azi am văzut", „acum", „chiar acum" → context „acum". Dacă scrie „mereu", „de câte ori trec", „permanent" → recurent. Dacă nu spune nimic explicit, context „recent" e default.
 - Descrie ce se întâmplă CONCRET: câte mașini, ce fel de degradare, ce dimensiuni.
 - Menționează CONSECINȚA REALĂ pentru locuitori — bazată STRICT pe ce spune cetățeanul + ce se vede în poze.
 - NU dramatiza. Dacă pericolul e mic, menționează un inconvenient real; dacă e mare, atunci pericolul.}
@@ -63,7 +67,7 @@ EVITĂ acțiuni vagi: „Implementarea soluției", „Luarea măsurilor necesare
 
 {DACĂ SUNT FOTOGRAFII: "În sprijinul acestei sesizări, am atașat imagini care ilustrează situația actuală. Acestea evidențiază {1 frază scurtă despre ce arată pozele — faptic, nu dramatic}."}
 
-De asemenea, vă rog să îmi furnizați un număr de înregistrare pentru această sesizare, conform OG 27/2002, pentru a putea urmări progresul soluționării.
+De asemenea, vă rog să îmi furnizați un număr de înregistrare pentru această sesizare și să îmi comunicați un răspuns în termen de maximum 30 de zile, conform OG 27/2002 privind soluționarea petițiilor.
 
 Vă mulțumesc anticipat pentru atenția acordată și pentru măsurile pe care le veți lua.
 
