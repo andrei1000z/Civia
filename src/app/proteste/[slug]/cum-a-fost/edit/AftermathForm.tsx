@@ -308,11 +308,15 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       }
       // Functional setData — race condition fix. Plus scoatem entry-urile
       // cu URL gol ca să nu rămână rânduri moarte după upload.
+      // Numele fișierului local poate fi „IMG_1234.mp4" sau un token
+      // base64 random (screen recordings, downloads din Twitter etc.).
+      // Dacă e junk, nu setăm title — UI-ul cade pe fallback „Video N".
+      const cleanedTitle = sanitizeFileTitle(file.name);
       setData((d) => ({
         ...d,
         videos: [
           ...d.videos.filter((v) => v.url.trim().length > 0),
-          { url, source: "direct", title: file.name },
+          { url, source: "direct", ...(cleanedTitle ? { title: cleanedTitle } : {}) },
         ].slice(0, 8),
       }));
     } catch (e) {
@@ -813,6 +817,30 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
       </div>
     </form>
   );
+}
+
+// ----- Helpers -----
+
+/**
+ * Curăță numele fișierului pentru a fi folosit ca titlu video. Returnează
+ * null dacă numele e junk (random base64-like din screen recordings sau
+ * downloads automate, fără valoare semantică) — caller-ul lasă title gol
+ * și UI-ul cade pe „Video N".
+ */
+function sanitizeFileTitle(filename: string): string | null {
+  if (!filename) return null;
+  // Strip extensia
+  const base = filename.replace(/\.(mp4|webm|mov|m4v)$/i, "").trim();
+  if (!base) return null;
+  // Junk patterns:
+  // 1. 20+ alfanumerice consecutive (token base64, upload IDs)
+  // 2. Doar cifre + dash + ID (ex: "1777918862991-3ocuqq")
+  // 3. UUID
+  if (/^[A-Za-z0-9_-]{20,}$/.test(base)) return null;
+  if (/^[0-9]{10,}-[a-z0-9]+$/i.test(base)) return null;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(base)) return null;
+  // OK, pare nume real (gen „Marș protest 3 mai" sau „IMG_1234")
+  return base.slice(0, 200);
 }
 
 // ----- Helper components -----

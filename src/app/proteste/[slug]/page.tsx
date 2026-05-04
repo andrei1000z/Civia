@@ -16,7 +16,6 @@ import {
   MessageSquare,
   ListChecks,
   Newspaper,
-  Video as VideoIcon,
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -24,6 +23,7 @@ import { MarkdownBody } from "@/components/markdown/MarkdownBody";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
 import { AftermathGallery } from "@/components/proteste/AftermathGallery";
+import { AftermathVideos } from "@/components/proteste/AftermathVideos";
 import type {
   AftermathImage,
   AftermathVideo,
@@ -643,49 +643,10 @@ function AftermathSection({ protest }: { protest: Protest }) {
       {/* Galerie — client component cu lightbox + masonry aspect-ratio natural */}
       <AftermathGallery images={images} />
 
-      {/* Videos */}
-      {videos.length > 0 && (
-        <div>
-          <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm uppercase tracking-wider text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-2">
-            <VideoIcon size={14} aria-hidden="true" />
-            Video ({videos.length})
-          </h3>
-          <ul className="space-y-2">
-            {videos.map((v, i) => (
-              <li key={i}>
-                <a
-                  href={v.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors group"
-                >
-                  <span
-                    className="shrink-0 w-9 h-9 rounded-full bg-rose-500/15 grid place-items-center"
-                    aria-hidden="true"
-                  >
-                    <VideoIcon size={14} className="text-rose-500" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-text)] truncate">
-                      {v.title ?? v.url}
-                    </p>
-                    {v.source && (
-                      <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mt-0.5">
-                        {v.source}
-                      </p>
-                    )}
-                  </div>
-                  <ExternalLink
-                    size={13}
-                    className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] shrink-0"
-                    aria-hidden="true"
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Videos — client component cu lightbox player în-pagină
+          (ImageLightbox-equivalent pentru video). Filenames junk
+          (upload IDs base64-like) sunt înlocuite cu „Video N". */}
+      <AftermathVideos videos={videos} />
 
       {/* Outcome */}
       {protest.aftermath_outcome && (
