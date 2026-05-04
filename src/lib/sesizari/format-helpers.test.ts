@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { capitalizeName, formatAddress, normalizeRoLocation } from "./format-helpers";
+import {
+  capitalizeName,
+  formatAddress,
+  normalizeRoLocation,
+  appendGdprClause,
+  GDPR_CLAUSE,
+} from "./format-helpers";
 
 describe("capitalizeName", () => {
   it("capitalizes single word", () => {
@@ -107,5 +113,68 @@ describe("normalizeRoLocation", () => {
 
   it("does not mangle standalone 'in' inside other words", () => {
     expect(normalizeRoLocation("Linus Pauling in capat")).toBe("Linus Pauling în capăt");
+  });
+});
+
+describe("appendGdprClause", () => {
+  it("inserts GDPR clause before 'Cu stimă,' signature", () => {
+    const input = `Bună ziua,
+
+Mă numesc Ion Popescu și locuiesc pe strada X.
+
+[corp sesizare...]
+
+Vă mulțumesc anticipat.
+
+Cu stimă,
+Ion Popescu
+4 mai 2026`;
+    const out = appendGdprClause(input);
+    // Clauza e prezentă
+    expect(out).toContain(GDPR_CLAUSE);
+    // E înainte de „Cu stimă"
+    expect(out.indexOf(GDPR_CLAUSE)).toBeLessThan(out.indexOf("Cu stimă,"));
+    // Semnătura + numele rămân după clauză, în ordinea originală
+    expect(out.indexOf("Cu stimă,")).toBeLessThan(out.indexOf("Ion Popescu\n4 mai 2026"));
+  });
+
+  it("inserts before 'Cu respect,' variant", () => {
+    const input = `Bună ziua,\n\nText...\n\nCu respect,\nNume\n4 mai 2026`;
+    const out = appendGdprClause(input);
+    expect(out).toContain(GDPR_CLAUSE);
+    expect(out.indexOf(GDPR_CLAUSE)).toBeLessThan(out.indexOf("Cu respect,"));
+  });
+
+  it("appends at end if no signature found", () => {
+    const input = "Bună ziua, problemă X.";
+    const out = appendGdprClause(input);
+    expect(out).toContain(GDPR_CLAUSE);
+    expect(out.endsWith(GDPR_CLAUSE)).toBe(true);
+  });
+
+  it("is idempotent — does not duplicate clause on repeated calls", () => {
+    const input = `Text\n\nCu stimă,\nNume`;
+    const once = appendGdprClause(input);
+    const twice = appendGdprClause(once);
+    expect(twice).toBe(once);
+    // Verify exact one occurrence
+    const occurrences = once.split("Regulamentului (UE) 2016/679").length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it("handles empty/null-ish input safely", () => {
+    expect(appendGdprClause("")).toBe("");
+    expect(appendGdprClause("   ")).toContain("Regulamentului (UE) 2016/679");
+  });
+
+  it("preserves blank-line spacing around inserted clause", () => {
+    const input = `Vă mulțumesc.\n\nCu stimă,\nNume`;
+    const out = appendGdprClause(input);
+    // Format expected: empty line, clause, empty line, signature
+    const lines = out.split("\n");
+    const clauseIdx = lines.findIndex((l) => l.startsWith("În temeiul Regulamentului"));
+    expect(clauseIdx).toBeGreaterThan(0);
+    expect(lines[clauseIdx - 1]).toBe(""); // blank before
+    expect(lines[clauseIdx + 1]).toBe(""); // blank after
   });
 });

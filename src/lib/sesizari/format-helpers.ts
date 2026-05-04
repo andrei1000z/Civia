@@ -5,6 +5,66 @@
  * imposibil de rulat unit tests pe componenta întreagă).
  */
 
+/**
+ * Clauza GDPR standard atașată automat la sfârșitul oricărei sesizări
+ * generate de AI. Solicită explicit primăriei/autorității să nu divulge
+ * datele cetățeanului persoanei sau entității vizate de sesizare.
+ *
+ * Reason: au fost cazuri în care primăria a forwarduit sesizarea
+ * (cu numele/adresa cetățeanului inclusă) către persoana reclamată
+ * (vecin, comerciant, etc.) → cetățeanul reclamat a primit acasă
+ * documentul oficial cu identitatea lui completă. GDPR art. 5
+ * (limitarea scopului + minimizarea datelor + confidențialitatea)
+ * obligă autoritățile să nu facă asta fără temei legal explicit.
+ *
+ * Adăugarea automată e idempotentă — dacă AI-ul deja a inclus clauza
+ * (improbabil dar posibil dacă o adăugăm și în prompt în viitor),
+ * helper-ul nu o dublează.
+ */
+export const GDPR_CLAUSE =
+  "În temeiul Regulamentului (UE) 2016/679 (GDPR), vă solicit ca prelucrarea " +
+  "datelor mele cu caracter personal să se realizeze cu respectarea principiilor " +
+  "prevăzute la art. 5, în special limitarea scopului, minimizarea datelor și " +
+  "confidențialitatea. În mod expres, solicit ca identitatea și datele mele de " +
+  "contact să nu fie divulgate persoanelor vizate de prezenta sesizare sau altor " +
+  "terți, în absența unui temei legal clar și justificat.";
+
+/**
+ * Inserează `GDPR_CLAUSE` ca paragraf separat înainte de semnătura
+ * "Cu stimă," / "Cu respect,". Dacă nu găsește semnătură, append la
+ * sfârșit. Idempotent: dacă clauza există deja, nu o duplică.
+ */
+export function appendGdprClause(text: string): string {
+  if (!text) return text;
+  // Idempotent check — primele 40 chars din clauză sunt distinctive.
+  if (text.includes("Regulamentului (UE) 2016/679")) return text;
+
+  const lines = text.split("\n");
+  let signatureIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = (lines[i] ?? "").trim();
+    // Matches "Cu stimă,", "Cu stima,", "Cu respect,", "Cu respect."
+    if (/^Cu\s+(stim[aă]|respect)[,.]?$/i.test(line)) {
+      signatureIdx = i;
+      break;
+    }
+  }
+
+  if (signatureIdx === -1) {
+    // Fără semnătură — append la final.
+    return text.trimEnd() + "\n\n" + GDPR_CLAUSE;
+  }
+
+  // Insert înainte de semnătură. Curăță rândurile goale precedente
+  // ca să avem exact UN rând liber de separare.
+  let insertAt = signatureIdx;
+  while (insertAt > 0 && (lines[insertAt - 1] ?? "").trim() === "") insertAt--;
+
+  const before = lines.slice(0, insertAt);
+  const after = lines.slice(signatureIdx);
+  return [...before, "", GDPR_CLAUSE, "", ...after].join("\n");
+}
+
 /** Capitalize each word: "ion POPESCU" → "Ion Popescu". */
 export function capitalizeName(name: string): string {
   return name

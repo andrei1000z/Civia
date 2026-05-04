@@ -7,6 +7,7 @@ import { getTemplate } from "@/lib/groq/templates";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { isProd } from "@/lib/env";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from "@/lib/ai/gemini";
+import { appendGdprClause } from "@/lib/sesizari/format-helpers";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -306,6 +307,12 @@ Răspunde JSON:
       .replace(/\$\{[^}]*new\s+Date[^}]*\}/gi, todayRo);
 
     parsed.formal_text = normalizeFormatting(parsed.formal_text);
+
+    // Apendix GDPR — adăugat determinist DUPĂ AI generation. Nu lăsăm
+    // AI-ul să-l producă (poate să-l rescrie/scape) — îl injectăm exact
+    // pe formularea cerută de cetățean ca paragraf înainte de „Cu stimă".
+    // Idempotent: dacă deja apare în text, nu se duplică.
+    parsed.formal_text = appendGdprClause(parsed.formal_text);
 
     // Debug headers — open DevTools → Network → /api/ai/improve →
     // Headers to see which provider actually generated the text.
