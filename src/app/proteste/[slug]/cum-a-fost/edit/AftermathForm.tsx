@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Video,
   Link as LinkIcon,
+  Upload,
 } from "lucide-react";
 import type {
   AftermathData,
@@ -75,17 +76,21 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
     setScrapeSummary(null);
     setScrapeDetails([]);
 
-    const urls = urlsRaw
-      .split(/[\n,\s]+/)
-      .map((u) => u.trim())
-      .filter((u) => /^https?:\/\//i.test(u));
+    // Extragem URL-urile din text liber (regex pe https?://...).
+    // Restul text-ului — non-URL — devine `notes` (observații admin)
+    // pe care AI-ul le folosește ca sursă PRIMARĂ.
+    const URL_RE = /https?:\/\/[^\s<>"]+/gi;
+    const urls = (urlsRaw.match(URL_RE) ?? [])
+      .map((u) => u.trim().replace(/[.,;:!?)]+$/, ""))
+      .slice(0, 10);
+    const notes = urlsRaw.replace(URL_RE, " ").replace(/\s+/g, " ").trim();
 
-    if (urls.length === 0) {
-      setScrapeError("Adaugă cel puțin un link valid (cu https://).");
+    if (urls.length === 0 && notes.length < 30) {
+      setScrapeError("Adaugă link-uri presă SAU scrie observații (min. 30 caractere).");
       return;
     }
     if (urls.length > 10) {
-      setScrapeError("Maxim 10 link-uri o dată.");
+      setScrapeError("Maxim 10 link-uri.");
       return;
     }
 
@@ -94,7 +99,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       const res = await fetch(`/api/proteste/${slug}/aftermath/scrape`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_urls: urls }),
+        body: JSON.stringify({ source_urls: urls, notes: notes || undefined }),
       });
       const json: ScrapeResponse = await res.json();
       if (!res.ok || !json.data) {
@@ -173,6 +178,69 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
   const removeImage = (i: number) =>
     patch({ images: data.images.filter((_, idx) => idx !== i) });
 
+  // Upload state — admin poate alege fișiere locale (poze sau video) și
+  // le urcăm pe Supabase Storage via /api/upload, apoi auto-append-uim
+  // URL-urile la lista de images/videos. Mai prietenos decât „pastează URL".
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleImageUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    setUploadingImages(true);
+    try {
+      const fd = new FormData();
+      // /api/upload acceptă maxim 5 fișiere per call
+      Array.from(files).slice(0, 5).forEach((f) => fd.append("files", f));
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = (await res.json()) as { data?: { urls: string[] }; error?: string };
+      if (!res.ok || !json.data) {
+        setUploadError(json.error ?? "Upload eșuat.");
+        return;
+      }
+      patch({
+        images: [...data.images, ...json.data.urls.map((url) => ({ url }))].slice(0, 12),
+      });
+    } catch {
+      setUploadError("Eroare de rețea la upload.");
+    } finally {
+      setUploadingImages(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  }
+
+  async function handleVideoUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploadingVideo(true);
+    try {
+      const fd = new FormData();
+      fd.append("files", file);
+      const res = await fetch("/api/upload?kind=video", { method: "POST", body: fd });
+      const json = (await res.json()) as { data?: { urls: string[] }; error?: string };
+      if (!res.ok || !json.data) {
+        setUploadError(json.error ?? "Upload video eșuat.");
+        return;
+      }
+      const url = json.data.urls[0];
+      if (url) {
+        patch({
+          videos: [...data.videos, { url, source: "direct", title: file.name }].slice(0, 8),
+        });
+      }
+    } catch {
+      setUploadError("Eroare de rețea la upload video.");
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  }
+
   const addVideo = () => patch({ videos: [...data.videos, { url: "" }] });
   const updateVideo = (i: number, p: Partial<AftermathVideo>) =>
     patch({
@@ -218,8 +286,8 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
               Completează automat din presă
             </h2>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Lipește 1-10 link-uri către articole care relatează protestul (un link per linie).
-              AI citește toate și completează câmpurile.
+              Lipește link-uri presă (până la 10) <strong>și/sau</strong> scrie observații proprii — ce ai văzut la protest, sloganuri, atmosferă, momente.
+              AI le combină și completează câmpurile de mai jos.
             </p>
           </div>
         </div>
@@ -227,11 +295,15 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         <textarea
           value={urlsRaw}
           onChange={(e) => setUrlsRaw(e.target.value)}
-          placeholder={
-            "https://www.digi24.ro/...\nhttps://hotnews.ro/...\nhttps://g4media.ro/..."
-          }
-          rows={5}
-          className="w-full rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          placeholder={`Lipește link-uri presă pe linii separate sau scrie ce ai văzut.
+
+Exemplu:
+https://www.digi24.ro/articol-protest
+https://g4media.ro/...
+
+Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scandat „Justiție" și „Dreptate". Au venit aproximativ 800 de persoane, în special tineri și pensionari...`}
+          rows={7}
+          className="w-full rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
         />
 
         {scrapeError && (
@@ -416,7 +488,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         {/* Images */}
         <Field
           label="Galerie poze"
-          hint="URL-uri publice (Imgur, Twitter media, OG images din articole). Max 12."
+          hint="Încarcă fișiere de pe device sau lipește URL-uri publice. Max 12."
           icon={ImageIcon}
         >
           <div className="space-y-2">
@@ -452,13 +524,40 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
               </div>
             ))}
             {data.images.length < 12 && (
-              <button
-                type="button"
-                onClick={addImage}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
-              >
-                <Plus size={13} aria-hidden /> Adaugă poză
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImages}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 py-2 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15 disabled:opacity-50 transition-colors"
+                >
+                  {uploadingImages ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" aria-hidden />
+                      Se încarcă...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={13} aria-hidden /> Încarcă poze
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={addImage}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                >
+                  <LinkIcon size={13} aria-hidden /> Lipește URL
+                </button>
+              </div>
             )}
           </div>
         </Field>
@@ -466,7 +565,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
         {/* Videos */}
         <Field
           label="Video-uri"
-          hint="Link-uri YouTube, TikTok, Instagram, Facebook video."
+          hint="Încarcă MP4/WebM/MOV (max 50 MB) sau lipește link YouTube/TikTok/Facebook."
           icon={Video}
         >
           <div className="space-y-2">
@@ -502,13 +601,45 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
               </div>
             ))}
             {data.videos.length < 8 && (
-              <button
-                type="button"
-                onClick={addVideo}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
-              >
-                <Plus size={13} aria-hidden /> Adaugă video
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime"
+                  className="hidden"
+                  onChange={(e) => handleVideoUpload(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 py-2 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15 disabled:opacity-50 transition-colors"
+                >
+                  {uploadingVideo ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" aria-hidden />
+                      Se încarcă...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={13} aria-hidden /> Încarcă video
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={addVideo}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                >
+                  <LinkIcon size={13} aria-hidden /> Lipește URL
+                </button>
+              </div>
+            )}
+            {uploadError && (
+              <div className="flex items-start gap-2 text-xs text-rose-600 dark:text-rose-400">
+                <AlertCircle size={12} className="shrink-0 mt-0.5" aria-hidden />
+                <span>{uploadError}</span>
+              </div>
             )}
           </div>
         </Field>

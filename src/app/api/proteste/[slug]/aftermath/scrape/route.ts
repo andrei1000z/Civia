@@ -35,13 +35,23 @@ async function requireAdmin() {
   return { ok: true as const };
 }
 
-const inputSchema = z.object({
-  // 1-10 link-uri către articole de presă scrise după protest.
-  source_urls: z
-    .array(z.string().url().max(2000))
-    .min(1, "Adaugă cel puțin un link.")
-    .max(10, "Maxim 10 link-uri."),
-});
+const inputSchema = z
+  .object({
+    // 0-10 link-uri către articole de presă scrise după protest.
+    // Acceptăm 0 pentru cazul când admin furnizează DOAR observații proprii
+    // (vezi `notes` mai jos) — AI-ul sintetizează direct din text.
+    source_urls: z.array(z.string().url().max(2000)).max(10).default([]),
+    // Observații libere ale admin-ului — AI le folosește ca context
+    // adițional la articolele scrape-uite (sau ca singură sursă dacă nu
+    // există URL-uri).
+    notes: z.string().trim().max(8000).optional(),
+  })
+  .refine(
+    (d) => (d.source_urls && d.source_urls.length > 0) || (d.notes && d.notes.length >= 30),
+    {
+      message: "Adaugă fie link-uri, fie observații proprii (min. 30 caractere).",
+    },
+  );
 
 export async function POST(
   req: Request,
@@ -107,17 +117,23 @@ export async function POST(
     );
   }
 
-  // 1. Scrape URL-urile în paralel.
-  const scraped = await scrapeMultiple(parsed.data.source_urls);
-  // Acceptăm orice articol cu body >= 100 chars (înainte 200 era prea
-  // strict — sites cu paywall sau JS-only render dau OG description scurtă
-  // dar tot utilă pentru AI). Sub 100 chars nu e suficient nici pentru AI.
+  // 1. Scrape URL-urile în paralel (dacă există).
+  const scraped =
+    parsed.data.source_urls.length > 0
+      ? await scrapeMultiple(parsed.data.source_urls)
+      : [];
+  // Acceptăm orice articol cu body >= 100 chars.
   const okScraped = scraped.filter((s) => s.ok && s.body && s.body.length >= 100);
-  if (okScraped.length === 0) {
+  const adminNotes = (parsed.data.notes ?? "").trim();
+
+  // Trebuie să avem măcar SOMETHING — fie articole scrape-uite cu succes,
+  // fie observații substanțiale ale admin-ului. Schema garantează că
+  // input-ul nu e gol, dar scrape-ul poate eșua complet pe URL-uri.
+  if (okScraped.length === 0 && adminNotes.length < 30) {
     return NextResponse.json(
       {
         error:
-          "Nu am putut citi conținutul niciunui link. Verifică că URL-urile sunt accesibile public.",
+          "Nu am putut citi conținutul niciunui link. Adaugă observații proprii sau verifică URL-urile.",
         scraped,
       },
       { status: 422 },
@@ -134,15 +150,27 @@ export async function POST(
   const articles = okScraped
     .map((s, i) => {
       const head = `## Articol ${i + 1}\nURL: ${s.url}\nTitlu: ${s.title ?? "(n/a)"}\nPublicație: ${s.publication ?? "(n/a)"}\n\n`;
-      // 2200 chars/articol × 10 = 22k chars input ≈ 6k tokens. Sub
-      // bugetul TPD-ului Groq (500k/zi) cu loc de 80+ apeluri/zi.
-      // Mai mult material → AI extrage mai multe sloganuri și momente.
       const body = (s.body ?? "").slice(0, 2200);
       return head + body;
     })
     .join("\n\n---\n\n");
 
-  const userPrompt = `PROTESTUL: "${p.title}"\nDATA: ${protestDate}\n\nARTICOLELE DE PRESĂ:\n\n${articles}\n\nReturnează DOAR JSON conform schemei.`;
+  // Prompt-ul include OBSERVAȚIILE ADMIN ca sursă PRIMARĂ când există
+  // (admin-ul a fost prezent la protest sau are info first-hand).
+  // Articolele de presă completează contextul. Dacă lipsesc URL-uri,
+  // promptul folosește doar observațiile.
+  const sections: string[] = [`PROTESTUL: "${p.title}"`, `DATA: ${protestDate}`];
+  if (adminNotes) {
+    sections.push(
+      "OBSERVAȚII ADMINISTRATOR (sursă PRIMARĂ — admin-ul a fost prezent sau are info first-hand; tratează cu prioritate):",
+      adminNotes.slice(0, 6000),
+    );
+  }
+  if (articles) {
+    sections.push("ARTICOLELE DE PRESĂ:", articles);
+  }
+  sections.push("Returnează DOAR JSON conform schemei.");
+  const userPrompt = sections.join("\n\n");
 
   // 3. AI call chain — 7 candidați, fiecare cu quota separată.
   // Verificat empiric 5/3/2026 după ce user-ul a raportat „toate cotele

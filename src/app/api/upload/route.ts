@@ -9,9 +9,14 @@ export const maxDuration = 30;
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_DOC_TYPES = [...ALLOWED_IMAGE_TYPES, "application/pdf"];
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 // PDFs are allowed up to a higher cap because scanned official letters
 // often run 2–10 MB, but only when the caller opts in via `kind=document`.
 const PDF_MAX_BYTES = 15 * 1024 * 1024;
+// Video: telefoane moderne fac clip-uri de 30 sec ≈ 30-50 MB H.264.
+// Cap-ăm la 50 MB ca să rămânem în limita Vercel (body 4.5MB pe edge,
+// dar nodejs runtime + Supabase Storage acceptă mai mult).
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -23,12 +28,21 @@ export async function POST(req: Request) {
     );
   }
 
-  // `kind=document` opts in to PDF uploads (status-ticket evidence,
-  // official-response receipts). The default flow stays image-only so
-  // sesizari photo uploads can't accidentally accept arbitrary PDFs.
+  // `kind` opts in to specific media types:
+  //   - default (image)   — sesizari photo flow
+  //   - document          — PDF uploads (status receipts, official letters)
+  //   - video             — proteste aftermath video clips
+  // Default rămâne image-only ca să nu accepte arbitrar alte tipuri.
   const url = new URL(req.url);
-  const kind = url.searchParams.get("kind") === "document" ? "document" : "image";
-  const allowedTypes = kind === "document" ? ALLOWED_DOC_TYPES : ALLOWED_IMAGE_TYPES;
+  const kindParam = url.searchParams.get("kind");
+  const kind: "image" | "document" | "video" =
+    kindParam === "document" ? "document" : kindParam === "video" ? "video" : "image";
+  const allowedTypes =
+    kind === "document"
+      ? ALLOWED_DOC_TYPES
+      : kind === "video"
+        ? ALLOWED_VIDEO_TYPES
+        : ALLOWED_IMAGE_TYPES;
 
   try {
     const formData = await req.formData();
@@ -46,24 +60,35 @@ export async function POST(req: Request) {
       if (!allowedTypes.includes(file.type)) {
         return NextResponse.json({ error: `Tip invalid: ${file.type}` }, { status: 400 });
       }
-      const sizeCap = file.type === "application/pdf" ? PDF_MAX_BYTES : MAX_FILE_SIZE;
+      const sizeCap =
+        file.type === "application/pdf"
+          ? PDF_MAX_BYTES
+          : file.type.startsWith("video/")
+            ? VIDEO_MAX_BYTES
+            : MAX_FILE_SIZE;
       if (file.size > sizeCap) {
         return NextResponse.json({ error: `Fișier prea mare: ${file.name}` }, { status: 400 });
       }
-      const validMagic =
-        file.type === "application/pdf"
-          ? await isValidPdf(file)
-          : await isValidImage(file);
-      if (!validMagic) {
-        return NextResponse.json(
-          {
-            error:
-              file.type === "application/pdf"
-                ? `Fișier PDF corupt: ${file.name}`
-                : `Fișier corupt sau nu e imagine reală: ${file.name}`,
-          },
-          { status: 400 }
-        );
+      // Magic-byte validation: pentru imagini + PDF avem helper-e robuste.
+      // Video skipăm (size cap + MIME check trebuie să fie suficient — un
+      // exploit prin video file în storage-ul nostru servit static e
+      // foarte improbabil; oricum, container-ul de browser sandbox-ează).
+      if (file.type !== "application/pdf" && !file.type.startsWith("video/")) {
+        const validMagic = await isValidImage(file);
+        if (!validMagic) {
+          return NextResponse.json(
+            { error: `Fișier corupt sau nu e imagine reală: ${file.name}` },
+            { status: 400 }
+          );
+        }
+      } else if (file.type === "application/pdf") {
+        const validMagic = await isValidPdf(file);
+        if (!validMagic) {
+          return NextResponse.json(
+            { error: `Fișier PDF corupt: ${file.name}` },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -79,6 +104,9 @@ export async function POST(req: Request) {
       "image/webp": "webp",
       "image/gif": "gif",
       "application/pdf": "pdf",
+      "video/mp4": "mp4",
+      "video/webm": "webm",
+      "video/quicktime": "mov",
     };
 
     for (const file of files) {
