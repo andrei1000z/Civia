@@ -119,8 +119,12 @@ export function repairSesizareLeaks(text: string): string {
   //    fraza întreagă. Altfel, înlocuim placeholder-ul cu spațiu gol +
   //    curățăm punctuația rămasă.
   // Patterns gen „Mă numesc X, locuiesc în [ADRESA]" → „Mă numesc X"
+  // sau „Mă numesc X și locuiesc în [ADRESA]" — separatorul poate fi
+  // „, " sau „ și/şi/si " (ultima fiind output-ul din rule 1 atunci
+  // când transformăm „Subsemnatul X, domiciliat în Y" → „Mă numesc X
+  // și locuiesc în Y", dar Y-ul e placeholder).
   t = t.replace(
-    /,\s*(?:locuiesc|domiciliat[uă]?|cu\s+domiciliul)\s+(?:în|pe)\s*[\[{][A-ZĂÂÎȘȚ_ ]+[\]}]\s*/g,
+    /(?:,\s*|\s+(?:și|şi|si)\s+)(?:locuiesc|domiciliat[uă]?|cu\s+domiciliul)\s+(?:în|pe)\s*[\[{][A-ZĂÂÎȘȚ_ ]+[\]}]\s*/g,
     "",
   );
   // Generic: orice {TOKEN} sau [TOKEN] cu litere mari → strip
@@ -128,6 +132,9 @@ export function repairSesizareLeaks(text: string): string {
   // Curăță „, ," sau „, ." rezidual de la replace-uri
   t = t.replace(/,\s*,/g, ",");
   t = t.replace(/,\s*\./g, ".");
+  // „Mă numesc X , mă adresez" → „Mă numesc X, mă adresez" (strip de
+  // placeholder a lăsat virgulă orfană înainte de spațiu).
+  t = t.replace(/\s+,/g, ",");
   // Spațiu dublu între cuvinte (lăsat de strip-uri)
   t = t.replace(/[ \t]{2,}/g, " ");
 
