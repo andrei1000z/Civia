@@ -122,13 +122,29 @@ Datele agregate publice sunt licențiate **CC BY 4.0** — reutilizează cu atri
 
 ---
 
+## Privacy & analytics (transparență)
+
+Civia colectează **analytics anonime** prin Upstash Redis cu retenție de 30 de zile:
+- Hash de visitor ID, country/city derivat din IP, clasă de device, pageview-uri, click-uri, web vitals, AI usage counts.
+- **Nu** se colectează email, nume, sau adresă în analytics.
+- Per-visitor session timeline în `/admin/analytics/sessions` — last 200 events / visitor, TTL 30 zile, cap 1000 vizitatori. Folosit pentru debugging UX (rage-clicks, error spikes), niciodată pentru profilare individuală.
+- Cookie consent granular pe homepage (Accept toate / Respinge non-esențiale / Personalizează — egal de easy de respins).
+
+User-ul poate exporta toate datele lui (JSON) sau șterge contul definitiv din `/cont`. Politica completă: `/legal/confidentialitate`.
+
+Pentru raportare vulnerabilități de securitate: vezi [`SECURITY.md`](./SECURITY.md).
+
 ## Contribuie
 
 - **GitHub Issues** — bug reports + feature requests
-- **PR-uri** — bine venite, citește `AGENTS.md` pentru convenții
+- **PR-uri** — bine venite, citește [`CONTRIBUTING.md`](./CONTRIBUTING.md) și [`AGENTS.md`](./AGENTS.md) pentru convenții
 - **Date locale lipsă** — emailuri primării, ziare locale, surse oficiale lipsă din catalog: deschide un issue sau folosește formularul de feedback din footer
 - **Conținut** — petiții civice de adăugat, ghiduri de scris, evenimente locale: la fel
+- **Code of Conduct** — vezi [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
+- **Securitate** — raportează vulnerabilitățile **privat**, vezi [`SECURITY.md`](./SECURITY.md)
 
 ## Licență
 
-Codul-sursă: vezi LICENSE. Datele agregate publice: CC BY 4.0. Branding-ul Civia (logo, identitate vizuală, nume) rămâne proprietatea operatorului.
+- Cod sursă: **MIT** — vezi [`LICENSE`](./LICENSE).
+- Date agregate publice: **CC BY 4.0** — reutilizează cu atribuire.
+- Branding-ul Civia (logo, identitate vizuală, nume „Civia") rămâne proprietatea operatorului. Dacă faci fork și deploy public, te rugăm să rebrand-uiești.

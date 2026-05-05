@@ -1,6 +1,6 @@
 /**
  * Email-side text formatting helpers. Keeps every transactional email
- * consistent: no „Salut musateduardandrei10," lines, no double commas,
+ * consistent: no „Salut ion.popescu123," lines, no double commas,
  * no missing comma when a real name is present.
  *
  * Why this lives here and not next to `emailTemplate`: the template is
@@ -23,7 +23,7 @@ const PLACEHOLDER_NAMES = new Set(["cetățean", "cetatean", "cetățean anonim"
  *   - placeholder strings (Cetățean, Cetățean anonim, …)
  *   - matches the email's local part (default Supabase display_name
  *     for users who never set their name)
- *   - contains digits (musateduardandrei10, andrei1000z)
+ *   - contains digits (ion.popescu123, user1000z)
  *   - not all letters / hyphen / apostrophe (no spaces / digits / dots)
  *   - ≤ 1 char or > 30 chars
  *
@@ -76,7 +76,7 @@ export function formatRecipientName(opts: {
  * Build the salutation line. With a name we get „Salut, Eduard 👋"
  * (the wave emoji is opt-in via `withEmoji` so transactional /
  * decision emails can stay sober). Without a name we get „Bună!" —
- * never „Salut musateduardandrei10".
+ * never „Salut ion.popescu123".
  */
 export function buildSalutation(opts: {
   displayName?: string | null;

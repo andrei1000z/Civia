@@ -3,12 +3,12 @@ import { buildSalutation, formatRecipientName } from "./format";
 
 describe("formatRecipientName", () => {
   test("returns first capitalized name when fullName is a real human name", () => {
-    expect(formatRecipientName({ fullName: "Eduard Musat" })).toBe("Eduard");
+    expect(formatRecipientName({ fullName: "Ion Popescu" })).toBe("Ion");
     expect(formatRecipientName({ fullName: "Maria-Elena Popescu" })).toBe("Maria-Elena");
   });
 
   test("normalizes case (ALL CAPS / lowercase → Title Case)", () => {
-    expect(formatRecipientName({ fullName: "EDUARD" })).toBe("Eduard");
+    expect(formatRecipientName({ fullName: "ION" })).toBe("Ion");
     expect(formatRecipientName({ fullName: "andrei" })).toBe("Andrei");
   });
 
@@ -20,14 +20,14 @@ describe("formatRecipientName", () => {
   test("returns null when displayName equals the email local part", () => {
     expect(
       formatRecipientName({
-        displayName: "musateduardandrei10",
-        email: "musateduardandrei10@gmail.com",
+        displayName: "ion.popescu",
+        email: "ion.popescu@example.com",
       }),
     ).toBeNull();
   });
 
   test("returns null when the only candidate has digits in it", () => {
-    expect(formatRecipientName({ displayName: "andrei1000z" })).toBeNull();
+    expect(formatRecipientName({ displayName: "user1000z" })).toBeNull();
     expect(formatRecipientName({ fullName: "user42" })).toBeNull();
   });
 
@@ -39,8 +39,8 @@ describe("formatRecipientName", () => {
 
   test("prefers fullName over displayName", () => {
     expect(
-      formatRecipientName({ fullName: "Eduard Pop", displayName: "andrei1000z" }),
-    ).toBe("Eduard");
+      formatRecipientName({ fullName: "Ion Pop", displayName: "user1000z" }),
+    ).toBe("Ion");
   });
 
   test("falls back to displayName when fullName is missing or rejected", () => {
@@ -56,8 +56,8 @@ describe("formatRecipientName", () => {
   });
 
   test("rejects names that look like emails or URLs (non-letter chars)", () => {
-    expect(formatRecipientName({ fullName: "andrei@civia.ro" })).toBeNull();
-    expect(formatRecipientName({ fullName: "https://civia.ro" })).toBeNull();
+    expect(formatRecipientName({ fullName: "ion@example.com" })).toBeNull();
+    expect(formatRecipientName({ fullName: "https://example.com" })).toBeNull();
   });
 
   test("returns null when both candidates are empty", () => {
@@ -67,29 +67,29 @@ describe("formatRecipientName", () => {
 });
 
 describe("buildSalutation", () => {
-  test('returns "Salut, Eduard," with comma when a name is found', () => {
-    expect(buildSalutation({ fullName: "Eduard Pop" })).toBe("Salut, Eduard,");
+  test('returns "Salut, Ion," with comma when a name is found', () => {
+    expect(buildSalutation({ fullName: "Ion Pop" })).toBe("Salut, Ion,");
   });
 
   test("appends a wave emoji when withEmoji is set", () => {
-    expect(buildSalutation({ fullName: "Eduard", withEmoji: true })).toBe("Salut, Eduard 👋");
+    expect(buildSalutation({ fullName: "Ion", withEmoji: true })).toBe("Salut, Ion 👋");
   });
 
   test('returns "Bună!" when no clean name is available', () => {
     expect(
       buildSalutation({
-        displayName: "musateduardandrei10",
-        email: "musateduardandrei10@gmail.com",
+        displayName: "ion.popescu",
+        email: "ion.popescu@example.com",
       }),
     ).toBe("Bună!");
   });
 
   test("never emits Salut + email-local-part", () => {
     const out = buildSalutation({
-      displayName: "andrei1000z",
-      email: "andrei1000z@github.com",
+      displayName: "user1000z",
+      email: "user1000z@github.com",
     });
-    expect(out).not.toContain("andrei1000z");
+    expect(out).not.toContain("user1000z");
     expect(out).toBe("Bună!");
   });
 });

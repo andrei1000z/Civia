@@ -182,11 +182,11 @@ Ion Popescu
 
 describe("repairSesizareLeaks", () => {
   it("rescrie 'Subsemnatul X, domiciliat în Y' → 'Mă numesc X și locuiesc în Y'", () => {
-    const input = "Bună ziua, Subsemnatul Eduard Mușat, domiciliat în Strada Novaci, vă rog...";
+    const input = "Bună ziua, Subsemnatul Ion Popescu, domiciliat în Strada Florilor, vă rog...";
     const out = repairSesizareLeaks(input);
     expect(out).not.toMatch(/Subsemnatul/i);
     expect(out).not.toMatch(/domiciliat în/i);
-    expect(out).toContain("Mă numesc Eduard Mușat și locuiesc în Strada Novaci");
+    expect(out).toContain("Mă numesc Ion Popescu și locuiesc în Strada Florilor");
   });
 
   it("rescrie 'Subsemnata X, domiciliată în Y' (feminin)", () => {
@@ -207,11 +207,11 @@ describe("repairSesizareLeaks", () => {
   });
 
   it("strip-uiește placeholder-uri ne-substituite [ADRESA] / {NUMELE}", () => {
-    const input = "Mă numesc Eduard, locuiesc în [ADRESA], doresc să...";
+    const input = "Mă numesc Ion, locuiesc în [ADRESA], doresc să...";
     const out = repairSesizareLeaks(input);
     expect(out).not.toContain("[ADRESA]");
-    // Cu strip-ul, structura devine „Mă numesc Eduard, doresc să..."
-    expect(out).toMatch(/Mă numesc Eduard,?\s+doresc/);
+    // Cu strip-ul, structura devine „Mă numesc Ion, doresc să..."
+    expect(out).toMatch(/Mă numesc Ion,?\s+doresc/);
   });
 
   it("strip-uiește placeholder generic { TOKEN } în corpul textului", () => {

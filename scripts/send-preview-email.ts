@@ -22,14 +22,19 @@ import {
 import { buildSalutation } from "../src/lib/email/format";
 import { SESIZARE_STATUS_META } from "../src/lib/sesizari/status";
 
-const TO = process.argv[2] ?? "musateduardandrei10@gmail.com";
+// Pass recipient as CLI arg: `npx tsx scripts/send-preview-email.ts you@example.com`
+const TO = process.argv[2];
+if (!TO) {
+  console.error("Usage: npx tsx scripts/send-preview-email.ts <recipient-email>");
+  process.exit(1);
+}
 
 async function main() {
-  // Pretend the recipient is „Eduard" so they see the polished greeting
+  // Pretend the recipient is „Ion" so they see the polished greeting
   // path. The salutation helper would otherwise fall through to „Bună!"
-  // since the email's local part contains digits.
+  // since the email's local part may contain digits.
   const salutation = buildSalutation({
-    fullName: "Eduard Musat",
+    fullName: "Ion Popescu",
     email: TO,
     withEmoji: true,
   });

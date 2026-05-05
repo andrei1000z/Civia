@@ -11,7 +11,7 @@ const BASE = {
   titlu: "T",
   locatie: "Șoseaua Pantelimon 292",
   descriere: "d",
-  author_name: "Eduard Andrei Mușat",
+  author_name: "Ion Andrei Popescu",
   author_address: "Strada Novaci 12, Sector 5",
 };
 
@@ -30,7 +30,7 @@ CineVrea Altcineva
     // Exactly one "Sector 5" — not "Sector 5, Sector 5"
     const matches = out.match(/Sector 5/g) ?? [];
     expect(matches.length).toBe(1);
-    expect(out).toContain("Mă numesc Eduard Andrei Mușat");
+    expect(out).toContain("Mă numesc Ion Andrei Popescu");
     expect(out).toContain("locuiesc în Strada Novaci 12, Sector 5");
     // Tail ("și doresc...") must survive
     expect(out).toMatch(/și\s+doresc/);
@@ -65,7 +65,7 @@ Altcineva
 20 martie 2024`;
     const out = buildFormalText({ ...BASE, formal_text: aiText });
     expect(out).not.toContain("Subsemnatul");
-    expect(out).toContain("Mă numesc Eduard Andrei Mușat");
+    expect(out).toContain("Mă numesc Ion Andrei Popescu");
     expect(out).toContain("Strada Novaci 12, Sector 5");
   });
 
@@ -141,7 +141,7 @@ describe("buildEmailPayload — parcare legal template", () => {
       lat: 44.441,
       lng: 26.123,
       descriere: "Mașină parcată pe trotuar de o săptămână.",
-      author_name: "Eduard Andrei Mușat",
+      author_name: "Ion Andrei Popescu",
       author_address: "Strada Novaci 12, Sector 5",
       imagini: ["https://x/a.jpg", "https://x/b.jpg"],
       parking: { plate: "B 123 ABC", jurisdiction: "trotuar" },
