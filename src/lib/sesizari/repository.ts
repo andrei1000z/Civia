@@ -98,22 +98,27 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
       (!!viewerEmail && r.author_email?.toLowerCase().trim() === viewerEmail);
     if (isOwner) return r; // owner sees their own name + address + email
 
-    const idHit = !!r.user_id && hiddenIds.has(r.user_id);
-    const emailHit =
-      !!r.author_email && hiddenEmails.has(r.author_email.toLowerCase().trim());
-    const hideName = idHit || emailHit;
+    // Decizie 5/5/2026: scrub-uim NUMELE pentru TOȚI ne-owneri, default
+    // on. Anterior era opt-in via hidden_users (idHit/emailHit) — dar
+    // user-ul a observat numele real exposed pe pagina publică (incluzând
+    // sesizări co-semnate cu numele original al inițiatorului). Privacy
+    // by default, nu privacy by opt-in. Owner-ul își vede tot numele
+    // său (logged-in match pe user_id sau author_email).
+    void hiddenIds;
+    void hiddenEmails;
+    const hideName = true;
 
     let scrubbedFormalText = r.formal_text ?? null;
     if (scrubbedFormalText) {
       scrubbedFormalText = scrubFormalTextForPublic(scrubbedFormalText, {
         authorName: r.author_name,
-        hideName, // scrub name only when user opted in
+        hideName,
       });
     }
 
     return {
       ...r,
-      author_name: hideName ? ANONYMOUS_LABEL : r.author_name,
+      author_name: ANONYMOUS_LABEL,
       author_email: null, // never expose to non-owner non-admin viewers
       formal_text: scrubbedFormalText,
     };

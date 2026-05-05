@@ -106,6 +106,14 @@ export function repairSesizareLeaks(text: string): string {
     "doresc să vă aduc la cunoștință o problemă care afectează",
   );
 
+  // 2.5. „Sector X. Y" → „Sector X" — pattern observat de user pe
+  //      adrese tip „Strada Novaci 12, Sector 5. 12" unde trailing
+  //      „. 12" e un artefact (probabil număr stradă duplicat la
+  //      capătul adresei). Detectăm „Sector \d+\. \d+" și păstrăm doar
+  //      sectorul. Match doar dacă numărul după punct e ≤ 999 (nu
+  //      ștergem un cod poștal sau coordonată).
+  t = t.replace(/\b(Sector\s+\d+)\.\s+\d{1,3}\b/gi, "$1");
+
   // 3. Placeholder-uri ne-substituite: {NUMELE}, [ADRESA], {LOCAȚIA}, etc.
   //    Strategie: dacă apare „domiciliat în [ADRESA]" sau similar, scoatem
   //    fraza întreagă. Altfel, înlocuim placeholder-ul cu spațiu gol +
@@ -135,10 +143,14 @@ export function capitalizeName(name: string): string {
     .join(" ");
 }
 
-/** Clean up address: trim, capitalize first letter. Restul rămâne neatins. */
+/** Clean up address: trim, capitalize first letter, strip „Sector X. Y" artifact. */
 export function formatAddress(addr: string): string {
-  const trimmed = addr.trim();
+  let trimmed = addr.trim();
   if (!trimmed) return trimmed;
+  // Same „Sector 5. 12" → „Sector 5" cleanup as in repairSesizareLeaks (2.5).
+  // Aplicat aici pe address-ul bare ca să prindem și cazurile în care
+  // adresa NU trece prin AI (ex: form direct, fără improve).
+  trimmed = trimmed.replace(/\b(Sector\s+\d+)\.\s+\d{1,3}\b/gi, "$1");
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
