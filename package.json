@@ -61,6 +61,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "happy-dom": "^20.8.9",
+    "mapshaper": "^0.7.9",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
