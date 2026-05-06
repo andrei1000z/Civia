@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ImageOverlay } from "react-leaflet";
 import type { UnifiedSensor } from "@/lib/aer/types";
 import { getAqiColor } from "@/lib/aer/colors";
+import { geojsonUrl } from "@/lib/maps/geojson-url";
 
 /**
  * AQI heatmap as a single Canvas ImageOverlay.
@@ -160,7 +161,7 @@ export function AirHeatGrid({ sensors, clipBounds, estimationCells }: Props) {
   // bounds — the rectangle replaces the polygon mask.
   useEffect(() => {
     if (clipBounds) return;
-    fetch("/geojson/romania-border.json")
+    fetch(geojsonUrl("romania-border.json"))
       .then((r) => r.json())
       .then((j) => {
         const geom = j.geometry;

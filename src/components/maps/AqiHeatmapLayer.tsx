@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Circle, useMap } from "react-leaflet";
+import { geojsonUrl } from "@/lib/maps/geojson-url";
 
 /**
  * Air-quality heatmap masked to Bucharest admin boundary.
@@ -115,7 +116,7 @@ export function AqiHeatmapLayer() {
 
   // Load border once
   useEffect(() => {
-    fetch("/geojson/bucuresti-border.json")
+    fetch(geojsonUrl("bucuresti-border.json"))
       .then((r) => r.json())
       .then((j: BorderFeature) => setBorder(j))
       .catch(() => setBorder(null));

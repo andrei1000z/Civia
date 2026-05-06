@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { GeoJsonLayer } from "./GeoJsonLayer";
 import { NationalAqiLayer } from "./NationalAqiLayer";
+import { geojsonUrl } from "@/lib/maps/geojson-url";
 import dynamic from "next/dynamic";
 
 const DynamicRoadsLayer = dynamic(() => import("./DynamicRoadsLayer").then(m => ({ default: m.DynamicRoadsLayer })), { ssr: false });
@@ -181,7 +182,7 @@ export default function HartiLayers(props: HartiLayersProps) {
     return (
       <GeoJsonLayer
         key="bike"
-        url="/geojson/bicicleta-romania.json"
+        url={geojsonUrl("bicicleta-romania.json")}
         style={memoizedBikeStyle}
         popupFormatter={bikePopup}
       />
@@ -196,7 +197,7 @@ export default function HartiLayers(props: HartiLayersProps) {
     return (
       <>
         {showParcuri && (
-          <GeoJsonLayer key="parks" url="/geojson/parcuri-romania.json" style={parkStyle} popupFormatter={parkPopup} />
+          <GeoJsonLayer key="parks" url={geojsonUrl("parcuri-romania.json")} style={parkStyle} popupFormatter={parkPopup} />
         )}
         {showPietonal && <DynamicPedestrianLayer />}
       </>
@@ -209,7 +210,7 @@ export default function HartiLayers(props: HartiLayersProps) {
         {/* Static layers: autostrăzi + naționale (always visible, lightweight) */}
         <GeoJsonLayer
           key="autostrazi"
-          url="/geojson/autostrazi-romania.json"
+          url={geojsonUrl("autostrazi-romania.json")}
           style={() => ({ color: "#DC2626", weight: 3, opacity: 0.9 })}
           popupFormatter={(f: Feature) => {
             const p = f.properties ?? {};
@@ -218,7 +219,7 @@ export default function HartiLayers(props: HartiLayersProps) {
         />
         <GeoJsonLayer
           key="nationale"
-          url="/geojson/nationale-romania.json"
+          url={geojsonUrl("nationale-romania.json")}
           style={(f?: Feature) => {
             const hw = f?.properties?.highway;
             if (hw === "trunk") return { color: "#F97316", weight: 2, opacity: 0.8 };
@@ -245,19 +246,19 @@ export default function HartiLayers(props: HartiLayersProps) {
             tram, etc. */}
         <GeoJsonLayer
           key="bus"
-          url="/geojson/autobuz-romania.json"
+          url={geojsonUrl("autobuz-romania.json")}
           style={busStyle}
           popupFormatter={busPopup}
         />
         <GeoJsonLayer
           key="trolleybus"
-          url="/geojson/troleibuz-romania.json"
+          url={geojsonUrl("troleibuz-romania.json")}
           style={trolleybusStyle}
           popupFormatter={trolleybusPopup}
         />
-        <GeoJsonLayer key="trams" url="/geojson/tramvai-romania.json" style={tramStyle} />
-        <GeoJsonLayer key="metro-lines" url="/geojson/metrou.json" style={memoizedMetroStyle} popupFormatter={metroLinePopup} />
-        <GeoJsonLayer key="metro-stations" url="/geojson/metrou-statii.json" style={metroStationStyle()} popupFormatter={metroStationPopup} />
+        <GeoJsonLayer key="trams" url={geojsonUrl("tramvai-romania.json")} style={tramStyle} />
+        <GeoJsonLayer key="metro-lines" url={geojsonUrl("metrou.json")} style={memoizedMetroStyle} popupFormatter={metroLinePopup} />
+        <GeoJsonLayer key="metro-stations" url={geojsonUrl("metrou-statii.json")} style={metroStationStyle()} popupFormatter={metroStationPopup} />
         {/* Dynamic: bus stops + extra rail progressively stream in
             from Overpass at zoom >= 13. */}
         <DynamicTransitLayer />
