@@ -134,6 +134,7 @@ export default async function PetitiePage({
             <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] bg-[var(--color-surface-2)] rounded-[var(--radius-md)] overflow-hidden mb-5 md:mb-6">
               <Image
                 src={petitie.image_url}
+                unoptimized
                 alt={petitie.title}
                 fill
                 priority

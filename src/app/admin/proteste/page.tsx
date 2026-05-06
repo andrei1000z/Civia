@@ -1320,6 +1320,7 @@ function ListGroup({
                   <div className="relative w-20 h-14 rounded-[var(--radius-xs)] overflow-hidden bg-[var(--color-surface-2)] shrink-0">
                     <Image
                       src={r.cover_image_url}
+                      unoptimized
                       alt=""
                       fill
                       sizes="80px"

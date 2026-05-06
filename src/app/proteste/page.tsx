@@ -286,6 +286,7 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
           <div className="relative aspect-[16/9] bg-[var(--color-surface-2)]">
             <Image
               src={p.cover_image_url}
+              unoptimized
               alt=""
               fill
               sizes="(max-width: 768px) 100vw, 50vw"

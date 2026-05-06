@@ -182,6 +182,7 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
         <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
           <Image
             src={p.image_url}
+            unoptimized
             alt={p.title}
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"

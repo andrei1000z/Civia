@@ -368,11 +368,11 @@ export function StiriList() {
                   {stire.image_url ? (
                     <Image
                       src={stire.image_url}
+                      unoptimized
                       alt={stire.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover opacity-90"
-                      unoptimized
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLElement).style.display = "none";

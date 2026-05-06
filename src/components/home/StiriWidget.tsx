@@ -165,10 +165,10 @@ export async function StiriWidget() {
                     {s.image_url && (
                       <Image
                         src={s.image_url}
+                        unoptimized
                         alt=""
                         fill
                         sizes="64px"
-                        unoptimized
                         className="object-cover"
                       />
                     )}

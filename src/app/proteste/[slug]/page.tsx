@@ -311,6 +311,7 @@ export default async function ProtestDetailPage({
           <div className="relative aspect-[16/8] bg-[var(--color-surface-2)]">
             <Image
               src={p.cover_image_url}
+              unoptimized
               alt={p.title}
               fill
               priority
