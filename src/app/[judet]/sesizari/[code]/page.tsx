@@ -131,7 +131,7 @@ export default async function CountySesizareDetail({
                 Text formal
               </h2>
               <div className="bg-[var(--color-surface-2)] rounded-[var(--radius-xs)] p-4 text-xs font-mono whitespace-pre-wrap">
-                {stripPrivateAddress(sesizare.formal_text)}
+                {stripPrivateAddress(sesizare.formal_text, sesizare.author_name)}
               </div>
             </section>
           )}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { stripPrivateAddress } from "@/lib/privacy";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,13 @@ export async function GET(
 <p style="font-size:10pt;color:#666;margin-bottom:16px">📍 ${sesizare.locatie}</p>
 
 ${sesizare.formal_text
-  ? `<div class="body">${sesizare.formal_text.split("\n\n").map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("")}</div>`
+  ? (() => {
+      // Defense-in-depth scrub: getSesizareByCode already redacts for
+      // non-owners, but apply stripPrivateAddress anyway as backup so
+      // the printed PDF can't leak even on a cache or fetch regression.
+      const scrubbed = stripPrivateAddress(sesizare.formal_text, sesizare.author_name);
+      return `<div class="body">${scrubbed.split("\n\n").map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("")}</div>`;
+    })()
   : `<div class="body"><p>${sesizare.descriere}</p></div>`
 }
 

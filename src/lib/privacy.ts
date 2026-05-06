@@ -1,44 +1,36 @@
 /**
- * Strip ONLY the address from formal text, keeping everything else intact
- * (name, paragraph structure, line breaks, signature).
+ * Strip private info (address + name + phones + emails) from a formal
+ * text for PUBLIC display.
  *
- * "domiciliată în Str. Țintasului 17-19, ap 14, mă adresez"
- *   → "domiciliată în [adresă protejată], mă adresez"
+ * Defense-in-depth: this is called as a final barrier in pages even
+ * though repository.ts already scrubs at fetch time. If anything skips
+ * the repository scrub (cached row, alternate fetch path, future
+ * regression), this catches it.
+ *
+ * Delegates address+name redaction to `scrubFormalTextForPublic` so
+ * there's exactly ONE pattern source of truth. Adds phone/email scrub
+ * on top.
  */
 
-export function stripPrivateAddress(text: string): string {
+import { scrubFormalTextForPublic } from "./sesizari/scrub-public";
+
+export function stripPrivateAddress(text: string, authorName?: string | null): string {
   if (!text) return text;
 
-  let result = text;
+  // 1. Address + name redaction (handles both "Mă numesc X, locuiesc..."
+  //    and legacy "Subsemnatul X, domiciliat în..." openers + signature).
+  let result = scrubFormalTextForPublic(text, {
+    authorName: authorName ?? null,
+    hideName: true,
+  });
 
-  // Replace the address between "domiciliat(ă) în" and ", mă adresez"
-  // This keeps the name + "domiciliată în" prefix + ", mă adresez" suffix
-  result = result.replace(
-    /(domiciliat[ăa]?\(?[ăa]?\)?\s+în\s+)([^]*?)(,\s*mă adresez)/gi,
-    "$1[adresă protejată]$3"
-  );
-
-  // Fallback: if "mă adresez" pattern didn't match, catch simpler patterns
-  // "domiciliată în ADDR, ADDR, ADDR." (ends with sentence-final period).
-  // Greedy body up to a real terminator (newline or end-of-string), so
-  // address abbreviations like "Str." / "Bd." / "nr." inside the body
-  // don't end the match prematurely (which previously leaked the rest of
-  // the address after a period that was actually an abbreviation).
-  result = result.replace(
-    /(domiciliat[ăa]?\(?[ăa]?\)?\s+în\s+)([^\n]+?)(\.?\s*)$/gim,
-    (full, prefix, body, terminator) => {
-      if ((body as string).includes("[adresă")) return full; // already redacted
-      return `${prefix}[adresă protejată]${terminator}`;
-    },
-  );
-
-  // Strip phone numbers (Romanian format)
+  // 2. Strip phone numbers (Romanian format)
   result = result.replace(
     /(\+?40|0)\s*7\d{2}[\s.-]?\d{3}[\s.-]?\d{3}/g,
     "[telefon protejat]"
   );
 
-  // Strip email addresses from body text (but not the signature name)
+  // 3. Strip email addresses from body text (but not the signature name)
   result = result.replace(
     /[\w.+-]+@[\w.-]+\.\w{2,}/g,
     "[email protejat]"

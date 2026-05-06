@@ -308,7 +308,7 @@ export default async function SesizareDetailPage({
                 Text formal
               </h2>
               <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 text-xs font-mono whitespace-pre-wrap text-[var(--color-text-muted)] leading-relaxed">
-                {stripPrivateAddress(sesizare.formal_text)}
+                {stripPrivateAddress(sesizare.formal_text, sesizare.author_name)}
               </div>
               <p className="text-[10px] text-[var(--color-text-muted)] mt-2 italic">
                 Adresa de domiciliu a fost ascunsă automat pentru protecția datelor personale.
