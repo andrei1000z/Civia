@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, X, AlertCircle, ArrowRight } from "lucide-react";
-import { getRecipientsLabel } from "@/lib/sesizari/mailto";
+import { UserPlus, X, AlertCircle, ArrowRight, Mail, Download, Paperclip } from "lucide-react";
+import { getRecipientsLabel, buildMailtoLink } from "@/lib/sesizari/mailto";
 import { EmailChoicePanel } from "./EmailChoicePanel";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,23 @@ export function SignSesizareButton({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"form" | "send">("form");
+  // Mobile detection — touch + narrow viewport. Default desktop pe SSR
+  // ca să avem hidratare consistentă; flip pe mobil post-mount.
+  // De ce contează: pe mobil sărim peste EmailChoicePanel (care arată
+  // 4-5 opțiuni Gmail/Outlook/Yahoo/etc) și mergem direct cu mailto:
+  // → se deschide aplicația de email defaut (Gmail, iOS Mail, Outlook).
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const detect = () => {
+      const touch = window.matchMedia?.("(pointer: coarse)").matches;
+      const narrow = window.innerWidth < 768;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsMobile(touch && narrow);
+    };
+    detect();
+    window.addEventListener("resize", detect);
+    return () => window.removeEventListener("resize", detect);
+  }, []);
   // Lazy initializer — reads localStorage sync on first render, no useEffect needed
   const [data, setData] = useState<UserData>(() => {
     if (typeof window === "undefined") return { name: "", address: "", email: "" };
@@ -239,7 +256,55 @@ export function SignSesizareButton({
                   <ArrowRight size={16} aria-hidden="true" />
                 </button>
               </form>
+            ) : isMobile ? (
+              // ─── MOBILE FLOW: 1 ecran cu disclaimer poze + 1 buton mailto ───
+              // Fără EmailChoicePanel pe mobil — sare peste „pregătire" și
+              // duce direct în aplicația de email defaut (Gmail/iOS Mail/etc).
+              <div className="p-5 space-y-4">
+                {(imagini && imagini.length > 0) && (
+                  <div className="rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Paperclip size={14} className="text-amber-700 dark:text-amber-400 mt-0.5 shrink-0" aria-hidden="true" />
+                      <p className="text-xs text-amber-900 dark:text-amber-300 leading-relaxed">
+                        <strong>Important:</strong> descarcă pozele de mai jos și atașează-le manual la mail după ce apeși <strong>Trimite</strong>. Aplicațiile de mail nu permit pre-atașare automată din web.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {imagini.map((url, i) => (
+                        <a
+                          key={url}
+                          href={url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 h-8 px-2 rounded-[var(--radius-xs)] bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-800 text-[11px] font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+                        >
+                          <Download size={11} aria-hidden="true" />
+                          Poza {i + 1}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <a
+                  href={buildMailtoLink(emailInput)}
+                  className="w-full inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                >
+                  <Mail size={18} aria-hidden="true" />
+                  Trimite emailul
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setStep("form")}
+                  className="w-full h-9 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded-[var(--radius-xs)] transition-colors"
+                >
+                  <span aria-hidden="true">←</span> Înapoi la datele tale
+                </button>
+              </div>
             ) : (
+              // ─── DESKTOP FLOW: opțiuni multiple Gmail/Outlook/mailto/copy ───
               <div className="p-5 space-y-4">
                 <div className="flex items-start gap-2 p-3 rounded-[var(--radius-xs)] bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                   <AlertCircle size={14} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
