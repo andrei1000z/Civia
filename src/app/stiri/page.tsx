@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Newspaper } from "lucide-react";
 import { StiriList } from "@/components/stiri/StiriList";
+import { ExpiredArticleBanner } from "@/components/stiri/ExpiredArticleBanner";
 import { Badge } from "@/components/ui/Badge";
 import { SOURCE_COLORS, SITE_URL, readableTextColor } from "@/lib/constants";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
@@ -57,6 +59,10 @@ export default function StiriPage() {
           ))}
         </div>
       </PageHero>
+
+      <Suspense fallback={null}>
+        <ExpiredArticleBanner />
+      </Suspense>
 
       <StiriList />
     </div>

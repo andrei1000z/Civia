@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, Calendar, User, Tag, Building2, Info, Sparkles } from "lucide-react";
 import { createSupabaseAnon } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/Badge";
@@ -172,7 +172,15 @@ export default async function StireDetailPage({
 }) {
   const { id } = await params;
   const stire = await getStire(id);
-  if (!stire) notFound();
+  if (!stire) {
+    // Articol sters / expirat din RSS cache. In loc de 404 dur (28 hits
+    // raportate de analytics 5/8/2026, multe de la Google indexand URL-uri
+    // vechi), facem redirect 308 la lista. Useful pentru SEO (nu pierdem
+    // crawl budget pe paginile moarte) si UX (utilizatorul nu vede pagina
+    // 404 alba). Toast-ul de pe /stiri va explica ca articolul nu mai e
+    // disponibil daca url-ul are ?from=expired.
+    redirect("/stiri?from=expired");
+  }
 
   // Pre-render summary DOAR dacă e cached + la versiunea curentă. Înainte
   // făceam `getOrGenerateAiSummary(stire)` aici, care bloca render-ul 30-

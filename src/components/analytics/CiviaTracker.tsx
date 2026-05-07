@@ -319,7 +319,29 @@ export function CiviaTracker(): null {
   // JS errors (filtered noise) + unhandled rejections
   useEffect(() => {
     if (isExcluded()) return;
-    const NOISE = [/__firefox__/i, /chrome-extension/i, /^Script error\.?$/i, /ResizeObserver loop/i];
+    // Pattern-uri de zgomot extension/browser pe care le-am vazut in audit
+    // (5/8/2026): MetaMask 7, uBlock Origin 2, plus alte extensii care injecteaza
+    // cod si esueaza ca pagina nu e ce se asteapta. Astea NU sunt buguri Civia.
+    const NOISE = [
+      /__firefox__/i,
+      /chrome-extension/i,
+      /moz-extension/i,
+      /safari-extension/i,
+      /^Script error\.?$/i,
+      /ResizeObserver loop/i,
+      // MetaMask & alte wallet extensions
+      /window\.ethereum/i,
+      /ethereum\.selectedAddress/i,
+      // uBlock Origin / AdBlock cosmetic filtering
+      /cosmeticAPI/i,
+      /getSelectors/i,
+      // Grammarly / LanguageTool / extension DOM injection
+      /grammarly/i,
+      /languagetool/i,
+      // Generic „object is not extensible" — apare cand extensii incearca sa
+      // adauge proprietati pe obiectele Supabase / next-router (frozen).
+      /object is not extensible/i,
+    ];
     const onError = (e: ErrorEvent) => {
       const msg = (e.message || "").slice(0, 200);
       if (!msg || NOISE.some((rx) => rx.test(msg))) return;

@@ -47,6 +47,25 @@ function sanitizeForPostgrest(q: string): string {
 }
 
 /**
+ * Normalize diacritics ASCII pentru matching robust.
+ * "Țepeș" / "tepes" / "Tepes" → "tepes"
+ *
+ * Folosit pe AMBELE: query (qRaw) si haystack (titlu+locatie+descriere).
+ * Astfel, utilizator care tasteaza "Iancului" fara diacritice gaseste si
+ * "Strada Iancului" cu diacritice corecte din DB. Search din analytics
+ * (5/8/2026) a aratat 4 search-uri zero-result, posibil din cauza ca
+ * utilizatorii tastau fara diacritice text care era stocat cu diacritice.
+ */
+function normalizeForSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    // Sedila variants (codepoint diferit de virgulita)
+    .replace(/ş/g, "s").replace(/ţ/g, "t");
+}
+
+/**
  * Stem a Romanian word by trimming inflection suffixes.
  * "explozie" → "explozi", "rahovei" → "rahov", "incendiul" → "incendi"
  * Returns array of stems to try (original + trimmed variants).
@@ -83,7 +102,9 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const qRaw = (searchParams.get("q") ?? "").trim().toLowerCase();
+  // Query original (pentru CTA fallback) + normalizat (pentru matching).
+  const qOriginal = (searchParams.get("q") ?? "").trim();
+  const qRaw = normalizeForSearch(qOriginal);
   if (!qRaw || qRaw.length < 2) return NextResponse.json({ data: [] });
   const words = qRaw.split(/\s+/).filter((w) => w.length >= 2);
   if (words.length === 0) return NextResponse.json({ data: [] });
@@ -92,7 +113,7 @@ export async function GET(req: Request) {
 
   // Counties / Județe
   for (const c of ALL_COUNTIES) {
-    const hay = `${c.name} ${c.id} ${c.slug}`.toLowerCase();
+    const hay = normalizeForSearch(`${c.name} ${c.id} ${c.slug}`);
     if (matchesAll(hay, words)) {
       results.push({
         type: "judet",
@@ -106,7 +127,7 @@ export async function GET(req: Request) {
 
   // Static pages
   for (const p of STATIC_PAGES) {
-    const hay = `${p.title} ${p.excerpt ?? ""}`.toLowerCase();
+    const hay = normalizeForSearch(`${p.title} ${p.excerpt ?? ""}`);
     if (matchesAll(hay, words)) {
       results.push(p);
     }
@@ -114,7 +135,7 @@ export async function GET(req: Request) {
 
   // Ghiduri
   for (const g of ghiduri) {
-    const hay = `${g.titlu} ${g.descriere}`.toLowerCase();
+    const hay = normalizeForSearch(`${g.titlu} ${g.descriere}`);
     if (matchesAll(hay, words)) {
       results.push({
         type: "ghid",
@@ -127,7 +148,7 @@ export async function GET(req: Request) {
 
   // Evenimente
   for (const e of evenimente) {
-    const hay = `${e.titlu} ${e.descriere} ${e.county ?? ""}`.toLowerCase();
+    const hay = normalizeForSearch(`${e.titlu} ${e.descriere} ${e.county ?? ""}`);
     if (matchesAll(hay, words)) {
       results.push({
         type: "eveniment",
@@ -141,7 +162,7 @@ export async function GET(req: Request) {
 
   // Ghiduri sesizări (tipuri de sesizări)
   for (const sg of SESIZARI_GUIDES) {
-    const hay = [sg.label, sg.urgenta, ...sg.tips, ...sg.destinatari].join(" ").toLowerCase();
+    const hay = normalizeForSearch([sg.label, sg.urgenta, ...sg.tips, ...sg.destinatari].join(" "));
     if (matchesAll(hay, words)) {
       results.push({
         type: "ghid-sesizare",
@@ -167,7 +188,7 @@ export async function GET(req: Request) {
         .or(`titlu.ilike.%${first}%,locatie.ilike.%${first}%,descriere.ilike.%${first}%`)
         .limit(20);
       for (const s of (data ?? []) as Array<{ code: string; titlu: string; locatie: string; sector: string; status: string; descriere: string }>) {
-        const hay = `${s.titlu} ${s.locatie} ${s.descriere}`.toLowerCase();
+        const hay = normalizeForSearch(`${s.titlu} ${s.locatie} ${s.descriere}`);
         if (matchesAll(hay, safeWords)) {
           results.push({
             type: "sesizare",
@@ -194,7 +215,7 @@ export async function GET(req: Request) {
         .order("published_at", { ascending: false })
         .limit(10);
       for (const s of (data ?? []) as Array<{ id: string; title: string; excerpt: string; source: string }>) {
-        const hay = `${s.title} ${s.excerpt ?? ""}`.toLowerCase();
+        const hay = normalizeForSearch(`${s.title} ${s.excerpt ?? ""}`);
         if (matchesAll(hay, safeWords)) {
           results.push({
             type: "stire",
@@ -207,6 +228,20 @@ export async function GET(req: Request) {
       }
     }
   } catch { /* ignore */ }
+
+  // Zero-result fallback: daca nu am gasit nimic, oferim CTA spre form-ul
+  // de sesizare cu query-ul prefixat. Audit analytics 5/8/2026 a aratat
+  // zero-result pe „Iancului", „Soseaua Iancului", „Parteneriat" — locatii
+  // sau termeni care NU exista inca in DB-ul de sesizari publice. In loc
+  // sa lasam user-ul cu lista goala, ii sugeram sa creeze el sesizarea.
+  if (results.length === 0) {
+    results.push({
+      type: "ai",
+      title: `Trimite o sesizare pentru "${qOriginal.slice(0, 60)}"`,
+      url: `/sesizari?q=${encodeURIComponent(qOriginal)}`,
+      excerpt: "Nu am găsit rezultate. Deschide formul de sesizare cu acest text pre-completat.",
+    });
+  }
 
   return NextResponse.json(
     { data: results.slice(0, 30) },
