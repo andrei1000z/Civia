@@ -187,7 +187,7 @@ export default function RootLayout({
         <Script
           src="https://analytics-seven-steel.vercel.app/t.js#9LjeAjtEMpPwCNbtgwqA-wgnIvqJHNf_4iJfocBQU1Q"
           data-site="fd73614b69cdd4bbbd4b0a5443cfe9b3dd3da9e35010b498e115984fdb3dfa54"
-          data-ingest="https://roulette-personals-gotta-guards.trycloudflare.com"
+          data-ingest="https://rhjfutxgmnkonichxpro.supabase.co"
           strategy="afterInteractive"
         />
       </head>
