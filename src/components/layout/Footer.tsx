@@ -45,6 +45,10 @@ export function Footer() {
               <br />
               Făcută cu <span className="text-rose-500" aria-label="dragoste">❤️</span> pentru o Românie ca afară.
             </p>
+            <p className="text-[11px] text-[var(--color-text-muted)] inline-flex items-center gap-1.5">
+              <span aria-hidden="true">🇪🇺</span>
+              <span>Date stocate în UE · GDPR-compliant</span>
+            </p>
           </div>
 
           {/* Column 2 — Despre Civia (legal + about) */}
@@ -90,12 +94,12 @@ export function Footer() {
               </a>
             </li>
             <li>
-              <a
-                href="https://eyou.eu/civia"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="eYou — rețea socială europeană"
-                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              {/* eYou — link gol pe moment (platforma nu are URL public).
+                  Pastram badge-ul vizual ca placeholder; cand iese public,
+                  inlocuim span-ul cu <a href>. */}
+              <span
+                title="eYou — rețea socială europeană (link când iese public)"
+                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] opacity-70"
               >
                 <Image
                   src="/eyou.webp"
@@ -109,7 +113,7 @@ export function Footer() {
                   <span className="font-semibold text-[var(--color-text)]">eYou</span>
                   <span className="text-[var(--color-text-muted)]"> · @civia</span>
                 </span>
-              </a>
+              </span>
             </li>
           </ul>
         </div>

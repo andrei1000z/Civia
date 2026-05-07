@@ -63,6 +63,8 @@ const nextConfig: NextConfig = {
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.open-meteo.com https://overpass-api.de https://plausible.io https://api.openaq.org https://nominatim.openstreetmap.org https://www.seismicportal.eu https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdn.jsdelivr.net https://unpkg.com https://analytics-seven-steel.vercel.app https://roulette-personals-gotta-guards.trycloudflare.com",
       "worker-src 'self' blob:",
+      "manifest-src 'self'",
+      "media-src 'self' https: data: blob:",
       "frame-ancestors 'self'",
       "frame-src 'self' https://mail.google.com https://outlook.live.com https://compose.mail.yahoo.com",
       "object-src 'none'",
@@ -78,10 +80,36 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-DNS-Prefetch-Control", value: "on" },
-          { key: "Permissions-Policy", value: "geolocation=(self), camera=(), microphone=()" },
+          // Permissions-Policy mai strict (5/8/2026): explicit deny pe
+          // payment, USB, serial, bluetooth, MIDI, accelerometer, gyroscope,
+          // magnetometer, autoplay non-self. Civia n-are nevoie de niciuna
+          // dintre ele -- denying explicit blocheaza scripts third-party
+          // (analytics) sa le acceseze, daca incearca.
+          {
+            key: "Permissions-Policy",
+            value: [
+              "geolocation=(self)",
+              "camera=()",
+              "microphone=()",
+              "payment=()",
+              "usb=()",
+              "serial=()",
+              "bluetooth=()",
+              "midi=()",
+              "accelerometer=()",
+              "gyroscope=()",
+              "magnetometer=()",
+              "autoplay=(self)",
+              "fullscreen=(self)",
+              "picture-in-picture=()",
+              "interest-cohort=()", // FLoC opt-out (privacy)
+            ].join(", "),
+          },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           // same-origin-allow-popups is needed for Supabase OAuth popup flow
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          // Limita expunerea fingerprint-urilor cross-domain.
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           { key: "Content-Security-Policy", value: csp },
         ],
       },
