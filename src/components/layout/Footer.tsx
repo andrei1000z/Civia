@@ -82,10 +82,10 @@ export function Footer() {
                 <Image
                   src="/bluesky.png"
                   alt="Bluesky"
-                  width={28}
-                  height={28}
+                  width={24}
+                  height={24}
                   unoptimized
-                  className="w-7 h-7 rounded-full object-contain bg-white"
+                  className="w-6 h-6 rounded-full object-contain bg-white"
                 />
                 <span className="text-sm">
                   <span className="font-semibold text-[var(--color-text)]">Bluesky</span>
@@ -104,10 +104,10 @@ export function Footer() {
                 <Image
                   src="/eyou.webp"
                   alt="eYou"
-                  width={28}
-                  height={28}
+                  width={24}
+                  height={24}
                   unoptimized
-                  className="w-7 h-7 rounded-full object-contain bg-white"
+                  className="w-6 h-6 rounded-full object-contain bg-white"
                 />
                 <span className="text-sm">
                   <span className="font-semibold text-[var(--color-text)]">eYou</span>
