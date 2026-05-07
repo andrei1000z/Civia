@@ -4,6 +4,7 @@ import {
   buildEmailPayload,
   buildOutlookLink,
   buildGmailLink,
+  buildMailtoLink,
 } from "./mailto";
 
 const BASE = {
@@ -273,5 +274,62 @@ describe("buildGmailLink — sanity", () => {
     });
     expect(url).toContain("mail.google.com/mail/");
     expect(url).toContain("view=cm");
+  });
+});
+
+describe("buildMailtoLink — diacritic safety pe clienti mobile (Yahoo bug 5/8/2026)", () => {
+  it("foldeaza ș / ț / ă / â / î la ASCII in subject + body", () => {
+    const url = buildMailtoLink({
+      tip: "iluminat",
+      titlu: "Felinar stricat pe Strada Țepeș Vodă",
+      locatie: "București, Sector 3",
+      descriere: "Pe strada Țepeș Vodă felinarul nu mai funcționează de o săptămână.",
+      author_name: "Ștefan Cel Mare",
+      author_address: "Bulevardul Ștefan, București",
+    });
+
+    // URL-decode subject + body ca să verificăm conținutul real
+    // (după ce orice client de mail decodează URL).
+    const decoded = decodeURIComponent(url);
+
+    // Diacriticele NU mai apar nicăieri în URL după fold.
+    expect(decoded).not.toMatch(/[ăâîșțĂÂÎȘȚşţŞŢ]/);
+
+    // Versiunile ASCII sunt prezente.
+    expect(decoded).toContain("Tepes Voda");
+    expect(decoded).toContain("Bucuresti");
+    expect(decoded).toContain("nu mai functioneaza");
+  });
+
+  it("decoded URL nu mai conține caractere multi-byte UTF-8 % sequence", () => {
+    const url = buildMailtoLink({
+      tip: "groapa",
+      titlu: "Groapă în asfalt",
+      locatie: "Str. Ștefăniță 5",
+      descriere: "Pe strada Ștefăniță e o groapă mare.",
+      author_name: "Ion",
+      author_address: "B",
+    });
+    // Romanian diacritics encode to %C8%99 (ș), %C8%9B (ț), %C4%83 (ă), etc.
+    // After ASCII fold, none of these multi-byte sequences appear.
+    expect(url).not.toMatch(/%C[48]%[89AB][0-9A-F]/);
+  });
+
+  it("text fără diacritice rămâne neschimbat (numele autor)", () => {
+    const url = buildMailtoLink({
+      tip: "iluminat",
+      titlu: "Lamp broken on Main Street",
+      locatie: "Bucharest",
+      descriere: "The lamp is broken since last week.",
+      author_name: "John Smith",
+      author_address: "5 Main St",
+    });
+    const decoded = decodeURIComponent(url);
+    // Numele autor (fără diacritice) supraviețuiește în signature.
+    expect(decoded).toContain("John Smith");
+    // URL e well-formed (mailto: prefix + subject + body).
+    expect(url.startsWith("mailto:")).toBe(true);
+    expect(url).toContain("subject=");
+    expect(url).toContain("body=");
   });
 });

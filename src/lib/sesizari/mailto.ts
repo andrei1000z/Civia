@@ -272,10 +272,41 @@ export function buildEmailPayload(input: MailtoInput): EmailPayload {
   };
 }
 
+/**
+ * ASCII-fold pentru diacritice românești.
+ *
+ * De ce: `mailto:` URL-urile transferă subject + body prin URL encoding
+ * (`%C8%99` pentru „ș" etc). Majoritatea aplicațiilor de mail decodează
+ * corect UTF-8, dar Yahoo Mail Android (raportat user 5/8/2026) îl
+ * sparge — „ș" devine „%#@/" în composer-ul Yahoo. Pentru robustețe
+ * across-clients, foldăm la ASCII chiar din URL: text e tot inteligibil
+ * pentru autorități, e neutru pe orice client de mail.
+ *
+ * Acoperă: ă â î ș ț (+ majuscule) + variantele cu sedilă (ş ţ — codepoint
+ * diferit, comune la text vechi copy-paste). NFD + diacritic strip prinde
+ * orice altă diacritică (germană, franceză etc) ca fallback.
+ */
+function asciiFoldRo(s: string): string {
+  return s
+    .replace(/ș/g, "s").replace(/Ș/g, "S")
+    .replace(/ț/g, "t").replace(/Ț/g, "T")
+    .replace(/ă/g, "a").replace(/Ă/g, "A")
+    .replace(/â/g, "a").replace(/Â/g, "A")
+    .replace(/î/g, "i").replace(/Î/g, "I")
+    // Sedilă (codepoint diferit de virguliță) — apare în texte vechi.
+    .replace(/ş/g, "s").replace(/Ş/g, "S") // ş Ş
+    .replace(/ţ/g, "t").replace(/Ţ/g, "T") // ţ Ţ
+    // Catch-all: orice diacritică rămasă (Unicode NFD + remove combining marks).
+    .normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
 export function buildMailtoLink(input: MailtoInput): string {
   const p = buildEmailPayload(input);
   const cc = p.cc.length > 0 ? `&cc=${p.cc.join(",")}` : "";
-  return `mailto:${p.to.join(",")}?subject=${encodeURIComponent(p.subject)}${cc}&body=${encodeURIComponent(p.body)}`;
+  // ASCII-fold subject + body — vezi asciiFoldRo de ce.
+  const subject = encodeURIComponent(asciiFoldRo(p.subject));
+  const body = encodeURIComponent(asciiFoldRo(p.body));
+  return `mailto:${p.to.join(",")}?subject=${subject}${cc}&body=${body}`;
 }
 
 export function buildGmailLink(input: MailtoInput): string {
@@ -319,8 +350,10 @@ export function buildGmailAndroidIntent(input: MailtoInput): string {
   const to = p.to.join(",");
   // Hand-build the query string with encodeURIComponent (NOT
   // URLSearchParams) so spaces become %20 instead of +.
-  const subject = encodeURIComponent(p.subject);
-  const body = encodeURIComponent(p.body);
+  // ASCII-fold pentru robustețe — unele Android intent handlers
+  // (Yahoo, default Email app, etc) sparg multi-byte UTF-8.
+  const subject = encodeURIComponent(asciiFoldRo(p.subject));
+  const body = encodeURIComponent(asciiFoldRo(p.body));
   const cc = p.cc.length > 0 ? `&cc=${encodeURIComponent(p.cc.join(","))}` : "";
   const fallback = encodeURIComponent(buildMailtoLink(input));
   return `intent:${to}?subject=${subject}&body=${body}${cc}#Intent;scheme=mailto;package=com.google.android.gm;S.browser_fallback_url=${fallback};end`;
