@@ -16,7 +16,7 @@ import { isInsideRomania, preloadRomaniaPolygon } from "@/lib/aer/romania-polygo
 // metering: the 60s window was firing ~60 cold pulls/h per route
 // for marginal freshness gain (most sensors hadn't updated yet).
 // 180s halves origin cost; map still feels live.
-export const revalidate = 180;
+export const revalidate = 600;
 
 /**
  * Citizen-network sensors occasionally drift out of calibration and

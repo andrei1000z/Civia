@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

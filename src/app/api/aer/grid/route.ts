@@ -14,7 +14,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 // 3-min ISR — same cadence as /api/aer. Grid is cheap to compute
 // (~50ms for ~400 cells) once the sensors are fetched, but the
 // upstream sensor fetches are the cost; we want to amortize them.
-export const revalidate = 180;
+export const revalidate = 600;
 
 interface GridResponse {
   cells: GridCell[];

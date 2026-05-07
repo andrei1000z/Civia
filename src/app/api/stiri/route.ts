@@ -6,7 +6,7 @@ import { analyticsRedis } from "@/lib/analytics/redis";
 
 // 30s cache — paired with client polling at the same cadence so the
 // /stiri page surfaces freshly-fetched RSS articles within ~30s.
-export const revalidate = 30;
+export const revalidate = 300;
 
 // Self-healing background refresh: when the /stiri page is being viewed,
 // kick off /api/stiri/fetch in the background — but throttled so at most

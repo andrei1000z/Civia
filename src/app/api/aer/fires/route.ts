@@ -5,7 +5,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 // FIRMS itself updates every ~3h; ISR-cache 10 minutes so we serve
 // stale-while-revalidate'd data instead of hitting NASA on every map
 // pan. Vercel CDN holds it the same 10 min via the response header.
-export const revalidate = 600;
+export const revalidate = 1800;
 
 interface FiresResponse {
   fires: FireDetection[];

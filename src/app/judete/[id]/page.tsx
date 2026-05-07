@@ -25,7 +25,7 @@ import { STATUS_COLORS, STATUS_LABELS, SITE_URL } from "@/lib/constants";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
 // ISR: county authorities rarely change; sesizari list is small. 5 min refresh.
-export const revalidate = 300;
+export const revalidate = 1800;
 
 interface DbCounty {
   id: string;

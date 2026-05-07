@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 600; // 10 minutes
+export const revalidate = 1800; // 10 minutes
 
 /**
  * GET /api/weather?lat=44.43&lng=26.10

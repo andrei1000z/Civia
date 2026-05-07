@@ -61,23 +61,42 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Urmărește Civia — social row. eYou e încă în early-access
-            beta (no public URLs yet), așa că afișăm doar handle-ul ca
-            badge non-clickabil. Înlocuim cu <a href> când platforma
-            iese din beta. */}
+        {/* Urmărește Civia — social row. */}
         <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
           <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
             Urmărește Civia
           </h4>
           <ul className="flex flex-wrap items-center gap-2">
             <li>
-              <span
-                title="eYou (platformă socială europeană, în early-access beta)"
-                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)]"
+              <a
+                href="https://bsky.app/profile/civiaro.bsky.social"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Bluesky — @civiaro.bsky.social"
+                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
-                {/* unoptimized — e deja un .webp mic (2.5 KB) static din
-                    public/. Bypassăm /_next/image proxy ca să apară instant
-                    fără round-trip la optimizer. */}
+                <Image
+                  src="/bluesky.png"
+                  alt="Bluesky"
+                  width={28}
+                  height={28}
+                  unoptimized
+                  className="w-7 h-7 rounded-full object-contain bg-white"
+                />
+                <span className="text-sm">
+                  <span className="font-semibold text-[var(--color-text)]">Bluesky</span>
+                  <span className="text-[var(--color-text-muted)]"> · @civiaro</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://eyou.eu/civia"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="eYou — rețea socială europeană"
+                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
                 <Image
                   src="/eyou.webp"
                   alt="eYou"
@@ -90,16 +109,9 @@ export function Footer() {
                   <span className="font-semibold text-[var(--color-text)]">eYou</span>
                   <span className="text-[var(--color-text-muted)]"> · @civia</span>
                 </span>
-              </span>
+              </a>
             </li>
-            {/* Aici vor fi adăugate Facebook / Instagram / X când conturile
-                vor fi create. */}
           </ul>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
-            Postăm acolo despre platformă, proteste, petițiile noi și altele.
-            eYou e noua rețea socială europeană, momentan în early-access —
-            când iese public, link-ul devine activ.
-          </p>
         </div>
 
         {/* Feedback + newsletter */}

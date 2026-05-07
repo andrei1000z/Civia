@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eye, Search, CheckCircle2, Send, Scale, ChevronDown, HelpCircle } from "lucide-react";
+import { Eye, Search, CheckCircle2, Send, Scale } from "lucide-react";
 import { SesizareForm } from "@/components/sesizari/SesizareForm";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
-import { FaqJsonLd } from "@/components/FaqJsonLd";
 
 export const metadata: Metadata = {
   title: "Sesizări",
@@ -159,71 +158,9 @@ export default async function SesizariPage() {
         </div>
       </div>
 
-      {/* FAQ — native <details> for zero-JS expand. JSON-LD makes the
-          questions Google-snippet-eligible. */}
-      <FaqJsonLd items={SESIZARE_FAQ} />
-      <section className="mt-12">
-        <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-extrabold mb-5 inline-flex items-center gap-2">
-          <HelpCircle
-            size={22}
-            className="text-[var(--color-primary)]"
-            aria-hidden="true"
-          />
-          Întrebări frecvente
-        </h2>
-        <div className="space-y-2">
-          {SESIZARE_FAQ.map((q) => (
-            <details
-              key={q.question}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] hover:border-[var(--color-primary)]/40 transition-colors"
-            >
-              <summary className="flex items-center justify-between gap-3 cursor-pointer list-none p-4 font-semibold text-sm md:text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded-[var(--radius-md)]">
-                <span>{q.question}</span>
-                <ChevronDown
-                  size={18}
-                  className="text-[var(--color-text-muted)] shrink-0 transition-transform group-open:rotate-180"
-                  aria-hidden="true"
-                />
-              </summary>
-              <div className="px-4 pb-4 text-sm text-[var(--color-text-muted)] leading-relaxed">
-                {q.answer}
-              </div>
-            </details>
-          ))}
-        </div>
-      </section>
+      {/* FAQ section removed (5/8/2026 user request — minimalist).
+          Răspunsurile la cele mai comune întrebări sunt deja în
+          /ghiduri/ghid-sesizari + în PageHero-ul de mai sus. */}
     </div>
   );
 }
-
-// FAQ catalog — answers calibrated against the most-asked support
-// questions in the first 3 months of public sesizare submissions.
-const SESIZARE_FAQ = [
-  {
-    question: "E gratuit? Trebuie să-mi fac cont?",
-    answer:
-      "Da, e gratuit pentru totdeauna. Nu trebuie cont — poți trimite o sesizare anonim pentru tine însuți. Contul îți permite doar să vezi istoricul tuturor sesizărilor tale într-un singur loc și să primești notificări prin email.",
-  },
-  {
-    question: "Ce se întâmplă după ce trimit sesizarea?",
-    answer:
-      "Civia generează emailul formal cu temei legal (OG 27/2002) și îl deschide în clientul tău de email cu adresa primăriei competente deja completată. Tu apeși Trimite. Primării din toată România au 30 de zile calendaristice să răspundă. Primești un cod cu care urmărești statusul pe /urmareste.",
-  },
-  {
-    question: "Cum aleg autoritatea corectă? Mă pot înșela?",
-    answer:
-      "Civia detectează automat autoritatea competentă în funcție de tipul problemei (groapă, gunoi, iluminat, parcare etc.) și de locația ta. Pentru parcare neregulamentară pe domeniu public, scrisoarea pleacă către Poliția Locală. Pentru gropi sau iluminat, către primărie. Pentru aer poluat, către Garda de Mediu sau ANPM. Vezi exact unde merge sesizarea înainte să apeși trimite.",
-  },
-  {
-    question: "Ce face Civia cu poza și datele mele?",
-    answer: `Poza și descrierea sunt vizibile public doar dacă bifezi opțiunea „Public" la trimitere — implicit, sesizarea e privată (doar autoritatea vede textul complet). Numele și adresa sunt obligatorii prin OG 27/2002 (sesizările anonime sunt clasate fără răspuns), dar nu se publică niciodată — apar doar în emailul către primărie. Datele tale rămân pe serverele Civia (UE). Detalii complete în Politica de confidențialitate.`,
-  },
-  {
-    question: "Și dacă primăria nu îmi răspunde în 30 de zile?",
-    answer: `Conform OG 27/2002, lipsa răspunsului în 30 de zile e o încălcare a obligației legale. Ai trei căi: (1) plângere la Avocatul Poporului — gratuit, prin formular online; (2) acțiune la instanța de contencios administrativ; (3) marchează sesizarea ca „fără răspuns" pe Civia, intră în statisticile publice ale primăriei și ne ajută să apăsăm.`,
-  },
-  {
-    question: "Pot trimite o sesizare pentru altcineva?",
-    answer: `Poți să trimiți o sesizare în nume propriu despre o problemă pe care ai văzut-o oriunde în România — sesizările civice nu cer ca tu să fii „victima". Dar numele și adresa care apar în email trebuie să fie reale. Sesizările anonime nu sunt acceptate legal.`,
-  },
-];

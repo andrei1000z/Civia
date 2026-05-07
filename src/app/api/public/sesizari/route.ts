@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 120;
+export const revalidate = 600;
 
 // LEGACY public API — deprecated in favour of /api/v1/sesizari which
 // returns a more complete field set, has proper versioning and

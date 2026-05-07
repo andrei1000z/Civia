@@ -10,7 +10,7 @@ import type {
   SesizareVerificationRow,
 } from "@/lib/supabase/types";
 
-const ANONYMOUS_LABEL = "Cetățean anonim";
+const ANONYMOUS_LABEL = "[nume]";
 
 // One pass on the session: returns the viewer's user id (if any), email
 // (for legacy guest-then-signed-up rows where user_id may be null but

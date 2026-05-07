@@ -6,7 +6,8 @@ import { evenimente } from "@/data/evenimente";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SESIZARI_GUIDES } from "@/data/sesizari-guides";
 
-export const revalidate = 60;
+// 5 min (de la 1 min) — search results pot fi cached agresiv la edge.
+export const revalidate = 300;
 
 interface SearchResult {
   type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "bilet" | "linie" | "primar" | "directie" | "companie" | "glosar" | "ghid-sesizare" | "transport" | "ai";

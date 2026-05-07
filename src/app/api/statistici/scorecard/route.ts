@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 300; // 5 min cache
+export const revalidate = 900; // 5 min cache
 
 interface SesRow {
   sector: string;

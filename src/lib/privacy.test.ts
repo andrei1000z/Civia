@@ -5,29 +5,29 @@ describe("stripPrivateAddress", () => {
   it("redacts address between 'domiciliat în' and ', mă adresez'", () => {
     const input = "Subsemnatul Ion Popescu, domiciliat în Str. Țintașului 17, ap 14, mă adresez prin prezenta...";
     const r = stripPrivateAddress(input);
-    expect(r).toContain("[adresă ascunsă]");
+    expect(r).toContain("[adresa]");
     expect(r).not.toContain("Țintașului");
     expect(r).not.toContain("17");
     // name redacted with hideName=true (defense-in-depth: page already passes
     // through repository scrub, which sets hideName=true for non-owners).
-    expect(r).toContain("Cetățean anonim");
+    expect(r).toContain("[nume]");
   });
 
   it("redacts feminine 'domiciliată'", () => {
     const r = stripPrivateAddress("Subsemnata Maria, domiciliată în Calea Victoriei 1, mă adresez...");
-    expect(r).toContain("[adresă ascunsă]");
+    expect(r).toContain("[adresa]");
     expect(r).not.toContain("Victoriei");
   });
 
   it("handles 'domiciliat(ă)' with parentheses (gender-neutral)", () => {
     const r = stripPrivateAddress("Subsemnatul X, domiciliat(ă) în Str. Test 1, mă adresez...");
-    expect(r).toContain("[adresă ascunsă]");
+    expect(r).toContain("[adresa]");
   });
 
   it("falls back to period-terminated pattern if 'mă adresez' missing", () => {
     const input = "Domiciliat în Str. Test 5, ap 2, București.";
     const r = stripPrivateAddress(input);
-    expect(r).toContain("[adresă ascunsă]");
+    expect(r).toContain("[adresa]");
     expect(r).not.toContain("Test 5");
   });
 

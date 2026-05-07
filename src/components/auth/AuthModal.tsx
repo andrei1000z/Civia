@@ -23,11 +23,10 @@ export function AuthModal() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  // Default ON. Analytics: 149 logins, 2 newsletter subscribers (1.3%)
-  // when the only path was the footer form. Putting an opt-in here
-  // captures the genuine intent of users who already trust us enough
-  // to log in. They can still uncheck.
-  const [subscribeNewsletter, setSubscribeNewsletter] = useState(true);
+  // Default OFF (5/8/2026): user prefera real opt-in -- doar cei care
+  // vor genuin sa fie reamintiti de platforma bifeaza. Newsletter
+  // scos din footer in aceasi sesiune; signup e singurul loc.
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
 
   // Inline validation: only show error AFTER user has blurred the field
   // and only when the value isn't empty (don't shame empty fields prematurely).
@@ -229,8 +228,9 @@ export function AuthModal() {
                 className="mt-0.5 accent-[var(--color-primary)] cursor-pointer shrink-0"
               />
               <span>
-                Trimite-mi <strong>newsletter săptămânal</strong> cu sesizările
-                rezolvate, petițiile noi și știri civice locale. Te poți dezabona oricând.
+                Trimite-mi <strong>un email săptămânal</strong> ca reamintire — sesizări
+                noi din zona mea, ca să nu uit de platformă când văd ceva pe stradă.
+                Dezabonare cu un click.
               </span>
             </label>
             <button

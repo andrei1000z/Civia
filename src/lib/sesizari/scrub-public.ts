@@ -8,8 +8,8 @@ export interface ScrubOptions {
   hideName: boolean;
 }
 
-const ADDRESS_REDACTED = "[adresă ascunsă]";
-const NAME_REDACTED = "Cetățean anonim";
+const ADDRESS_REDACTED = "[adresa]";
+const NAME_REDACTED = "[nume]";
 
 // End-of-address markers: the address starts after "locuiesc în/pe" or
 // "domiciliat în" and continues until one of these shows up. Includes:

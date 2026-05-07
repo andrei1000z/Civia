@@ -30,7 +30,7 @@ import type {
   AftermathSource,
 } from "@/lib/proteste/aftermath";
 
-export const revalidate = 600;
+export const revalidate = 1800;
 
 interface Protest {
   id: string;

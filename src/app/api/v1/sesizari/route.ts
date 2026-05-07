@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 60;
+export const revalidate = 600;
 
 /**
  * Public open API v1 — returns only approved, public sesizari.

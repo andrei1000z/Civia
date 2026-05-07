@@ -6,7 +6,9 @@ import { loadInterruptions, maybeTriggerBackgroundRefresh } from "@/lib/intrerup
 // Page-side polling can be aggressive; 5 min is short enough that the
 // admin queue feels live but long enough that 1000 viewers don't beat
 // up Supabase reads.
-export const revalidate = 300;
+// 15 min (de la 5 min) — reduce ISR Writes Vercel Hobby. Date scraped
+// se schimbă rar (zilnic via cron), 15 min e suficient.
+export const revalidate = 900;
 
 /**
  * GET /api/intreruperi

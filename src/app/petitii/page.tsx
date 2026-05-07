@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Megaphone, ArrowRight, ExternalLink, Plus } from "lucide-react";
+import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon } from "lucide-react";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
@@ -73,13 +73,23 @@ export default async function PetitiiPage() {
             Inițiază propria petiție pe Civia — verificare în 1-2 ore, apoi e publică.
           </p>
         </div>
-        <Link
-          href="/petitii/initiaza"
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-        >
-          <Plus size={14} aria-hidden="true" />
-          Inițiază petiție
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/petitii/initiaza"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+          >
+            <Plus size={14} aria-hidden="true" />
+            Inițiază cu AI
+          </Link>
+          <Link
+            href="/petitii/propune"
+            title="Ai văzut o petiție pe alt site (Declic, Avaaz, …) și vrei să fie listată și aici? Propune-o."
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-purple-500/40 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-500/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+          >
+            <LinkIcon size={14} aria-hidden="true" />
+            Propune cu link
+          </Link>
+        </div>
       </div>
 
       {petitii.length === 0 ? (

@@ -27,7 +27,7 @@ describe("scrubFormalTextForPublic", () => {
     });
     expect(out).not.toContain("Strada Novaci 12");
     expect(out).not.toContain("Sector 5 și doresc"); // address removed
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
     expect(out).toContain("Ion Andrei Popescu"); // name kept
   });
 
@@ -38,8 +38,8 @@ describe("scrubFormalTextForPublic", () => {
     });
     expect(out).not.toContain("Ion Andrei Popescu");
     expect(out).not.toContain("Strada Novaci 12");
-    expect(out).toContain("Cetățean anonim");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[nume]");
+    expect(out).toContain("[adresa]");
   });
 
   it("keeps the 'și doresc...' tail intact after opener scrub", () => {
@@ -56,7 +56,7 @@ describe("scrubFormalTextForPublic", () => {
       hideName: false,
     });
     expect(out).not.toContain("Strada Novaci 12");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
   });
 
   it("redacts legacy opener name when hidden", () => {
@@ -65,7 +65,7 @@ describe("scrubFormalTextForPublic", () => {
       hideName: true,
     });
     expect(out).not.toContain("Ion Andrei Popescu");
-    expect(out).toContain("Cetățean anonim");
+    expect(out).toContain("[nume]");
   });
 
   it("redacts signature when hideName=true", () => {
@@ -75,7 +75,7 @@ describe("scrubFormalTextForPublic", () => {
     });
     // Signature line should have the redacted name, not the real one
     const sigMatch = out.match(/Cu stim[ăa],\s*\n([^\n]+)/);
-    expect(sigMatch?.[1]).toBe("Cetățean anonim");
+    expect(sigMatch?.[1]).toBe("[nume]");
   });
 
   it("handles empty text", () => {
@@ -98,7 +98,7 @@ describe("scrubFormalTextForPublic", () => {
       hideName: true,
     });
     expect(out).not.toContain("Ion Andrei Popescu");
-    expect((out.match(/Cetățean anonim/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect((out.match(/\[nume\]/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
   it("captures full multi-comma address with Sector marker", () => {
@@ -110,7 +110,7 @@ describe("scrubFormalTextForPublic", () => {
     expect(out).not.toContain("Strada Novaci");
     expect(out).not.toContain("Sector 5");
     expect(out).not.toContain("București și");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
   });
 
   it("handles address with Romanian abbreviations (Str., nr., bl., ap.)", () => {
@@ -122,7 +122,7 @@ describe("scrubFormalTextForPublic", () => {
     expect(out).not.toContain("Novaci");
     expect(out).not.toContain("bl. A3");
     expect(out).not.toContain("ap. 15");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
     expect(out).toContain("doresc să semnalez");
   });
 
@@ -134,7 +134,7 @@ describe("scrubFormalTextForPublic", () => {
     });
     expect(out).not.toContain("Dinicu Golescu 30");
     expect(out).not.toContain("Sector 1, București,");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
   });
 
   it("scrubs address when the clause ends at paragraph break (no 'și doresc')", () => {
@@ -147,7 +147,7 @@ describe("scrubFormalTextForPublic", () => {
     });
     expect(out).not.toContain("Aleea Teilor 5");
     expect(out).not.toContain("Sector 3, București");
-    expect(out).toContain("[adresă ascunsă]");
+    expect(out).toContain("[adresa]");
     expect(out).toContain("În ultima perioadă am observat");
   });
 });

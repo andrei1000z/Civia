@@ -531,7 +531,7 @@ export default function ContPage() {
                 onChange={(v) => setForm({ ...form, hide_name: v })}
                 title="Ascunde numele meu pe site"
                 description={
-                  `Sesizările publice apar cu "Cetățean anonim". Numele rămâne în email-ul către autoritate (e nevoie pentru identificare legală).`
+                  `Sesizările publice apar cu "[nume]". Numele rămâne în email-ul către autoritate (e nevoie pentru identificare legală).`
                 }
               />
             </section>

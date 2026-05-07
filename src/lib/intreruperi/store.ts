@@ -169,7 +169,10 @@ export async function getActiveInterruptions(): Promise<Interruption[]> {
 }
 
 const FETCH_LOCK_KEY = "civia:intreruperi:refresh-lock";
-const FETCH_LOCK_TTL_S = 6 * 60 * 60; // 6h
+// 12h lock (5/8/2026): reducem invocations pe Vercel (lock-ul de 6h
+// declanșa până la 4 refresh-uri/zi pe trafic). Plus cron zilnic =
+// fereastra max-staleness 12h pentru date scraped.
+const FETCH_LOCK_TTL_S = 12 * 60 * 60; // 12h
 
 /**
  * Self-healing background refresh. Invoked from `after()` on the
