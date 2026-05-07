@@ -30,6 +30,16 @@ const REDIRECT_EXACT = new Set([
 // ca /autoritati. Versiunea per-județ există ca /{slug}/intreruperi și
 // e accesibilă separat, dar bara de URL /intreruperi arată toate județele.
 
+// Paths care există DOAR ca național (NU au /[judet]/<path> echivalent).
+// Conform AGENTS.md: /sesizari, /petitii, /ghiduri sunt action surfaces
+// național-only. /sesizari-publice e feed comunitar național.
+//
+// Google + share-uri externe au indexat URL-uri tip „/b/petitii" — astea
+// dădeau 404. Acum 308-redirectăm la versiunea națională.
+// Raport analytics (5/8/2026): 3 hit-uri 404 pe /b/petitii, plus /b/ghiduri
+// și similar pe alte județe.
+const NATIONAL_ONLY_PATHS = ["petitii", "ghiduri", "sesizari-publice"] as const;
+
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -69,6 +79,26 @@ export default function proxy(request: NextRequest) {
     return res;
   }
 
+  // ─── National-only paths accidentally county-prefixed ──────────────
+  // /b/petitii, /cj/ghiduri etc → 308 redirect la /petitii / /ghiduri.
+  // Match: /{2-letter-slug}/{petitii|ghiduri|sesizari-publice}[/...]
+  const m = pathname.match(/^\/([a-z]{1,3})\/([^/]+)(\/.*)?$/);
+  if (m) {
+    const slug = m[1] ?? "";
+    const segment = m[2] ?? "";
+    const rest = m[3];
+    if (
+      COUNTY_SLUGS.has(slug) &&
+      (NATIONAL_ONLY_PATHS as readonly string[]).includes(segment)
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${segment}${rest ?? ""}`;
+      // 308 (permanent) — relația /b/petitii → /petitii e fixă, nu depinde
+      // de cookie sau user. Browserele și Google pot cache-ui agresiv.
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   // ─── County-scoped path shortcuts ───────────────────────────────
   if (!REDIRECT_EXACT.has(pathname)) return NextResponse.next();
 
@@ -91,5 +121,10 @@ export const config = {
     "/bilete",
     "/istoric",
     "/aer",
+    // National-only paths accidentally prefixed cu județ.
+    // Wildcard county slugs (2-3 chars) + national path:
+    "/:slug([a-z]{1,3})/petitii/:path*",
+    "/:slug([a-z]{1,3})/ghiduri/:path*",
+    "/:slug([a-z]{1,3})/sesizari-publice/:path*",
   ],
 };
