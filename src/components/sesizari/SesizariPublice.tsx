@@ -118,6 +118,18 @@ export function SesizariPublice() {
   // is filtered client-side against the current filter set so the
   // count is accurate per view.
   const [pendingNew, setPendingNew] = useState(0);
+  // Total platform-wide count (toate aprobate, NU filtrate). User a cerut
+  // să apară numărul global de sesizări făcute, nu cele 20 paginate. Sursa:
+  // /api/v1/stats (cached 15 min). Fallback la rows.length dacă API eșuează.
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  useEffect(() => {
+    fetch("/api/v1/stats")
+      .then((r) => r.json())
+      .then((j) => {
+        if (typeof j?.data?.total === "number") setTotalCount(j.data.total);
+      })
+      .catch(() => { /* silent — fallback la rows.length */ });
+  }, []);
   useEffect(() => {
     const supabase = createSupabaseBrowser();
     const channelName = `sesizari-realtime-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
@@ -250,7 +262,12 @@ export function SesizariPublice() {
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between text-xs gap-2">
             <span className="text-[var(--color-text-muted)] inline-flex items-center gap-2 flex-wrap">
-              <span>{filtered.length} sesizări găsite · 🔴 live</span>
+              <span>
+                {totalCount !== null
+                  ? `${totalCount.toLocaleString("ro-RO")} sesizări pe Civia`
+                  : `${filtered.length} sesizări`}
+                {" · 🔴 live"}
+              </span>
               {pendingNew > 0 && (
                 <button
                   type="button"
