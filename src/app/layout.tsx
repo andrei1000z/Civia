@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import dynamic from "next/dynamic";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -179,6 +180,16 @@ export default function RootLayout({
         {/* Preload the #1 font weight used above the fold (hero) for faster
             LCP on the homepage + county pages. Next font already fingerprints
             it so cache hits are immediate. */}
+
+        {/* External analytics — encarcat post-interactive ca sa nu intarzie LCP.
+            CSP-ul din next.config.ts permite explicit acest origin in script-src
+            si data-ingest in connect-src. */}
+        <Script
+          src="https://analytics-seven-steel.vercel.app/t.js#KCIqO-lsHcSZaQ1DJo_fGKNNJaTs-2-n_1ooqB6IwHQ"
+          data-site="f6fe2063252598799d49bf980bd094b04f59654777c2d52b98ffdd3fcf271405"
+          data-ingest="https://roulette-personals-gotta-guards.trycloudflare.com"
+          strategy="afterInteractive"
+        />
       </head>
       <body
         className="min-h-full flex flex-col bg-[var(--color-bg)] pt-16"
