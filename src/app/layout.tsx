@@ -185,9 +185,9 @@ export default function RootLayout({
             CSP-ul din next.config.ts permite explicit acest origin in script-src
             si data-ingest in connect-src. */}
         <Script
-          src="https://analytics-seven-steel.vercel.app/t.js#UeLhse7h7fSdotsy8I_qB2yAv2aJIpr4Ubq6MpWbZTo"
-          data-site="49cf0e6302707cc96eb99cef10e271b825c1874dc18e1a9e90dea27e6851f795"
-          data-ingest="https://rhjfutxgmnkonichxpro.supabase.co"
+          src="https://analytics-seven-steel.vercel.app/t.js#9zckkiikreoVzr9vkSWW70oKQJFkbTDcekweVuFciqw"
+          data-site="c861869472d8b888eaa8b0fa877f68a62c1e5e969623125c8207185798a8ae5d"
+          data-ingest="https://rhjfutxgmnkonichxpro.supabase.co/functions/v1"
           strategy="afterInteractive"
         />
       </head>
