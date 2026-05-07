@@ -185,8 +185,8 @@ export default function RootLayout({
             CSP-ul din next.config.ts permite explicit acest origin in script-src
             si data-ingest in connect-src. */}
         <Script
-          src="https://analytics-seven-steel.vercel.app/t.js#OJp087nyFOaYYiK5PKy5hrZulj7WZ1-S_1ULTf3Vp3Q"
-          data-site="b4e42861b812e0c59594293dc53f85ab27afa851c40766360a76a6afd886b899"
+          src="https://analytics-seven-steel.vercel.app/t.js#9LjeAjtEMpPwCNbtgwqA-wgnIvqJHNf_4iJfocBQU1Q"
+          data-site="fd73614b69cdd4bbbd4b0a5443cfe9b3dd3da9e35010b498e115984fdb3dfa54"
           data-ingest="https://roulette-personals-gotta-guards.trycloudflare.com"
           strategy="afterInteractive"
         />
