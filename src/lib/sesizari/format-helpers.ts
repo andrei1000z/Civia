@@ -114,6 +114,39 @@ export function repairSesizareLeaks(text: string): string {
   //      ștergem un cod poștal sau coordonată).
   t = t.replace(/\b(Sector\s+\d+)\.\s+\d{1,3}\b/gi, "$1");
 
+  // 2.6. Minimizări fabricate: AI-ul scrie „rămânând spațiu de trecere de
+  //      aproximativ 1-2 metri" / „mașinile ocupă aproximativ X% din
+  //      lățime" / „aproximativ N mașini" — măsurători inventate care
+  //      MINIMIZEAZĂ gravitatea. Raportat user 5/8/2026 pe sesizări reale
+  //      unde trotuarul era complet blocat dar AI scria „rămâne 1-2m".
+  //      Strip COMPLET clauza minimizatoare cu măsurători false.
+
+  // „, rămânând spațiu de trecere de aproximativ X-Y metri" →  „"
+  // „, lăsând un spațiu de aproximativ X metri" → „"
+  // „, lăsând spațiu de trecere de X metri" → „"
+  t = t.replace(
+    /,\s*(?:rămânând|lăsând|lasand|cu)\s+(?:un\s+)?spațiu(?:\s+de\s+trecere)?\s+(?:de\s+)?(?:aproximativ\s+)?\d+(?:[-–]\d+)?\s*(?:metri|m\.|cm)\b\.?/gi,
+    "",
+  );
+  // „mașinile ocupă aproximativ X% / X la sută / X procente din lățime/trotuar"
+  t = t.replace(
+    /\bma[șs]inile\s+ocup[ăa]\s+aproximativ\s+\d+\s*(?:%|la\s+sut[ăa]|procente)\s+din\s+(?:l[ăa][țt]imea\s+)?trotuarului?\b\.?/gi,
+    "trotuarul este ocupat de mașini parcate",
+  );
+  // „aproximativ N mașini" / „aproximativ X-Y mașini" / „cca N mașini"
+  // / „circa N mașini" / „în jur de N mașini" → „mai multe mașini".
+  // Acoperă cifre simple și range-uri (5-6, 1-2 etc).
+  t = t.replace(
+    /\b(?:aproximativ|circa|cca\.?|[îi]n\s+jur\s+de)\s+\d+(?:[-–]\d+)?\s+ma[șs]ini\b/gi,
+    "mai multe mașini",
+  );
+  // „groapă cu adâncime de aproximativ X cm" / „de circa X cm"
+  // → „groapă vizibilă" (când nu există măsurătoare reală).
+  t = t.replace(
+    /\bgroap[ăa]\s+(?:cu\s+)?(?:adâncime|ad[âi]ncime)\s+(?:de\s+)?(?:aproximativ|circa|cca\.?)\s+\d+\s*cm\b/gi,
+    "groapă vizibilă în asfalt",
+  );
+
   // 3. Placeholder-uri ne-substituite: {NUMELE}, [ADRESA], {LOCAȚIA}, etc.
   //    Strategie: dacă apare „domiciliat în [ADRESA]" sau similar, scoatem
   //    fraza întreagă. Altfel, înlocuim placeholder-ul cu spațiu gol +

@@ -222,6 +222,29 @@ describe("repairSesizareLeaks", () => {
     expect(out).toContain("a apărut o groapă");
   });
 
+  it("strip-uieste minimizari AI: ramanand spatiu de trecere de X metri", () => {
+    const input = "Masinile ocupa o parte din latimea trotuarului, rămânând spațiu de trecere de aproximativ 1-2 metri. Acest lucru pune in pericol pietonii.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toContain("rămânând spațiu");
+    expect(out).not.toContain("1-2 metri");
+    expect(out).toContain("Masinile ocupa o parte din latimea trotuarului");
+    expect(out).toContain("pune in pericol pietonii");
+  });
+
+  it("strip-uieste aproximativ N masini -> mai multe masini", () => {
+    const input = "Astazi am constatat ca aproximativ 10 mașini ocupa trotuarul.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/aproximativ \d+ ma[șs]ini/i);
+    expect(out).toContain("mai multe mașini");
+  });
+
+  it("strip-uieste masinile ocupa aproximativ X% din latime", () => {
+    const input = "Observ ca mașinile ocupă aproximativ 60% din lățimea trotuarului in zona.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/aproximativ \d+\s*%/);
+    expect(out).toContain("trotuarul este ocupat de mașini parcate");
+  });
+
   it("este idempotent (re-run = no-op pe text deja reparat)", () => {
     const input = "Subsemnatul Ion, domiciliat în București, vă sesizez cu privire la gunoi.";
     const once = repairSesizareLeaks(input);
