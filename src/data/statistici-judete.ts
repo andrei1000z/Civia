@@ -1077,8 +1077,8 @@ const COUNTY_DATA: Record<string, CountyStats> = {
     populatie: 371156,
     suprafataKmp: 5318,
     densitate: Math.round(371156 / 5318),
-    primarName: "Vasile Pavăl",
-    primarPartid: "PSD",
+    primarName: "Lucian Braniște",
+    primarPartid: "—",
   },
 
   // ===================== VRANCEA =====================

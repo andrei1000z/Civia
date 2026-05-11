@@ -842,14 +842,16 @@ export const PRIMARI_JUDETE: PrimarJudet[] = [
     rating: 3.0,
   },
   {
-    id: "vasile-paval-vs",
-    nume: "Vasile Pavăl",
-    partid: "PSD",
-    culoarePartid: "#DC2626",
+    id: "lucian-braniste-vs",
+    nume: "Lucian Braniște",
+    // Partid actualizat când avem confirmare; păstrăm rosu pentru a nu
+    // induce in eroare cu o culoare partid neverificată.
+    partid: "—",
+    culoarePartid: "#64748B",
     city: "Vaslui",
     countyId: "VS",
-    perioada: "2020 - prezent",
-    anInceput: 2020,
+    perioada: "2024 - prezent",
+    anInceput: 2024,
     anSfarsit: null,
     website: "https://www.primariavaslui.ro",
     realizari: [

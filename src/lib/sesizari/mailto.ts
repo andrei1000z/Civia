@@ -386,25 +386,29 @@ export function buildOutlookLink(input: MailtoInput): string {
   // The `/mail/0/deeplink/compose` route is what Outlook's own mailto
   // handler resolves to today on outlook.live.com and works for personal
   // accounts; Office 365 business accounts get auto-redirected across.
+  //
+  // ENCODING: hand-build query cu encodeURIComponent (NU URLSearchParams)
+  // ca spațiile să fie %20, nu +. Outlook web NU decodează `+` ca spațiu
+  // în body — utilizatorii primeau email-uri cu „cuvânt+cuvânt+cuvânt"
+  // în loc de spații (raportat user 5/9/2026 pe sesizare 00027). Același
+  // bug pe care Gmail-Android-intent îl avea — fix identic.
   const p = buildEmailPayload(input);
-  const params = new URLSearchParams({
-    to: p.to.join(","),
-    subject: p.subject,
-    body: p.body,
-  });
-  if (p.cc.length > 0) params.set("cc", p.cc.join(","));
-  return `https://outlook.live.com/mail/0/deeplink/compose?${params.toString()}`;
+  const to = encodeURIComponent(p.to.join(","));
+  const subject = encodeURIComponent(p.subject);
+  const body = encodeURIComponent(p.body);
+  const cc = p.cc.length > 0 ? `&cc=${encodeURIComponent(p.cc.join(","))}` : "";
+  return `https://outlook.live.com/mail/0/deeplink/compose?to=${to}&subject=${subject}&body=${body}${cc}`;
 }
 
 export function buildYahooLink(input: MailtoInput): string {
+  // Same +/space issue ca Outlook — Yahoo web compose nu decodează `+`.
+  // Hand-build cu encodeURIComponent.
   const p = buildEmailPayload(input);
-  const params = new URLSearchParams({
-    to: p.to.join(","),
-    subject: p.subject,
-    body: p.body,
-  });
-  if (p.cc.length > 0) params.set("cc", p.cc.join(","));
-  return `https://compose.mail.yahoo.com/?${params.toString()}`;
+  const to = encodeURIComponent(p.to.join(","));
+  const subject = encodeURIComponent(p.subject);
+  const body = encodeURIComponent(p.body);
+  const cc = p.cc.length > 0 ? `&cc=${encodeURIComponent(p.cc.join(","))}` : "";
+  return `https://compose.mail.yahoo.com/?to=${to}&subject=${subject}&body=${body}${cc}`;
 }
 
 export function getRecipientsLabel(

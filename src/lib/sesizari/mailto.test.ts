@@ -244,6 +244,32 @@ describe("buildOutlookLink — modern deeplink format", () => {
     expect(to.split(",").every((addr) => addr.includes("@"))).toBe(true);
   });
 
+  it("encodes spaces as %20, not + (Outlook web nu decodeaza +)", () => {
+    const url = buildOutlookLink({
+      tip: "groapa",
+      titlu: "Test cu spatii multiple",
+      locatie: "Strada X 1, Sector 2, Bucuresti",
+      descriere: "Multe cuvinte cu spatii intre ele aici.",
+      author_name: "Ion Popescu",
+      author_address: "Strada Y, Sector 5",
+    });
+    // Bug raportat user 5/9/2026 pe sesizare 00027: Outlook arata
+    // „cuvant+cuvant+cuvant" in body in loc de spatii. URLSearchParams
+    // foloseste form-encoding (space -> +); Outlook web NU decodeaza +
+    // ca space. Fix: hand-build cu encodeURIComponent (space -> %20).
+    // Verificam ca NU exista `+` ca separator de cuvinte in query.
+    // Doar +-ul din `+40` (telefon) e ok daca exista, dar in body sunt
+    // doar spatii.
+    const queryPart = url.split("?")[1] ?? "";
+    // Numara `+` urile — daca sunt prezente in valori encoded, e bug.
+    // Acceptam %2B (`+` properly encoded) dar nu `+` raw ca separator.
+    const plusCount = (queryPart.match(/\+/g) ?? []).length;
+    const percent20Count = (queryPart.match(/%20/g) ?? []).length;
+    expect(percent20Count).toBeGreaterThan(5); // multe spatii in body
+    // `+` raw nu trebuie sa apara (form-encoding bug)
+    expect(plusCount).toBe(0);
+  });
+
   it("attaches CC only when there are CC recipients", () => {
     const noCc = buildOutlookLink({
       tip: "iluminat",
