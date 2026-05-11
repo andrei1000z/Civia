@@ -246,7 +246,22 @@ export function buildEmailPayload(input: MailtoInput): EmailPayload {
   // primărie ca atare — îl normalizăm: diacritice + Title-case la
   // tipurile de stradă.
   const locatieFormatted = normalizeRoLocation(input.locatie);
-  let subject = `Sesizare ${tipLabel} — ${locatieFormatted}`;
+
+  // Pentru tip="altele", label-ul generic „Altele" face un subject urât
+  // („Sesizare Altele — Strada X") care arată prefacut, pre-completat —
+  // primăria îl ignoră ca template automat. Folosim AI-polished titlu
+  // care descrie problema concret (raportat user 5/9/2026).
+  let subject: string;
+  if (input.tip === "altele" && input.titlu && input.titlu.length > 5) {
+    // Truncate titlu lung — subject-urile lungi sunt clipped de mail
+    // clients la afișare în inbox listing. 100 char max e standardul.
+    const titluTrim = input.titlu.length > 80
+      ? input.titlu.slice(0, 77).trimEnd() + "..."
+      : input.titlu;
+    subject = `Sesizare: ${titluTrim} — ${locatieFormatted}`;
+  } else {
+    subject = `Sesizare ${tipLabel} — ${locatieFormatted}`;
+  }
   if (input.tip === "parcare" && input.parking?.plate) {
     // Police mailrooms search inbox by plate number when triaging
     // parking complaints — putting it in the subject shaves days off
