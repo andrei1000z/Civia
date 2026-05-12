@@ -12,7 +12,7 @@ export const revalidate = 3600; // hourly
 // `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,
 // adaugă slug-ul aici (altfel Google nu-l indexează automat).
 const COUNTY_PAGES = [
-  "", "/sesizari", "/aer", "/stiri", "/ghiduri",
+  "", "/sesizari", "/stiri", "/ghiduri",
   "/autoritati", "/evenimente", "/istoric",
   "/intreruperi",
   // Sub-pages pentru date publice — au fost adăugate ca pagini per-județ
@@ -37,8 +37,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/urmareste`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/legal/confidentialitate`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/legal/termeni`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/dezvoltatori`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/calendar-civic`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${base}/siguranta`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/educatie`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/sanatate`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
@@ -60,7 +58,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Legacy pages that still exist
   const legacyRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/sesizari`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
-    { url: `${base}/aer`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/stiri`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/ghiduri`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/evenimente`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },

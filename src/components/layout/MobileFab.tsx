@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, FileText, AlertTriangle, Building2, Wind } from "lucide-react";
+import { Plus, X, FileText, AlertTriangle, Building2 } from "lucide-react";
 import { useCountyOptional } from "@/lib/county-context";
 import { ALL_COUNTIES } from "@/data/counties";
 
@@ -30,7 +30,6 @@ export function MobileFab() {
   const countySlug = county?.slug ?? validated;
   const sesizariTarget = countySlug ? `/${countySlug}/sesizari` : "/sesizari";
   const intreruperiTarget = countySlug ? `/${countySlug}/intreruperi` : "/intreruperi";
-  const aerTarget = countySlug ? `/${countySlug}/aer` : "/aer";
 
   const hidden =
     /\/sesizari\/?$/.test(pathname) ||
@@ -72,7 +71,6 @@ export function MobileFab() {
   // last (highest in the column), so the primary "Fă sesizare" is at
   // the bottom — closest to the thumb.
   const dialItems = [
-    { href: aerTarget, icon: <Wind size={16} />, label: "Aer live", bg: "bg-sky-600" },
     { href: "/autoritati", icon: <Building2 size={16} />, label: "Autorități", bg: "bg-slate-700 dark:bg-slate-600" },
     { href: intreruperiTarget, icon: <AlertTriangle size={16} />, label: "Întreruperi", bg: "bg-orange-500" },
     { href: sesizariTarget, icon: <FileText size={16} />, label: "Fă sesizare", bg: "bg-[var(--color-primary)]" },

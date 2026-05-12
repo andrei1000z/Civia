@@ -510,7 +510,6 @@ export default async function CountyDetailPage({
             </h2>
             <ul className="grid grid-cols-2 gap-2">
               {[
-                { href: `/${slug}/aer`, label: "Calitate aer", emoji: "🌬️" },
                 { href: `/${slug}/stiri`, label: "Știri", emoji: "📰" },
                 { href: `/${slug}/intreruperi`, label: "Întreruperi", emoji: "⚠️" },
                 { href: `/${slug}/autoritati`, label: "Autorități", emoji: "🏛️" },

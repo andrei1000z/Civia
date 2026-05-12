@@ -177,14 +177,6 @@ function HeroQuickTiles({
   // mai jos. Era duplicat informațional.
   const tiles = [
     {
-      href: `/${judet}/aer`,
-      label: "Calitate aer",
-      value: `AQI ${aqi}`,
-      hint: aqiQuality,
-      icon: Wind,
-      color: aqiColor(aqi),
-    },
-    {
       href: `/${judet}/sesizari`,
       label: "Sesizări active",
       value: totalSesizari.toLocaleString("ro-RO"),
@@ -199,6 +191,14 @@ function HeroQuickTiles({
       hint: intreruperiCount === 0 ? "nimic activ" : "apă/curent/gaz",
       icon: AlertTriangle,
       color: "#F59E0B",
+    },
+    {
+      href: `/${judet}/autoritati`,
+      label: "Autorități",
+      value: "Catalog",
+      hint: "primărie, prefectură, ipj",
+      icon: AlertCircle,
+      color: "#059669",
     },
   ] as const;
 
@@ -611,8 +611,8 @@ function AuthorityCard({
 
 const PRIMARY_SECTIONS = [
   { path: "/sesizari", icon: AlertCircle, label: "Sesizări", color: "#DC2626", prefetch: true },
-  { path: "/aer", icon: Wind, label: "Calitate aer", color: "#059669", prefetch: true },
   { path: "/intreruperi", icon: AlertTriangle, label: "Întreruperi", color: "#F59E0B", prefetch: true },
+  { path: "/autoritati", icon: AlertCircle, label: "Autorități", color: "#059669", prefetch: true },
   { path: "/stiri", icon: Newspaper, label: "Știri locale", color: "#0EA5E9", prefetch: false },
 ];
 

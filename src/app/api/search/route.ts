@@ -26,7 +26,6 @@ const STATIC_PAGES: SearchResult[] = [
   { type: "page", title: "Știri", url: "/stiri", excerpt: "Știri civice din surse verificate" },
   { type: "page", title: "Evenimente", url: "/evenimente", excerpt: "Evenimente majore din România" },
   { type: "page", title: "Ghiduri", url: "/ghiduri", excerpt: "Ghiduri practice pentru cetățeni" },
-  { type: "page", title: "Calitate aer", url: "/aer", excerpt: "Hartă live cu senzori din toată România" },
   { type: "page", title: "Sesizări publice", url: "/sesizari-publice", excerpt: "Ce semnalează alți cetățeni" },
   { type: "page", title: "Urmărește sesizarea", url: "/urmareste", excerpt: "Verifică statusul sesizării tale" },
   { type: "page", title: "Contul tău", url: "/cont", excerpt: "Profil + sesizările tale" },
@@ -36,10 +35,8 @@ const STATIC_PAGES: SearchResult[] = [
   { type: "page", title: "Siguranță & criminalitate", url: "/siguranta", excerpt: "Statistici oficiale Poliția Română pe tipuri și județe" },
   { type: "page", title: "Educație", url: "/educatie", excerpt: "Promovabilitate BAC, top licee, statistici învățământ" },
   { type: "page", title: "Sănătate", url: "/sanatate", excerpt: "Speranță viață, medici per capita, top spitale publice" },
-  { type: "page", title: "Calendar civic", url: "/calendar-civic", excerpt: "Alegeri, taxe, ședințe CGMB, consultări publice" },
 
   // Dev
-  { type: "page", title: "API public pentru dezvoltatori", url: "/dezvoltatori", excerpt: "API v1 deschis cu CORS, licență CC BY 4.0" },
 ];
 
 function sanitizeForPostgrest(q: string): string {

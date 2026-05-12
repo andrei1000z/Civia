@@ -87,35 +87,7 @@ export async function GET(req: Request) {
   const quake = await fetchRecentQuake();
   if (quake) alerts.push(quake);
 
-  // 2. AQI — query our own aggregator
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const res = await fetch(`${base}/api/aer?county=B`, {
-      next: { revalidate: 300 },
-    });
-    if (res.ok) {
-      const { data } = (await res.json()) as {
-        data: { sensors?: Array<{ aqi: number }> };
-      };
-      if (data?.sensors && data.sensors.length > 0) {
-        const maxAqi = Math.max(...data.sensors.map((s) => s.aqi ?? 0));
-        if (maxAqi >= 150) {
-          alerts.push({
-            id: `aqi-${Math.floor(maxAqi / 25) * 25}-${new Date().toISOString().slice(0, 10)}`,
-            type: "aqi",
-            severity: maxAqi >= 200 ? "critical" : "warning",
-            title: maxAqi >= 200 ? "Poluare periculoasă" : "Calitate aer redusă",
-            message: `AQI ${Math.round(maxAqi)} în București — evită efortul fizic în exterior și închide ferestrele.`,
-            link: "/aer",
-            source: "OpenAQ / Sensor Community",
-            validUntil: new Date(Date.now() + 6 * 60 * 60_000).toISOString(),
-          });
-        }
-      }
-    }
-  } catch {
-    /* best-effort */
-  }
+  // AQI alerts scoase 5/12/2026 — /aer page eliminat la cererea user-ului.
 
   // 2. Editorial announcements — simple env-var based
   // Format: "SEVERITY|TITLE|MESSAGE|LINK"

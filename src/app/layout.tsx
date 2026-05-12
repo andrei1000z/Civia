@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
-import dynamic from "next/dynamic";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -19,14 +18,7 @@ import { ToastProvider } from "@/components/Toast";
 import { BackToTop } from "@/components/BackToTop";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
-import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
-
-// CivicAssistant FAB removed (3 messages in 1500 visits = 0.2% engagement
-// per analytics). Search palette stays (genuine utility for power users).
-const CommandPalette = dynamic(
-  () => import("@/components/CommandPalette").then((m) => ({ default: m.CommandPalette }))
-);
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -220,13 +212,11 @@ export default function RootLayout({
               {/* Heavy interactive widgets — mount only after first paint + idle.
                   Shaves ~300ms off LCP on slow devices. */}
               <DeferredClientMount>
-                <CommandPalette />
                 <AuthModal />
                 <CookieBanner />
                 <BackToTop />
                 <InstallPrompt />
                 <MobileFab />
-                <KeyboardShortcuts />
               </DeferredClientMount>
             </ToastProvider>
           </AuthProvider>

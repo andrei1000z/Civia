@@ -42,7 +42,6 @@ export default function manifest(): MetadataRoute.Manifest {
       { name: "Trimite o sesizare", short_name: "Sesizare", url: "/sesizari", description: "Scrie o sesizare formală către primărie" },
       { name: "Urmărește sesizarea", short_name: "Urmărește", url: "/urmareste", description: "Verifică statusul cu codul primit" },
       { name: "Întreruperi apă/caldură", short_name: "Întreruperi", url: "/intreruperi", description: "Vezi când ți se oprește apa, caldura, curentul" },
-      { name: "Calitatea aerului live", short_name: "Aer", url: "/aer", description: "Hartă live cu senzori din toată România" },
       { name: "Sesizări publice", short_name: "Publice", url: "/sesizari-publice", description: "Votează și trimite și tu sesizări civice" },
     ],
     // Web Share Target API — when another app shares a photo/text
