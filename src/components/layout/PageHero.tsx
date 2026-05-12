@@ -88,8 +88,19 @@ export function PageHero({
           aria-hidden="true"
         />
         <div className="relative flex items-start gap-4 flex-wrap">
+          {/* Liquid-glass icon chip — inset highlight + saturated blur dă
+              senzație de „sticlă lichidă" (iOS 18 / Vision OS). Înlocuiește
+              ring-2 cu inset shadow alb subtle care „prinde lumina" la marginea
+              superioară. */}
           <div
-            className="w-12 h-12 rounded-[var(--radius-xs)] bg-white/15 backdrop-blur-sm ring-2 ring-white/30 grid place-items-center shrink-0"
+            className="w-12 h-12 rounded-[var(--radius-xs)] bg-white/15 grid place-items-center shrink-0"
+            style={{
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.15)",
+              border: "1px solid rgba(255,255,255,0.22)",
+            }}
             aria-hidden="true"
           >
             <Icon size={22} />

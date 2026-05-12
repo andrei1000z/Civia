@@ -164,7 +164,7 @@ export function CommandPalette() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-2xl overflow-hidden"
+        className="w-full max-w-xl liquid-glass rounded-[var(--radius-md)] shadow-2xl overflow-hidden"
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--color-border)]">
