@@ -180,6 +180,133 @@ Ion Popescu
   });
 });
 
+describe("formatAddress", () => {
+  it("trim + capitalize prima litera", () => {
+    
+    expect(formatAddress("  strada Florilor 12  ")).toBe("Strada Florilor 12");
+  });
+
+  it("strip Sector X. Y trailing duplicate", () => {
+    
+    expect(formatAddress("Strada Novaci 12, Sector 5. 12")).toBe("Strada Novaci 12, Sector 5");
+  });
+
+  it("nu modifica adresa fara artifact", () => {
+    
+    expect(formatAddress("Bulevardul Magheru 7")).toBe("Bulevardul Magheru 7");
+  });
+
+  it("empty input -> empty", () => {
+    
+    expect(formatAddress("")).toBe("");
+    expect(formatAddress("   ")).toBe("");
+  });
+
+  it("Sector 5. 123 pastreaza forma cu 3-digit number", () => {
+    
+    // 3 digits inca prinde (max 1-3 cifre dupa punct)
+    expect(formatAddress("Strada X, Sector 5. 999")).toBe("Strada X, Sector 5");
+  });
+});
+
+describe("capitalizeName", () => {
+  it("transforma ALL CAPS in Title Case", () => {
+    
+    expect(capitalizeName("ION POPESCU")).toBe("Ion Popescu");
+  });
+
+  it("transforma lowercase in Title Case", () => {
+    
+    expect(capitalizeName("ion popescu")).toBe("Ion Popescu");
+  });
+
+  it("pastreaza nume deja capitalizate", () => {
+    
+    expect(capitalizeName("Ion Popescu")).toBe("Ion Popescu");
+  });
+
+  it("compacteaza spatii multiple", () => {
+    
+    expect(capitalizeName("ion    popescu")).toBe("Ion Popescu");
+  });
+
+  it("trim leading/trailing", () => {
+    
+    expect(capitalizeName("  ion popescu  ")).toBe("Ion Popescu");
+  });
+});
+
+describe("normalizeRoLocation", () => {
+  it("adauga diacritice la nume orase fara", () => {
+    
+    expect(normalizeRoLocation("Strada X, Bucuresti")).toContain("București");
+    expect(normalizeRoLocation("Iasi")).toContain("Iași");
+    expect(normalizeRoLocation("Constanta")).toContain("Constanța");
+    expect(normalizeRoLocation("Timisoara")).toContain("Timișoara");
+  });
+
+  it("normalizeaza fraza-cheie 'in capatul cu' -> 'in capătul cu'", () => {
+    
+    const out = normalizeRoLocation("strada X in capatul cu strada Y");
+    expect(out).toContain("în capătul cu");
+  });
+
+  it("normalizeaza 'la intersectia cu' -> 'la intersecția cu'", () => {
+    
+    expect(normalizeRoLocation("Calea Victoriei la intersectia cu Romana")).toContain("la intersecția cu");
+  });
+
+  it("'Stefan' -> 'Ștefan' (numele propriu)", () => {
+    
+    expect(normalizeRoLocation("Bd Stefan cel Mare")).toContain("Ștefan");
+  });
+
+  it("empty input -> empty", () => {
+    
+    expect(normalizeRoLocation("")).toBe("");
+  });
+
+  it("orase compus: Satu Mare, Baia Mare, Targu Mures", () => {
+    
+    expect(normalizeRoLocation("Strada Y, satu mare")).toContain("Satu Mare");
+    expect(normalizeRoLocation("baia mare")).toContain("Baia Mare");
+    expect(normalizeRoLocation("targu mures")).toContain("Târgu Mureș");
+  });
+});
+
+describe("appendGdprClause", () => {
+  it("adauga clauza GDPR inainte de semnatura 'Cu stima'", () => {
+    
+    const input = "Bună ziua.\n\nMesaj.\n\nCu stimă,\nIon";
+    const out = appendGdprClause(input);
+    expect(out).toContain("Regulamentului (UE) 2016/679");
+    expect(out.indexOf("Regulamentului")).toBeLessThan(out.indexOf("Cu stimă"));
+  });
+
+  it("idempotent: re-run pe text cu clauza nu o dubleaza", () => {
+    
+    const input = "Mesaj.\n\nCu stimă,\nIon";
+    const once = appendGdprClause(input);
+    const twice = appendGdprClause(once);
+    // Aceeasi clauza nu apare de doua ori
+    const matches = (twice.match(/Regulamentului \(UE\) 2016\/679/g) ?? []).length;
+    expect(matches).toBe(1);
+  });
+
+  it("fara semnatura: append la final", () => {
+    
+    const input = "Mesaj fara semnatura.";
+    const out = appendGdprClause(input);
+    expect(out).toContain("Regulamentului (UE) 2016/679");
+    expect(out.endsWith(".")).toBe(true);
+  });
+
+  it("empty input -> empty", () => {
+    
+    expect(appendGdprClause("")).toBe("");
+  });
+});
+
 describe("repairSesizareLeaks", () => {
   it("rescrie 'Subsemnatul X, domiciliat în Y' → 'Mă numesc X și locuiesc în Y'", () => {
     const input = "Bună ziua, Subsemnatul Ion Popescu, domiciliat în Strada Florilor, vă rog...";
