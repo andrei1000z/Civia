@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { SearchX, Home, Map, AlertCircle, BookOpen, Newspaper } from "lucide-react";
+import { SearchX, Home, AlertCircle, BookOpen, Newspaper, Megaphone } from "lucide-react";
 import { NotFoundTracker } from "./NotFoundTracker";
 import { NotFoundSearchButton } from "./NotFoundSearchButton";
 
 export default function NotFound() {
   const quickLinks = [
     { href: "/sesizari", label: "Trimit o sesizare", icon: AlertCircle },
-    { href: "/harti", label: "Hărți", icon: Map },
+    { href: "/petitii", label: "Petiții", icon: Megaphone },
     { href: "/ghiduri", label: "Ghiduri practice", icon: BookOpen },
     { href: "/stiri", label: "Știri locale", icon: Newspaper },
   ];

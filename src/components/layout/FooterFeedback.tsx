@@ -61,8 +61,9 @@ export function FooterFeedback() {
       id="footer-feedback"
       className="mt-10 pt-8 border-t border-[var(--color-border)] scroll-mt-24"
     >
-      {/* Feedback only — newsletter removed (signup-only opt-in now). */}
-      <section className="max-w-2xl">
+      {/* Feedback only — newsletter removed (signup-only opt-in now).
+          Centrat pe ecran (user request 5/12/2026) ca să arate frumos. */}
+      <section className="max-w-2xl mx-auto text-center">
         <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
           <MessageSquareMore size={16} className="text-[var(--color-primary)]" />
           Ce nu-ți place la Civia? Ce lipsește?

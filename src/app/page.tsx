@@ -177,7 +177,7 @@ export default function HomePage() {
               href="/sesizari"
               className="inline-flex items-center gap-2 h-12 px-8 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] active:scale-[0.97] transition-all shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
-              Începe — fă o sesizare în 90 de secunde
+              Începe — fă o sesizare în 60 de secunde
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>

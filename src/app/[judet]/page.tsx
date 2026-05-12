@@ -612,7 +612,7 @@ function AuthorityCard({
 const PRIMARY_SECTIONS = [
   { path: "/sesizari", icon: AlertCircle, label: "Sesizări", color: "#DC2626", prefetch: true },
   { path: "/aer", icon: Wind, label: "Calitate aer", color: "#059669", prefetch: true },
-  { path: "/harti", icon: MapIcon, label: "Hărți mobilitate", color: "#2563EB", prefetch: true },
+  { path: "/intreruperi", icon: AlertTriangle, label: "Întreruperi", color: "#F59E0B", prefetch: true },
   { path: "/stiri", icon: Newspaper, label: "Știri locale", color: "#0EA5E9", prefetch: false },
 ];
 
@@ -620,7 +620,6 @@ const PRIMARY_SECTIONS = [
 // dezintegrat /statistici, /cum-functioneaza, /bilete, /buget, /compara
 // la cererea user-ului. Rămân doar surfacele păstrate.
 const SECONDARY_SECTIONS = [
-  { path: "/intreruperi", icon: AlertTriangle, label: "Întreruperi", color: "#F59E0B" },
   { path: "/ghiduri", icon: BookOpen, label: "Ghiduri", color: "#A855F7" },
   { path: "/educatie", icon: BookOpen, label: "Educație", color: "#0EA5E9" },
   { path: "/sanatate", icon: Compass, label: "Sănătate", color: "#E11D48" },
@@ -733,11 +732,11 @@ export default async function CountyHomePage({
                   Fă o sesizare
                 </Link>
                 <Link
-                  href={`/${judet}/harti`}
+                  href={`/${judet}/intreruperi`}
                   className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-white/10 text-white border border-white/20 font-semibold hover:bg-white/20 active:scale-[0.97] backdrop-blur-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <MapIcon size={18} aria-hidden="true" />
-                  Explorează harta
+                  <AlertCircle size={18} aria-hidden="true" />
+                  Vezi întreruperi
                 </Link>
               </div>
             </div>

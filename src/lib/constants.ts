@@ -67,7 +67,6 @@ export const NAV_LINKS = [
   { href: "/petitii", label: "Petiții", national: true },
   { href: "/proteste", label: "Proteste", national: true },
   { href: "/intreruperi", label: "Întreruperi" },
-  { href: "/harti", label: "Hărți" },
   { href: "/stiri", label: "Știri" },
   { href: "/ghiduri", label: "Ghiduri", national: true },
 ] as const;

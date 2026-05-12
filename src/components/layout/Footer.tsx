@@ -11,10 +11,9 @@ export function Footer() {
   return (
     <footer className="bg-[var(--color-surface-soft)] border-t border-[var(--color-border)] mt-auto">
       <div className="container-narrow py-12">
-        {/* Brand + 2 link sections (Despre Civia + Resurse oficiale).
-            User a cerut: scoatem complet „Folosește platforma" + „Ghiduri
-            practice" — sunt deja accesibile din navbar/Altele dropdown. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+        {/* 3 columns: Brand · Despre Civia · Urmărește Civia.
+            Tot pe același rând, simetric, mobile-stack 1-col. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Column 1 — Brand */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
@@ -51,74 +50,72 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Column 2 — Despre Civia (legal + about) */}
+          {/* Column 2 — Despre Civia (legal only — API scos la cerere user 5/12/2026) */}
           <div>
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Despre Civia
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/dezvoltatori" className={linkCls}>API public — pentru jurnaliști</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><CookiePreferencesButton /></li>
             </ul>
           </div>
+
+          {/* Column 3 — Urmărește Civia (social media, una sub alta) */}
+          <div>
+            <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
+              Urmărește Civia
+            </h4>
+            <ul className="flex flex-col gap-2">
+              <li>
+                <a
+                  href="https://bsky.app/profile/civiaro.bsky.social"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Bluesky — @civiaro.bsky.social"
+                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
+                >
+                  <Image
+                    src="/bluesky.png"
+                    alt="Bluesky"
+                    width={24}
+                    height={24}
+                    unoptimized
+                    className="w-6 h-6 rounded-full object-contain bg-white"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold text-[var(--color-text)]">Bluesky</span>
+                    <span className="text-[var(--color-text-muted)]"> · @civiaro</span>
+                  </span>
+                </a>
+              </li>
+              <li>
+                {/* eYou — link gol pe moment (platforma nu are URL public).
+                    Înlocuim span-ul cu <a href> când iese public. */}
+                <span
+                  title="eYou — rețea socială europeană (link când iese public)"
+                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] opacity-70 w-fit"
+                >
+                  <Image
+                    src="/eyou.webp"
+                    alt="eYou"
+                    width={24}
+                    height={24}
+                    unoptimized
+                    className="w-6 h-6 rounded-full object-contain bg-white"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold text-[var(--color-text)]">eYou</span>
+                    <span className="text-[var(--color-text-muted)]"> · @civia</span>
+                  </span>
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Urmărește Civia — social row. */}
-        <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
-          <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
-            Urmărește Civia
-          </h4>
-          <ul className="flex flex-wrap items-center gap-2">
-            <li>
-              <a
-                href="https://bsky.app/profile/civiaro.bsky.social"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Bluesky — @civiaro.bsky.social"
-                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              >
-                <Image
-                  src="/bluesky.png"
-                  alt="Bluesky"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  className="w-6 h-6 rounded-full object-contain bg-white"
-                />
-                <span className="text-sm">
-                  <span className="font-semibold text-[var(--color-text)]">Bluesky</span>
-                  <span className="text-[var(--color-text-muted)]"> · @civiaro</span>
-                </span>
-              </a>
-            </li>
-            <li>
-              {/* eYou — link gol pe moment (platforma nu are URL public).
-                  Pastram badge-ul vizual ca placeholder; cand iese public,
-                  inlocuim span-ul cu <a href>. */}
-              <span
-                title="eYou — rețea socială europeană (link când iese public)"
-                className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] opacity-70"
-              >
-                <Image
-                  src="/eyou.webp"
-                  alt="eYou"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  className="w-6 h-6 rounded-full object-contain bg-white"
-                />
-                <span className="text-sm">
-                  <span className="font-semibold text-[var(--color-text)]">eYou</span>
-                  <span className="text-[var(--color-text-muted)]"> · @civia</span>
-                </span>
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Feedback + newsletter */}
+        {/* Feedback — centrat (cerut user 5/12/2026) */}
         <FooterFeedback />
 
         {/* Bottom bar — year derived dynamically so the footer doesn't

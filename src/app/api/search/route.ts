@@ -23,7 +23,6 @@ const STATIC_PAGES: SearchResult[] = [
   { type: "page", title: "Petiții", url: "/petitii", excerpt: "Petiții civice curate" },
   { type: "page", title: "Proteste", url: "/proteste", excerpt: "Proteste civice anunțate" },
   { type: "page", title: "Întreruperi", url: "/intreruperi", excerpt: "Întreruperi planificate utilități (apă, gaz, curent)" },
-  { type: "page", title: "Hărți", url: "/harti", excerpt: "Piste bicicletă, drumuri, transport, calitate aer" },
   { type: "page", title: "Știri", url: "/stiri", excerpt: "Știri civice din surse verificate" },
   { type: "page", title: "Evenimente", url: "/evenimente", excerpt: "Evenimente majore din România" },
   { type: "page", title: "Ghiduri", url: "/ghiduri", excerpt: "Ghiduri practice pentru cetățeni" },

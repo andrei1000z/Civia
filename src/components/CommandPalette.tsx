@@ -51,7 +51,6 @@ const QUICK_LINKS = [
   { label: "Petiții", url: "/petitii", icon: Megaphone, color: "text-purple-500" },
   { label: "Proteste", url: "/proteste", icon: Flag, color: "text-rose-500" },
   { label: "Întreruperi", url: "/intreruperi", icon: AlertTriangle, color: "text-amber-600" },
-  { label: "Hărți", url: "/harti", icon: MapIcon, color: "text-blue-500" },
   { label: "Știri", url: "/stiri", icon: Newspaper, color: "text-emerald-500" },
   { label: "Ghiduri", url: "/ghiduri", icon: BookOpen, color: "text-amber-500" },
 ];
