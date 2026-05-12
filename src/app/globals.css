@@ -46,15 +46,15 @@
   --shadow-4: 0 8px 24px rgba(0, 0, 0, 0.08), 0 24px 48px rgba(0, 0, 0, 0.06);
   --shadow-5: 0 12px 32px rgba(0, 0, 0, 0.10), 0 32px 64px rgba(0, 0, 0, 0.08);
 
-  /* Glass tokens (glassmorphism uniform).
-     User request 5/12/2026 — efect mai pronunțat „iOS 26 style":
-     transparență mai vizibilă (60% în loc de 70%), blur 20px, saturație
-     200% pentru chroma „lichidă". Folosit pe navbar, modale, FAB,
-     bottom sheets. */
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-strong: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.22);
-  --glass-blur: 20px;
+  /* Glass tokens iOS 26 OBVIOUS style. Boost final 5/12/2026:
+     - bg coboară la 45% (light) / 42% (dark) — translucent puternic
+     - border devine 45% alb (light) / 18% (dark) — edge highlight vizibil
+     - blur 28px — milky deep blur ca pe iOS lock screen
+     Folosit pe navbar, modale, FAB, bottom sheets. */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-bg-strong: rgba(255, 255, 255, 0.70);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-blur: 28px;
 
   /* Surface variants — micro-hierarchy fără să stricăm surface/surface-2.
      Folosite în Phase 3 ca să avem 3-4 niveluri de elevation:
@@ -103,10 +103,10 @@
   --shadow-4: 0 8px 24px rgba(0, 0, 0, 0.65), 0 24px 48px rgba(0, 0, 0, 0.45);
   --shadow-5: 0 12px 32px rgba(0, 0, 0, 0.7), 0 32px 64px rgba(0, 0, 0, 0.55);
 
-  /* Glass dark — tint mai prominent pentru efect „iOS 26" (5/12/2026) */
-  --glass-bg: rgba(23, 23, 23, 0.55);
-  --glass-bg-strong: rgba(23, 23, 23, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  /* Glass dark — strong iOS 26 style (5/12/2026) */
+  --glass-bg: rgba(23, 23, 23, 0.42);
+  --glass-bg-strong: rgba(23, 23, 23, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.18);
 
   /* Surface variants dark — true-black pentru OLED + soft offset */
   --color-surface-soft: #0F0F10;       /* aproape pure black, sub surface */
@@ -215,7 +215,21 @@ html, body {
 }
 
 body {
-  background: var(--color-bg);
+  /* Aurora gradient mesh permanent — fix attachment ca să apară statică
+     sub conținut scrolling. Asta face GLASS-ul VIZIBIL pe orice pagină,
+     orice scroll position. Fără asta, navbar peste body color flat = blur
+     pe nimic = glass invizibil. Cu mesh, navbar/modale/FAB blur peste
+     gradient = efect iOS 26 vizibil instant.
+
+     Light mode: emerald + sky + violet, low-opacity blobs pe fundal alb.
+     Dark mode: emerald + indigo + purple, peste true-black. */
+  background:
+    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+    radial-gradient(at 85% 18%, rgba(56, 189, 248, 0.16) 0px, transparent 50%),
+    radial-gradient(at 50% 70%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(244, 114, 182, 0.10) 0px, transparent 50%),
+    var(--color-bg);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv11", "ss01";
@@ -288,6 +302,19 @@ html { scroll-padding-top: 4.5rem; }
    with overflow-x: visible if they truly need horizontal scroll
    (none currently do). Reported via reddit feedback 2026-04. */
 html, body { overflow-x: clip; }
+
+/* Dark-mode aurora — emerald + indigo + purple peste true-black.
+   Layered cu radial-gradient ca să respire efectul de „aurora boreală" pe
+   OLED. Pe device-uri non-OLED se vede ca subtle accent. */
+.dark body {
+  background:
+    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.14) 0px, transparent 55%),
+    radial-gradient(at 85% 18%, rgba(99, 102, 241, 0.16) 0px, transparent 55%),
+    radial-gradient(at 50% 75%, rgba(168, 85, 247, 0.12) 0px, transparent 55%),
+    radial-gradient(at 80% 90%, rgba(244, 63, 94, 0.08) 0px, transparent 55%),
+    var(--color-bg);
+  background-attachment: fixed;
+}
 
 /* Respect user's motion preference — pentru user-ii cu
    vestibular sensitivity sau care dezactivează animații din
