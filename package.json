@@ -8,7 +8,6 @@
     "build:windows": "node --max-old-space-size=6144 node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "eslint",
-    "fetch-osm": "tsx scripts/fetch-osm-bucharest.ts",
     "fetch-stiri": "tsx scripts/fetch-stiri.ts",
     "migrate": "tsx scripts/migrate.ts",
     "scrape:intreruperi": "node scripts/scrape-intreruperi.mjs",
