@@ -27,7 +27,7 @@ export function BackToTop() {
         window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
       }}
       className={cn(
-        "fixed bottom-24 left-6 z-30 w-11 h-11 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-lg)] flex items-center justify-center text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
+        "liquid-glass fixed bottom-24 left-6 z-30 w-11 h-11 rounded-full shadow-[var(--shadow-lg)] flex items-center justify-center text-[var(--color-text)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
         visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
       )}
       aria-label="Înapoi la începutul paginii"
