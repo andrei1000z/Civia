@@ -85,7 +85,7 @@ export function MobileFab() {
           z-index sits below the dial wrap (z-30 vs z-40) so the
           buttons stay clickable. */}
       <div
-        className={`lg:hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ${
+        className={`lg:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-md backdrop-saturate-150 transition-opacity duration-200 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setOpen(false)}
