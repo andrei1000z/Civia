@@ -1,24 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Clock, CheckCircle2, Megaphone, Wind } from "lucide-react";
+import { Activity, Clock, CheckCircle2, Megaphone } from "lucide-react";
 
 interface LiveData {
   totalSesizari: number;
   inLucru: number;
   rezolvate: number;
   petitiiActive: number;
-  // null când API returnează „indisponibil" — afișăm doar dacă avem date reale.
-  aqi: number | null;
-  aqiQuality: string | null;
 }
 
 /**
  * Ticker național — sesizări totale + în lucru + rezolvate (≥3 ca să nu
- * pară gol) + petiții active + calitatea aerului națională medie.
+ * pară gol) + petiții active.
  *
- * Round 2026-04-29: scos AQI prefix-uit (înainte „AQI:"), scoase „Surse"
- * și „Actualizat realtime" (filler), adăugat petiții (feature nou).
+ * 5/12/2026: scos AQI după ștergerea completă a /aer.
  */
 export function LiveStatsBar() {
   const [data, setData] = useState<LiveData | null>(null);
@@ -39,27 +35,18 @@ export function LiveStatsBar() {
         "/api/statistici/summary",
         { data: null },
       ),
-      fetchJson<{ data: { aqi: number | null; quality: string | null } | null }>(
-        "/api/statistici/aqi",
-        { data: null },
-      ),
       fetchJson<{ data: { active: number } | null }>(
         "/api/petitii/count",
         { data: { active: 0 } },
       ),
-    ]).then(([summary, aqi, petitii]) => {
+    ]).then(([summary, petitii]) => {
       if (cancelled) return;
       const s = summary.data ?? { total: 0, today: 0, inLucru: 0, rezolvate: 0 };
-      // Doar dacă AQI-ul e număr valid (nu null) afișăm stat-ul. Altfel
-      // SKIP — preferăm să nu arătăm „Date indisponibile" sau fake fallback.
-      const aqiNum = typeof aqi.data?.aqi === "number" ? aqi.data.aqi : null;
       setData({
         totalSesizari: s.total,
         inLucru: s.inLucru,
         rezolvate: s.rezolvate ?? 0,
         petitiiActive: petitii.data?.active ?? 0,
-        aqi: aqiNum,
-        aqiQuality: aqiNum !== null ? aqi.data?.quality ?? null : null,
       });
     });
     return () => {
@@ -67,10 +54,6 @@ export function LiveStatsBar() {
     };
   }, []);
 
-  // Build stats list — fiecare stat conditional:
-  //   - rezolvate: ≥3 (nu vrem 0/1/2 care arată ca neutilizat)
-  //   - petiții active: ≥1
-  //   - AQI: doar când avem număr valid (nu fake fallback, nu "Date indisponibile")
   const stats = data
     ? [
         {
@@ -98,15 +81,6 @@ export function LiveStatsBar() {
                 icon: Megaphone,
                 text: `${data.petitiiActive.toLocaleString("ro-RO")} petiții active`,
                 color: "text-purple-500",
-              },
-            ]
-          : []),
-        ...(data.aqi !== null && data.aqiQuality
-          ? [
-              {
-                icon: Wind,
-                text: `Calitatea aerului națională medie: ${data.aqi} (${data.aqiQuality})`,
-                color: "text-sky-500",
               },
             ]
           : []),
