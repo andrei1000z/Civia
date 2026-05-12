@@ -62,9 +62,9 @@ export default function HomePage() {
 
             <p className="text-lg md:text-xl text-emerald-100/90 mb-10 max-w-2xl mx-auto leading-relaxed">
               Sesizări formale către primărie. Petiții civice cu impact.
-              Hărți de mobilitate, calitatea aerului în timp real, întreruperi
-              programate, știri locale și statistici pentru toate cele 42 de
-              județe — într-un singur loc.
+              Calitatea aerului în timp real, întreruperi programate, știri
+              locale și ghiduri practice pentru toate cele 42 de județe —
+              într-un singur loc.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -100,7 +100,7 @@ export default function HomePage() {
               Alege-ți județul
             </h2>
             <p className="text-[var(--color-text-muted)] mt-2">
-              Sesizări, hărți interactive, știri locale și date publice — filtrate pe județul tău.
+              Sesizări, calitate aer, întreruperi, știri locale și date publice — filtrate pe județul tău.
             </p>
           </div>
         </div>

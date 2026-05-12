@@ -119,7 +119,7 @@ export async function GET(req: Request) {
         type: "judet",
         title: c.name,
         url: `/${c.slug}`,
-        excerpt: `Sesizări, statistici, hărți pentru ${c.name}`,
+        excerpt: `Sesizări, calitate aer, știri pentru ${c.name}`,
         meta: c.id,
       });
     }

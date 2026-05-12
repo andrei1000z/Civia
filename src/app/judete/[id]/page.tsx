@@ -257,7 +257,7 @@ export default async function CountyDetailPage({
             {authorities.length > 0
               ? `${authorities.length} autorități indexate · ${sesizari.length} sesizări recente vizibile public.`
               : "Datele autorităților se completează manual — vor apărea aici la următoarele actualizări."}{" "}
-            Pagina live a județului are hărțile, calitatea aerului, statisticile și știrile —{" "}
+            Pagina live a județului are calitatea aerului, întreruperile, statisticile și știrile —{" "}
             <Link href={`/${slug}`} className="underline underline-offset-2 hover:text-white">
               deschide-o aici
             </Link>
@@ -510,11 +510,11 @@ export default async function CountyDetailPage({
             </h2>
             <ul className="grid grid-cols-2 gap-2">
               {[
-                { href: `/${slug}/harti`, label: "Hărți", emoji: "🗺️" },
                 { href: `/${slug}/aer`, label: "Calitate aer", emoji: "🌬️" },
                 { href: `/${slug}/stiri`, label: "Știri", emoji: "📰" },
                 { href: `/${slug}/intreruperi`, label: "Întreruperi", emoji: "⚠️" },
                 { href: `/${slug}/autoritati`, label: "Autorități", emoji: "🏛️" },
+                { href: `/${slug}/sesizari`, label: "Sesizări", emoji: "📋" },
               ].map((l) => (
                 <li key={l.href}>
                   <Link

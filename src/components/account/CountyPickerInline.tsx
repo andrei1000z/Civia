@@ -101,7 +101,7 @@ export function CountyPickerInline() {
       <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
         {currentCounty ? (
           <>
-            Hărțile, calitatea aerului, întreruperile și statisticile vor fi filtrate pentru{" "}
+            Calitatea aerului, întreruperile, știrile și statisticile vor fi filtrate pentru{" "}
             <strong>{currentCounty.name}</strong>. Sesizările, petițiile și ghidurile rămân naționale.{" "}
             <Link href={`/${currentCounty.slug}`} className="text-[var(--color-primary)] hover:underline">
               Vezi pagina județului →

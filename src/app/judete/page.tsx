@@ -69,7 +69,7 @@ export default async function JudetePage() {
         icon={MapPin}
         gradient={HERO_GRADIENT.primary}
         description="Civia reține județul tău la următoarea vizită și te duce direct acolo. De aici îl poți schimba oricând — click pe alt județ ca să-l salvezi în loc."
-        tagline={`${totalCounties} de județe · ${totalPopulation.toLocaleString("ro-RO")} locuitori · sesizările, hărțile, calitatea aerului și știrile se filtrează automat după județul ales`}
+        tagline={`${totalCounties} de județe · ${totalPopulation.toLocaleString("ro-RO")} locuitori · sesizările, calitatea aerului, întreruperile și știrile se filtrează automat după județul ales`}
       />
 
       {/* Live signal strip — pulled from production data so the page feels alive.

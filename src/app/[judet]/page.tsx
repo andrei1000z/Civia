@@ -720,7 +720,7 @@ export default async function CountyHomePage({
               </h1>
 
               <p className="text-lg md:text-xl text-emerald-100/85 max-w-xl leading-relaxed mb-8">
-                Tot ce ține de {isBucharest ? "Bucureștiul tău" : `județul ${county.name}`} într-un singur loc — sesizări la primărie, hărți interactive, știri locale și întreruperi programate.
+                Tot ce ține de {isBucharest ? "Bucureștiul tău" : `județul ${county.name}`} într-un singur loc — sesizări la primărie, calitate aer live, întreruperi programate și știri locale.
               </p>
 
               <div className="flex flex-wrap gap-3">

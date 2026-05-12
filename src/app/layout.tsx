@@ -88,11 +88,11 @@ export const metadata: Metadata = {
   },
   keywords: [
     "sesizări România",
-    "hărți civice",
+    "petiții civice",
     "primăria București",
     "date publice",
-    "buget național",
-    "transport public București",
+    "calitate aer România",
+    "întreruperi utilități",
     "Poliția Locală",
     "parcare ilegală",
     "civia.ro",
@@ -147,9 +147,7 @@ export default function RootLayout({
             tile load on cold visits. */}
         <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org" />
         <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
-        {/* Overpass is the bottleneck for /harti at zoom >= 13 — preconnect
-            so the first viewport fetch doesn't pay TLS handshake latency. */}
-        <link rel="preconnect" href="https://overpass-api.de" crossOrigin="anonymous" />
+        {/* Overpass preconnect scos (5/12/2026) — folosea doar /harti, sters complet. */}
         {/* Supabase — every page that reads data hits this origin. */}
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
         <link rel="alternate" type="application/rss+xml" title="Sesizări Civia" href="/feed.xml" />

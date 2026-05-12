@@ -81,7 +81,7 @@ export default async function OgImage({ params }: { params: Promise<{ judet: str
         </div>
 
         <div style={{ display: "flex", color: "#bfdbfe", fontSize: 30, fontWeight: 400, maxWidth: 1040, lineHeight: 1.3 }}>
-          Sesizări, calitate aer, hărți, statistici și ghiduri civice — toate dintr-un singur loc.
+          Sesizări, calitate aer, întreruperi și ghiduri civice — toate dintr-un singur loc.
         </div>
 
         <div
@@ -99,9 +99,9 @@ export default async function OgImage({ params }: { params: Promise<{ judet: str
         >
           <div style={{ display: "flex", gap: 28 }}>
             <span>📮 Sesizări</span>
-            <span>🗺️ Hărți</span>
             <span>🌬️ Aer live</span>
-            <span>📊 Statistici</span>
+            <span>⚠️ Întreruperi</span>
+            <span>📰 Știri locale</span>
           </div>
           <div style={{ display: "flex" }}>{`civia.ro/${county?.slug ?? "ro"}`}</div>
         </div>

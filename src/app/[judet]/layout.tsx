@@ -20,7 +20,7 @@ export async function generateMetadata({
     // because most sub-pages already inline the county name in their title
     // (e.g. "Știri civice — Cluj"). Doubling it produced "Știri — Cluj — Cluj — Civia".
     title: { default: `${county.name} — Civia`, template: `%s — Civia` },
-    description: `Sesizări, calitate aer, hărți și ghiduri civice pentru județul ${county.name}.`,
+    description: `Sesizări, calitate aer, întreruperi și ghiduri civice pentru județul ${county.name}.`,
     alternates: { canonical: `/${county.slug}` },
   };
 }

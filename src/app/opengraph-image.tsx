@@ -64,7 +64,7 @@ export default async function OGImage() {
         </div>
 
         <div style={{ color: "#bfdbfe", fontSize: 32, fontWeight: 400, maxWidth: 1000 }}>
-          Hărți, sesizări, ghiduri, știri și statistici — într-un singur loc.
+          Sesizări, petiții, ghiduri, calitate aer și știri — într-un singur loc.
         </div>
 
         <div
@@ -81,9 +81,9 @@ export default async function OGImage() {
           }}
         >
           <div style={{ display: "flex", gap: 28 }}>
-            <span>🗺️ Hărți OSM</span>
             <span>📮 Sesizări</span>
-            <span>📊 Statistici</span>
+            <span>✍️ Petiții</span>
+            <span>🌬️ Calitate aer</span>
           </div>
           <div>civia.ro</div>
         </div>
