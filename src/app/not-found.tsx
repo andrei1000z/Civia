@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SearchX, Home, AlertCircle, BookOpen, Newspaper, Megaphone } from "lucide-react";
 import { NotFoundTracker } from "./NotFoundTracker";
-import { NotFoundSearchButton } from "./NotFoundSearchButton";
 
 export default function NotFound() {
   const quickLinks = [
@@ -25,7 +24,7 @@ export default function NotFound() {
         Probabil ai un link vechi sau ai tastat greșit URL-ul. Scrie-ne <Link href="/#footer-feedback" className="text-[var(--color-primary)] hover:underline">aici</Link> dacă ai venit din altă parte de pe site — reparăm linkul.
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
+      <div className="flex justify-center mb-10">
         <Link
           href="/"
           className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
@@ -33,7 +32,6 @@ export default function NotFound() {
           <Home size={16} aria-hidden="true" />
           Înapoi la pagina principală
         </Link>
-        <NotFoundSearchButton />
       </div>
 
       <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
