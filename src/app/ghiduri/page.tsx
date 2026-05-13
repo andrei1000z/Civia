@@ -43,7 +43,7 @@ export default function GhiduriPage() {
 
       <section aria-label="Listă ghiduri civice">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {ghiduri.map((ghid) => (
+            {ghiduri.map((ghid, idx) => (
               <Link
                 key={ghid.id}
                 href={`/ghiduri/${ghid.slug}`}
@@ -53,12 +53,20 @@ export default function GhiduriPage() {
                 <div className={`relative h-48 bg-gradient-to-br ${ghid.gradient} overflow-hidden`}>
                   {ghid.image && (
                     <>
+                      {/* Primele 3 carduri (above-the-fold pe desktop) sunt
+                          LCP candidate — eager + fetchpriority high. Restul
+                          raman lazy. Analytics 2026-05-13: /ghiduri LCP poor
+                          33% deoarece toate imaginile erau lazy = LCP astepta
+                          dupa toate scripturile. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/images/ghiduri/${ghid.image}.webp`}
                         alt=""
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
+                        loading={idx < 3 ? "eager" : "lazy"}
+                        fetchPriority={idx === 0 ? "high" : "auto"}
+                        width="400"
+                        height="192"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                     </>

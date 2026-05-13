@@ -311,9 +311,19 @@ export function SesizareForm() {
   // Abandon signal — if the user leaves without hitting submit, fire a
   // form-abandon event marking the furthest step reached. Lets the
   // dashboard compute "where do people drop off".
+  // Update 2026-05-13: doar daca a fost ENGAGEMENT real (descriere > 5,
+  // tip, poza, sau GPS). Inainte fire-uia si pe page views fara
+  // interactiune → „before-tip" arata 112 abandons din care 90%+ erau
+  // bounces, nu drop-offs reale. Aliniat cu funnel „start".
   useEffect(() => {
     const onUnload = () => {
       if (submitted) return;
+      const hasEngagement =
+        data.descriere.trim().length >= 5 ||
+        !!data.tip ||
+        imagini.length > 0 ||
+        data.lat !== null;
+      if (!hasEngagement) return;
       const step =
         data.tip && data.descriere.length > 10 && data.locatie ? "before-submit"
         : data.tip && data.descriere.length > 10 ? "before-locatie"
@@ -323,8 +333,8 @@ export function SesizareForm() {
     };
     window.addEventListener("pagehide", onUnload);
     return () => window.removeEventListener("pagehide", onUnload);
-     
-  }, [data.tip, data.descriere, data.locatie, submitted]);
+
+  }, [data.tip, data.descriere, data.locatie, data.lat, imagini.length, submitted]);
 
   // Auto-fill from profile (auth) or localStorage (anonymous)
   useEffect(() => {
