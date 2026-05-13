@@ -93,7 +93,9 @@ export function LiveStatsBar() {
     <section
       aria-label="Statistici live Civia"
       className="bg-[var(--color-surface)] border-b border-[var(--color-border)] overflow-hidden"
-      style={{ minHeight: "44px" }}
+      // height fix (nu minHeight) — minHeight permitea variatii in inaltime cand
+      // continutul wrap-uia pe mobile. height fix asigura zero CLS la mount.
+      style={{ height: "44px" }}
     >
       <div className="relative">
         {/*

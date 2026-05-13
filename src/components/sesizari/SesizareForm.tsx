@@ -272,11 +272,25 @@ export function SesizareForm() {
     return () => clearTimeout(timer);
   }, [data, imagini, parkingSlots, parkingPlateText, parkingJurisdiction, parkingObservedAt, submitted]);
 
-  // Funnel entry — user landed on the form
+  // Funnel entry — fires DOAR cand userul interactioneaza prima data (input
+  // in descriere, click pe quick-pick tip, upload poza). Inainte fire-uia
+  // pe mount, ceea ce inflate-uia „start" cu page views care nu reprezentau
+  // nicio intentie reala → funnel arata 1.2% submit rate (catastrofal).
+  // Update 2026-05-13: cu acest fix, „start" = engagement real, conversia
+  // o sa fie reflectiva.
+  const startFiredRef = useRef(false);
   useEffect(() => {
-    trackFunnelStep("sesizare-create", "start");
-
-  }, []);
+    if (startFiredRef.current) return;
+    const hasEngagement =
+      data.descriere.length > 0 ||
+      !!data.tip ||
+      imagini.length > 0 ||
+      data.lat !== null;
+    if (hasEngagement) {
+      startFiredRef.current = true;
+      trackFunnelStep("sesizare-create", "start");
+    }
+  }, [data.descriere, data.tip, imagini.length, data.lat]);
 
   // beforeunload guard — dacă user încearcă să închidă tab-ul în timpul
   // submit-ului, prevenim pierderea silentă a datelor / imaginilor
