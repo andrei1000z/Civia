@@ -23,7 +23,7 @@ export default function TermeniPage() {
           Termeni și condiții
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-8">
-          Ultima actualizare: aprilie 2026
+          Ultima actualizare: mai 2026
         </p>
 
         <p className="text-sm text-[var(--color-text-muted)] italic mb-8">
@@ -169,7 +169,7 @@ export default function TermeniPage() {
           <li>acțiunile sau inacțiunile autorităților publice către care trimiți sesizări;</li>
           <li>pierderi indirecte, incidentale sau speculative (lucrum cessans);</li>
           <li>conținutul postat de alți utilizatori;</li>
-          <li>indisponibilități cauzate de furnizori terți (Vercel, Supabase, Groq, OpenAQ, OpenStreetMap etc.);</li>
+          <li>indisponibilități cauzate de furnizori terți (Vercel, Supabase, Upstash, Groq, Resend, OpenStreetMap, Open-Meteo etc. — lista completă în politica de confidențialitate);</li>
           <li>pagube cauzate de forța majoră.</li>
         </ul>
         <p className="text-sm">

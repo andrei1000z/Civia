@@ -24,7 +24,7 @@ export default function ConfidentialitatePage() {
           Politica de confidențialitate
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-2">
-          Ultima actualizare: aprilie 2026
+          Ultima actualizare: mai 2026
         </p>
         <p className="text-sm text-[var(--color-text-muted)] mb-8 italic">
           Document redactat conform Regulamentului UE 2016/679 (GDPR), Directivei
@@ -68,12 +68,11 @@ export default function ConfidentialitatePage() {
         <h2>2. Categoriile de date colectate</h2>
         <h3>a. Date pentru sesizări (informații civice)</h3>
         <ul>
-          <li><strong>Numele și prenumele</strong> (obligatoriu pentru ca autoritatea să poată răspunde);</li>
-          <li><strong>Adresa de email</strong> (obligatoriu — primești copia email-ului trimis autorității);</li>
-          <li><strong>Adresa poștală</strong> (opțional — doar dacă alegi să o adaugi);</li>
-          <li><strong>Locația problemei</strong> (coordonate GPS, adresă, județ);</li>
-          <li><strong>Descrierea problemei</strong> (text liber);</li>
-          <li><strong>Fotografii</strong> (opțional — încărcate de tine, păstrate metadatele EXIF doar dacă alegi).</li>
+          <li><strong>Numele și prenumele</strong> (obligatoriu — autoritatea trebuie să identifice petentul, conform art. 7 OG 27/2002 privind petițiile);</li>
+          <li><strong>Adresa de email</strong> (obligatoriu — autoritatea răspunde pe email, iar tu primești o copie);</li>
+          <li><strong>Locația problemei</strong> (coordonate GPS, adresă, județ — selectate de tine pe hartă);</li>
+          <li><strong>Descrierea problemei</strong> (text liber pe care îl scrii tu);</li>
+          <li><strong>Fotografii</strong> (opțional — re-encodate în browser înainte de upload, astfel încât metadatele EXIF, inclusiv GPS-ul aparatului, sunt eliminate automat).</li>
         </ul>
 
         <h3>b. Date pentru cont</h3>
@@ -135,11 +134,12 @@ export default function ConfidentialitatePage() {
         <ul>
           <li><strong>Cont activ:</strong> pe durata existenței contului.</li>
           <li><strong>Cont șters:</strong> datele personale se șterg imediat. Sesizările publice rămân anonimizate (numele înlocuit cu „Cetățean").</li>
-          <li><strong>Sesizări private trimise prin platformă:</strong> 3 ani (termen rezonabil pentru tracking răspuns autoritate + apel).</li>
-          <li><strong>Logurile server (IP, UA):</strong> 30 de zile.</li>
-          <li><strong>Backup-uri:</strong> 90 de zile (Supabase point-in-time recovery).</li>
-          <li><strong>Email-uri trimise (newsletter, tranzacționale):</strong> 6 luni (jurnal de livrare).</li>
-          <li><strong>Date analytics anonime:</strong> 90 de zile.</li>
+          <li><strong>Sesizări trimise prin platformă:</strong> 3 ani (termen rezonabil pentru tracking răspuns autoritate + eventual apel).</li>
+          <li><strong>Logurile server și cheile de rate-limit (IP, User-Agent):</strong> maxim 30 de zile.</li>
+          <li><strong>Backup-uri:</strong> 7 zile (Supabase point-in-time recovery pe plan Pro).</li>
+          <li><strong>Email-uri trimise (newsletter, tranzacționale):</strong> 6 luni (jurnal de livrare Resend).</li>
+          <li><strong>Statistici agregate anonime (pageviews, web vitals):</strong> 90 de zile.</li>
+          <li><strong>Timeline per vizitator (debug UX, ID hash):</strong> 30 de zile.</li>
         </ul>
 
         <h2>6. Destinatari și împuterniciți (sub-procesori)</h2>
@@ -149,10 +149,13 @@ export default function ConfidentialitatePage() {
         </p>
         <ul>
           <li><strong>Vercel Inc.</strong> — hosting Next.js (regiune Frankfurt, DE) — DPA semnat;</li>
-          <li><strong>Supabase</strong> — bază de date PostgreSQL + autentificare (regiune EU) — DPA semnat;</li>
-          <li><strong>Upstash</strong> — Redis pentru cache + rate-limiting (regiune EU) — DPA semnat;</li>
-          <li><strong>Groq</strong> — procesare AI text (cu clauze contractuale standard UE pentru orice transfer extra-UE);</li>
-          <li><strong>Open-Meteo, OpenAQ, OpenStreetMap, ANSPMS</strong> — furnizori date publice (date publice, fără PII trimisă).</li>
+          <li><strong>Supabase</strong> — bază de date PostgreSQL + autentificare + storage (regiune EU) — DPA semnat;</li>
+          <li><strong>Upstash</strong> — Redis pentru cache + rate-limiting + statistici agregate (regiune EU) — DPA semnat;</li>
+          <li><strong>Groq</strong> — procesare AI text + viziune (formalizarea sesizărilor); cu clauze contractuale standard UE pentru orice transfer extra-UE;</li>
+          <li><strong>Resend</strong> — trimiterea email-urilor tranzacționale (magic-link, notificări status sesizare, newsletter) — DPA conform GDPR;</li>
+          <li><strong>Sentry</strong> — monitorizarea erorilor aplicației, cu PII redactat la sursă;</li>
+          <li><strong>Open-Meteo, OpenStreetMap (tiles + Nominatim)</strong> — furnizori de date publice (geocoding, hărți, vreme); cererile pleacă din browser-ul tău și conțin doar coordonate / interogări de adresă, fără identificator personal;</li>
+          <li><strong>ANPM (Agenția Națională pentru Protecția Mediului)</strong> — date publice despre calitatea aerului, folosite static (fără apeluri live).</li>
         </ul>
         <p>
           Toate accesurile sunt logate. Nu împărtășim date cu terți pentru marketing,
@@ -250,30 +253,33 @@ export default function ConfidentialitatePage() {
 
         <h2 id="cookies">10. Cookie-uri și tehnologii similare</h2>
         <p>
-          Folosim doar <strong>cookie-uri strict necesare</strong>, scutite de consimțământ
-          conform art. 5 alin. 3 al Directivei ePrivacy:
+          Folosim doar <strong>cookie-uri strict necesare</strong> și <strong>localStorage</strong>{" "}
+          pentru preferințe locale, scutite de consimțământ conform art. 5 alin. 3 al
+          Directivei ePrivacy (necesare pentru funcționarea serviciului cerut de utilizator):
         </p>
         <table className="text-sm w-full border border-[var(--color-border)] rounded-[var(--radius-xs)] my-4">
           <thead className="bg-[var(--color-surface-2)]">
             <tr>
-              <th className="text-left p-3">Cookie</th>
+              <th className="text-left p-3">Cheie</th>
+              <th className="text-left p-3">Tip</th>
               <th className="text-left p-3">Scop</th>
               <th className="text-left p-3">Durată</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">sb-*</td><td className="p-3">Sesiunea Supabase (autentificare)</td><td className="p-3">7 zile</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_theme</td><td className="p-3">Preferința temă (dark/light)</td><td className="p-3">1 an</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_cookie_consent</td><td className="p-3">Stochează alegerea ta de consimțământ</td><td className="p-3">12 luni</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_county</td><td className="p-3">Județul preferat (UI personalizat)</td><td className="p-3">1 an</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_vid</td><td className="p-3">Vizitator ID anonim (statistici minime)</td><td className="p-3">30 zile</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">sb-*</td><td className="p-3">cookie HTTP</td><td className="p-3">Sesiunea Supabase (autentificare)</td><td className="p-3">7 zile</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">county</td><td className="p-3">cookie HTTP</td><td className="p-3">Județul preferat (folosit de server pentru a personaliza pagina ta)</td><td className="p-3">1 an</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">theme</td><td className="p-3">localStorage</td><td className="p-3">Preferința temă (dark/light) — gestionată de biblioteca next-themes</td><td className="p-3">permanent (până la ștergere)</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_cookie_consent</td><td className="p-3">localStorage</td><td className="p-3">Stochează alegerea ta privind consimțământul</td><td className="p-3">permanent (până la ștergere)</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_county</td><td className="p-3">localStorage</td><td className="p-3">Județul preferat (oglindit local pentru randări client-side)</td><td className="p-3">permanent (până la ștergere)</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_vid</td><td className="p-3">localStorage</td><td className="p-3">Vizitator ID anonim (hash, fără identificare personală)</td><td className="p-3">permanent (până la ștergere)</td></tr>
           </tbody>
         </table>
         <p>
           <strong>Nu folosim:</strong> Google Analytics, Meta Pixel, TikTok Pixel, cookie-uri
-          de publicitate, fingerprinting, web beacons sau tracking cross-site. Detalii și
-          modificare consimțământ în banner-ul cookie (deschis prin „Preferințe cookie" din
-          subsol).
+          de publicitate, fingerprinting, web beacons sau tracking cross-site. Poți șterge
+          oricând toate cheile de mai sus din setările browser-ului (Clear site data) sau
+          retrage consimțământul prin „Preferințe cookie" din subsol.
         </p>
 
         <h2>11. Securitate (art. 32 GDPR)</h2>
