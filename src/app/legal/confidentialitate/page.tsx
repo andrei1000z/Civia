@@ -24,7 +24,7 @@ export default function ConfidentialitatePage() {
           Politica de confidențialitate
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-2">
-          Ultima actualizare: 29 aprilie 2026 · Versiunea 2.0
+          Ultima actualizare: aprilie 2026
         </p>
         <p className="text-sm text-[var(--color-text-muted)] mb-8 italic">
           Document redactat conform Regulamentului UE 2016/679 (GDPR), Directivei
@@ -309,8 +309,8 @@ export default function ConfidentialitatePage() {
         <p>
           Modificările materiale (ce afectează drepturile tale) le anunțăm cu cel puțin{" "}
           <strong>30 de zile</strong> înainte prin email + banner pe platformă. Pentru
-          modificări minore (clarificări, corecturi), versiunea se actualizează cu indicarea
-          datei. Versiunile anterioare sunt disponibile la cerere.
+          modificări minore (clarificări, corecturi), actualizăm documentul cu indicarea
+          lunii. Versiunile anterioare sunt disponibile la cerere.
         </p>
 
         <h2 id="contact">15. Contact pentru chestiuni privind protecția datelor</h2>

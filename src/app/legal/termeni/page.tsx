@@ -23,7 +23,7 @@ export default function TermeniPage() {
           Termeni și condiții
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-8">
-          Ultima actualizare: 29 aprilie 2026 · Versiunea 2.0
+          Ultima actualizare: aprilie 2026
         </p>
 
         <p className="text-sm text-[var(--color-text-muted)] italic mb-8">
