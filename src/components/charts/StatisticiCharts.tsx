@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -143,7 +142,6 @@ export function AqiTrendChart() {
       <div className="h-[220px] flex items-center justify-center rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] p-4 text-center">
         <p className="text-xs text-[var(--color-text-muted)] max-w-xs">
           Nu avem încă acces la date per zi din API-ul ANPM/calitateaer.ro.
-          Vezi valoarea actuală pe pagina <Link href="/aer" className="text-[var(--color-primary)] hover:underline">Calitate aer</Link>.
         </p>
       </div>
     );

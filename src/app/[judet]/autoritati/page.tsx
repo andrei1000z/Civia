@@ -222,7 +222,6 @@ export default async function AutoritatiPage({
           icon={Globe}
           details={[
             stats ? `AQI mediu: ${stats.aqiMediu} — ${stats.aqiQuality}` : "Monitorizare calitate aer",
-            `Consultă harta live: /${county.slug}/aer`,
             "Raportează poluare: trimite prin Civia",
           ]}
         />

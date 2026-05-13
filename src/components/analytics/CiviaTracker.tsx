@@ -319,9 +319,15 @@ export function CiviaTracker(): null {
   // JS errors (filtered noise) + unhandled rejections
   useEffect(() => {
     if (isExcluded()) return;
-    // Pattern-uri de zgomot extension/browser pe care le-am vazut in audit
-    // (5/8/2026): MetaMask 7, uBlock Origin 2, plus alte extensii care injecteaza
-    // cod si esueaza ca pagina nu e ce se asteapta. Astea NU sunt buguri Civia.
+    // Pattern-uri de zgomot extension/browser/in-app-browser. Astea NU sunt
+    // buguri Civia — sunt cauzate de:
+    //  - extensii care injecteaza DOM dupa SSR (Grammarly, MetaMask, ad blockers)
+    //  - mobile in-app browsers (Reddit, Facebook, Instagram, X) care modifica markup
+    //  - wallet-uri (MetaMask, Phantom, Coinbase) care pun proprietati pe window
+    // Update 2026-05-13 dupa audit: React #418/#419 (816 ocurente!) + classList/
+    // parentNode null + ethereum.selectedAddress se intampla doar in browsere
+    // cu extensii sau in webview-uri sociale. Le filtram ca sa nu drowneze
+    // erorile reale (pana acum, intre #418 zgomot nu mai vedeam alte buguri).
     const NOISE = [
       /__firefox__/i,
       /chrome-extension/i,
@@ -329,18 +335,37 @@ export function CiviaTracker(): null {
       /safari-extension/i,
       /^Script error\.?$/i,
       /ResizeObserver loop/i,
-      // MetaMask & alte wallet extensions
+      // React hydration mismatches — cauzate de extensii care modifica DOM-ul
+      // intre SSR si client hydration. Layout-ul are deja suppressHydrationWarning
+      // pe body, dar copiii injectati de extensii dau eroare hard. Pe trafic
+      // public, 99% sunt zgomot real.
+      /Minified React error #418/i,
+      /Minified React error #419/i,
+      /Hydration failed/i,
+      /hydrating/i,
+      // Wallet extensions (MetaMask, Phantom, Coinbase, etc.)
       /window\.ethereum/i,
       /ethereum\.selectedAddress/i,
+      /web3/i,
+      /__phantom/i,
       // uBlock Origin / AdBlock cosmetic filtering
       /cosmeticAPI/i,
       /getSelectors/i,
       // Grammarly / LanguageTool / extension DOM injection
       /grammarly/i,
       /languagetool/i,
+      // Extensii care manipuleaza DOM dupa ce React l-a re-rendat —
+      // referintele lor catre nodes vechi devin null/stale.
+      /classList/i,
+      /parentNode/i,
+      /Cannot read propert(y|ies).*null/i,
       // Generic „object is not extensible" — apare cand extensii incearca sa
       // adauge proprietati pe obiectele Supabase / next-router (frozen).
       /object is not extensible/i,
+      // Bytedance/TikTok webview script errors
+      /bytedance/i,
+      // Facebook in-app browser injecteaza propriul cod care esueaza pe site-uri ne-FB
+      /FB.*navigator/i,
     ];
     const onError = (e: ErrorEvent) => {
       const msg = (e.message || "").slice(0, 200);

@@ -44,13 +44,17 @@ export function TimeAgo({ date, className, refreshMs = 60_000 }: Props) {
   // First render = absolute timestamp (deterministic, SSR-safe).
   // After mount, switch to relative — and auto-refresh every minute.
   const display = mounted ? timeAgo(date) : abs;
+  // Bug fix 2026-05-13: aria-label-ul calcula timeAgo() la fiecare render,
+  // inclusiv pe SSR + first client render → server-time != client-time →
+  // mismatch #418. Acum aria-label se schimba sincron cu display.
+  const ariaLabel = mounted ? `${timeAgo(date)} (${abs})` : abs;
 
   return (
     <time
       dateTime={iso}
       title={abs}
       className={className}
-      aria-label={`${timeAgo(date)} (${abs})`}
+      aria-label={ariaLabel}
       suppressHydrationWarning
     >
       {display}

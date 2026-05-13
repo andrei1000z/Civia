@@ -100,7 +100,6 @@ export async function GET(req: Request) {
           next: count && offset + limit < count ? offset + limit : null,
           license: "CC BY 4.0",
           source: "https://civia.ro",
-          docs: "https://civia.ro/dezvoltatori",
         },
         data: data ?? [],
       },

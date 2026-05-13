@@ -14,7 +14,6 @@ const DEFAULT_COUNTY = "b";
 // county-specific version. These pages DON'T have a national surface:
 //   - /bilete: transport tickets are per-city (Bucharest has STB, Cluj has CTP)
 //   - /istoric: historical mayors of a specific city
-//   - /aer: live air quality is a per-county map
 //
 // NOTE: /autoritati was previously in this list but is now a NATIONAL
 // catalog page (42 counties + 298 localities searchable). Leaving it
@@ -23,8 +22,21 @@ const DEFAULT_COUNTY = "b";
 const REDIRECT_EXACT = new Set([
   "/bilete",
   "/istoric",
-  "/aer",
 ]);
+
+// Rute sterse care apar inca in analytics (Reddit, Google cache, share-uri
+// vechi). Redirect 308 catre destinatii utile in loc de 404.
+// Update 2026-05-13 dupa audit analytics: /aer, /b/aer, /harti, /b/harti,
+// /cj/harti, /dezvoltatori, /buget, /compara, /calendar-civic, /impact.
+const LEGACY_REDIRECTS: Record<string, string> = {
+  "/harti": "/",
+  "/aer": "/",
+  "/dezvoltatori": "/",
+  "/buget": "/",
+  "/compara": "/judete",
+  "/calendar-civic": "/proteste",
+  "/impact": "/",
+};
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată
 // ca /autoritati. Versiunea per-județ există ca /{slug}/intreruperi și
@@ -42,6 +54,26 @@ const NATIONAL_ONLY_PATHS = ["petitii", "ghiduri", "sesizari-publice"] as const;
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ─── Legacy routes 308 redirects (rute sterse, vezi LEGACY_REDIRECTS) ──
+  const legacyTarget = LEGACY_REDIRECTS[pathname];
+  if (legacyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyTarget;
+    return NextResponse.redirect(url, 308);
+  }
+
+  // Match /{county}/{harti|aer} → /{county} (paginile au fost sterse;
+  // județul are propria homepage care arata aceleaśi informații).
+  const legacyCountyMatch = pathname.match(/^\/([a-z]{1,3})\/(harti|aer)(\/.*)?$/);
+  if (legacyCountyMatch) {
+    const slug = legacyCountyMatch[1] ?? "";
+    if (COUNTY_SLUGS.has(slug)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${slug}`;
+      return NextResponse.redirect(url, 308);
+    }
+  }
 
   // ─── Homepage "come home to your county" redirect ───────────────
   // If the user picked a county on a previous visit, bounce them
@@ -120,9 +152,17 @@ export const config = {
     "/",
     "/bilete",
     "/istoric",
+    // Legacy routes redirects (paginile au fost sterse).
+    "/harti",
     "/aer",
+    "/dezvoltatori",
+    "/buget",
+    "/compara",
+    "/calendar-civic",
+    "/impact",
+    "/:slug([a-z]{1,3})/harti/:path*",
+    "/:slug([a-z]{1,3})/aer/:path*",
     // National-only paths accidentally prefixed cu județ.
-    // Wildcard county slugs (2-3 chars) + national path:
     "/:slug([a-z]{1,3})/petitii/:path*",
     "/:slug([a-z]{1,3})/ghiduri/:path*",
     "/:slug([a-z]{1,3})/sesizari-publice/:path*",
