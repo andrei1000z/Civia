@@ -57,6 +57,38 @@ export function Lightbox({ open, onClose, url, kind = "auto", caption, title }: 
   const resolvedKind = kind === "auto" ? detectKind(url) : kind;
   const isPdf = resolvedKind === "pdf";
 
+  /**
+   * Download fix (raportat user 5/13/2026 — pe telefon, click pe „Descarcă"
+   * deschidea imaginea într-un tab nou în loc s-o salveze).
+   *
+   * Cauza: atribut `<a download>` nu funcționează cross-origin (Supabase
+   * Storage e alt origin). Browser-ul ignoră hint-ul + navighează.
+   *
+   * Fix: fetch + blob + click on dynamic <a> cu blob: URL (same-origin
+   * automat) → salvare reală pe disk/Photos pe mobil.
+   */
+  const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const filename = url.split("/").pop()?.split("?")[0] || `civia-${Date.now()}.jpg`;
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Eliberăm memoria — chrome cleanup la 60s, dar revoke-uim noi pentru safety.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch {
+      // Fallback: deschide în tab nou — utilizatorul poate face long-press save manual.
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-[var(--z-modal)] flex items-stretch justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
@@ -101,7 +133,7 @@ export function Lightbox({ open, onClose, url, kind = "auto", caption, title }: 
             </a>
             <a
               href={url}
-              download
+              onClick={handleDownload}
               className="inline-flex items-center gap-1 h-8 px-2.5 rounded-[var(--radius-xs)] text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               title="Descarcă fișierul"
             >

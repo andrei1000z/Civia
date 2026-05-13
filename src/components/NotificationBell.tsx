@@ -166,7 +166,10 @@ export function NotificationBell() {
             table: "sesizare_votes",
             filter: `sesizare_id=in.(${ownedIds.join(",")})`,
           },
-          async (payload: { new: { sesizare_id: string; value: number } }) => {
+          async (payload: { new: { sesizare_id: string; value: number; user_id: string | null } }) => {
+            // Nu notificăm pe user-ul însuși când dă like la propria sesizare —
+            // raportat 2026-05-13: „dacă imi dau like singur îmi apare notificare".
+            if (payload.new.user_id && payload.new.user_id === user!.id) return;
             const sez = await lookupSesizare(payload.new.sesizare_id);
             if (!sez) return;
             const isUp = payload.new.value > 0;
@@ -191,7 +194,8 @@ export function NotificationBell() {
             table: "sesizare_verifications",
             filter: `sesizare_id=in.(${ownedIds.join(",")})`,
           },
-          async (payload: { new: { sesizare_id: string; agrees: boolean } }) => {
+          async (payload: { new: { sesizare_id: string; agrees: boolean; user_id: string | null } }) => {
+            if (payload.new.user_id && payload.new.user_id === user!.id) return;
             const sez = await lookupSesizare(payload.new.sesizare_id);
             if (!sez) return;
             addNotification({

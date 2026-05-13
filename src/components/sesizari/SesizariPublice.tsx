@@ -445,7 +445,7 @@ export function SesizariPublice() {
                 )}
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)] gap-2 min-w-0">
                   <span className="text-xs text-[var(--color-text-muted)] truncate min-w-0 flex-1">
-                    de {s.author_name} <span aria-hidden="true">·</span> <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
+                    <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <span
