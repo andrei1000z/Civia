@@ -41,6 +41,10 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(fullText)}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(url)}`;
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  // Bluesky compose intent — share text + URL via Bluesky's official intent
+  // URL. Civia are deja cont @civiaro pe Bluesky, deci shares ajung in
+  // ecosistemul european open-source preferat.
+  const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${fullText}\n${url}`)}`;
 
   // Helper — fire a "share" custom analytics event with the channel
   // so /admin/analytics can show which sharing surfaces are hot.
@@ -147,6 +151,17 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             >
               <span className="w-4 h-4 flex items-center justify-center text-sm font-bold" aria-hidden="true">𝕏</span>
               <span>Twitter/X</span>
+            </a>
+            <a
+              href={blueskyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              onClick={() => { setOpen(false); trackShare("bluesky"); }}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)]"
+            >
+              <span className="w-4 h-4 flex items-center justify-center text-base font-bold text-[#0085ff]" aria-hidden="true">🦋</span>
+              <span>Bluesky</span>
             </a>
             <a
               href={facebookUrl}

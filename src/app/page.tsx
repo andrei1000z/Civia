@@ -1,14 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Megaphone, Camera, Send, Sparkles } from "lucide-react";
+import { ArrowRight, TrendingUp, Megaphone, Camera, Send, Sparkles, Users } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { CountyPicker } from "./CountyPicker";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
 import { StiriWidget } from "@/components/home/StiriWidget";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const revalidate = 1800;
+
+/**
+ * Fetch total approved sesizari count for the homepage social-proof line.
+ * Stat ISR-cached (revalidate la 30 min), zero-impact pe Vercel CPU.
+ * Fallback la null pe eroare — line se ascunde, nu rupe page-ul.
+ */
+async function getTotalSesizariCount(): Promise<number | null> {
+  try {
+    const admin = createSupabaseAdmin();
+    const { count } = await admin
+      .from("sesizari")
+      .select("*", { count: "exact", head: true })
+      .eq("moderation_status", "approved");
+    return count;
+  } catch {
+    return null;
+  }
+}
 
 export const metadata: Metadata = {
   title: { absolute: `${SITE_NAME} — Schimbă România prin sesizări și petiții civice` },
@@ -17,7 +36,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const totalSesizari = await getTotalSesizariCount();
+
   return (
     <>
       {/* Preload hero background image — browserul începe să-l descarce
@@ -82,6 +103,21 @@ export default function HomePage() {
                 Semnează petiții
               </Link>
             </div>
+
+            {/* Social proof — counter live cu cetatenii care au folosit deja
+                platforma. Ridica conversion-ul prin demonstrarea ca nu esti
+                singur ("X cetateni s-au alaturat deja"). Stat ISR-cached. */}
+            {totalSesizari !== null && totalSesizari > 0 && (
+              <p className="mt-6 text-sm text-emerald-100/85 inline-flex items-center gap-2">
+                <Users size={14} aria-hidden="true" />
+                <span>
+                  <strong className="text-white tabular-nums">
+                    {totalSesizari.toLocaleString("ro-RO")}
+                  </strong>{" "}
+                  cetățeni{totalSesizari === 1 ? "" : ""} s-au alăturat deja
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
