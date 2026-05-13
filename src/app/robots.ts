@@ -18,6 +18,9 @@ export default function robots(): MetadataRoute.Robots {
     "/cont/",
     "/admin",
     "/admin/",
+    // Embed widget pages — sunt pentru iframe externe, nu pentru SEO
+    // (ar dupica conținutul cu paginile principale).
+    "/embed/",
   ];
 
   return {

@@ -28,6 +28,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const globalRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1.0 },
     { url: `${base}/judete`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    // Action surfaces — main page-uri user-facing.
+    { url: `${base}/sesizari`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
+    { url: `${base}/petitii`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/petitii/initiaza`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/petitii/propune`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     // High-traffic sesizare views that were missing from the sitemap.
     // /sesizari-publice and /sesizari-rezolvate are the two main
     // discovery surfaces after the form itself; /urmareste is the
@@ -43,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/autoritati`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
+    { url: `${base}/embed`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
   ];
 
   // Per-county pages: 42 counties × 8 pages = 336 URLs

@@ -30,19 +30,15 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 - **Ghiduri practice** (`/ghiduri`) — Legea 544, contestare amendă, dezbatere publică, înființare ONG, ajutoare sociale, ghid cutremur ș.a.m.d.
 
 ### Date civice live
-- **Calitatea aerului** (`/aer`) — sute de senzori din toată țara (Sensor.Community v1+v2, OpenAQ, WAQI). Heatmap IDW de înaltă rezoluție clipat la județ pe `/[judet]/harti`.
-- **Hărți mobilitate** (`/harti`) — selector liquid-glass cu indicator water-drop între Bicicletă · Pietonale · Drumuri · Transport public · Aer.
+- **Proteste programate** (`/proteste`) — calendar civic cu mitinguri, marșuri, evenimente civice anunțate. Mod „cum a fost" cu imagini + presa.
 - **Întreruperi** (`/intreruperi`) — apă, caldură, gaz, curent, lucrări — agregate din Apa Nova, Termoenergetica, Distrigaz, E-Distribuție, PMB, RADP. iCal + RSS + JSON API.
 - **Știri** (`/stiri`) — RSS din Digi24, HotNews, G4Media, Mediafax, News.ro + ziare locale per județ. Sinteză AI structurată per articol cu reading-time + copy + listen, refresh la 30s pe traffic.
 
 ### Date publice deschise
-- **Statistici** (`/statistici`) — populație, accidente DRPCIV, calitate aer, BAC, primari per județ.
-- **Buget** (`/buget`) — execuție bugetară națională, evoluție 2020-2026, deficit %PIB.
-- **Compară** (`/compara`) — două județe alăturate, util pentru jurnaliști.
-- **Impact** (`/impact`) — dashboard live: sesizări totale, rezolvate, pe tipuri, pe județe.
-- **Cum funcționează** (`/cum-functioneaza`) — instituții, separația puterilor, legi, cum te implici.
-- **Calendar civic** (`/calendar-civic`) — alegeri, ședințe publice, deadline-uri taxe.
-- **42 județe** (`/judete`) — fiecare cu sesizări, aer, hărți, statistici, știri, ghiduri, autorități, evenimente, istoric primari, transport.
+- **Sesizări publice** (`/sesizari-publice`) — feed live cu sesizările publice ale altor cetățeni, vot + co-semnături.
+- **Sesizări rezolvate** (`/sesizari-rezolvate`) — galerie înainte/după cu probleme rezolvate de primării.
+- **Embed widget** (`/embed/[judet]`) — iframe gratuit pentru jurnaliști și bloggeri; sesizările live din județ + counter total, util pentru investigații locale.
+- **42 județe** (`/judete`) — fiecare cu sesizări, întreruperi, știri, ghiduri, autorități, evenimente, educație, sănătate, siguranță.
 
 ### Cont + GDPR
 - **Magic-link auth** — fără parole, opțional Google + Apple OAuth.
@@ -77,7 +73,7 @@ src/
     admin/                  # role-gated (profiles.role='admin')
     api/                    # 35+ route handlers
     legal/                  # GDPR + ToS + cookies, EU-grade
-    sesizari/, petitii/, stiri/, harti/, ...
+    sesizari/, petitii/, proteste/, intreruperi/, stiri/, ghiduri/, embed/, ...
   components/
     layout/PageHero.tsx     # canonical gradient hero — folosește-l, nu reinventa
     sesizari/, petitii/, stiri/, ai/CivicAssistant.tsx

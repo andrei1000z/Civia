@@ -1787,9 +1787,127 @@ function SuccessScreen({
         </button>
       </div>
 
+      <SuccessShareSection code={code} title={emailInput.titlu} />
+
       <p className="text-[11px] text-[var(--color-text-muted)] mt-6 leading-relaxed">
         Răspunsul vine în max. <strong className="text-[var(--color-text)]">30 de zile</strong> calendaristice (OG 27/2002).
       </p>
+    </div>
+  );
+}
+
+/**
+ * Viral share section post-submit. User a apasat „Trimite" -> ajunge pe
+ * SuccessScreen -> aici vede CTA „Spune-le si prietenilor — 5 secunde".
+ * Big share buttons pre-completate cu textul sesizarii + URL.
+ *
+ * Audit growth 5/13/2026: pana acum, dupa submit utilizatorul vedea doar
+ * codul + „vezi sesizarea". Zero viral. Acum cere actiunea de share intr-un
+ * moment de „high engagement" — tocmai a facut sesizarea, e mandru de ea.
+ */
+function SuccessShareSection({ code, title }: { code: string; title: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `https://civia.ro/sesizari/${code}`;
+  const shareText = `Am sesizat „${title}" pe Civia. Vezi sesizarea + co-semnează:`;
+
+  const trackShare = (channel: string) => {
+    import("@/components/analytics/CiviaTracker")
+      .then(({ trackCustomEvent }) => trackCustomEvent("share", { channel, url, source: "success-screen" }))
+      .catch(() => { /* silent */ });
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${url}`);
+      setCopied(true);
+      trackShare("clipboard-success");
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* silent */ }
+  };
+
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${url}`)}`;
+  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`;
+  const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${url}`)}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
+  return (
+    <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
+      <p className="text-sm font-semibold mb-1 text-[var(--color-text)]">
+        Spune-le și prietenilor — 5 secunde
+      </p>
+      <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
+        Cu cât mai mulți co-semnează aceeași sesizare, cu atât primăria
+        răspunde mai rapid. Distribuie în cartier:
+      </p>
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("whatsapp-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#25D366] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          aria-label="Distribuie pe WhatsApp"
+        >
+          <span className="text-xl" aria-hidden="true">💬</span>
+          <span className="text-[10px] font-medium">WhatsApp</span>
+        </a>
+        <a
+          href={telegramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("telegram-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0088cc] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          aria-label="Distribuie pe Telegram"
+        >
+          <span className="text-xl" aria-hidden="true">✈️</span>
+          <span className="text-[10px] font-medium">Telegram</span>
+        </a>
+        <a
+          href={blueskyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("bluesky-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0085ff] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          aria-label="Distribuie pe Bluesky"
+        >
+          <span className="text-xl" aria-hidden="true">🦋</span>
+          <span className="text-[10px] font-medium">Bluesky</span>
+        </a>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <a
+          href={facebookUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("facebook-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          aria-label="Distribuie pe Facebook"
+        >
+          <span className="text-[#1877F2] font-bold" aria-hidden="true">f</span>
+          <span className="text-[10px]">Facebook</span>
+        </a>
+        <a
+          href={twitterUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("twitter-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          aria-label="Distribuie pe Twitter/X"
+        >
+          <span className="font-bold" aria-hidden="true">𝕏</span>
+          <span className="text-[10px]">Twitter</span>
+        </a>
+        <button
+          type="button"
+          onClick={copyLink}
+          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          aria-label="Copiază link-ul"
+        >
+          <span aria-hidden="true">{copied ? "✓" : "🔗"}</span>
+          <span className="text-[10px]">{copied ? "Copiat!" : "Copiază"}</span>
+        </button>
+      </div>
     </div>
   );
 }

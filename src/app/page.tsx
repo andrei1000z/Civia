@@ -8,6 +8,56 @@ import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
 import { StiriWidget } from "@/components/home/StiriWidget";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { FaqJsonLd } from "@/components/FaqJsonLd";
+
+/**
+ * FAQ schema pentru homepage — Google rich results + AI parsing direct.
+ * Catalog de Q&A pe care LLM-urile (ChatGPT, Claude, Perplexity) le pot
+ * cita exact când utilizatorul intreaba „cum reclam la primarie?" sau
+ * similar.
+ */
+const HOMEPAGE_FAQ = [
+  {
+    question: "Ce este Civia.ro?",
+    answer:
+      "Civia este o platformă civică independentă pentru România, gratuită, care permite cetățenilor să trimită sesizări formale către primării, să semneze petiții civice, să urmărească proteste programate și întreruperi de utilități, și să citească știri civice. Platforma acoperă toate cele 42 de județe, e open-source (MIT), și e construită cu Next.js + Supabase + AI Groq.",
+  },
+  {
+    question: "Cum trimit o sesizare la primărie prin Civia?",
+    answer:
+      "Intri pe civia.ro/sesizari, descrii problema în 1-2 fraze, optional adaugi 1-5 poze, alegi tipul (groapă, parcare, gunoi, etc.). AI-ul Civia generează automat o sesizare formală cu temei legal OG 27/2002 și detectează autoritatea competentă (primărie, prefectură, poliție locală). Tu apeși Trimite și se deschide aplicația ta de email cu totul completat. Primești un cod unic pentru urmărirea răspunsului.",
+  },
+  {
+    question: "Care e temeiul legal pentru sesizările civice?",
+    answer:
+      "Ordonanța Guvernului nr. 27/2002 privind reglementarea activității de soluționare a petițiilor. Conform acestei legi, autoritățile publice (primării, prefecturi, ministere) sunt obligate să răspundă oricărei petiții/sesizări semnate de un cetățean în maxim 30 de zile calendaristice. Răspunsul oficial trebuie să conțină un număr de înregistrare. Lipsa răspunsului dă cetățeanului dreptul de a se plânge la Avocatul Poporului sau la instanța de contencios administrativ.",
+  },
+  {
+    question: "Cât timp are primăria să răspundă la o sesizare?",
+    answer:
+      "Maxim 30 de zile calendaristice de la data înregistrării sesizării, conform art. 8 din OG 27/2002. Pentru petițiile care necesită consultarea altor autorități, termenul poate fi prelungit cu maxim 15 zile, dar cetățeanul trebuie notificat în scris despre prelungire. Dacă primăria nu răspunde, ai trei căi: plângere la Avocatul Poporului (gratuit), acțiune la instanța de contencios administrativ, sau marchează sesizarea ca fără răspuns pe Civia pentru a intra în statisticile publice.",
+  },
+  {
+    question: "E gratis Civia? Trebuie cont?",
+    answer:
+      "Da, e gratuit pentru totdeauna și 100% open-source (licență MIT, cod pe github.com/andrei1000z/Civia). Nu trebuie cont pentru a trimite o sesizare — completezi anonim, datele tale sunt folosite doar pentru emailul către primărie. Contul îți permite să-ți vezi istoricul tuturor sesizărilor într-un loc și să primești notificări prin email.",
+  },
+  {
+    question: "Ce face Civia cu datele mele personale?",
+    answer:
+      "Numele și adresa apar OBLIGATORIU în emailul către primărie (cerință legală — sesizările anonime sunt clasate fără răspuns). Pe site, sesizările publice apar cu numele anonimizat ca [nume] și adresa ca [adresa]. Datele se stochează pe servere în UE (Supabase EU region), conform GDPR. Poți exporta toate datele tale ca JSON sau șterge contul definitiv din /cont.",
+  },
+  {
+    question: "Ce tipuri de sesizări pot trimite?",
+    answer:
+      "Groapă în asfalt, trotuar degradat, iluminat public defect, copac periculos, gunoi necolectat, parcare ilegală, stâlpișori anti-parcare, canalizare/inundație, semafor defect, traversare pietonală periculoasă, graffiti/vandalism, mobilier stradal stricat, zgomot excesiv, câini periculoși, problemă transport public, afișaj/publicitate ilegală. Pentru orice altceva există categoria Altele cu titlu personalizat.",
+  },
+  {
+    question: "Cum diferă Civia de Declic sau Avaaz?",
+    answer:
+      "Declic și Avaaz colectează semnături pentru petiții politice naționale. Civia se concentrează pe sesizări CIVICE LOCALE către primării — probleme concrete în orașul tău (groapă, parcare ilegală, iluminat) care au temei legal OG 27/2002 obligatoriu de răspuns. Civia agregă și petițiile de pe Declic/Avaaz în catalogul propriu pentru cetățenii care vor să semneze ambele tipuri.",
+  },
+];
 
 export const revalidate = 1800;
 
@@ -41,6 +91,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <FaqJsonLd items={HOMEPAGE_FAQ} />
       {/* Preload hero background image — browserul începe să-l descarce
           în paralel cu HTML parsing, nu așteaptă să întâlnească CSS-ul
           care îl referă. ~200-500ms LCP improvement pe primul paint.

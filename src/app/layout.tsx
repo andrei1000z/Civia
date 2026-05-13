@@ -18,6 +18,7 @@ import { ToastProvider } from "@/components/Toast";
 import { BackToTop } from "@/components/BackToTop";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
+import { NewsletterNudge } from "@/components/NewsletterNudge";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -217,6 +218,7 @@ export default function RootLayout({
                 <BackToTop />
                 <InstallPrompt />
                 <MobileFab />
+                <NewsletterNudge />
               </DeferredClientMount>
             </ToastProvider>
           </AuthProvider>

@@ -215,13 +215,28 @@ ${preheader ? `<span style="display:none;max-height:0;overflow:hidden;visibility
     </table>` : ""}
   </td></tr>
 
+  <!-- Share CTA — virality nudge in every email Civia trimite. User
+       already cares (they engaged enough to get an email), so this is
+       the highest-conversion moment to ask for a friend share. -->
+  <tr><td style="padding:0 40px 24px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PRIMARY_SOFT};border:1px solid #a7f3d0;border-radius:12px;padding:18px 20px">
+      <tr><td>
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${PRIMARY_DARKER}">Cunoști pe cineva care s-ar bate cu primăria?</p>
+        <p style="margin:0 0 12px;font-size:12px;color:${TEXT_MUTED};line-height:1.5">Distribuie Civia. Cu cât suntem mai mulți, cu atât răspund mai repede.</p>
+        <a href="https://wa.me/?text=${encodeURIComponent(`Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-right:6px">WhatsApp</a>
+        <a href="https://t.me/share/url?url=${encodeURIComponent(siteUrl)}&text=${encodeURIComponent("Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul.")}" style="display:inline-block;background:#0088cc;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-right:6px">Telegram</a>
+        <a href="https://bsky.app/intent/compose?text=${encodeURIComponent(`Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="display:inline-block;background:#0085ff;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600">Bluesky</a>
+      </td></tr>
+    </table>
+  </td></tr>
+
   <!-- Footer (inside card) -->
   <tr><td style="padding:24px 40px 28px;border-top:1px solid ${BORDER};background:${BG}">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td style="font-size:12px;color:${TEXT_MUTED};line-height:1.5">
           <a href="${siteUrl}" style="color:${PRIMARY};text-decoration:none;font-weight:600">civia.ro</a> · platforma civică a României
-          <br><span style="color:${TEXT_DIM};font-size:11px">Gratuit · Fără reclame · Open-source</span>
+          <br><span style="color:${TEXT_DIM};font-size:11px">Gratuit · Fără reclame · Open-source · 🇪🇺 GDPR</span>
         </td>
         <td align="right" style="font-size:11px;color:${TEXT_DIM}">
           <a href="${siteUrl}/cont" style="color:${TEXT_MUTED};text-decoration:none">Contul meu</a>
