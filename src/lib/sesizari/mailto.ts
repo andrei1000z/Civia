@@ -88,11 +88,12 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
     // Sentinel for "end of address". Stops at:
     //  • " și/şi/si {word}" — new conjunction/clause
     //  • verb of intent (doresc, vă aduc, solicit, etc.)
-    //  • "[.?!] + whitespace + Capital letter" — sentence break that
-    //    SKIPS abbreviations (nr. 16C, Str. X) because the next char
-    //    after them is a digit or lowercase, not a Romanian capital.
+    //  • sentence-end „[.?!] + whitespace + Capital letter" DAR NU dupa
+    //    o abreviere romana de adresa (Str./Bd./Bl./Nr./Ap./Et./etc.)
+    //    pentru ca dupa ele urmeaza tot adresa (numele strazii).
     //  • paragraph break or EOS.
-    const END = String.raw`(?=\s*(?:\s+(?:și|şi|si)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|aduc)\b|[.?!]\s+[A-ZĂÂÎȘȚ]|\n\s*\n|$))`;
+    const SENT_END_NOT_ABBREV = String.raw`(?<!\b(?:str|bd|bld|blv|bl|sc|ap|et|nr|sect|sec|jud|com|loc|cod|sos|cal))[.?!]\s+[A-ZĂÂÎȘȚ]`;
+    const END = String.raw`(?=\s*(?:\s+(?:și|şi|si)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|aduc)\b|${SENT_END_NOT_ABBREV}|\n\s*\n|$))`;
 
     // Connector flexibil intre nume si verb — AI poate produce „X, locuiesc"
     // SAU „X și locuiesc". CRITICAL fix 2026-05-14 dupa raport leak GDPR:
