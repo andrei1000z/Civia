@@ -85,30 +85,43 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
   // preamble after it ("și doresc...", "vă aduc...", ".") stays intact
   // OUTSIDE the replacement span — no doubling possible.
   if (name && address) {
-    // Sentinel for "end of address" — same rules as scrub-public:
-    // stops at " și/şi/si/vă/va/mă/ma/îmi/imi/doresc/solicit/adresez/
-    // aduc" verb cues, end of sentence (.?!), paragraph break, or EOS.
-    const END = String.raw`(?=\s*(?:\s+(?:și|şi|si)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|aduc)\b|[.?!]\s|\n\s*\n|$))`;
+    // Sentinel for "end of address". Stops at:
+    //  • " și/şi/si {word}" — new conjunction/clause
+    //  • verb of intent (doresc, vă aduc, solicit, etc.)
+    //  • "[.?!] + whitespace + Capital letter" — sentence break that
+    //    SKIPS abbreviations (nr. 16C, Str. X) because the next char
+    //    after them is a digit or lowercase, not a Romanian capital.
+    //  • paragraph break or EOS.
+    const END = String.raw`(?=\s*(?:\s+(?:și|şi|si)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|aduc)\b|[.?!]\s+[A-ZĂÂÎȘȚ]|\n\s*\n|$))`;
 
-    // New style: "Mă numesc {name}, locuiesc (pe|în) {address}" — replace
-    // the captured span with our corrected version. Tail is not captured
-    // and stays as-is.
+    // Connector flexibil intre nume si verb — AI poate produce „X, locuiesc"
+    // SAU „X și locuiesc". CRITICAL fix 2026-05-14 dupa raport leak GDPR:
+    // varianta cu „și" nu era acoperita → numele + adresa autorului original
+    // ramaneau in body-ul mailto-ului co-semnatarilor.
+    const NAME_VERB_CONNECTOR = String.raw`(?:,\s*|\s+(?:și|şi|si)\s+)`;
+
+    // Helper: capturile pot include sau nu punctuatie de final (depinde de
+    // unde s-a oprit `${END}`). Pastram „." dacă a fost consumat de match
+    // ca sa nu lasam fraza neterminata gramatical.
+    const buildReplacement = (matched: string): string => {
+      const endsPunct = /[.?!]\s*$/.test(matched) ? "." : "";
+      return `Mă numesc ${name}, locuiesc în ${address}${endsPunct}`;
+    };
+
+    // New style: "Mă numesc {name}[,| și] locuiesc (pe|în) {address}"
     const newStyleRe = new RegExp(
-      String.raw`M[ăa]\s+numesc\s+[^,\n]+,\s*locuiesc\s+(?:pe|în|in)\s+[^\n]+?${END}`,
+      String.raw`M[ăa]\s+numesc\s+[^,\n]+?\s*${NAME_VERB_CONNECTOR}locuiesc\s+(?:pe|în|in)\s+[^\n]+?${END}`,
       "gim",
     );
-    text = text.replace(newStyleRe, `Mă numesc ${name}, locuiesc în ${address}`);
+    text = text.replace(newStyleRe, (m) => buildReplacement(m));
 
-    // Legacy "Subsemnatul/Subsemnata X, domiciliat(ă) pe/în Y" → same
-    // new-style landing. Lookahead keeps the tail intact here too.
+    // Legacy "Subsemnatul/Subsemnata X[,| și] domiciliat(ă) pe/în Y" → same
+    // new-style landing.
     const legacyRe = new RegExp(
-      String.raw`Subsemnat(?:ul|a|ul\(a\)|a\/Subsemnatul)?\s+[^,\n]+,\s*domiciliat(?:\(?ă\)?|ă|a)?\s+(?:pe|în|in)\s+[^\n]+?${END}`,
+      String.raw`Subsemnat(?:ul|a|ul\(a\)|a\/Subsemnatul)?\s+[^,\n]+?\s*${NAME_VERB_CONNECTOR}domiciliat(?:\(?ă\)?|ă|a)?\s+(?:pe|în|in)\s+[^\n]+?${END}`,
       "gim",
     );
-    text = text.replace(
-      legacyRe,
-      `Mă numesc ${name}, locuiesc în ${address}`,
-    );
+    text = text.replace(legacyRe, (m) => buildReplacement(m));
 
     // Fallback: no identity line at all — inject after "Bună ziua,"
     if (!/M[ăa]\s+numesc/i.test(text) && !/Subsemnat/i.test(text)) {

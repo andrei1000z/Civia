@@ -150,4 +150,46 @@ describe("scrubFormalTextForPublic", () => {
     expect(out).toContain("[adresa]");
     expect(out).toContain("În ultima perioadă am observat");
   });
+
+  // ─── REGRESSION GUARDS ─────────────────────────────────────────────
+  // Aceste teste sunt cazuri reale raportate de useri. Fiecare a cauzat
+  // un GDPR-leak in productie. Nu le sterge — daca cad, e regres serios.
+
+  it("[regression 2026-05-14] scrubs PII when connector is 'și' instead of ','", () => {
+    // Format AI „Mă numesc X și locuiesc în Y" (fara virgula intre nume
+    // si verb) treceau nescrubate prin regex-ul vechi → numele + adresa
+    // autorului original ramaneau publice in mailto-ul co-semnatarilor.
+    // Pattern exact din raport user (sesizare 00031, 2026-05-14).
+    const text = `Bună ziua,
+
+Mă numesc Florin Răzvan Vărzaru și locuiesc în Strada Gheorghe Doja nr. 16C, Etaj 2, Apartament 7, Județul Ilfov, Comuna Dobroești. Doresc să vă aduc la cunoștință o problemă.
+
+Cu stimă,
+Florin Răzvan Vărzaru
+14 mai 2026`;
+    const out = scrubFormalTextForPublic(text, {
+      authorName: "Florin Răzvan Vărzaru",
+      hideName: true,
+    });
+    expect(out).not.toContain("Vărzaru și locuiesc");
+    expect(out).not.toContain("Gheorghe Doja");
+    expect(out).not.toContain("Apartament 7");
+    expect(out).not.toContain("Dobroești");
+    expect(out).not.toContain("Florin Răzvan Vărzaru");
+    expect(out).toContain("[adresa]");
+    expect(out).toContain("[nume]");
+  });
+
+  it("[regression 2026-05-14] same fix for 'și' connector but hideName=false (display flow)", () => {
+    const text = `Mă numesc Florin Răzvan Vărzaru și locuiesc în Strada Gheorghe Doja nr. 16C, Județul Ilfov. Doresc să semnalez.`;
+    const out = scrubFormalTextForPublic(text, {
+      authorName: "Florin Răzvan Vărzaru",
+      hideName: false,
+    });
+    expect(out).not.toContain("Gheorghe Doja");
+    expect(out).not.toContain("Ilfov");
+    expect(out).toContain("[adresa]");
+    // Numele ramane afisat — owner-ul a ales sa il faca public.
+    expect(out).toContain("Florin Răzvan Vărzaru");
+  });
 });

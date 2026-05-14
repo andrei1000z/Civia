@@ -5,6 +5,9 @@ import {
   buildOutlookLink,
   buildGmailLink,
   buildMailtoLink,
+  buildGmailAndroidIntent,
+  buildGmailIosLink,
+  buildYahooLink,
 } from "./mailto";
 
 const BASE = {
@@ -357,5 +360,152 @@ describe("buildMailtoLink — diacritic safety pe clienti mobile (Yahoo bug 5/8/
     expect(url.startsWith("mailto:")).toBe(true);
     expect(url).toContain("subject=");
     expect(url).toContain("body=");
+  });
+});
+
+// ─── GDPR REGRESSION TESTS ──────────────────────────────────────────
+//
+// In 2026-05-14 un user a raportat ca a apasat „Trimite si tu" pe o
+// sesizare publica si Gmail a deschis emailul cu numele + adresa
+// autorului ORIGINAL (Florin Razvan Varzaru / Strada Gheorghe Doja)
+// in body — nu cu datele lui (co-semnatar).
+//
+// Cauza: rewriteFormalText nu acoperea forma „Ma numesc X *si* locuiesc"
+// (fara virgula) — doar „X, locuiesc". Pattern-ul scapa nescrubat.
+//
+// Aceste teste asigura ca PII-ul autorului original e SCOS COMPLET din
+// emailul co-semnatarului in TOATE formatele de URL si pentru TOATE
+// formele de connector intre nume si verb. Daca pica vreunul, e leak
+// GDPR. NU sterge.
+
+describe("GDPR co-sign: PII original author MUST NOT appear in any email URL", () => {
+  // Formal text exact din raportul user-ului (sesizare 00031):
+  const ORIGINAL_PII_LETTER = `Bună ziua,
+
+Mă numesc Florin Răzvan Vărzaru și locuiesc în Strada Gheorghe Doja nr. 16C, Etaj 2, Apartament 7, Județul Ilfov, Comuna Dobroești. Doresc să vă aduc la cunoștință o problemă care afectează siguranța pietonilor pe Șoseaua Morarilor, Sector 2, București.
+
+De câteva zile am observat că mașinile sunt parcate pe trotuar.
+
+Cu stimă,
+Florin Răzvan Vărzaru
+14 mai 2026`;
+
+  const COSIGNER = {
+    tip: "stalpisori",
+    titlu: "Mașini parcate pe trotuar",
+    locatie: "Șoseaua Morarilor, Sector 2",
+    sector: "Sector 2",
+    descriere: "Mașini pe trotuar",
+    formal_text: ORIGINAL_PII_LETTER,
+    author_name: "Eduard Andrei Mușat",
+    author_address: "Strada Mea 1, Sector 3, București",
+  };
+
+  // PII-ul original care NU TREBUIE sa apara nicaieri:
+  const FORBIDDEN = [
+    "Florin",
+    "Răzvan",
+    "Vărzaru",
+    "Gheorghe Doja",
+    "16C",
+    "Apartament 7",
+    "Dobroești",
+    "Ilfov",
+  ];
+
+  // ASCII-fold echivalent (asa apare in mailto/Gmail Android URLs):
+  const FORBIDDEN_ASCII = [
+    "Razvan",
+    "Varzaru",
+    "Gheorghe Doja",
+    "Dobroesti",
+    "Apartament 7",
+  ];
+
+  function assertNoOriginalPII(decodedBody: string, asciiFolded: boolean) {
+    const list = asciiFolded ? FORBIDDEN_ASCII : FORBIDDEN;
+    for (const piece of list) {
+      expect(decodedBody, `leak detected: '${piece}' in body`).not.toContain(piece);
+    }
+  }
+
+  it("buildFormalText replaces original PII with co-signer data", () => {
+    const out = buildFormalText(COSIGNER);
+    for (const piece of FORBIDDEN) {
+      expect(out, `leak '${piece}'`).not.toContain(piece);
+    }
+    expect(out).toContain("Eduard Andrei Mușat");
+    expect(out).toContain("Strada Mea 1, Sector 3, București");
+  });
+
+  it("mailto: link does not contain original author PII", () => {
+    const url = buildMailtoLink(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), true);
+  });
+
+  it("Gmail web link does not contain original author PII", () => {
+    const url = buildGmailLink(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), false);
+  });
+
+  it("Gmail Android intent does not contain original author PII", () => {
+    const url = buildGmailAndroidIntent(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), true);
+  });
+
+  it("Gmail iOS link does not contain original author PII", () => {
+    const url = buildGmailIosLink(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), false);
+  });
+
+  it("Outlook web link does not contain original author PII", () => {
+    const url = buildOutlookLink(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), false);
+  });
+
+  it("Yahoo web link does not contain original author PII", () => {
+    const url = buildYahooLink(COSIGNER);
+    assertNoOriginalPII(decodeURIComponent(url), false);
+  });
+
+  it("Signature block has co-signer name + today's date, NOT original author", () => {
+    const out = buildFormalText(COSIGNER);
+    expect(out).toMatch(/Cu stim[ăa],\s*\n\s*Eduard Andrei Mușat/);
+    expect(out).not.toMatch(/Cu stim[ăa],\s*\n\s*Florin/);
+  });
+
+  it("Works even when connector is comma instead of 'și' (legacy format)", () => {
+    const legacyFormat = ORIGINAL_PII_LETTER.replace(
+      "Florin Răzvan Vărzaru și locuiesc",
+      "Florin Răzvan Vărzaru, locuiesc",
+    );
+    const out = buildFormalText({ ...COSIGNER, formal_text: legacyFormat });
+    for (const piece of FORBIDDEN) {
+      expect(out, `leak '${piece}'`).not.toContain(piece);
+    }
+    expect(out).toContain("Eduard Andrei Mușat");
+  });
+
+  it("Works with legacy 'Subsemnatul X, domiciliat în Y' opener", () => {
+    const legacySubsemnatul = `Bună ziua,
+
+Subsemnatul Florin Răzvan Vărzaru, domiciliat în Strada Gheorghe Doja nr. 16C, Județul Ilfov, vă adresez prezenta.
+
+Cu respect,
+Florin Răzvan Vărzaru
+14 mai 2026`;
+    const out = buildFormalText({ ...COSIGNER, formal_text: legacySubsemnatul });
+    for (const piece of FORBIDDEN) {
+      expect(out, `leak '${piece}'`).not.toContain(piece);
+    }
+    expect(out).toContain("Eduard Andrei Mușat");
+  });
+
+  it("Works with legacy 'Subsemnatul X și domiciliat' (și instead of comma)", () => {
+    const legacyWithSi = `Subsemnatul Florin Răzvan Vărzaru și domiciliat în Strada Gheorghe Doja, Județul Ilfov, vă adresez.`;
+    const out = buildFormalText({ ...COSIGNER, formal_text: legacyWithSi });
+    for (const piece of FORBIDDEN) {
+      expect(out, `leak '${piece}'`).not.toContain(piece);
+    }
   });
 });

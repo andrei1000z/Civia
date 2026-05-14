@@ -6,6 +6,7 @@ import { getRecipientsLabel, buildMailtoLink } from "@/lib/sesizari/mailto";
 import { EmailChoicePanel } from "./EmailChoicePanel";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
+import { downloadImageAsJpeg } from "@/lib/image-download";
 
 interface Props {
   tip: string;
@@ -271,17 +272,15 @@ export function SignSesizareButton({
                     </div>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {imagini.map((url, i) => (
-                        <a
+                        <button
                           key={url}
-                          href={url}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          type="button"
+                          onClick={() => void downloadImageAsJpeg(url, `${code}-poza-${i + 1}`)}
                           className="inline-flex items-center gap-1 h-8 px-2 rounded-[var(--radius-xs)] bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-800 text-[11px] font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
                         >
                           <Download size={11} aria-hidden="true" />
                           Poza {i + 1}
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>

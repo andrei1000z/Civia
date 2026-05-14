@@ -20,7 +20,7 @@ const NAME_REDACTED = "[nume]";
 //   • double newline  — paragraph break
 //   • end of string
 // We write the address with a lookahead so the marker stays in the output.
-const ADDRESS_END = String.raw`(?=\s*(?:\s+(?:și|si|şi)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|semnal(?:ez|au)|aduc)\b|[?!]\s|\n\s*\n|$))`;
+const ADDRESS_END = String.raw`(?=\s*(?:\s+(?:și|si|şi)\s+\w+|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|semnal(?:ez|au)|aduc)\b|[.?!]\s+[A-ZĂÂÎȘȚ]|\n\s*\n|$))`;
 
 /**
  * Strips the home address (and optionally the author's name) from an
@@ -41,16 +41,22 @@ export function scrubFormalTextForPublic(text: string, opts: ScrubOptions): stri
 
   const nameRedacted = opts.hideName ? NAME_REDACTED : (opts.authorName?.trim() || "Cetățean");
 
-  // 1. New opener: "Mă numesc X, locuiesc pe/în {ADDRESS}"
+  // Connector intre nume si verb: AI-ul genereaza fie „X, locuiesc" fie
+  // „X și locuiesc" (fara virgula). Bug 2026-05-14: regex-ul cerea STRICT
+  // virgula → texte cu „și locuiesc" treceau nescrubate → leak GDPR
+  // (numele + adresa originalului ajungeau in mailto-ul co-semnatarilor).
+  const NAME_VERB_CONNECTOR = String.raw`(?:,\s*|\s+(?:și|şi|si)\s+)`;
+
+  // 1. New opener: "Mă numesc X[,| și] locuiesc pe/în {ADDRESS}"
   const newOpener = new RegExp(
-    String.raw`M[ăa]\s+numesc\s+([^,\n]+),\s*locuiesc\s+(?:pe|în|in)\s+[^\n]+?${ADDRESS_END}`,
+    String.raw`M[ăa]\s+numesc\s+[^,\n]+?\s*${NAME_VERB_CONNECTOR}locuiesc\s+(?:pe|în|in)\s+[^\n]+?${ADDRESS_END}`,
     "gim",
   );
   out = out.replace(newOpener, () => `Mă numesc ${nameRedacted}, locuiesc în ${ADDRESS_REDACTED}`);
 
-  // 2. Legacy opener: "Subsemnatul/Subsemnata X, domiciliat(ă) pe/în Y"
+  // 2. Legacy opener: "Subsemnatul/Subsemnata X[,| și] domiciliat(ă) pe/în Y"
   const legacyOpener = new RegExp(
-    String.raw`Subsemnat(?:ul|a|ul\(a\)|a\/Subsemnatul)?\s+([^,\n]+),\s*domiciliat(?:\(?ă\)?|ă|a)?\s+(?:pe|în|in)\s+[^\n]+?${ADDRESS_END}`,
+    String.raw`Subsemnat(?:ul|a|ul\(a\)|a\/Subsemnatul)?\s+[^,\n]+?\s*${NAME_VERB_CONNECTOR}domiciliat(?:\(?ă\)?|ă|a)?\s+(?:pe|în|in)\s+[^\n]+?${ADDRESS_END}`,
     "gim",
   );
   out = out.replace(

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { downloadImageAsJpeg } from "@/lib/image-download";
 
 interface Props {
   urls: string[];
@@ -47,18 +48,19 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
       aria-label={`Imagine ${index + 1} din ${urls.length}`}
     >
       <div className="absolute top-4 right-4 flex gap-2 z-10">
-        <a
-          href={urls[index]}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const url = urls[index];
+            if (url) void downloadImageAsJpeg(url);
+          }}
           className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors"
           aria-label="Salvează imaginea"
           title="Salvează imaginea"
         >
           <Download size={20} aria-hidden="true" />
-        </a>
+        </button>
         <button
           type="button"
           onClick={onClose}

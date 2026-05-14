@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { X as CloseX, ExternalLink, Download, FileText } from "lucide-react";
+import { downloadImageAsJpeg } from "@/lib/image-download";
 
 interface LightboxProps {
   open: boolean;
@@ -58,35 +59,22 @@ export function Lightbox({ open, onClose, url, kind = "auto", caption, title }: 
   const isPdf = resolvedKind === "pdf";
 
   /**
-   * Download fix (raportat user 5/13/2026 — pe telefon, click pe „Descarcă"
-   * deschidea imaginea într-un tab nou în loc s-o salveze).
-   *
-   * Cauza: atribut `<a download>` nu funcționează cross-origin (Supabase
-   * Storage e alt origin). Browser-ul ignoră hint-ul + navighează.
-   *
-   * Fix: fetch + blob + click on dynamic <a> cu blob: URL (same-origin
-   * automat) → salvare reală pe disk/Photos pe mobil.
+   * Download: delega la helper-ul shared care face fetch → blob → canvas
+   * convert la JPEG → trigger <a download> pe object URL. Cauza istorica:
+   *  - <a download> cross-origin (Supabase Storage) e ignorat de browser
+   *  - webp-ul nu apare in galeria foto Android/iOS pentru multi useri
+   * Helper-ul rezolva ambele intr-un singur loc reutilizabil.
    */
-  const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleDownload = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    try {
-      const res = await fetch(url, { mode: "cors" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const filename = url.split("/").pop()?.split("?")[0] || `civia-${Date.now()}.jpg`;
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      // Eliberăm memoria — chrome cleanup la 60s, dar revoke-uim noi pentru safety.
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-    } catch {
-      // Fallback: deschide în tab nou — utilizatorul poate face long-press save manual.
+    if (isPdf) {
+      // PDF-urile le lasam asa cum sunt — fara conversie, doar trigger
+      // download standard. Daca Supabase serveste cu Content-Disposition
+      // potrivit, browser-ul salveaza direct.
       window.open(url, "_blank", "noopener,noreferrer");
+      return;
     }
+    void downloadImageAsJpeg(url);
   };
 
   return (

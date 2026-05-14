@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Image as ImgIcon, Download } from "lucide-react";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { downloadImageAsJpeg } from "@/lib/image-download";
 
 interface Props {
   urls: string[];
@@ -66,16 +67,17 @@ export function PhotoGallery({ urls, title = "Foto" }: Props) {
                 44×44 tap target (WCAG AAA) — pe mobile, tactil tap area
                 contează mai mult decât silueta vizuală. Pe pointer:fine
                 rămâne hidden until hover, pe touch e mereu visible. */}
-            <a
-              href={url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void downloadImageAsJpeg(url, `${title}-${i + 1}`);
+              }}
               className="absolute top-2 right-2 z-20 w-11 h-11 rounded-full bg-black/60 text-white flex items-center justify-center opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-black/80 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60"
               aria-label={`Salvează ${title} ${i + 1}`}
             >
               <Download size={16} aria-hidden="true" />
-            </a>
+            </button>
           </div>
         ))}
       </div>
