@@ -704,8 +704,13 @@ export function SesizareForm() {
     };
   }, []);
 
-  // Auto-generate titlu from descriere if empty
-  const effectiveTitlu = data.titlu || (data.descriere ? data.descriere.slice(0, 80).trim() : "");
+  // Auto-generate titlu daca lipseste. Inainte fallback-ul era descriere.slice(80)
+  // care era textul INFORMAL al user-ului ("sa elibereze masinile..."). Pe share
+  // (Bluesky/Twitter) iesea oribil intre ghilimele. Acum fallback-ul e label-ul
+  // formal al tipului ("Parcare ilegala", "Montare stalpisori anti-parcare") —
+  // mereu curat, mereu in romana corecta cu diacritice.
+  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === data.tip)?.label;
+  const effectiveTitlu = data.titlu || tipLabel || "Sesizare civică";
 
   // Parking flow has extra hard requirements: both mandatory photo
   // slots filled + a plate number + a jurisdiction. Relaxing any of
@@ -1832,7 +1837,12 @@ function SuccessScreen({
 function SuccessShareSection({ code, title }: { code: string; title: string }) {
   const [copied, setCopied] = useState(false);
   const url = `https://civia.ro/sesizari/${code}`;
-  const shareText = `Am sesizat „${title}" pe Civia. Vezi sesizarea + co-semnează:`;
+  // Doar titlul, fara ghilimele si fara prefix „Am sesizat „..." pe Civia".
+  // Link-preview card-ul de pe Bluesky/Twitter/Facebook deja arata Civia +
+  // detaliile sesizarii. User request 2026-05-14: „pune doar titlu acolo
+  // si fara ghilimele". Plus titlu poate fi acum „Parcare ilegala" cand
+  // user nu a folosit AI improve (vezi effectiveTitlu).
+  const shareText = title;
 
   const trackShare = (channel: string) => {
     import("@/components/analytics/CiviaTracker")
