@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
+import { SESIZARE_TIPURI } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const alt = "Sesizare Civia";
@@ -18,26 +19,6 @@ const STATUS_LABELS: Record<string, string> = {
   "in-lucru": "În lucru",
   "rezolvat": "Rezolvat",
   "respins": "Respins",
-};
-
-const TIP_ICONS: Record<string, string> = {
-  groapa: "🕳️",
-  trotuar: "🚶",
-  iluminat: "💡",
-  copac: "🌳",
-  gunoi: "🗑️",
-  parcare: "🅿️",
-  stalpisori: "🧱",
-  canalizare: "🚰",
-  semafor: "🚦",
-  pietonal: "🛑",
-  graffiti: "🎨",
-  mobilier: "🪑",
-  zgomot: "🔊",
-  animale: "🐾",
-  transport: "🚌",
-  afisaj: "📢",
-  altele: "📝",
 };
 
 function truncate(str: string, max: number): string {
@@ -60,7 +41,12 @@ export default async function SesizareOG({
   const locatie = truncate(sesizare?.locatie ?? "", 80);
   const statusColor = STATUS_COLORS[status] ?? "#64748b";
   const statusLabel = STATUS_LABELS[status] ?? status;
-  const tipIcon = TIP_ICONS[tip] ?? "📝";
+  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === tip)?.label ?? "Sesizare civică";
+
+  // Foloseste prima imagine a sesizarii ca background — face share card-ul
+  // sa para o stire reala, nu un template generic. Daca lipseste, fallback
+  // la un gradient bogat (nu plat).
+  const photo = sesizare?.imagini?.[0] ?? null;
 
   return new ImageResponse(
     (
@@ -70,106 +56,203 @@ export default async function SesizareOG({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1C4ED8 100%)",
-          padding: "72px 80px",
           position: "relative",
           fontFamily: "system-ui",
+          background: photo
+            ? "#0a0a0a"
+            : "linear-gradient(135deg, #042f2e 0%, #0e7c66 45%, #064e3b 100%)",
         }}
       >
-        {/* Header: logo + Civia + status */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
-          <div
+        {/* Background image — poza sesizarii cu dark overlay pentru lizibilitate */}
+        {photo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photo}
+            alt=""
+            width={1200}
+            height={630}
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #ffffff, #dbeafe)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 30,
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              filter: "blur(2px) brightness(0.55)",
             }}
-          >
-            🏙️
-          </div>
-          <div style={{ color: "#fff", fontSize: 28, fontWeight: 700, display: "flex" }}>Civia</div>
-          <div
-            style={{
-              marginLeft: "auto",
-              display: "flex",
-              alignItems: "center",
-              padding: "10px 22px",
-              borderRadius: 999,
-              background: statusColor,
-              color: "#fff",
-              fontSize: 22,
-              fontWeight: 600,
-            }}
-          >
-            {statusLabel}
-          </div>
-        </div>
-
-        {/* Tip + sector */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            marginBottom: 24,
-            color: "#bfdbfe",
-            fontSize: 26,
-          }}
-        >
-          <span style={{ fontSize: 40 }}>{tipIcon}</span>
-          <span style={{ textTransform: "capitalize", display: "flex" }}>{tip}</span>
-          {sector && <span style={{ display: "flex" }}>· {sector}</span>}
-        </div>
-
-        {/* Title */}
-        <div
-          style={{
-            color: "#fff",
-            fontSize: 60,
-            fontWeight: 800,
-            lineHeight: 1.1,
-            letterSpacing: -1.5,
-            marginBottom: 24,
-            display: "flex",
-          }}
-        >
-          {title}
-        </div>
-
-        {/* Location */}
-        {locatie && (
-          <div
-            style={{
-              color: "#cbd5e1",
-              fontSize: 26,
-              display: "flex",
-            }}
-          >
-            📍 {locatie}
-          </div>
+          />
         )}
-
-        {/* Footer */}
+        {/* Gradient overlay — sus mai transparent, jos negru pentru contrast text */}
         <div
           style={{
             position: "absolute",
-            bottom: 48,
-            left: 80,
-            right: 80,
+            inset: 0,
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            color: "rgba(255,255,255,0.7)",
-            fontSize: 20,
+            background: photo
+              ? "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.85) 100%)"
+              : "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.25) 100%)",
+          }}
+        />
+
+        {/* Content layer */}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            height: "100%",
+            padding: "60px 72px",
           }}
         >
-          <div style={{ fontFamily: "monospace", display: "flex" }}>#{code}</div>
-          <div style={{ display: "flex" }}>civia.ro/sesizari/{code}</div>
+          {/* Header: brand + status */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 30,
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: -1,
+                boxShadow: "0 8px 24px rgba(16, 185, 129, 0.35)",
+              }}
+            >
+              C
+            </div>
+            <div
+              style={{
+                color: "#fff",
+                fontSize: 26,
+                fontWeight: 700,
+                display: "flex",
+                letterSpacing: -0.5,
+              }}
+            >
+              Civia
+            </div>
+            <div
+              style={{
+                marginLeft: "auto",
+                display: "flex",
+                alignItems: "center",
+                padding: "8px 18px",
+                borderRadius: 999,
+                background: statusColor,
+                color: "#fff",
+                fontSize: 18,
+                fontWeight: 600,
+                boxShadow: `0 6px 18px ${statusColor}55`,
+              }}
+            >
+              {statusLabel}
+            </div>
+          </div>
+
+          {/* Push content to bottom-third for poster-style hierarchy */}
+          <div style={{ flex: 1, display: "flex" }} />
+
+          {/* Tip pill */}
+          <div style={{ display: "flex", marginBottom: 18 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "8px 18px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.14)",
+                border: "1px solid rgba(255,255,255,0.22)",
+                color: "#fff",
+                fontSize: 18,
+                fontWeight: 600,
+                letterSpacing: 0.2,
+              }}
+            >
+              {tipLabel}
+              {sector && (
+                <span style={{ display: "flex", marginLeft: 10, opacity: 0.7 }}>
+                  · {sector}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Title */}
+          <div
+            style={{
+              color: "#fff",
+              fontSize: title.length > 60 ? 54 : 64,
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: -1.8,
+              marginBottom: 20,
+              display: "flex",
+              maxWidth: "92%",
+              textShadow: photo ? "0 2px 12px rgba(0,0,0,0.4)" : "none",
+            }}
+          >
+            {title}
+          </div>
+
+          {/* Location */}
+          {locatie && (
+            <div
+              style={{
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ display: "flex" }}>📍</span>
+              <span style={{ display: "flex" }}>{locatie}</span>
+            </div>
+          )}
+
+          {/* Footer: code + URL + CTA */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 36,
+              paddingTop: 20,
+              borderTop: "1px solid rgba(255,255,255,0.18)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 18,
+              }}
+            >
+              <span style={{ fontFamily: "monospace", display: "flex" }}>#{code}</span>
+              <span style={{ display: "flex" }}>civia.ro</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px 20px",
+                borderRadius: 999,
+                background: "#fff",
+                color: "#042f2e",
+                fontSize: 18,
+                fontWeight: 700,
+                letterSpacing: -0.2,
+              }}
+            >
+              Co-semnează →
+            </div>
+          </div>
         </div>
       </div>
     ),

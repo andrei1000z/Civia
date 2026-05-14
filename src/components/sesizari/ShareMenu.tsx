@@ -16,6 +16,11 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  // Direction smart: cand butonul e in jumatatea de sus a viewport-ului
+  // deschidem in jos, altfel in sus. Inainte era hard-coded „bottom-full"
+  // care taia meniul cand butonul era langa top (pagina sesizare detail).
+  const [direction, setDirection] = useState<"up" | "down">("up");
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -91,6 +96,7 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
     <>
       <div ref={ref} className="relative inline-block" data-no-print>
         <button
+          ref={triggerRef}
           type="button"
           onClick={async (e) => {
             e.preventDefault();
@@ -99,6 +105,14 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             if (typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches) {
               const shared = await tryNativeShare();
               if (shared) return;
+            }
+            // Smart direction: meniul are ~340px inaltime cu toate optiunile.
+            // Daca am loc dedesubt → deschide in jos. Daca nu → in sus.
+            if (!open && triggerRef.current) {
+              const rect = triggerRef.current.getBoundingClientRect();
+              const spaceBelow = window.innerHeight - rect.bottom;
+              const spaceAbove = rect.top;
+              setDirection(spaceBelow >= 340 || spaceBelow > spaceAbove ? "down" : "up");
             }
             setOpen(!open);
           }}
@@ -118,7 +132,10 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
         {open && (
           <div
             role="menu"
-            className="absolute bottom-full right-0 mb-2 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden z-50">
+            className={cn(
+              "absolute right-0 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden z-50",
+              direction === "up" ? "bottom-full mb-2" : "top-full mt-2",
+            )}>
             <a
               href={whatsappUrl}
               target="_blank"
