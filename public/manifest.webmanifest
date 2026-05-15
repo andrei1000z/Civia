@@ -31,32 +31,20 @@
   ],
   "shortcuts": [
     {
-      "name": "Sesizare prin voce",
-      "short_name": "Voce",
-      "description": "Apasă și vorbește — AI face restul",
-      "url": "/sesizari/voce",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Trimite o sesizare scrisă",
+      "name": "Trimite o sesizare",
       "short_name": "Sesizare",
-      "description": "Formular complet cu poză + AI formal",
       "url": "/sesizari",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Vezi sesizările publice",
+      "name": "Sesizări publice",
       "short_name": "Publice",
-      "description": "Ce semnalează cetățenii — votează + co-semnează",
-      "url": "/sesizari-publice",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "/sesizari-publice"
     },
     {
-      "name": "Petiții civice",
+      "name": "Petiții",
       "short_name": "Petiții",
-      "description": "Semnează cauze active",
-      "url": "/petitii",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "/petitii"
     }
   ]
 }

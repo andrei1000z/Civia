@@ -1185,9 +1185,7 @@ ${today}`;
             </div>
           </div>
           <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
-            <strong>Cu cât mai concret, cu atât primești răspuns mai rapid.</strong>{" "}
-            Dă dimensiuni aproximative, intersecția / nr. stâlp / reper, dacă e
-            pe trotuar sau carosabil. Punem textul în formă oficială după.{" "}
+            Scrie liber. Punem textul în formă oficială.{" "}
             <span
               className={cn(
                 "whitespace-nowrap tabular-nums font-medium",
@@ -1209,9 +1207,6 @@ ${today}`;
               să deschidă select dropdown. */}
           {!data.tip && (
             <div className="mb-2 flex flex-wrap gap-1.5">
-              <span className="text-[11px] text-[var(--color-text-muted)] inline-flex items-center mr-1">
-                Cele mai trimise:
-              </span>
               {(["stalpisori", "parcare", "trotuar", "groapa"] as const).map((qt) => {
                 const meta = SESIZARE_TIPURI.find((t) => t.value === qt);
                 if (!meta) return null;
@@ -1430,13 +1425,13 @@ ${today}`;
           <Field label="Fotografii (max 5)">
             <PhotoUploader urls={imagini} onChange={setImagini} max={5} />
             <p className="text-xs text-[var(--color-text-muted)] mt-2">
-              Atașează poze clare, cu rezoluție mare și lumină bună. Ideal: o poză apropiată cu problema + o poză de context mai largă cu un reper vizibil (stâlp, clădire, număr casă). Fotografiază din mai multe unghiuri. Cu cât mai multe poze relevante, cu atât mai bine.
+              O poză apropiată + una de context.
             </p>
             {imagini.length > 0 && (
               <div className="mt-2 flex items-start gap-2 p-3 rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300">
                 <span className="shrink-0 mt-0.5">⚠️</span>
                 <p>
-                  <strong>Atașează pozele manual în emailul către autorități</strong> — sunt salvate public pe Civia la linkul sesizării tale, dar e mai profesionist să le pui tu direct în email ca atașamente.
+                  <strong>Atașează pozele manual în email</strong> — apar pe Civia, dar e mai bine să le pui și ca atașamente.
                 </p>
               </div>
             )}
@@ -1453,9 +1448,7 @@ ${today}`;
             Cine ești
           </h3>
           <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
-            OG 27/2002 obligă autoritățile să răspundă DOAR sesizărilor
-            cu petent identificat. Numele + adresa apar în scrisoarea către
-            primărie, nu pe site (rămân private).
+            Apar în scrisoare, nu pe site. <strong>Rămân private.</strong>
           </p>
         </div>
 
@@ -1497,7 +1490,7 @@ ${today}`;
             className={inputClass}
           />
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Pentru email de confirmare cu codul de urmărire și notificări când autoritatea răspunde. Nu apare public.
+Pentru confirmare + notificări. Nu apare public.
           </p>
         </Field>
 
@@ -1537,9 +1530,9 @@ ${today}`;
             className="w-5 h-5 rounded accent-[var(--color-primary)]"
           />
           <div className="flex-1">
-            <p className="text-sm font-medium">Publică sesizarea pe Civia (recomandat)</p>
+            <p className="text-sm font-medium">Publică pe Civia (recomandat)</p>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Alți cetățeni din zonă o văd pe hartă, o pot <strong>vota</strong>, <strong>co-semna</strong> și <strong>retrimite la autorități</strong>. Multiple semnături oficiale pe aceeași problemă = prioritate mare la primărie. Datele tale personale (nume, adresă) rămân private.
+              Alții o pot <strong>vota</strong> și <strong>co-semna</strong>. Mai multe voci = răspuns mai rapid.
             </p>
           </div>
         </label>

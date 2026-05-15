@@ -105,10 +105,10 @@ export default async function SesizariPage() {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-tight">
-            Vorbește în loc · sesizare prin voce
+            Vorbește în loc
           </p>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-            Apasă mic, spune ce vezi. AI detectează tipul + locația, ne pregătește scrisoarea.
+            Apasă mic, spune ce vezi.
           </p>
         </div>
         <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium shrink-0" aria-hidden="true">→</span>
@@ -168,10 +168,7 @@ export default async function SesizariPage() {
             Legal — OG 27/2002 art. 8 alin. (1)
           </p>
           <p className="text-[var(--color-text)] leading-relaxed">
-            Autoritatea are <strong>30 de zile calendaristice</strong> să îți răspundă. Dacă nu
-            primești răspuns, ai drept de plângere la <strong>Avocatul Poporului</strong> și la
-            <strong> instanța de contencios administrativ</strong>. Sesizarea generată include
-            temeiul legal complet.
+            Autoritatea are <strong>30 de zile</strong> să răspundă (OG 27/2002 art. 8).
           </p>
         </div>
       </div>
