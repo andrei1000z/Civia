@@ -65,7 +65,7 @@ export function PageHero({
         </Link>
       )}
       <header
-        className={`relative mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
+        className={`relative mb-5 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} px-4 py-5 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
       >
         <div
           className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
@@ -87,13 +87,11 @@ export function PageHero({
           }}
           aria-hidden="true"
         />
-        <div className="relative flex items-start gap-4 flex-wrap">
+        <div className="relative flex items-start gap-3 sm:gap-4 flex-wrap">
           {/* Liquid-glass icon chip — inset highlight + saturated blur dă
-              senzație de „sticlă lichidă" (iOS 18 / Vision OS). Înlocuiește
-              ring-2 cu inset shadow alb subtle care „prinde lumina" la marginea
-              superioară. */}
+              senzație de „sticlă lichidă" (iOS 18 / Vision OS). */}
           <div
-            className="w-12 h-12 rounded-[var(--radius-xs)] bg-white/15 grid place-items-center shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-[var(--radius-xs)] bg-white/15 grid place-items-center shrink-0"
             style={{
               backdropFilter: "blur(12px) saturate(180%)",
               WebkitBackdropFilter: "blur(12px) saturate(180%)",
@@ -103,19 +101,20 @@ export function PageHero({
             }}
             aria-hidden="true"
           >
-            <Icon size={22} />
+            <Icon size={20} className="sm:hidden" />
+            <Icon size={22} className="hidden sm:block" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-4xl font-extrabold leading-tight mb-2 break-words">
+            <h1 className="font-[family-name:var(--font-sora)] text-lg sm:text-2xl md:text-4xl font-extrabold leading-tight mb-1.5 sm:mb-2 break-words">
               {title}
             </h1>
             {description && (
-              <div className="text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words">
+              <div className="text-[13px] sm:text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words">
                 {description}
               </div>
             )}
             {tagline && (
-              <p className="text-[11px] text-white/70 mt-3 inline-flex flex-wrap items-start gap-1.5 break-words">
+              <p className="text-[11px] text-white/70 mt-2 sm:mt-3 inline-flex flex-wrap items-start gap-1.5 break-words">
                 <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span>{tagline}</span>
               </p>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, Link as LinkIcon, Check } from "lucide-react";
+import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, Link as LinkIcon, Check, ChevronDown, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ShareButton } from "./ShareButton";
 
@@ -51,6 +51,19 @@ export function SesizariPublice() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Filtre collapsed default. Deschise automat daca user are filtru activ
+  // (ex: a venit din /sesizari?tip=parcare → filtrul e vizibil instant).
+  const hasActiveFilter =
+    filterTip !== "toate" ||
+    filterStatus !== "toate" ||
+    filterCounty !== "toate" ||
+    sort !== "recent";
+  const [filtersOpen, setFiltersOpen] = useState(hasActiveFilter);
+  const activeFilterCount =
+    (filterTip !== "toate" ? 1 : 0) +
+    (filterStatus !== "toate" ? 1 : 0) +
+    (filterCounty !== "toate" ? 1 : 0) +
+    (sort !== "recent" ? 1 : 0);
 
   // Push filter state into URL (replace, no history pollution)
   // — so a copy-paste of current URL preserves exact view.
@@ -208,59 +221,109 @@ export function SesizariPublice() {
 
       {/* Filters — hidden on map view; the map already provides spatial
           filtering and the controls just compete with the canvas for
-          attention. The list view still gets the full filter bar. */}
+          attention. The list view still gets the full filter bar.
+          UX (user request 2026-05-14): „1 buton care deschide aia si
+          sa deschida mai mic" → toate dropdown-urile sunt acum
+          collapsible sub un singur trigger „Filtrează (N active)".
+          Auto-expand daca exista filtre active (deep-link / share). */}
       {view !== "map" && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-4 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter size={16} className="text-[var(--color-text-muted)]" />
-            <span className="text-sm font-medium">Filtrează</span>
-            {loading && <Loader2 size={14} className="animate-spin text-[var(--color-text-muted)]" />}
-          </div>
-          <div className={cn(
-            "grid gap-3",
-            // 4 cols when county dropdown is shown (national surface),
-            // 3 cols when route-scoped county hides the dropdown.
-            county ? "sm:grid-cols-2 md:grid-cols-3" : "sm:grid-cols-2 md:grid-cols-4",
-          )}>
-            <select value={filterTip} onChange={(e) => setFilterTip(e.target.value)} className={selectClass}>
-              <option value="toate">Toate tipurile</option>
-              {SESIZARE_TIPURI.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
-              <option value="toate">Orice status</option>
-              {/* Keep the order in sync with the workflow in
-                  src/lib/sesizari/status.ts so the dropdown reads
-                  top→bottom the way the lifecycle progresses. */}
-              <option value="nou">Nou</option>
-              <option value="inregistrata">Înregistrată</option>
-              <option value="redirectionata">Redirecționată</option>
-              <option value="in-lucru">În lucru</option>
-              <option value="actiune-autoritate">Acțiune autoritate</option>
-              <option value="interventie">Intervenție</option>
-              <option value="amanata">Amânată</option>
-              <option value="rezolvat">Rezolvat</option>
-              <option value="respins">Respins</option>
-            </select>
-            {/* County dropdown — only on the national surface. The
-                /[judet]/sesizari route already pins county via context
-                and exposing the picker there would let users wander
-                off the county landing page. */}
-            {!county && (
-              <select value={filterCounty} onChange={(e) => setFilterCounty(e.target.value)} className={selectClass}>
-                <option value="toate">Toate județele</option>
-                {ALL_COUNTIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            )}
-            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectClass}>
-              <option value="recent">Cele mai recente</option>
-              <option value="votate">Cele mai votate</option>
-            </select>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between text-xs gap-2">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] mb-5">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded-[var(--radius-md)]"
+            aria-expanded={filtersOpen}
+            aria-controls="sesizari-filtre-panel"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Filter size={15} className="text-[var(--color-text-muted)]" aria-hidden="true" />
+              <span className="text-sm font-medium">Filtrează</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-semibold tabular-nums">
+                  {activeFilterCount}
+                </span>
+              )}
+              {loading && <Loader2 size={13} className="animate-spin text-[var(--color-text-muted)]" aria-hidden="true" />}
+            </span>
+            <span className="inline-flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+              {!filtersOpen && (
+                <span className="hidden sm:inline">
+                  {totalCount !== null ? `${totalCount.toLocaleString("ro-RO")} sesizări` : `${filtered.length}`}
+                </span>
+              )}
+              <ChevronDown
+                size={16}
+                className={cn(
+                  "transition-transform",
+                  filtersOpen ? "rotate-180" : "rotate-0",
+                )}
+                aria-hidden="true"
+              />
+            </span>
+          </button>
+          {filtersOpen && (
+            <div
+              id="sesizari-filtre-panel"
+              className="px-4 pb-4 pt-1 border-t border-[var(--color-border)] animate-fade-in"
+            >
+              <div className={cn(
+                "grid gap-2.5 mt-3",
+                // 4 cols when county dropdown is shown (national surface),
+                // 3 cols when route-scoped county hides the dropdown.
+                county ? "sm:grid-cols-2 md:grid-cols-3" : "sm:grid-cols-2 md:grid-cols-4",
+              )}>
+                <select value={filterTip} onChange={(e) => setFilterTip(e.target.value)} className={selectClass}>
+                  <option value="toate">Toate tipurile</option>
+                  {SESIZARE_TIPURI.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
+                  <option value="toate">Orice status</option>
+                  {/* Keep the order in sync with the workflow in
+                      src/lib/sesizari/status.ts so the dropdown reads
+                      top→bottom the way the lifecycle progresses. */}
+                  <option value="nou">Nou</option>
+                  <option value="inregistrata">Înregistrată</option>
+                  <option value="redirectionata">Redirecționată</option>
+                  <option value="in-lucru">În lucru</option>
+                  <option value="actiune-autoritate">Acțiune autoritate</option>
+                  <option value="interventie">Intervenție</option>
+                  <option value="amanata">Amânată</option>
+                  <option value="rezolvat">Rezolvat</option>
+                  <option value="respins">Respins</option>
+                </select>
+                {!county && (
+                  <select value={filterCounty} onChange={(e) => setFilterCounty(e.target.value)} className={selectClass}>
+                    <option value="toate">Toate județele</option>
+                    {ALL_COUNTIES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
+                <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectClass}>
+                  <option value="recent">Cele mai recente</option>
+                  <option value="votate">Cele mai votate</option>
+                </select>
+              </div>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterTip("toate");
+                    setFilterStatus("toate");
+                    setFilterCounty("toate");
+                    setSort("recent");
+                  }}
+                  className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
+                >
+                  <X size={12} aria-hidden="true" />
+                  Resetează filtrele
+                </button>
+              )}
+            </div>
+          )}
+          <div className="px-4 pb-4 pt-1 flex flex-wrap items-center justify-between text-xs gap-2 border-t border-[var(--color-border)]">
             <span className="text-[var(--color-text-muted)] inline-flex items-center gap-2 flex-wrap">
               <span>
                 {totalCount !== null
