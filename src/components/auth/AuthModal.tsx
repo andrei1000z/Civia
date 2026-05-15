@@ -204,7 +204,7 @@ export function AuthModal() {
                 aria-invalid={inlineError != null || (status === "error" && errorMsg != null)}
                 aria-describedby={inlineError ? "auth-email-error" : undefined}
                 placeholder="nume@exemplu.ro"
-                className={`w-full h-11 pl-9 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 transition-colors ${
+                className={`w-full h-11 pl-9 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 transition-colors ${
                   inlineError
                     ? "border-red-500 dark:border-red-400"
                     : "border-[var(--color-border)]"

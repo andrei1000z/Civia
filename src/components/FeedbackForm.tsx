@@ -118,7 +118,7 @@ export function FeedbackForm({
         <select
           value={topic}
           onChange={(e) => setTopic(e.target.value as Topic)}
-          className="w-full h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         >
           {(Object.keys(TOPIC_LABELS) as Topic[]).map((t) => (
             <option key={t} value={t}>
@@ -141,7 +141,7 @@ export function FeedbackForm({
           rows={5}
           aria-describedby="fb-text-hint"
           aria-invalid={text.length > 0 && text.trim().length < 10}
-          className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] resize-y min-h-[110px]"
+          className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] resize-y min-h-[110px]"
         />
         <p
           id="fb-text-hint"
@@ -170,7 +170,7 @@ export function FeedbackForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nume@exemplu.ro"
-          className="w-full h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         />
       </div>
 

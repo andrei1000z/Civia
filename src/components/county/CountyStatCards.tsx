@@ -65,24 +65,24 @@ export function CountyStatCards({ countyName, stats, variant }: Props) {
   // variant === "grid"
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-4">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-3 sm:p-4">
         <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Calitate aer</p>
         <p className="text-2xl font-bold" style={{ color: aqiColor(stats.aqiMediu) }}>AQI {stats.aqiMediu}</p>
         <p className="text-xs text-[var(--color-text-muted)]">{stats.aqiQuality}</p>
       </div>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-4">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-3 sm:p-4">
         <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Populație</p>
         <p className="text-2xl font-bold tabular-nums">{stats.populatie.toLocaleString("ro-RO")}</p>
         <p className="text-xs text-[var(--color-text-muted)] tabular-nums">
           {stats.suprafataKmp.toLocaleString("ro-RO")} km²
         </p>
       </div>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-4">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-3 sm:p-4">
         <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Primar</p>
         <p className="text-sm font-bold truncate">{stats.primarName}</p>
         <p className="text-xs text-[var(--color-text-muted)]">{stats.primarPartid}</p>
       </div>
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-4">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-3 sm:p-4">
         <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Transport</p>
         <p className="text-sm font-bold truncate">{stats.transportPublicOperator}</p>
         <p className="text-xs text-[var(--color-text-muted)]">{stats.hasMetrou ? "Cu metrou" : "Fără metrou"}</p>

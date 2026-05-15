@@ -1563,7 +1563,10 @@ ${today}`;
   );
 }
 
-const inputClass = "w-full h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
+// text-base (16px) pe mobile previne zoom-ul auto iOS Safari pe focus.
+// Pe sm+ revenim la text-sm (14px) ca sa nu fie textul prea mare in formulare.
+// Aceeasi convenție folosită în restul platformei după pass-ul mobil 2026-05-14.
+const inputClass = "w-full h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
 
 function Field({
   label,

@@ -71,6 +71,18 @@ export function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
+  // Close mobile menu on Escape key — a11y standard + power-user expectation
+  // (toate celelalte modaluri din platforma se inchid la Esc: Lightbox,
+  // ImageLightbox, AuthModal, ShareMenu, SignSesizareButton).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
   return (
     <>
       <header

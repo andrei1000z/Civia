@@ -456,6 +456,7 @@ export default function ContPage() {
                 <input
                   type="text"
                   autoComplete="street-address"
+                  autoCapitalize="words"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   placeholder="Str. Exemplu 12, Sector 3"
@@ -466,6 +467,7 @@ export default function ContPage() {
                 <input
                   type="tel"
                   autoComplete="tel"
+                  inputMode="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="07XX..."
@@ -797,8 +799,9 @@ export default function ContPage() {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
+// h-11 (era h-10 sub WCAG 44px) + text-base sm:text-sm (era text-sm → iOS zoom).
 const inputClass =
-  "w-full h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
+  "w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

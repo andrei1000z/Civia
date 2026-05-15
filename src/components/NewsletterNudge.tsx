@@ -21,6 +21,7 @@ import { Mail, X, Check } from "lucide-react";
 const VISIT_COUNT_KEY = "civia_visit_count";
 const NUDGE_DISMISS_KEY = "civia_newsletter_nudge_dismissed";
 const NUDGE_ACCEPT_KEY = "civia_newsletter_accepted";
+const COOKIE_CONSENT_KEY = "civic_cookie_consent";
 const MIN_VISITS_BEFORE_NUDGE = 3;
 const DISMISS_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 
@@ -41,6 +42,11 @@ export function NewsletterNudge() {
     // Visit count gate
     const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) ?? "0", 10);
     if (visitCount < MIN_VISITS_BEFORE_NUDGE) return;
+    // GATE: nu apare daca user n-a decis inca despre cookies (CookieBanner
+    // e in jos). Altfel cele doua bannere se suprapun in coltul dreapta
+    // mobile/desktop. Pe useri care au respins/acceptat consent, nudge-ul
+    // poate aparea normal dupa cele 8 secunde.
+    if (!localStorage.getItem(COOKIE_CONSENT_KEY)) return;
     // Show after delay so it's not jarring on landing
     const t = setTimeout(() => setVisible(true), 8000);
     return () => clearTimeout(t);
@@ -84,6 +90,7 @@ export function NewsletterNudge() {
     <div
       role="dialog"
       aria-labelledby="newsletter-nudge-title"
+      data-newsletter-nudge
       className="fixed left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-[var(--z-toast)] animate-fade-in-up"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
     >
@@ -134,13 +141,14 @@ export function NewsletterNudge() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@exemplu.ro"
                 autoComplete="email"
+                inputMode="email"
                 required
-                className="flex-1 h-9 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                className="flex-1 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               />
               <button
                 type="submit"
                 disabled={sending}
-                className="h-9 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                className="h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
               >
                 {sending ? "..." : "Da"}
               </button>

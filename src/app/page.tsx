@@ -125,7 +125,7 @@ export default async function HomePage() {
 
         <div className="container-narrow relative z-10 pt-32 pb-16 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-[1.05] tracking-tight">
+            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words">
               Ajută la schimbarea{" "}
               <span className="bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
                 României.

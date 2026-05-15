@@ -135,6 +135,10 @@ export function AlertBanner() {
     <div
       // FIXED top-16 — sits direct sub navbar-ul fixed (h-16 = 64px).
       // z higher than nav (z-50) ca să nu fie acoperit de glass blur.
+      // data-alert-banner: CSS in globals.css foloseste :has() pentru a creste
+      // body padding-top de la pt-16 la pt-[7rem] cand bannerul e prezent —
+      // altfel content-ul de sus al paginii ramane ascuns sub el.
+      data-alert-banner
       className={`${style.bg} ${style.text} fixed top-16 left-0 right-0 z-[var(--z-banner)] shadow-md`}
       role={alert.severity === "critical" ? "alert" : "status"}
       aria-live={alert.severity === "critical" ? "assertive" : "polite"}

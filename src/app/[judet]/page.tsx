@@ -711,7 +711,7 @@ export default async function CountyHomePage({
                 🇷🇴 Platformă civică independentă · gratuit · fără reclame
               </p>
 
-              <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+              <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5 sm:mb-6 break-words">
                 Ajută la schimbarea
                 <br className="hidden sm:block" />{" "}
                 <span className="bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">

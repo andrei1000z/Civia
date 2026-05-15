@@ -204,6 +204,14 @@
   body:has([role="dialog"][aria-labelledby="install-prompt-title"]) [data-toast-stack] {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 9rem);
   }
+
+  /* AlertBanner content shift fix — cand body conține [data-alert-banner]
+     (fixed top-16, ~52px tall), crestem body padding-top de la 4rem
+     (pt-16) la ~7rem ca primul element vizibil pe pagina sa nu fie
+     ascuns sub bandă. */
+  body:has([data-alert-banner]) {
+    padding-top: 7rem;
+  }
 }
 
 * {
