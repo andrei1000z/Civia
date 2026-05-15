@@ -299,7 +299,7 @@ export function StiriList() {
               <div className="grid md:grid-cols-[1.2fr_1fr]">
                 <div
                   className={cn(
-                    "relative h-64 md:h-auto bg-gradient-to-br",
+                    "relative h-56 sm:h-72 md:h-auto md:min-h-[360px] bg-gradient-to-br",
                     sourceGradients[featured.source] ?? "from-slate-600 to-slate-800"
                   )}
                 >
@@ -308,9 +308,12 @@ export function StiriList() {
                     <img
                       src={featured.image_url}
                       alt={featured.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-90"
+                      className="absolute inset-0 w-full h-full object-cover"
                       // LCP candidate pe /stiri — eager + fetchpriority high
-                      // ca să se descarce în primul bath de resurse
+                      // ca să se descarce în primul bath de resurse.
+                      // opacity-90 scos 2026-05-15: lasa gradientul sursei
+                      // (roz/violet) sa transpara la fund, parea ca imaginea
+                      // nu acopera tot cardul.
                       loading="eager"
                       fetchPriority="high"
                       onError={(e) => (e.currentTarget.style.display = "none")}
