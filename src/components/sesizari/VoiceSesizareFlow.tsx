@@ -29,7 +29,14 @@ interface SpeechWindow extends Window {
   webkitSpeechRecognition?: new () => Recognition;
 }
 
-type Phase = "idle" | "listening" | "processing" | "review" | "sent" | "error";
+type Phase =
+  | "idle"
+  | "listening"
+  | "processing"
+  | "review"
+  | "submitting"
+  | "sent"
+  | "error";
 
 /**
  * Voice-only sesizare flow — variantă mobile-first cu hold-to-record.
@@ -253,8 +260,59 @@ export function VoiceSesizareFlow() {
     }
   };
 
+  /** Submit direct la /api/sesizari — fetch profile data + POST. */
+  const submitDirect = async () => {
+    setError(null);
+    setPhase("submitting");
+    try {
+      // Fetch user profile pentru nume + adresa (necesar pentru sesizare)
+      const profileRes = await fetch("/api/profile");
+      const profileJson = await profileRes.json();
+      const profile = profileJson?.data;
+      if (!profile?.full_name || !profile?.address) {
+        // Profil incomplet — redirect la formularul complet ca user-ul să
+        // poată completa datele lipsă (e mai bun feedback decât eroare).
+        goToFullForm();
+        return;
+      }
+
+      const payload = {
+        nume: profile.full_name,
+        adresa: profile.address,
+        email: profile.email ?? null,
+        tip,
+        titlu: "", // server-side se completează din descriere/AI
+        locatie,
+        sector,
+        lat,
+        lng,
+        descriere: transcript,
+        formal_text: null, // serverul cheamă AI improve automat
+        publica: true,
+        county: null, // detect din lat/lng pe server
+      };
+
+      const res = await fetch("/api/sesizari", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Eroare la trimitere");
+
+      // Redirect la pagina sesizării nou create
+      if (typeof window !== "undefined") {
+        window.location.href = `/sesizari/${json.data.code}?from=voice`;
+      }
+      setPhase("sent");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Eroare");
+      setPhase("review");
+    }
+  };
+
   // ─── RENDER ───
-  if (phase === "review") {
+  if (phase === "review" || phase === "submitting") {
     const tipLabel = SESIZARE_TIPURI.find((t) => t.value === tip)?.label ?? "—";
     return (
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 space-y-5 shadow-[var(--shadow-2)]">
@@ -287,7 +345,37 @@ export function VoiceSesizareFlow() {
           </div>
         </div>
 
+        {error && (
+          <p className="text-xs text-red-500 text-center" role="alert">
+            {error}
+          </p>
+        )}
+
         <div className="space-y-2 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                openAuthModal();
+                return;
+              }
+              void submitDirect();
+            }}
+            disabled={phase === "submitting"}
+            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          >
+            {phase === "submitting" ? (
+              <>
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                Se trimite...
+              </>
+            ) : (
+              <>
+                <Send size={14} aria-hidden="true" />
+                Trimite acum
+              </>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -297,10 +385,10 @@ export function VoiceSesizareFlow() {
               }
               goToFullForm();
             }}
-            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+            disabled={phase === "submitting"}
+            className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
-            <Send size={14} aria-hidden="true" />
-            Verifică și trimite
+            Editează în formularul complet
           </button>
           <button
             type="button"
@@ -309,16 +397,19 @@ export function VoiceSesizareFlow() {
               setTip("");
               setLocatie("");
               setSector(null);
+              setError(null);
               setPhase("idle");
             }}
-            className="w-full h-10 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded transition-colors"
+            disabled={phase === "submitting"}
+            className="w-full h-9 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded transition-colors"
           >
             Reia de la zero
           </button>
         </div>
 
         <p className="text-[11px] text-[var(--color-text-muted)] text-center leading-relaxed">
-          Vei vedea formularul complet preumplut. Verifică, adaugă o poză dacă vrei, AI rescrie textul formal când apeși Trimite.
+          „Trimite acum" folosește datele tale din profil. Dacă lipsesc nume/adresă,
+          deschidem formularul complet ca să le completezi.
         </p>
       </div>
     );

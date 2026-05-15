@@ -22,6 +22,7 @@ import {
   type SesizareStatus,
 } from "@/lib/sesizari/status";
 import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
+import { sendPushToUsers } from "@/lib/push/web-push-client";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,37 @@ export async function POST(
   }
 
   invalidateSesizariCache();
+
+  // ─── Push notifications to followers (fire-and-forget) ───────
+  // Schimbarea de status e cea mai importantă notificare push — userii
+  // care urmăresc sesizarea sau autorul vor să afle imediat. Best-effort,
+  // nu blocăm response-ul admin-ului.
+  if (statusChanged) {
+    void (async () => {
+      try {
+        const { data: followers } = await admin
+          .from("sesizare_follows")
+          .select("user_id")
+          .eq("sesizare_id", sesizare.id);
+        const userIds = (followers ?? []).map((f) => f.user_id).filter(Boolean);
+        // Adaugă și autorul, dacă nu e deja în lista de followers
+        if (sesizare.user_id && !userIds.includes(sesizare.user_id)) {
+          userIds.push(sesizare.user_id);
+        }
+        if (userIds.length === 0) return;
+        const meta = SESIZARE_STATUS_META[newStatus];
+        await sendPushToUsers(userIds, {
+          title: `Sesizare ${sesizare.code}: ${meta?.label ?? newStatus}`,
+          body: sesizare.titlu ?? "Status actualizat",
+          url: `/sesizari/${sesizare.code}`,
+          tag: `sesizare-${sesizare.code}`,
+          icon: "/icon-192.png",
+        });
+      } catch (err) {
+        Sentry.captureException(err, { tags: { source: "push_status_notify" } });
+      }
+    })();
+  }
 
   // ─── Notify author by email (best-effort) ────────────────────
   const recipient = sesizare.author_email;

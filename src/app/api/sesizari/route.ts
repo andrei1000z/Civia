@@ -12,6 +12,8 @@ import { buildSalutation, formatRecipientName } from "@/lib/email/format";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { polishSesizare } from "@/lib/sesizari/polish";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
+import { sendPushToUsers } from "@/lib/push/web-push-client";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -197,6 +199,45 @@ export async function POST(req: Request) {
       // Bust stats cache so /impact, LiveStatsBar, /api/v1/stats see the new
       // sesizare immediately instead of waiting up to 5 min for the TTL.
       invalidateSesizariCache();
+
+      // ─── Push to street followers (fire-and-forget) ─────────────
+      // Sesizarea nouă pe o stradă urmărită = notificare push pentru toți
+      // useri care au „adoptat-o". Match prin ILIKE %street% pe locatie.
+      // Folosim service-role (admin) pentru read pe street_follows fără RLS.
+      if (parsed.publica !== false) {
+        void (async () => {
+          try {
+            const sa = createSupabaseAdmin();
+            const county = (parsed.county ?? "b").toLowerCase();
+            // Selectează toate follow-urile din acest județ, filtrăm in memorie
+            // după ILIKE — pattern matching ar fi posibil în SQL dar mai
+            // costisitor. Volum maxim per județ e mic (sub 1000 follows).
+            const { data: follows } = await sa
+              .from("street_follows")
+              .select("user_id, street")
+              .eq("county", county);
+            if (!follows || follows.length === 0) return;
+            const locatieLow = (parsed.locatie ?? "").toLowerCase();
+            const matched: string[] = [];
+            for (const f of follows) {
+              if (!f.street) continue;
+              if (locatieLow.includes(f.street.toLowerCase())) {
+                matched.push(f.user_id);
+              }
+            }
+            if (matched.length === 0) return;
+            await sendPushToUsers(matched, {
+              title: "Sesizare nouă pe strada ta",
+              body: parsed.titlu ?? parsed.locatie ?? "Vezi detalii pe Civia.",
+              url: `/sesizari/${code}`,
+              tag: `new-${code}`,
+              icon: "/icon-192.png",
+            });
+          } catch {
+            // silent — push e best-effort
+          }
+        })();
+      }
 
       // Send confirmation email (non-blocking — don't delay response)
       const authorEmail = parsed.author_email;
