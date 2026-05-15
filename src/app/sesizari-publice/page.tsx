@@ -28,14 +28,11 @@ export default function SesizariPublicePage() {
         gradient={HERO_GRADIENT.primary}
         description={
           <>
-            Sesizări trimise de cetățeni la primării și autorități locale. Dacă
-            vezi o problemă care te afectează,{" "}
-            <strong>votează</strong> ca să arăți că nu e doar a unuia, sau apasă{" "}
-            <strong>„Trimite și tu"</strong> ca să trimiți același email cu numele
-            tău.
+            Sesizări de la cetățeni. <strong>Votează</strong> sau apasă{" "}
+            <strong>„Trimite și tu"</strong> — co-semnătura crește prioritatea la primărie.
           </>
         }
-        tagline="Numere mari schimbă prioritatea la primărie — co-semnătura ta contează."
+        tagline="Numere mari schimbă prioritatea la primărie."
       />
 
       <SesizariPublice />

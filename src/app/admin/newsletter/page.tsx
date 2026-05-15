@@ -14,33 +14,43 @@ interface SubscriberRow {
   newsletter_sms_optin: boolean;
   email: string | null;
   emailConfirmedAt: string | null;
+  /** „cont" = signed-in user toggled opt-in pe /cont. „anonim" = anonymous
+   *  signup prin NewsletterNudge (insert in newsletter_subscribers). */
+  source: "cont" | "anonim";
+  /** Sortable absolute timestamp for created_at. */
+  createdAt: string;
 }
 
 async function loadSubscribers(): Promise<SubscriberRow[]> {
   const admin = createSupabaseAdmin();
 
-  // profiles only has created_at — no updated_at column. Ordering by it
-  // would fail silently with PostgREST error 42703 and the page would
-  // render zero subscribers despite real opt-ins existing.
-  const { data: profiles } = await admin
-    .from("profiles")
-    .select("id, display_name, full_name, phone, newsletter_email_optin, newsletter_sms_optin, created_at")
-    .or("newsletter_email_optin.eq.true,newsletter_sms_optin.eq.true")
-    .order("created_at", { ascending: false });
+  // Bug 2026-05-15: admin vedea DOAR profiles cu opt-in (utilizatorii logați
+  // care au bifat newsletter pe /cont). NewsletterNudge inserează in
+  // tabelul separat `newsletter_subscribers` (signup anonim public).
+  // Acum fac query paralel pe ambele si merge intr-un singur tabel cu
+  // coloana „Sursă" — admin vede absolut tot.
+  const [profilesRes, anonymousRes, usersPageRes] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, display_name, full_name, phone, newsletter_email_optin, newsletter_sms_optin, created_at")
+      .or("newsletter_email_optin.eq.true,newsletter_sms_optin.eq.true")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("newsletter_subscribers")
+      .select("id, email, confirmed, created_at, unsubscribed_at")
+      .is("unsubscribed_at", null)
+      .order("created_at", { ascending: false }),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ]);
 
-  if (!profiles || profiles.length === 0) return [];
-
-  // Bulk-fetch auth users so we can attach the email + confirmation
-  // status. The first 1000 users covers any reasonable subscriber count.
-  const { data: usersPage } = await admin.auth.admin.listUsers({ perPage: 1000 });
   const userById = new Map(
-    (usersPage?.users ?? []).map((u) => [u.id, u]),
+    (usersPageRes.data?.users ?? []).map((u) => [u.id, u]),
   );
 
-  return profiles.map((p) => {
+  const contRows: SubscriberRow[] = (profilesRes.data ?? []).map((p) => {
     const u = userById.get(p.id);
     return {
-      id: p.id,
+      id: `cont-${p.id}`,
       display_name: p.display_name,
       full_name: p.full_name,
       phone: p.phone,
@@ -48,19 +58,48 @@ async function loadSubscribers(): Promise<SubscriberRow[]> {
       newsletter_sms_optin: !!p.newsletter_sms_optin,
       email: u?.email ?? null,
       emailConfirmedAt: u?.email_confirmed_at ?? null,
+      source: "cont",
+      createdAt: p.created_at ?? new Date(0).toISOString(),
     };
   });
+
+  // De-dupe: dacă un anonymous email se potrivește cu unul logat, doar îl
+  // marcăm pe cel cont și sărim de duplicate.
+  const contEmails = new Set(
+    contRows.map((r) => (r.email ?? "").toLowerCase()).filter(Boolean),
+  );
+
+  const anonymousRows: SubscriberRow[] = (anonymousRes.data ?? [])
+    .filter((s) => !contEmails.has((s.email ?? "").toLowerCase()))
+    .map((s) => ({
+      id: `anon-${s.id}`,
+      display_name: null,
+      full_name: null,
+      phone: null,
+      newsletter_email_optin: true,
+      newsletter_sms_optin: false,
+      email: s.email ?? null,
+      emailConfirmedAt: s.confirmed ? s.created_at ?? null : null,
+      source: "anonim",
+      createdAt: s.created_at ?? new Date(0).toISOString(),
+    }));
+
+  // Merge + sort descendent dupa createdAt.
+  return [...contRows, ...anonymousRows].sort(
+    (a, b) => b.createdAt.localeCompare(a.createdAt),
+  );
 }
 
 export default async function NewsletterPage() {
   const subscribers = await loadSubscribers();
   const emailCount = subscribers.filter((s) => s.newsletter_email_optin).length;
   const smsCount = subscribers.filter((s) => s.newsletter_sms_optin).length;
+  const anonimCount = subscribers.filter((s) => s.source === "anonim").length;
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Stats — 4 acum: email, SMS, anonim public, total. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           icon={Mail}
           label="Abonați email"
@@ -72,6 +111,12 @@ export default async function NewsletterPage() {
           label="Abonați SMS"
           value={smsCount}
           color="#059669"
+        />
+        <StatCard
+          icon={Users}
+          label="Anonimi public"
+          value={anonimCount}
+          color="#0EA5E9"
         />
         <StatCard
           icon={Users}
@@ -89,15 +134,17 @@ export default async function NewsletterPage() {
             Niciun abonat încă
           </p>
           <p className="text-xs text-[var(--color-text-muted)] max-w-md mx-auto">
-            Utilizatorii bifează newsletter pe email / SMS din pagina lor de cont.
-            Abonații apar aici imediat ce schimbă preferința.
+            Abonații vin din 2 surse: utilizatorii logați care bifează newsletter pe{" "}
+            <Link href="/cont" className="text-[var(--color-primary)] underline">/cont</Link>,
+            sau anonimi care introduc emailul în nudge-ul de pe site. Ambele apar aici imediat.
           </p>
         </div>
       ) : (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] overflow-hidden">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
               <tr>
+                <th className="text-left p-3 text-[11px] uppercase tracking-wider font-semibold">Sursă</th>
                 <th className="text-left p-3 text-[11px] uppercase tracking-wider font-semibold">Utilizator</th>
                 <th className="text-left p-3 text-[11px] uppercase tracking-wider font-semibold">Email</th>
                 <th className="text-left p-3 text-[11px] uppercase tracking-wider font-semibold">Telefon</th>
@@ -112,7 +159,20 @@ export default async function NewsletterPage() {
                   className="border-t border-[var(--color-border)] hover:bg-[var(--color-surface-2)]/50 transition-colors"
                 >
                   <td className="p-3">
-                    <p className="font-medium">{s.display_name ?? s.full_name ?? "Cetățean"}</p>
+                    {s.source === "cont" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold uppercase tracking-wider">
+                        Cont
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 text-[10px] font-semibold uppercase tracking-wider">
+                        Anonim
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <p className="font-medium">
+                      {s.display_name ?? s.full_name ?? (s.source === "anonim" ? "—" : "Cetățean")}
+                    </p>
                     {s.full_name && s.display_name !== s.full_name && (
                       <p className="text-[11px] text-[var(--color-text-muted)]">{s.full_name}</p>
                     )}
@@ -168,12 +228,12 @@ export default async function NewsletterPage() {
       )}
 
       <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-        Abonații își gestionează singuri preferințele din pagina{" "}
-        <Link href="/cont" className="text-[var(--color-primary)] underline">
-          /cont
-        </Link>
-        . Bifa se salvează automat la fiecare schimbare; nu e nevoie de buton de „salvează".
-        Pentru export, contactează operatorul prin /legal/confidentialitate.
+        Abonații vin din două surse: <strong>Cont</strong> — utilizatori logați care bifează
+        newsletter pe{" "}
+        <Link href="/cont" className="text-[var(--color-primary)] underline">/cont</Link>
+        ; <strong>Anonim</strong> — vizitatori care introduc emailul în nudge-ul public.
+        Toți primesc digestul săptămânal (luni dimineața). Pentru export, contactează
+        operatorul prin /legal/confidentialitate.
       </p>
     </div>
   );

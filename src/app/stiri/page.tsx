@@ -38,13 +38,11 @@ export default function StiriPage() {
         gradient={HERO_GRADIENT.news}
         description={
           <>
-            <strong>{NATIONAL_SOURCES.length} surse naționale</strong> verificate
-            — wire-service, investigative independente și business. Pentru
-            ziarele locale din județul tău, deschide pagina județului
-            corespunzător.
+            <strong>{NATIONAL_SOURCES.length} surse naționale</strong> verificate.
+            Pentru ziare locale, deschide pagina județului tău.
           </>
         }
-        tagline="Fiecare articol primește o sinteză structurată — citești esența în 30 de secunde."
+        tagline="Sinteză structurată per articol — esența în 30 de secunde."
       >
         <div className="flex flex-wrap gap-1.5 mt-4">
           {NATIONAL_SOURCES.map((source) => (

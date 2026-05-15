@@ -88,12 +88,10 @@ export default async function SesizariPage() {
         gradient={HERO_GRADIENT.primary}
         description={
           <>
-            Descrie problema în română simplă, atașează o poză, alege locația.
-            Rescriem textul în limbaj formal cu temei legal și alegem singuri
-            autoritatea competentă.
+            Descrii simplu, atașezi o poză. AI rescrie formal + alegem autoritatea.
           </>
         }
-        tagline="2 minute de la tine, 30 de zile pentru răspunsul lor (OG 27/2002)."
+        tagline="2 minute la tine · 30 zile pentru răspuns (OG 27/2002)."
       />
 
       {/* Quick links — colored accent ring + icon chip per item.

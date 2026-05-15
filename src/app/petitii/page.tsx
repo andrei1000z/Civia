@@ -43,10 +43,8 @@ export default async function PetitiiPage() {
         gradient={HERO_GRADIENT.petition}
         description={
           <>
-            Curate de Civia + inițiate de comunitate. Click pe petiție → vezi
-            argumentele și sinteza, apoi semnezi pe site (sau pe sursa oficială
-            când e agregată din Declic / Avaaz). Petiția adună <strong>multe
-            voci pentru aceeași cauză</strong>.
+            Curate de Civia + de la comunitate. Semnezi pe site sau pe sursa oficială.{" "}
+            <strong>Multe voci pentru aceeași cauză.</strong>
           </>
         }
         tagline={

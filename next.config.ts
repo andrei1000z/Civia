@@ -90,7 +90,12 @@ const nextConfig: NextConfig = {
             value: [
               "geolocation=(self)",
               "camera=()",
-              "microphone=()",
+              // microphone=(self) — VoiceInput foloseste Web Speech API in
+              // formularul de sesizari (dictare). Fix 2026-05-15 dupa raport
+              // user „Permisiunea microfonului refuzata" pe prima incercare:
+              // microphone=() bloca complet API-ul cu service-not-allowed,
+              // fara sa apara prompt-ul Chrome. self permite doar same-origin.
+              "microphone=(self)",
               "payment=()",
               "usb=()",
               "serial=()",

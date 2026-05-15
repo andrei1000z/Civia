@@ -16,6 +16,7 @@ import { SESIZARE_TIPURI } from "@/lib/constants";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
+import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
 // Gender-detection helpers are no longer needed — the new email template uses
 // the neutral "Mă numesc X, locuiesc în Y" opening instead of Subsemnatul(a).
 import { cn } from "@/lib/utils";
@@ -385,6 +386,10 @@ export function SesizareForm() {
   // AI tip detection state
   const [tipDetecting, setTipDetecting] = useState(false);
   const [tipDetectedByAI, setTipDetectedByAI] = useState(false);
+  // Sector auto-detect flag — afisam un mic indicator „Sector detectat
+  // automat" cand l-am gasit din text (keyword-based) ca user-ul sa
+  // poata corecta daca am gresit. Reset cand user schimba manual.
+  const [sectorDetectedByText, setSectorDetectedByText] = useState(false);
 
   // Debounced auto-classify tip from description (800ms after typing stops)
   useEffect(() => {
@@ -415,6 +420,20 @@ export function SesizareForm() {
       } finally {
         setTipDetecting(false);
       }
+
+      // Sector auto-detect din text — independent de AI classify, ruleaza
+      // local cu sector-detect (keyword-based). Doar daca user n-a setat
+      // deja sector explicit. Raport 2026-05-15: user tasta locatii
+      // Sector 5 (Piata Constitutiei + ministere) fara sa apese sector,
+      // emailul sarea peste Primaria S5.
+      setData((d) => {
+        if (d.sector) return d;
+        const text = `${d.descriere} ${d.locatie}`;
+        const guess = detectSectorFromText(text);
+        if (!guess) return d;
+        setSectorDetectedByText(true);
+        return { ...d, sector: guess };
+      });
     }, 800);
     return () => {
       if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current);
@@ -534,6 +553,30 @@ export function SesizareForm() {
     // Intentionally omit handleAIImprove — it reads latest state via closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imaginiKey]);
+
+  // Pre-warm AI rewrite while user is still typing identity fields. Fix
+  // 2026-05-15: user a cerut sa elimine butonul mare „Rescrie cu AI" si
+  // ca rescriere sa fie automata. Strategie: cand are descriere completa
+  // (≥30 char) + tip + locatie set, fire AI silent dupa 1500ms debounce.
+  // Pana cand user-ul apasa Trimite, formal_text e deja generat — zero
+  // wait time perceput. Daca user e foarte rapid, fallback la AI in
+  // handleSubmit prinde cazul.
+  const prewarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (data.formal_text) return; // deja generat
+    if (aiLoading) return; // deja ruleaza
+    if (data.descriere.length < 30) return; // not enough context
+    if (!data.tip) return;
+    if (data.locatie.length < 3) return;
+    if (prewarmTimerRef.current) clearTimeout(prewarmTimerRef.current);
+    prewarmTimerRef.current = setTimeout(() => {
+      void handleAIImprove({ withPhotos: imagini.length > 0, silent: true });
+    }, 1500);
+    return () => {
+      if (prewarmTimerRef.current) clearTimeout(prewarmTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.descriere, data.tip, data.locatie, data.formal_text]);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -757,6 +800,20 @@ export function SesizareForm() {
     }
     setSubmitting(true);
     setError(null);
+
+    // Last-resort AI rescriere: daca user e foarte rapid si pre-warm nu a
+    // ajuns să ruleze încă (formal_text gol), facem aici. Compromis: pe
+    // mobile pierdem user-gesture-ul pentru intent:// (mailto poate sa nu
+    // se deschida automat), dar EmailChoicePanel din succes screen ofera
+    // butoanele explicite ca fallback. Cele mai multe submisii vor avea
+    // formal_text de la prewarm până aici.
+    if (!data.formal_text && data.descriere.length >= 10) {
+      try {
+        await handleAIImprove({ withPhotos: imagini.length > 0, silent: true });
+      } catch {
+        // silent — formal_text rămâne null, mailto template fallback prinde
+      }
+    }
 
     const lat = data.lat ?? 45.9432; // Romania center as fallback
     const lng = data.lng ?? 24.9668;
@@ -1444,27 +1501,33 @@ ${today}`;
           </p>
         </Field>
 
-        {/* Generator text formal — plasat după identitate ca să poată
-            include numele + adresa în signature-ul scrisorii. */}
-        <button
-          type="button"
-          onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
-          disabled={aiLoading || data.descriere.length < 10}
-          className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-sm)] bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-purple-500"
-          title={imagini.length > 0 ? "Citim descrierea + vedem pozele și rescriem textul oficial" : "Rescriem descrierea ta în limbaj oficial cu temei legal"}
-        >
-          {aiLoading ? <Loader2 size={18} className="motion-safe:animate-spin" aria-hidden="true" /> : <Sparkles size={18} aria-hidden="true" />}
-          {aiLoading
-            ? (imagini.length > 0 ? "Analizăm pozele…" : "Rescriem textul…")
-            : data.formal_text
-              ? (imagini.length > 0 ? "Re-rescrie textul — include pozele" : "Re-rescrie textul")
-              : (imagini.length > 0 ? "Rescrie textul — citește și pozele" : "Rescrie textul în limbaj oficial")}
-        </button>
-        {data.formal_text && !aiLoading && (
-          <p className="text-xs text-[var(--color-text-muted)] text-center -mt-1">
-            <Sparkles size={11} className="inline text-purple-500" aria-hidden="true" /> Textul a fost rescris — apare în emailul final și pe pagina publică.
+        {/* AI rewrite e acum automat (vezi prewarmTimerRef useEffect).
+            User request 2026-05-15: scoatem butonul mare „Rescrie textul".
+            Indicator subtle pe stare:
+             • aiLoading → spinner cu „AI rescrie…"
+             • formal_text gata → confirmare cu link discret „Regenerează"
+             • nimic înca → ghid simplu cum funcționează. */}
+        {aiLoading ? (
+          <p className="inline-flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400" role="status">
+            <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden="true" />
+            <Sparkles size={11} aria-hidden="true" /> AI rescrie textul în limbaj oficial…
           </p>
-        )}
+        ) : data.formal_text ? (
+          <div className="flex items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles size={11} className="text-purple-500" aria-hidden="true" />
+              Textul a fost rescris — apare în email și pe pagina publică.
+            </span>
+            <button
+              type="button"
+              onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
+              className="text-[var(--color-primary)] hover:underline font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
+              title="Regenerează textul oficial cu AI"
+            >
+              Regenerează
+            </button>
+          </div>
+        ) : null}
 
         <label className="flex items-center gap-3 p-4 bg-[var(--color-surface-2)] rounded-[var(--radius-md)] cursor-pointer">
           <input
@@ -1498,6 +1561,13 @@ ${today}`;
           {submitting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
           {submitting ? "Se generează textul și se salvează..." : "Trimite sesizarea la autorități"}
         </button>
+
+        {!data.formal_text && !aiLoading && !submitting && (
+          <p className="text-[11px] text-center text-[var(--color-text-muted)] mt-2 inline-flex items-center justify-center gap-1.5 w-full">
+            <Sparkles size={11} className="text-purple-500" aria-hidden="true" />
+            AI rescrie automat textul în limbaj oficial — apeși doar Trimite.
+          </p>
+        )}
 
         {draftSavedAt && !submitting && !submitted && (
           <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-2 flex items-center justify-center gap-1">

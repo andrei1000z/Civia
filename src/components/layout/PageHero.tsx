@@ -65,7 +65,7 @@ export function PageHero({
         </Link>
       )}
       <header
-        className={`relative mb-5 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} px-4 py-5 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
+        className={`relative mb-4 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} px-4 py-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
       >
         <div
           className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
@@ -105,16 +105,16 @@ export function PageHero({
             <Icon size={22} className="hidden sm:block" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-[family-name:var(--font-sora)] text-lg sm:text-2xl md:text-4xl font-extrabold leading-tight mb-1.5 sm:mb-2 break-words">
+            <h1 className="font-[family-name:var(--font-sora)] text-base sm:text-xl md:text-3xl font-extrabold leading-tight mb-1 sm:mb-2 break-words">
               {title}
             </h1>
             {description && (
-              <div className="text-[13px] sm:text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words">
+              <div className="text-[12px] sm:text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words line-clamp-2 sm:line-clamp-none">
                 {description}
               </div>
             )}
             {tagline && (
-              <p className="text-[11px] text-white/70 mt-2 sm:mt-3 inline-flex flex-wrap items-start gap-1.5 break-words">
+              <p className="hidden sm:inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words">
                 <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span>{tagline}</span>
               </p>

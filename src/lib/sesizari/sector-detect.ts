@@ -30,6 +30,14 @@ const SECTOR_KEYWORDS: Record<string, string[]> = {
     "calea 13", "panduri", "șos. alexandriei", "sos. alexandriei", "sebastian", "eroilor sanitari",
     "pieptănari", "pieptanari", "prelungirea ferentari", "margeanului", "rahovei", "trapezului",
     "progresului", "izvor", "libertății", "libertatii",
+    // Gov landmarks Sector 5 (Piața Constituției zone — Palatul Parlamentului,
+    // ministere principale). Raport user 2026-05-15: lipseau si AI-ul nu
+    // gasea sectorul → emailul nu ajungea la PMB Sector 5.
+    "constituției", "constitutiei", "piața constituției", "piata constitutiei",
+    "casa poporului", "palatul parlamentului", "parlamentului",
+    "ministerul justiției", "ministerul justitiei", "ministerul finanțelor", "ministerul finantelor",
+    "ministerul mediului", "academia română", "academia romana",
+    "cnsas", "biblioteca națională", "biblioteca nationala", "izvor",
   ],
   S6: [
     "sector 6", "sectorul 6", "s6", "drumul taberei", "militari", "crângași", "crangasi", "grozăvești", "grozavesti",
