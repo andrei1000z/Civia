@@ -30,6 +30,7 @@ import { formatDate } from "@/lib/utils";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
+import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 
 interface Profile {
   id: string;
@@ -568,6 +569,20 @@ export default function ContPage() {
               voturi, comentarii, verificari, sesizari rezolvate). Public
               read via /api/profile/[id]/badges. */}
           {user && <BadgesSection userId={user.id} />}
+
+          {/* Notificări push pe device — vizibil doar daca browser-ul
+              suporta + user logat. Configurabil din PWA (Chrome/Firefox
+              full, iOS Safari 16.4+ INSTALAT). */}
+          {user && (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 shadow-[var(--shadow-1)]">
+              <h3 className="font-semibold text-sm mb-2">Notificări push pe acest device</h3>
+              <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
+                Primește notificare native când o sesizare urmărită își schimbă statusul sau
+                când o autoritate răspunde. Funcționează și când Civia nu e deschis.
+              </p>
+              <PushPermissionButton />
+            </div>
+          )}
         </aside>
 
         {/* ─── Sesizari column ────────────────────────────────────── */}

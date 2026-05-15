@@ -166,6 +166,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
         <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png" />
+        {/* PWA manifest — declarat aici (in loc de metadata.manifest) ca sa
+            controlam exact ordinea cu icon-urile + sw.js precache. */}
+        <link rel="manifest" href="/manifest.webmanifest" />
         {/* Mask icon for Safari pinned tabs — falls back to favicon
             if absent. We don't ship one yet; favicon-32 is fine. */}
         {/* Preload the #1 font weight used above the fold (hero) for faster

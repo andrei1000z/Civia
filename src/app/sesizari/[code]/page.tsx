@@ -30,6 +30,7 @@ import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
 import { OverdueBadge } from "@/components/sesizari/OverdueBadge";
 import { ReminderButton } from "@/components/sesizari/ReminderButton";
+import { StreetFollowButton } from "@/components/sesizari/StreetFollowButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { GovernmentServiceJsonLd } from "@/components/JsonLd";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
@@ -180,11 +181,15 @@ export default async function SesizareDetailPage({
             <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight mb-3">
               {sesizare.titlu}
             </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-text-muted)] mb-5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--color-text-muted)] mb-5">
               <span className="inline-flex items-center gap-1.5">
                 <MapPin size={12} aria-hidden="true" />
                 {sesizare.locatie}
               </span>
+              <StreetFollowButton
+                locatie={sesizare.locatie}
+                county={sesizare.county ?? "b"}
+              />
               <span className="inline-flex items-center gap-1.5">
                 <User size={12} aria-hidden="true" />
                 {sesizare.author_name}

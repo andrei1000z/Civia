@@ -94,6 +94,26 @@ export default async function SesizariPage() {
         tagline="2 minute la tine · 30 zile pentru răspuns (OG 27/2002)."
       />
 
+      {/* CTA „Vorbește în loc" — variantă mobile-first pentru cei pe stradă.
+          Vizibil sus, înainte de Quick Links, ca să nu fie ratat. */}
+      <a
+        href="/sesizari/voce"
+        className="group flex items-center gap-3 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 border border-purple-500/30 rounded-[var(--radius-md)] p-4 mb-5 hover:from-purple-500/15 hover:via-pink-500/15 hover:to-purple-500/15 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+      >
+        <span className="w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500 to-pink-500 grid place-items-center text-white shrink-0">
+          <span className="text-lg" aria-hidden="true">🎤</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-tight">
+            Vorbește în loc · sesizare prin voce
+          </p>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+            Apasă mic, spune ce vezi. AI detectează tipul + locația, ne pregătește scrisoarea.
+          </p>
+        </div>
+        <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium shrink-0" aria-hidden="true">→</span>
+      </a>
+
       {/* Quick links — colored accent ring + icon chip per item.
           Grid scales to the link count so two cards don't stretch
           weirdly when the "Dovezi" entry is hidden pending the first

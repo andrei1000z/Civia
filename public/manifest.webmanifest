@@ -1,0 +1,50 @@
+{
+  "name": "Civia — Platforma civică a României",
+  "short_name": "Civia",
+  "description": "Sesizări AI-formalizate către primării, petiții civice, date publice — pentru toate cele 42 de județe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#10b981",
+  "lang": "ro-RO",
+  "categories": ["government", "news", "social"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Trimite o sesizare",
+      "short_name": "Sesizare",
+      "url": "/sesizari",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Vezi sesizările publice",
+      "short_name": "Publice",
+      "url": "/sesizari-publice"
+    },
+    {
+      "name": "Petiții civice",
+      "short_name": "Petiții",
+      "url": "/petitii"
+    }
+  ]
+}

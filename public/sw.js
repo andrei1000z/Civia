@@ -233,3 +233,57 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────────────
+// Mai 2026: feature push PWA. Server-ul trimite payload-uri encriptate
+// (web-push standard) → SW le primeste aici → arata notification native.
+// Payload-ul nostru: { title, body, url, tag?, icon? }
+// `tag` permite coalescing (notificari succesive cu acelasi tag se
+// suprapun, nu se acumuleaza in stack).
+self.addEventListener("push", (event) => {
+  let payload = { title: "Civia", body: "Update nou pe Civia.", url: "/" };
+  try {
+    if (event.data) {
+      payload = { ...payload, ...event.data.json() };
+    }
+  } catch {
+    // Daca data nu e JSON, folosim defaults.
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon || "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: payload.tag,
+      data: { url: payload.url || "/" },
+      // Vibratie scurta + actionable — userul tap → deschide pagina
+      vibrate: [120, 80, 120],
+      requireInteraction: false,
+    }),
+  );
+});
+
+// Click pe notification → focus tab existent SAU deschide URL nou.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification?.data?.url || "/";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // Cauta tab Civia deja deschis si focus-it
+        for (const client of clientList) {
+          try {
+            const url = new URL(client.url);
+            if (url.origin === self.location.origin && "focus" in client) {
+              return client.focus().then((c) => c.navigate(targetUrl));
+            }
+          } catch {
+            // ignore
+          }
+        }
+        // Niciun tab Civia deschis → deschide nou
+        return self.clients.openWindow(targetUrl);
+      }),
+  );
+});
