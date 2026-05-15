@@ -581,6 +581,12 @@ export default function ContPage() {
                 când o autoritate răspunde. Funcționează și când Civia nu e deschis.
               </p>
               <PushPermissionButton />
+              <Link
+                href="/widget/setup"
+                className="block text-[11px] text-[var(--color-primary)] hover:underline mt-3"
+              >
+                📱 Vezi cum adaugi Civia pe home screen + widget cu sesizările
+              </Link>
             </div>
           )}
         </aside>
