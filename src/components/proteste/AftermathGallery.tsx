@@ -54,7 +54,7 @@ export function AftermathGallery({ images }: Props) {
               key={img.url}
               type="button"
               onClick={() => setLightboxIndex(i)}
-              className="group relative block w-full mb-2 break-inside-avoid overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="group relative block w-full mb-2 break-inside-avoid overflow-hidden rounded-[var(--radius-sm)] cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               aria-label={`Deschide poza ${i + 1} din ${visibleImages.length}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -348,34 +348,6 @@ export default async function StireDetailPage({
             />
           </div>
 
-          {/* Original content */}
-          {(stire.excerpt || stire.content) && (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 md:p-6 mb-6">
-              <h2 className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold mb-4 inline-flex items-center gap-2">
-                <span
-                  className="w-5 h-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] grid place-items-center"
-                  style={{ color: sourceTextTint }}
-                  aria-hidden="true"
-                >
-                  <Building2 size={11} />
-                </span>
-                Text original — {stire.source}
-              </h2>
-              {stire.excerpt && (
-                <p
-                  className="text-base leading-relaxed mb-4 font-medium border-l-4 pl-4 text-[var(--color-text-muted)]"
-                  style={{ borderLeftColor: `${sourceColor}66` }}
-                >
-                  {stire.excerpt}
-                </p>
-              )}
-              {stire.content && stire.content !== stire.excerpt && (
-                <div className="text-sm text-[var(--color-text-muted)] leading-relaxed whitespace-pre-wrap">
-                  {stire.content}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Sidebar */}

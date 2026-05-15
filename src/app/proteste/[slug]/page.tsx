@@ -696,14 +696,6 @@ function AftermathSection({ protest }: { protest: Protest }) {
           </ul>
         </div>
       )}
-
-      <p className="text-[10px] text-[var(--color-text-muted)] text-center pt-2 border-t border-[var(--color-border)]">
-        Aftermath documentat de un cetățean, verificat de Civia. Vezi vreo greșeală?{" "}
-        <a href="#footer-feedback" className="text-[var(--color-primary)] hover:underline">
-          Raportează
-        </a>
-        .
-      </p>
     </section>
   );
 }

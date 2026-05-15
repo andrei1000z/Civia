@@ -160,7 +160,7 @@ export function FeedbackForm({
 
       <div>
         <label htmlFor="fb-email" className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-          Email <span className="font-normal normal-case text-[var(--color-text-muted)]">(opțional, pentru răspuns)</span>
+          Email <span className="font-normal normal-case text-[var(--color-text-muted)]">(opțional, ca să te putem contacta înapoi)</span>
         </label>
         <input
           id="fb-email"

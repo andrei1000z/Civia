@@ -75,12 +75,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               // Phase 3 v2: glass-surface-strong (85% bg + blur 16px) +
               // radius-lg (24px squircle) + shadow-4 (more diffused depth).
-              // Premium feel — toast feels like an iOS/One UI overlay.
-              className="glass-surface-strong pointer-events-auto rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] px-4 py-3 flex items-start gap-3 min-w-[280px] max-w-[420px] animate-toast-in"
+              // items-center pe rand, text-center pe paragraf — iconita,
+              // textul si X sunt aliniate vertical perfect, plus text-ul
+              // centrat orizontal in coloana lui.
+              className="glass-surface-strong pointer-events-auto rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] px-4 py-3 flex items-center gap-3 min-w-[280px] max-w-[420px] animate-toast-in"
               style={{ borderLeftWidth: 4, borderLeftColor: color }}
             >
-              <Icon size={18} style={{ color }} className="shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="flex-1 text-sm text-[var(--color-text)]">{t.message}</p>
+              <Icon size={18} style={{ color }} className="shrink-0" aria-hidden="true" />
+              <p className="flex-1 text-sm text-[var(--color-text)] text-center">{t.message}</p>
               <button
                 type="button"
                 onClick={() => dismiss(t.id)}
