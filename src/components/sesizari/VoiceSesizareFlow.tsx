@@ -65,6 +65,11 @@ export function VoiceSesizareFlow() {
   const recRef = useRef<Recognition | null>(null);
   const lastFinalAtRef = useRef<number>(0);
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track which result indices we've already appended as final — Chrome
+  // re-fires onresult cu același index cumulativ (continuous mode bug),
+  // ducea la transcript-uri pline de duplicate „să să să să monteze
+  // stalpisori pe Calea 13 Septembrie..." repetat la nesfârșit.
+  const processedFinalsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -114,10 +119,59 @@ export function VoiceSesizareFlow() {
     return text;
   };
 
-  const startListening = () => {
+  const startListening = async () => {
     setError(null);
     setTranscript("");
     setInterim("");
+    processedFinalsRef.current = new Set();
+
+    // ─── Pre-flight permission check ───
+    // Dacă mic e blocat la nivel de SISTEM/Chrome → service-not-allowed
+    // Dacă e blocat doar pentru SITE → not-allowed
+    // Folosim Permissions API ca să detectam preventiv si sa aratam
+    // mesaj diferentiat (instructiuni pas-cu-pas).
+    if ("permissions" in navigator) {
+      try {
+        const status = await (navigator.permissions as Permissions).query(
+          { name: "microphone" as PermissionName },
+        );
+        if (status.state === "denied") {
+          setError(
+            "Microfonul e refuzat. Pe Chrome: tap pe 🔒 lângă URL → Setări site → Microfon → Permite. Sau Setări Chrome → Confidențialitate → Permisiuni site → Microfon.",
+          );
+          setPhase("error");
+          return;
+        }
+      } catch {
+        // Permissions API nu suportă „microphone" pe unele browsere
+        // (Safari < 16) — sărim și încercăm direct, va apărea prompt-ul.
+      }
+    }
+
+    // Cerem direct getUserMedia ca să TRIGGER-uim prompt-ul OS/Chrome.
+    // Web Speech API NU declanșează prompt-ul singur pe unele platforme;
+    // getUserMedia da, după care eliberăm tracks-urile imediat.
+    if ("mediaDevices" in navigator && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Eliberăm imediat — voiam doar permission flow.
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        const name = (err as Error)?.name ?? "";
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+          setError(
+            "Ai refuzat microfonul în prompt-ul Chrome. Tap pe 🔒 lângă URL → permite microfonul și încearcă din nou.",
+          );
+        } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+          setError("Nu am găsit microfon pe acest device.");
+        } else {
+          setError("Microfonul nu poate fi pornit. Verifică setările.");
+        }
+        setPhase("error");
+        return;
+      }
+    }
+
     setPhase("listening");
     const w = window as SpeechWindow;
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
@@ -133,6 +187,10 @@ export function VoiceSesizareFlow() {
         if (!r) continue;
         const raw = r[0]?.transcript ?? "";
         if (r.isFinal) {
+          // Skip dacă deja procesat — Chrome continuous mode uneori
+          // re-emite același index cu isFinal true.
+          if (processedFinalsRef.current.has(i)) continue;
+          processedFinalsRef.current.add(i);
           const cleaned = cleanTranscript(raw);
           if (!cleaned) continue;
           const now = Date.now();
@@ -423,7 +481,7 @@ export function VoiceSesizareFlow() {
     <div className="space-y-5 text-center">
       <button
         type="button"
-        onClick={isListening ? stopListening : startListening}
+        onClick={isListening ? stopListening : () => void startListening()}
         disabled={isProcessing}
         aria-label={isListening ? "Oprește dictarea" : "Apasă și vorbește"}
         className={`mx-auto inline-flex items-center justify-center w-32 h-32 rounded-full shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-primary)] disabled:opacity-50 ${

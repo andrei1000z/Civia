@@ -1166,7 +1166,7 @@ ${today}`;
               value={data.descriere}
               onChange={(e) => update("descriere", e.target.value.slice(0, 2000))}
               rows={mode === "complet" ? 7 : 5}
-              placeholder="Scrie liber, în limbaj normal. Ex: „Groapa adâncă pe trotuar lângă blocul H12, strada Matei Voievod."
+              placeholder="Ex: Groapă pe trotuar la blocul H12"
               autoCapitalize="sentences"
               spellCheck
               className={cn(inputClass, "resize-y min-h-[120px] py-3 pr-12")}
@@ -1304,7 +1304,7 @@ ${today}`;
             type="text"
             value={data.titlu}
             onChange={(e) => update("titlu", e.target.value.slice(0, 200))}
-            placeholder="Se generează automat din descriere — completează doar dacă vrei să-l personalizezi"
+            placeholder="Automat din descriere"
             className={inputClass}
           />
         </Field>
@@ -1473,7 +1473,7 @@ ${today}`;
             value={data.adresa}
             onChange={(e) => update("adresa", e.target.value)}
             onBlur={() => { if (data.adresa) update("adresa", formatAddress(data.adresa)); }}
-            placeholder="Strada, număr (ex: Str. Matei Voievod nr. 12)"
+            placeholder="Str. Matei Voievod 12"
             className={inputClass}
           />
         </Field>

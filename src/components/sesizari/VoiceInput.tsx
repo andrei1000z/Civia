@@ -56,6 +56,9 @@ export function VoiceInput({
   const [interim, setInterim] = useState<string>("");
   const recRef = useRef<Recognition | null>(null);
   const lastFinalAtRef = useRef<number>(0);
+  // Anti-duplicate set — Chrome continuous mode re-emite uneori același
+  // index final, fără asta transcript-ul se umple de „să să să" repetat.
+  const processedFinalsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -94,7 +97,7 @@ export function VoiceInput({
     return text;
   };
 
-  const toggle = () => {
+  const toggle = async () => {
     if (listening) {
       recRef.current?.stop();
       return;
@@ -105,9 +108,32 @@ export function VoiceInput({
     setError(null);
     setErrorKind(null);
     setInterim("");
+    processedFinalsRef.current = new Set();
+
+    // Pre-flight: triggher prompt-ul native via getUserMedia. Web Speech
+    // singur nu garanteaza prompt-ul pe Chrome desktop — getUserMedia da.
+    if ("mediaDevices" in navigator && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        const name = (err as Error)?.name ?? "";
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+          setErrorKind("permission");
+          setError("Permite microfonul din 🔒 lângă URL.");
+        } else if (name === "NotFoundError") {
+          setErrorKind("other");
+          setError("Niciun microfon găsit.");
+        } else {
+          setErrorKind("policy");
+          setError("Microfonul nu poate fi pornit.");
+        }
+        return;
+      }
+    }
+
     const rec = new Ctor();
     rec.continuous = true;
-    // Interim true → user vede live ce zice; sigure pe Chrome 130+
     rec.interimResults = true;
     rec.lang = "ro-RO";
     rec.onresult = (e: SpeechEventLike) => {
@@ -117,6 +143,8 @@ export function VoiceInput({
         if (!r) continue;
         const rawText = r[0]?.transcript ?? "";
         if (r.isFinal) {
+          if (processedFinalsRef.current.has(i)) continue;
+          processedFinalsRef.current.add(i);
           const cleaned = cleanTranscript(rawText);
           if (!cleaned) continue;
           // Pauză între utterance-uri ≥ 800ms → inserează „. " plus
