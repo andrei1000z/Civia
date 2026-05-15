@@ -29,6 +29,7 @@ import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { CountyPickerInline } from "@/components/account/CountyPickerInline";
+import { BadgesSection } from "@/components/profile/BadgesSection";
 
 interface Profile {
   id: string;
@@ -562,6 +563,11 @@ export default function ContPage() {
               </button>
             </div>
           </form>
+
+          {/* Insigne civice — calculate dinamic din count-uri (sesizari,
+              voturi, comentarii, verificari, sesizari rezolvate). Public
+              read via /api/profile/[id]/badges. */}
+          {user && <BadgesSection userId={user.id} />}
         </aside>
 
         {/* ─── Sesizari column ────────────────────────────────────── */}

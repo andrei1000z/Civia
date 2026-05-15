@@ -28,6 +28,8 @@ import { FollowButton } from "@/components/sesizari/FollowButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
+import { OverdueBadge } from "@/components/sesizari/OverdueBadge";
+import { ReminderButton } from "@/components/sesizari/ReminderButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { GovernmentServiceJsonLd } from "@/components/JsonLd";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
@@ -167,6 +169,12 @@ export default async function SesizareDetailPage({
                 >
                   {sesizare.code}
                 </span>
+                <OverdueBadge
+                  createdAt={sesizare.created_at}
+                  status={sesizare.status}
+                  officialResponseAt={sesizare.official_response_at ?? null}
+                  variant="full"
+                />
               </div>
             </div>
             <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight mb-3">
@@ -221,6 +229,26 @@ export default async function SesizareDetailPage({
                 code={sesizare.code}
                 isAuthor={isAuthor}
               />
+              {isAuthor && (
+                <ReminderButton
+                  emailInput={{
+                    tip: sesizare.tip,
+                    titlu: sesizare.titlu,
+                    locatie: sesizare.locatie,
+                    sector: sesizare.sector,
+                    descriere: sesizare.descriere,
+                    formal_text: sesizare.formal_text,
+                    author_name: sesizare.author_name,
+                    author_email: null,
+                    author_address: null,
+                    imagini: sesizare.imagini,
+                    code: sesizare.code,
+                  }}
+                  createdAt={sesizare.created_at}
+                  status={sesizare.status}
+                  officialResponseAt={sesizare.official_response_at ?? null}
+                />
+              )}
             </div>
           </header>
         );
