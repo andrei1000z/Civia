@@ -91,11 +91,12 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                {/* eYou — link gol pe moment (platforma nu are URL public).
-                    Înlocuim span-ul cu <a href> când iese public. */}
-                <span
-                  title="eYou — rețea socială europeană (link când iese public)"
-                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] opacity-70 w-fit"
+                <a
+                  href="https://eyou.social/u/civia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="eYou — @civia"
+                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
                 >
                   <Image
                     src="/eyou.webp"
@@ -109,7 +110,7 @@ export function Footer() {
                     <span className="font-semibold text-[var(--color-text)]">eYou</span>
                     <span className="text-[var(--color-text-muted)]"> · @civia</span>
                   </span>
-                </span>
+                </a>
               </li>
             </ul>
           </div>
