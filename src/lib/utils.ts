@@ -70,6 +70,15 @@ export function formatDecimal(num: number, fractionDigits = 1): string {
   }).format(num);
 }
 
+/** Format pentru luna+an din ISO "YYYY-MM" -> "Septembrie 2028". */
+export function formatMonthYear(monthStr: string): string {
+  const [yearStr, monthIdxStr] = monthStr.split("-");
+  const idx = Number(monthIdxStr) - 1;
+  if (Number.isNaN(idx) || idx < 0 || idx > 11) return monthStr;
+  const date = new Date(Number(yearStr), idx, 1);
+  return new Intl.DateTimeFormat("ro-RO", { month: "long", year: "numeric" }).format(date);
+}
+
 /** Format prescurtat pentru numere mari ("125 mii", "3,4 mil", "1,2 mld").
  *  Folosit pentru stat-uri unde precizia nu contează (homepage, OG images). */
 export function formatCompact(num: number): string {

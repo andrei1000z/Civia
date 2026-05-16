@@ -383,6 +383,59 @@ h4 { font-weight: 500; }
   box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary) !important;
 }
 
+/* Skip link a11y — vizibil doar la :focus, pentru keyboard nav.
+   Tab pe orice pagina aduce skip link in fata, click → sare la #main. */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Print stylesheet — pe pagina sesizarii, ascundem navbar/footer/banner-uri
+   si lasam doar continutul de tip-arit (titlu + descriere + timeline).
+   Folositor pentru ca cetateanul sa printeze sesizarea la depunere
+   manuala la primarie. */
+@media print {
+  nav, header, footer, [data-hide-on-print="true"],
+  [aria-label="Sticky"], .fab, .toast-stack,
+  [role="dialog"], [data-cookie-banner],
+  [data-alert-banner] {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    padding-top: 0 !important;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: underline;
+  }
+  /* Forteaza single column pe print + readable font-size. */
+  .container, .container-narrow {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  h1, h2, h3 { page-break-after: avoid; }
+  img, table, pre { page-break-inside: avoid; }
+  /* QR code + cod sesizare vizibile mari. */
+  [data-print-emphasis="true"] {
+    font-size: 1.2em !important;
+    font-weight: bold !important;
+  }
+}
+
 /* Custom scrollbar — subtle, theme-aware. Track stays transparent
    so it disappears in screenshots; thumb uses border tone with
    slightly darker hover accent. Firefox uses scrollbar-color (CSS

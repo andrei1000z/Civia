@@ -49,6 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${base}/embed`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    // Pagini noi din sprint-ul recent (2026-05): clasament, dezvoltatori,
+    // alegeri, stickers. Toate sunt national-only (NU per-judet).
+    { url: `${base}/clasament`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
+    { url: `${base}/dezvoltatori`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/alegeri`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${base}/stickers`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
   ];
 
   // Per-county pages: 42 counties × 8 pages = 336 URLs

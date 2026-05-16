@@ -287,3 +287,121 @@ self.addEventListener("notificationclick", (event) => {
       }),
   );
 });
+
+// ============================================================
+// OFFLINE QUEUE pentru sesizari (Background Sync API)
+// ============================================================
+// IDB store „civia-outbox-v1" cu inregistrari:
+//   { id, url, method, body, headers, createdAt }
+// La un push de la pagina (postMessage), SW preia, salveaza in IDB,
+// si cere Background Sync. Browserul declanseaza eventul „sync" cand
+// reapare conexiunea. Daca BG Sync nu e suportat (iOS Safari, Firefox),
+// pagina face flush manual la online event.
+
+const OUTBOX_DB = "civia-outbox";
+const OUTBOX_STORE = "outbox";
+const OUTBOX_VER = 1;
+
+function openOutbox() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(OUTBOX_DB, OUTBOX_VER);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
+        db.createObjectStore(OUTBOX_STORE, { keyPath: "id", autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function addToOutbox(entry) {
+  const db = await openOutbox();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX_STORE, "readwrite");
+    tx.objectStore(OUTBOX_STORE).add({ ...entry, createdAt: Date.now() });
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function readOutbox() {
+  const db = await openOutbox();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX_STORE, "readonly");
+    const req = tx.objectStore(OUTBOX_STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function removeFromOutbox(id) {
+  const db = await openOutbox();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX_STORE, "readwrite");
+    tx.objectStore(OUTBOX_STORE).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function flushOutbox() {
+  const entries = await readOutbox();
+  for (const entry of entries) {
+    try {
+      const res = await fetch(entry.url, {
+        method: entry.method,
+        headers: entry.headers || { "Content-Type": "application/json" },
+        body: typeof entry.body === "string" ? entry.body : JSON.stringify(entry.body),
+        credentials: "include",
+      });
+      if (res.ok) {
+        await removeFromOutbox(entry.id);
+        // Notifica pagina ca s-a livrat.
+        const clients = await self.clients.matchAll();
+        for (const c of clients) {
+          c.postMessage({ type: "OUTBOX_DELIVERED", id: entry.id, url: entry.url });
+        }
+      } else if (res.status >= 400 && res.status < 500) {
+        // 4xx — request invalid, scoate-l ca sa nu blocheze coada.
+        await removeFromOutbox(entry.id);
+        const clients = await self.clients.matchAll();
+        for (const c of clients) {
+          c.postMessage({ type: "OUTBOX_FAILED", id: entry.id, status: res.status });
+        }
+      }
+      // 5xx → lasa in coada, retry pe urmatorul sync event.
+    } catch {
+      // Network gone again — pasram in coada.
+    }
+  }
+}
+
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || data.type !== "QUEUE_REQUEST") return;
+  event.waitUntil(
+    addToOutbox({ url: data.url, method: data.method, body: data.body, headers: data.headers })
+      .then(() => {
+        // Cere Background Sync — daca suportat, va declansa cand reapare reteaua.
+        if ("sync" in self.registration) {
+          return self.registration.sync.register("civia-outbox-sync");
+        }
+      })
+      .catch(() => { /* ignore */ }),
+  );
+});
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "civia-outbox-sync") {
+    event.waitUntil(flushOutbox());
+  }
+});
+
+// Daca pagina detecteaza online si cere flush manual (fallback iOS Safari).
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "FLUSH_OUTBOX") {
+    event.waitUntil(flushOutbox());
+  }
+});
