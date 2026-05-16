@@ -46,6 +46,18 @@ function saveConsent(value: ConsentValue, opts: { preferences: boolean; analytic
     decidedAt: new Date().toISOString(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+  // Sync cross-device daca userul e logat.
+  import("@/lib/preferences/sync").then(({ writeRemotePreferences }) => {
+    writeRemotePreferences({
+      cookie_consent: {
+        essential: true,
+        preferences: opts.preferences,
+        analytics: opts.analytics,
+        marketing: false,
+        acceptedAt: record.decidedAt,
+      },
+    });
+  }).catch(() => { /* offline / not logged in — ok */ });
   window.dispatchEvent(new CustomEvent("civic:cookie-consent:changed", { detail: record }));
 }
 
@@ -85,8 +97,37 @@ export function CookieBanner() {
       setVisible(true);
     };
     window.addEventListener(CHANGE_EVENT, reopen);
+
+    // Cand prefs-le se hydrate din DB (login), ascundem banner-ul daca remote
+    // are deja consent. Asta inseamna: ai acceptat pe laptop, deschizi pe
+    // telefon logat → nu mai apare prompt.
+    const onHydrate = (e: Event) => {
+      const detail = (e as CustomEvent<{ cookie_consent: ConsentRecord["essential"] extends boolean ? { acceptedAt: string; preferences: boolean; analytics: boolean } | null : never }>).detail;
+      if (detail?.cookie_consent) {
+        // Mirror remote in localStorage daca lipseste local.
+        const localConsent = readConsent();
+        if (!localConsent) {
+          const remote = detail.cookie_consent;
+          const record: ConsentRecord = {
+            version: 2,
+            value: remote.analytics && remote.preferences ? "accepted-all" : "custom",
+            essential: true,
+            preferences: remote.preferences,
+            analytics: remote.analytics,
+            decidedAt: remote.acceptedAt,
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+          window.dispatchEvent(new CustomEvent("civic:cookie-consent:changed", { detail: record }));
+        }
+        setVisible(false);
+        if (showTimer) window.clearTimeout(showTimer);
+      }
+    };
+    window.addEventListener("civia:prefs-hydrated", onHydrate);
+
     return () => {
       window.removeEventListener(CHANGE_EVENT, reopen);
+      window.removeEventListener("civia:prefs-hydrated", onHydrate);
       if (showTimer) window.clearTimeout(showTimer);
     };
   }, []);

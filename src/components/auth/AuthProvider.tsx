@@ -43,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           else if (event === "SIGNED_OUT") trackAuthEvent("signout");
           else if (event === "PASSWORD_RECOVERY") trackAuthEvent("password-reset");
         }).catch(() => { /* silent */ });
+
+        // Cross-device prefs sync: la SIGNED_IN, hydrateaza din DB + merge
+        // cu localStorage + dispatch event ca toate consumatorii (ThemeProvider,
+        // CookieBanner, NewsletterNudge) sa se re-citeasca.
+        if (event === "SIGNED_IN") {
+          import("@/lib/preferences/sync").then(({ hydratePreferences }) => {
+            hydratePreferences().then((merged) => {
+              window.dispatchEvent(new CustomEvent("civia:prefs-hydrated", { detail: merged }));
+            });
+          }).catch(() => { /* silent */ });
+        }
       }
     });
 

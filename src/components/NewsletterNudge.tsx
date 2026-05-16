@@ -36,24 +36,47 @@ export function NewsletterNudge() {
     if (typeof window === "undefined") return;
     // Already accepted — never show again
     if (localStorage.getItem(NUDGE_ACCEPT_KEY)) return;
-    // Recently dismissed
+    // Recently dismissed locally
     const dismissedAt = parseInt(localStorage.getItem(NUDGE_DISMISS_KEY) ?? "0", 10);
     if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) return;
+    // Cross-device dismissed: daca userul a respins nudge-ul pe alt device,
+    // respectam si aici. Check sincron pe localStorage cache (hydrated la
+    // login + actualizat in dismiss()).
+    void import("@/lib/preferences/sync").then(({ isPromptDismissed }) => {
+      if (isPromptDismissed("newsletter_nudge")) return; // skip, no schedule
+    });
     // Visit count gate
     const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) ?? "0", 10);
     if (visitCount < MIN_VISITS_BEFORE_NUDGE) return;
-    // GATE: nu apare daca user n-a decis inca despre cookies (CookieBanner
-    // e in jos). Altfel cele doua bannere se suprapun in coltul dreapta
-    // mobile/desktop. Pe useri care au respins/acceptat consent, nudge-ul
-    // poate aparea normal dupa cele 8 secunde.
+    // GATE: nu apare daca user n-a decis inca despre cookies.
     if (!localStorage.getItem(COOKIE_CONSENT_KEY)) return;
-    // Show after delay so it's not jarring on landing
-    const t = setTimeout(() => setVisible(true), 8000);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => {
+      // Re-check on fire (in caz ca prefs s-au hydrated intre setup si fire).
+      void import("@/lib/preferences/sync").then(({ isPromptDismissed }) => {
+        if (!isPromptDismissed("newsletter_nudge")) setVisible(true);
+      });
+    }, 8000);
+
+    // Pe hydrate cross-device: daca remote spune ca s-a dismissed, ascundem.
+    const onHydrate = () => {
+      void import("@/lib/preferences/sync").then(({ isPromptDismissed }) => {
+        if (isPromptDismissed("newsletter_nudge")) setVisible(false);
+      });
+    };
+    window.addEventListener("civia:prefs-hydrated", onHydrate);
+
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("civia:prefs-hydrated", onHydrate);
+    };
   }, []);
 
   const dismiss = () => {
     localStorage.setItem(NUDGE_DISMISS_KEY, Date.now().toString());
+    // Sync cross-device dismissal.
+    void import("@/lib/preferences/sync").then(({ dismissPrompt }) => {
+      dismissPrompt("newsletter_nudge");
+    });
     setVisible(false);
   };
 

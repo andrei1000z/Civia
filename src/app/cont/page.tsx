@@ -429,10 +429,10 @@ export default function ContPage() {
 
           <form
             onSubmit={handleSave}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)]"
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] min-w-0 overflow-hidden"
           >
             {/* Date personale */}
-            <section className="p-5 space-y-4">
+            <section className="p-4 sm:p-5 space-y-4 min-w-0">
               <SectionTitle icon={User}>Date personale</SectionTitle>
               <Field label="Nume afișat">
                 <input
@@ -521,13 +521,13 @@ export default function ContPage() {
             </section>
 
             {/* Aspect */}
-            <section className="border-t border-[var(--color-border)] p-5 space-y-3">
+            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
               <SectionTitle icon={Sparkles}>Aspect</SectionTitle>
               <ThemeSettings />
             </section>
 
             {/* Confidențialitate */}
-            <section className="border-t border-[var(--color-border)] p-5 space-y-3">
+            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
               <SectionTitle icon={ShieldCheck}>Confidențialitate</SectionTitle>
               <CheckboxRow
                 icon={EyeOff}
@@ -541,7 +541,7 @@ export default function ContPage() {
             </section>
 
             {/* Save button */}
-            <div className="border-t border-[var(--color-border)] p-5">
+            <div className="border-t border-[var(--color-border)] p-4 sm:p-5 min-w-0">
               {saveError && (
                 <div role="alert" className="mb-3 p-2.5 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
                   {saveError}
@@ -826,8 +826,8 @@ const inputClass =
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-[11px] font-semibold mb-1.5 text-[var(--color-text-muted)] uppercase tracking-wider">
+    <div className="min-w-0">
+      <label className="block text-xs font-semibold mb-1.5 text-[var(--color-text-muted)] break-words leading-snug">
         {label}
       </label>
       {children}
@@ -843,8 +843,8 @@ function SectionTitle({
   children: React.ReactNode;
 }) {
   return (
-    <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
-      <Icon size={12} className="text-[var(--color-primary)]" aria-hidden="true" />
+    <h2 className="text-sm font-bold text-[var(--color-text)] inline-flex items-center gap-1.5 break-words leading-snug">
+      <Icon size={14} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
       {children}
     </h2>
   );
