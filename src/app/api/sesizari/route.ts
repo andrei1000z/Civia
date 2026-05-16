@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { listSesizari, createSesizare } from "@/lib/sesizari/repository";
 import { generateUniqueCode } from "@/lib/sesizari/codes";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { rateLimitAsync, getClientIp, identityKey } from "@/lib/ratelimit";
 import { sanitizeText, escapeHtml } from "@/lib/sanitize";
 import { humanizeSupabaseError } from "@/lib/supabase/errors";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
@@ -82,7 +82,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
-  const rl = await rateLimitAsync(`sesizari-create:${ip}`, { limit: 5, windowMs: 10 * 60_000 });
+  // User-aware rate-limit: utilizator logat NU poate ocoli prin rotire IP.
+  const supabase = await createSupabaseServer();
+  const { data: { user: rlUser } } = await supabase.auth.getUser();
+  const rlKey = `sesizari-create:${identityKey(rlUser?.id ?? null, ip)}`;
+  const rl = await rateLimitAsync(rlKey, { limit: 5, windowMs: 10 * 60_000 });
   if (!rl.success) {
     return NextResponse.json(
       { error: "Prea multe sesizări create. Încearcă în 10 min." },
@@ -122,8 +126,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ data: { code: "XXXXXX", titlu: parsed.titlu } });
     }
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = rlUser; // already resolved at rate-limit time
 
     const code = await generateUniqueCode();
 

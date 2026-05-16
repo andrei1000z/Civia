@@ -19,5 +19,6 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
           echo "HTTP status: $response"
           if [ "$response" != "200" ]; then
-            echo "::warning::Fetch returned HTTP $response"
+            echo "::error::Fetch returned HTTP $response — fail-fast ca CI sa vada problema"
+            exit 1
           fi

@@ -29,8 +29,21 @@ function getUpstashLimiter(windowMs: number, limit: number): Ratelimit {
 interface Bucket { count: number; resetAt: number; }
 const BUCKETS = new Map<string, Bucket>();
 
+// Eager TTL eviction every 5 min ca sa nu ramana bucket-uri vechi pana
+// se ating cei 5000 (memory leak in dev cu rute frecvente). In prod cu
+// Upstash, niciodata nu ajungem aici, deci e fix pentru dev local.
+let lastSweep = 0;
+function sweepExpiredBuckets(now: number) {
+  if (now - lastSweep < 5 * 60_000) return;
+  lastSweep = now;
+  for (const [k, b] of BUCKETS) {
+    if (b.resetAt < now) BUCKETS.delete(k);
+  }
+}
+
 function memoryLimit(key: string, limit: number, windowMs: number): { success: boolean; remaining: number } {
   const now = Date.now();
+  sweepExpiredBuckets(now);
   const bucket = BUCKETS.get(key);
   if (!bucket || bucket.resetAt < now) {
     BUCKETS.set(key, { count: 1, resetAt: now + windowMs });
@@ -77,6 +90,15 @@ export function rateLimit(
 ): RateLimitResult {
   const result = memoryLimit(key, limit, windowMs);
   return { ...result, resetIn: windowMs };
+}
+
+/**
+ * Cheie identitate pentru rate-limit: prefera user_id daca e logat (nu
+ * poate fi ocolit prin rotire IP), altfel IP. Folosit prin
+ * `rateLimitAsync` ca: rateLimitAsync(identityKey(user, ip), ...).
+ */
+export function identityKey(userId: string | null | undefined, ip: string): string {
+  return userId ? `u:${userId}` : `ip:${ip}`;
 }
 
 export function getClientIp(req: Request): string {

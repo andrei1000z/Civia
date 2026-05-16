@@ -121,7 +121,7 @@ export function Modal({ open, onClose, title, children, size = "md", className }
       // suprafețele albe din spate să se vadă atenuate, nu invizibile.
       // Safe-area top/bottom pentru iPhone notch (landscape) — modalul
       // nu mai cade sub bezel.
-      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center p-4 bg-black/50 backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center px-2 py-4 sm:p-4 bg-black/50 backdrop-blur-md overflow-y-auto animate-fade-in"
       style={{
         paddingTop: "max(1rem, env(safe-area-inset-top))",
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))",

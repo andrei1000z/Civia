@@ -385,7 +385,7 @@ export function SesizariPublice() {
       {view === "map" && filtered.length > 0 ? (
         <SesizariMap limit={50} height="600px" zoom={12} />
       ) : loading && rows.length === 0 ? (
-        <div className="grid md:grid-cols-2 gap-4 min-w-0">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 animate-pulse">
               <div className="flex gap-2 mb-3">
@@ -443,7 +443,7 @@ export function SesizariPublice() {
         })()
       ) : (
         <>
-        <div className="grid md:grid-cols-2 gap-4 min-w-0">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
           {filtered.map((s) => {
             const tipLabel = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.label ?? s.tip;
             const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";

@@ -69,7 +69,8 @@ export async function GET(req: Request) {
       admin
         .from("newsletter_subscribers")
         .select("email")
-        .eq("confirmed", true),
+        .is("unsubscribed_at", null)
+        .not("confirmed_at", "is", null),
     ]);
 
   const weekTotal = thisWeekTotal.count ?? 0;

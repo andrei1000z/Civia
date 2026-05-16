@@ -37,7 +37,7 @@ async function loadSubscribers(): Promise<SubscriberRow[]> {
       .order("created_at", { ascending: false }),
     admin
       .from("newsletter_subscribers")
-      .select("id, email, confirmed, created_at, unsubscribed_at")
+      .select("id, email, confirmed_at, created_at, unsubscribed_at")
       .is("unsubscribed_at", null)
       .order("created_at", { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -79,7 +79,7 @@ async function loadSubscribers(): Promise<SubscriberRow[]> {
       newsletter_email_optin: true,
       newsletter_sms_optin: false,
       email: s.email ?? null,
-      emailConfirmedAt: s.confirmed ? s.created_at ?? null : null,
+      emailConfirmedAt: s.confirmed_at ?? null,
       source: "anonim",
       createdAt: s.created_at ?? new Date(0).toISOString(),
     }));
@@ -98,6 +98,28 @@ export default async function NewsletterPage() {
 
   return (
     <div className="space-y-6">
+      {/* Resend free tier limitation — warning vizibil ca admin sa stie
+          ca blast-ul efectiv funcționeaza doar dupa verificare domeniu. */}
+      <div className="rounded-[var(--radius-md)] bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-4">
+        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
+          ⚠️ Resend free tier — limitare critica
+        </p>
+        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+          Pe tier free, Resend trimite DOAR la emails verificate ale contului.
+          Newsletter blast la abonati externi <strong>esueaza silent</strong> fara
+          verificare DNS. Ca sa trimiti la oricine, verifica domeniul civia.ro la{" "}
+          <a
+            href="https://resend.com/domains"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-medium"
+          >
+            resend.com/domains
+          </a>{" "}
+          (SPF + DKIM + DMARC). Setup ~10 min.
+        </p>
+      </div>
+
       {/* Stats — 4 acum: email, SMS, anonim public, total. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <StatCard

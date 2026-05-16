@@ -138,11 +138,11 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-        title="Trimite o propunere de update de status către admin"
+        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-sm font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 hover:border-amber-400 dark:hover:border-amber-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+        title="Ai vazut progres in teren sau ai primit raspuns? Raporteaza si admin-ul verifica."
       >
         <Flag size={14} aria-hidden="true" />
-        Propune update status
+        Ai văzut progres? Raportează
       </button>
 
       {open && (

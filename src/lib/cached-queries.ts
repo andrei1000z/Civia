@@ -253,10 +253,15 @@ export function invalidateSesizariCache() {
   try {
     revalidateTag("sesizari-stats", "max");
   } catch (err) {
-    // Intentionally swallowed. Worst case: stats are stale for up to the
-    // TTL window (5 min). The mutation itself already succeeded.
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[cache] invalidateSesizariCache failed:", err);
-    }
+    // Intentionally non-fatal: stats stale until TTL (5 min). Logam la
+    // Sentry pe nivel `error` pentru ca daca aceasta cale esueaza
+    // repetat e un semn de regression (revalidateTag API broken sau Next
+    // version mismatch), nu un dev-only warn de ignorat.
+    import("@sentry/nextjs").then((Sentry) => {
+      Sentry.captureException(err, {
+        level: "error",
+        tags: { kind: "cache_invalidation", target: "sesizari-stats" },
+      });
+    }).catch(() => { /* sentry missing — accept silent */ });
   }
 }

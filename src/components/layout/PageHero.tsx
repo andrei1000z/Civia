@@ -114,7 +114,7 @@ export function PageHero({
               </div>
             )}
             {tagline && (
-              <p className="hidden sm:inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words">
+              <p className="inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words">
                 <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span>{tagline}</span>
               </p>

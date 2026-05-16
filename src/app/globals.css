@@ -109,10 +109,12 @@
   --shadow-4: 0 8px 24px rgba(0, 0, 0, 0.65), 0 24px 48px rgba(0, 0, 0, 0.45);
   --shadow-5: 0 12px 32px rgba(0, 0, 0, 0.7), 0 32px 64px rgba(0, 0, 0, 0.55);
 
-  /* Glass dark — strong iOS 26 style (5/12/2026) */
+  /* Glass dark — strong iOS 26 style (5/12/2026)
+     Border bump 0.18 → 0.25 ca edge highlight sa fie vizibil pe pure
+     black (OLED). 0.18 era aproape invizibil pe #000000 bg. */
   --glass-bg: rgba(23, 23, 23, 0.42);
   --glass-bg-strong: rgba(23, 23, 23, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.25);
 
   /* Surface variants dark — true-black pentru OLED + soft offset */
   --color-surface-soft: #0F0F10;       /* aproape pure black, sub surface */
@@ -372,6 +374,14 @@ h1 { font-weight: 800; }
 h2 { font-weight: 700; }
 h3 { font-weight: 600; }
 h4 { font-weight: 500; }
+
+/* Focus ring rotund: outline-offset pe `rounded-full` apare patrat. Pe
+   butoanele full-rounded folosim box-shadow inset+outside care urmaresc
+   border-radius-ul. Add: .ring-rotund pe orice <button> sau <a> rotund. */
+.ring-rotund:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary) !important;
+}
 
 /* Custom scrollbar — subtle, theme-aware. Track stays transparent
    so it disappears in screenshots; thumb uses border tone with

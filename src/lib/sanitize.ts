@@ -38,8 +38,11 @@ export async function isValidPdf(file: File): Promise<boolean> {
 }
 
 // Verify image file magic numbers (first bytes)
+// Hard upper bound: 12 MB pentru cazul AftermathForm care permite pre-compress
+// pana la 10 MB. Server-side handlers verifica si limita MAX_UPLOAD_BYTES (5 MB)
+// pentru sesizari, dar isValidImage e folosit si pe alte paths.
 export async function isValidImage(file: File): Promise<boolean> {
-  if (file.size === 0 || file.size > 10 * 1024 * 1024) return false;
+  if (file.size === 0 || file.size > 12 * 1024 * 1024) return false;
   const buf = await file.slice(0, 12).arrayBuffer();
   const bytes = new Uint8Array(buf);
 

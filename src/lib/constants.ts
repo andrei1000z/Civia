@@ -66,14 +66,18 @@ export const NAV_LINKS = [
   { href: "/sesizari", label: "Sesizări", national: true },
   { href: "/petitii", label: "Petiții", national: true },
   { href: "/proteste", label: "Proteste", national: true },
-  { href: "/intreruperi", label: "Întreruperi" },
   { href: "/stiri", label: "Știri" },
   { href: "/ghiduri", label: "Ghiduri", national: true },
 ] as const;
 
-// Dropdown-ul „Explorează" a fost dezintegrat odată cu paginile pe care
-// le conținea. Exports păstrate goale ca să nu spargă imports legacy.
-export const NAV_MORE: Array<{ href: string; label: string; icon: string; nationalOnly?: boolean; countyOnly?: boolean }> = [];
+// „Explorează" dropdown: items care nu se incarca in top-level, dar
+// raman accesibile. Mai bine ascuns aici decat lipsa cu totul.
+export const NAV_MORE: Array<{ href: string; label: string; icon: string; nationalOnly?: boolean; countyOnly?: boolean }> = [
+  { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡" },
+  { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
+  { href: "/judete", label: "Toate județele", icon: "🗺️", nationalOnly: true },
+  { href: "/autoritati", label: "Autorități publice", icon: "🏛️", nationalOnly: true },
+];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];
 
 export const GHID_DROPDOWN = [

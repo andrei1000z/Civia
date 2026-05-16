@@ -30,6 +30,20 @@ function getKey(): string | null {
   return process.env.INDEXNOW_KEY ?? null;
 }
 
+// Track-uim numarul de fail-uri consecutive ca sa nu inundam logs cu warn
+// la fiecare attempt. Loguim doar dupa 3+ fail-uri consecutive (semn de
+// outage real, nu glitch tranzitoriu).
+let consecutiveFailures = 0;
+function recordIndexNowFailure(reason: string) {
+  consecutiveFailures += 1;
+  if (consecutiveFailures >= 3) {
+    console.warn(`[indexnow] ${consecutiveFailures} fail-uri consecutive — ${reason}`);
+  }
+}
+function recordIndexNowSuccess() {
+  consecutiveFailures = 0;
+}
+
 /**
  * Pinguie IndexNow că URL-urile au fost șterse. Engines-urile vor scoate
  * din index aproape instant (Bing claim sub 1h).
@@ -60,13 +74,13 @@ export async function pingIndexNowDeleted(stireIds: string[]): Promise<void> {
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok && res.status !== 202) {
-      console.warn(
-        `[indexnow] ping eșuat: ${res.status} ${await res.text().catch(() => "")}`,
-      );
+      recordIndexNowFailure(`HTTP ${res.status}`);
+    } else {
+      recordIndexNowSuccess();
     }
   } catch (e) {
     // Best-effort: IndexNow e bonus, nu critical path.
-    console.warn("[indexnow] network error:", e);
+    recordIndexNowFailure(`network: ${(e as Error).message}`);
   }
 }
 

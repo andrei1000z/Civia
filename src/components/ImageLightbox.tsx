@@ -47,7 +47,10 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
       aria-modal="true"
       aria-label={`Imagine ${index + 1} din ${urls.length}`}
     >
-      <div className="absolute top-4 right-4 flex gap-2 z-10">
+      <div
+        className="absolute right-4 flex gap-2 z-10"
+        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
+      >
         <button
           type="button"
           onClick={(e) => {

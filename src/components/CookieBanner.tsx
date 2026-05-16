@@ -67,12 +67,12 @@ export function CookieBanner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const consent = readConsent();
-    // Delay 3.5s before first-show. Analytics: prompt-on-load was eating
-    // 28% of bottom-right clicks (FAB, BackToTop, in-page CTAs). A short
-    // delay lets the user start exploring before being asked, which both
-    // reduces blocking AND raises consent quality (informed > pressured).
+    // Delay 1.5s before first-show. Analytics: prompt-on-load era eating
+    // 28% of bottom-right clicks. 3.5s era prea agresiv (utilizatorul
+    // scrollea, eveneementul „pop" intrerupea). 1.5s e under-the-radar:
+    // pagina se asaza, user vede banner-ul cand termina prima privire.
     const showTimer = !consent
-      ? window.setTimeout(() => setVisible(true), 3500)
+      ? window.setTimeout(() => setVisible(true), 1500)
       : null;
 
     const reopen = () => {
