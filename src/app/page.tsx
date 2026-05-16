@@ -4,7 +4,6 @@ import { ArrowRight, TrendingUp, Megaphone, Camera, Send, Sparkles, Users } from
 import { SITE_NAME } from "@/lib/constants";
 import { CountyPicker } from "./CountyPicker";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
-import { SocialProofCounter } from "@/components/home/SocialProofCounter";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
 import { StiriWidget } from "@/components/home/StiriWidget";
@@ -178,11 +177,6 @@ export default async function HomePage() {
 
       {/* LIVE STATS BAR */}
       <LiveStatsBar />
-
-      {/* SOCIAL PROOF — counter live ca utilizatorul sa vada activitate */}
-      <div className="container-narrow flex justify-center -mt-2 mb-6">
-        <SocialProofCounter />
-      </div>
 
       {/* COUNTY PICKER */}
       <section id="county-picker" className="py-12 md:py-16 bg-[var(--color-surface)]">
