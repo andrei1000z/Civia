@@ -18,7 +18,10 @@
 // însemna că user-ii vedeau HTML din cache zile întregi. Acum noul SW
 // preia INSTANT la următoarea navigare. Trade-off: paginile vechi
 // rămase deschise pot rămâne pe assets vechi până la refresh.
-const CACHE_VERSION = "v9";
+// v10 bump: forteaza drop pe cache-urile vechi cand /cont layout fix +
+// prefs sync release intra in productie. User-ii cu PWA installed vor
+// vedea noul UI imediat dupa primul page-load (activate trigger).
+const CACHE_VERSION = "v10";
 const STATIC_CACHE = `civia-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `civia-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `civia-images-${CACHE_VERSION}`;

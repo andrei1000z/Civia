@@ -827,7 +827,7 @@ const inputClass =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <label className="block text-xs font-semibold mb-1.5 text-[var(--color-text-muted)] break-words leading-snug">
+      <label className="block text-[11px] sm:text-xs font-semibold mb-1 text-[var(--color-text-muted)] break-words leading-tight">
         {label}
       </label>
       {children}
@@ -843,8 +843,8 @@ function SectionTitle({
   children: React.ReactNode;
 }) {
   return (
-    <h2 className="text-sm font-bold text-[var(--color-text)] inline-flex items-center gap-1.5 break-words leading-snug">
-      <Icon size={14} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
+    <h2 className="!text-[13px] sm:!text-sm !font-semibold text-[var(--color-text)] inline-flex items-center gap-1.5 break-words leading-tight m-0">
+      <Icon size={13} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
       {children}
     </h2>
   );

@@ -30,6 +30,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
       setUser(data.user);
       setLoading(false);
+      // Page-load cu sesiune existenta: onAuthStateChange NU mai aprinde
+      // SIGNED_IN, deci hydratePreferences nu se executa de acolo. Trigger
+      // manual aici daca avem user — singura cale ca tema/cookie/dismissed
+      // sa sincronizeze cross-device pe revisit.
+      if (data.user && typeof window !== "undefined") {
+        import("@/lib/preferences/sync").then(({ hydratePreferences }) => {
+          hydratePreferences().then((merged) => {
+            window.dispatchEvent(new CustomEvent("civia:prefs-hydrated", { detail: merged }));
+          });
+        }).catch(() => { /* silent */ });
+      }
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event: string, session: Session | null) => {
