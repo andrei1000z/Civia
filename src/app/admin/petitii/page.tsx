@@ -401,7 +401,7 @@ function PetitieForm({
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [restoredBanner, setRestoredBanner] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [aiBusy, setAiBusy] = useState<"slug" | "summary" | null>(null);

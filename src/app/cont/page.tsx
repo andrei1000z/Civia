@@ -124,16 +124,6 @@ export default function ContPage() {
     }
   };
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      openAuthModal();
-      return;
-    }
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]);
-
   const loadData = async () => {
     setLoading(true);
     setLoadError(null);
@@ -176,6 +166,16 @@ export default function ContPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      openAuthModal();
+      return;
+    }
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   const uploadAvatar = async (file: File) => {
     if (!file.type.startsWith("image/")) {

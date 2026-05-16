@@ -105,8 +105,11 @@ export const getImpactDataCached = unstable_cache(
     const admin = createSupabaseAdmin();
     const todayIso = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
 
-    // Helper: apply optional county filter to a query builder chain
-    const withCounty = <T extends { eq: (col: string, val: string) => T }>(q: T): T =>
+    // Helper: apply optional county filter to a query builder chain.
+    // TS2589 cu generic T strict — cast prin any pentru a evita recursie
+    // de tipuri in Supabase v2 builder.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const withCounty = (q: any): any =>
       countyId ? q.eq("county", countyId.toUpperCase()) : q;
 
     const [totalRes, rezolvateRes, inLucruRes, todayRes, byTypeRes, byCountyRes, resolvedDates, topRes, latestRes] =

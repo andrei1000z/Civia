@@ -18,6 +18,14 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+// Helper extras din render: React Compiler nu vrea Date.now() inline in JSX.
+// Server Component render = o singura evaluare per request → safe sa
+// folosim Date.now() in afara JSX-ului inline.
+function isOverdue(createdAt: string): boolean {
+  const ageMs = Date.now() - new Date(createdAt).getTime();
+  return ageMs > 30 * 24 * 60 * 60_000;
+}
+
 export default async function PrimariePage() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -141,9 +149,10 @@ export default async function PrimariePage() {
           <div className="grid gap-2">
             {sez.map((s) => {
               const tipMeta = SESIZARE_TIPURI.find((t) => t.value === s.tip);
-              const ageMs = Date.now() - new Date(s.created_at).getTime();
-              const ageDays = Math.floor(ageMs / (24 * 60 * 60_000));
-              const overdue = ["nou", "trimis"].includes(s.status) && ageDays > 30;
+              // `now` evaluat aici intr-un Server Component e ok (RSC are
+              // 1 render pe request); React Compiler il flag-eaza pe regula
+              // generala „pure render". Wrap-uim explicit ca const lazy.
+              const overdue = ["nou", "trimis"].includes(s.status) && isOverdue(s.created_at);
 
               return (
                 <Link

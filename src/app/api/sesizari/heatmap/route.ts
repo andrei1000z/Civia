@@ -28,7 +28,10 @@ export async function GET(req: Request): Promise<NextResponse> {
   }
 
   const admin = createSupabaseAdmin();
-  let query = admin
+  // Supabase v2 type chain devine ~50-deep dupa .eq().eq().not() — TS 5.x
+  // produce TS2589 „excessively deep". Tipam ca any local; runtime e OK.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = admin
     .from("sesizari")
     .select("sector, status")
     .eq("publica", true)
@@ -36,12 +39,13 @@ export async function GET(req: Request): Promise<NextResponse> {
     .not("sector", "is", null);
 
   if (!includeAll) {
-    // By default arătăm doar sesizările active (not final) ca să vedem
-    // probleme curente, nu istoric complet.
     query = query.not("status", "in", "(rezolvat,respins)");
   }
 
-  const { data, error } = await query;
+  const { data, error } = (await query) as {
+    data: Array<{ sector: string | null; status: string }> | null;
+    error: { message: string } | null;
+  };
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
