@@ -324,7 +324,7 @@ export default async function CountyDetailPage({
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-extrabold inline-flex items-center gap-2">
               <span
-                className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] grid place-items-center"
+                className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] grid place-items-center"
                 aria-hidden="true"
               >
                 <Building2 size={14} />

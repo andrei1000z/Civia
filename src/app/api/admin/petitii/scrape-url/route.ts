@@ -43,7 +43,7 @@ async function rehostImage(srcUrl: string): Promise<string | null> {
     if (arrayBuffer.byteLength > 8 * 1024 * 1024) return null;
 
     const supabase = await createSupabaseServer();
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
     const path = `public/petitii/${filename}`;
     const { error } = await supabase.storage
       .from("sesizari-photos")

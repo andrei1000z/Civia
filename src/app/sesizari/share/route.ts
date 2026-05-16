@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       const validMagic = await isValidImage(photo);
       if (validMagic) {
         const ext = EXT_FROM_MIME[photo.type] ?? "jpg";
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
         const path = `public/${filename}`;
         const supabase = await createSupabaseServer();
         const arrayBuffer = await photo.arrayBuffer();

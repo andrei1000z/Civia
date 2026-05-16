@@ -43,6 +43,13 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     // Cache-ul imaginilor optimizate la edge — 30 zile (default e 60s).
     minimumCacheTTL: 2592000,
+    // SSRF hardening: SVG poate conține <script> + foreignObject → off.
+    // contentDispositionType "attachment" obligă browserul să descarce
+    // răspunsul, niciodată să-l execute inline → previne SVG XSS chiar
+    // dacă cineva forțează un Content-Type spoof prin redirect.
+    dangerouslyAllowSVG: false,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   /**
    * NU mai facem redirect www↔apex la nivel Next.js. Vercel-ul are

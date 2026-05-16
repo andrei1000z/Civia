@@ -390,7 +390,7 @@ export function AnalyticsDashboard() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/analytics/sessions"
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] hover:bg-[var(--color-primary)] hover:text-white text-xs font-medium transition-colors"
           >
             <Users size={14} />
             Sesiuni vizitatori

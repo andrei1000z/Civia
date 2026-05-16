@@ -11,10 +11,10 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  primary: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
-  secondary: "bg-[var(--color-secondary-soft)] text-[var(--color-secondary)]",
-  accent: "bg-[var(--color-accent-soft)] text-[var(--color-accent)]",
-  neutral: "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]",
+  primary: "bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]",
+  secondary: "bg-[var(--color-secondary-soft)] text-[var(--color-secondary-on-soft)]",
+  accent: "bg-[var(--color-accent-soft)] text-[var(--color-accent-on-soft)]",
+  neutral: "bg-[var(--color-surface-2)] text-[var(--color-text)]",
   warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
 };

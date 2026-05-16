@@ -429,7 +429,7 @@ export default async function StireDetailPage({
         <div className="mt-12">
           <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-bold mb-5 inline-flex items-center gap-2">
             <span
-              className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] grid place-items-center"
+              className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] grid place-items-center"
               aria-hidden="true"
             >
               <Tag size={13} />

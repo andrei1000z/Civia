@@ -55,7 +55,7 @@ export function ThemeSettings() {
             className={cn(
               "relative flex flex-col items-center justify-center gap-1.5 h-20 rounded-[var(--radius-xs)] border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
               isActive
-                ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-2)]",
             )}
           >

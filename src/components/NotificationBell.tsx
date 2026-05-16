@@ -354,9 +354,9 @@ export function NotificationBell() {
                   <div
                     className={cn(
                       "w-8 h-8 shrink-0 rounded-full flex items-center justify-center",
-                      n.type === "comment" && "bg-blue-100 text-blue-700",
-                      n.type === "status" && "bg-emerald-100 text-emerald-700",
-                      n.type === "verify" && "bg-amber-100 text-amber-700"
+                      n.type === "comment" && "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+                      n.type === "status" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+                      n.type === "verify" && "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
                     )}
                   >
                     {n.type === "comment" ? <MessageCircle size={16} /> : <CheckCircle2 size={16} />}

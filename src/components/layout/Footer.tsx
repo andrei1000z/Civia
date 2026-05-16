@@ -56,6 +56,7 @@ export function Footer() {
               Despre Civia
             </h4>
             <ul className="space-y-2 text-sm">
+              <li><Link href="/clasament" className={linkCls}>Clasament Fix Score</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><CookiePreferencesButton /></li>

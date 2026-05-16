@@ -119,11 +119,19 @@ export function SignSesizareButton({
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
     setStep("send");
-    // Record the co-sign on the server so it shows up in the timeline
-    // of everyone following the sesizare — "A mai depus cineva pe
-    // {data} la {ora}". Fire-and-forget; a failure here shouldn't block
-    // the send flow.
-    fetch(`/api/sesizari/${code}/cosign`, { method: "POST" }).catch(() => { /* silent */ });
+    // Record the IDENTIFIED co-sign on the server. Persistă numele +
+    // city + (optional) email în `sesizare_cosigners` ca primăria să
+    // vadă explicit cine co-semnează. Fire-and-forget; eroarea aici
+    // nu blochează send-ul.
+    fetch(`/api/sesizari/${code}/cosign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email || null,
+        city: data.address || null,
+      }),
+    }).catch(() => { /* silent */ });
   };
 
   const canContinue = data.name.length >= 2 && data.address.length >= 3;

@@ -154,7 +154,7 @@ function CountyIstoric({ countyName, countySlug, countyId }: { countyName: strin
       {/* Current mayor */}
       <section className="mb-12">
         <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] flex items-center justify-center">
             <Users size={20} />
           </div>
           Primar in functie
@@ -196,7 +196,7 @@ function CountyIstoric({ countyName, countySlug, countyId }: { countyName: strin
       {/* Admin structure */}
       <section className="mb-12">
         <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] flex items-center justify-center">
             <Building2 size={20} />
           </div>
           Despre administratia locala

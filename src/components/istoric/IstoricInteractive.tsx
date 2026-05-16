@@ -99,7 +99,7 @@ export function IstoricInteractive({ primari }: Props) {
           <Filter size={16} className="text-[var(--color-text-muted)]" />
           <span className="text-sm font-medium">Filtrează</span>
           {compareIds.length > 0 && (
-            <span className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] text-xs font-medium">
+            <span className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] text-xs font-medium">
               <GitCompare size={12} />
               {compareIds.length}/2 selectați pentru comparare
               <button onClick={() => setCompareIds([])} className="ml-1 opacity-60 hover:opacity-100">

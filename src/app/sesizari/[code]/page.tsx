@@ -19,6 +19,7 @@ import { VoteButtons } from "@/components/sesizari/VoteButtons";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
+import { CosignersBadge } from "@/components/sesizari/CosignersBadge";
 import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
@@ -199,6 +200,7 @@ export default async function SesizareDetailPage({
                 <time dateTime={sesizare.created_at}>{formatDate(sesizare.created_at)}</time>
               </span>
             </div>
+            <CosignersBadge code={sesizare.code} />
             <div className="flex flex-wrap gap-2">
               <SignSesizareButton
                 tip={sesizare.tip}
@@ -274,7 +276,7 @@ export default async function SesizareDetailPage({
           <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
             <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
               <span
-                className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] grid place-items-center"
+                className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] grid place-items-center"
                 aria-hidden="true"
               >
                 <FileText size={13} />

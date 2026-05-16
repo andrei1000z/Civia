@@ -220,7 +220,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
           "image/gif": "gif",
         };
         const ext = extMap[f.type] ?? "jpg";
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
         const path = `public/${filename}`;
         const { error: upErr } = await supabase.storage
           .from("sesizari-photos")
@@ -284,7 +284,7 @@ export function AftermathForm({ slug, protestTitle: _protestTitle }: Props) {
       const supabase = createSupabaseBrowser();
       const ext =
         file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : "mov";
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
       const path = `public/${filename}`;
 
       const { error: upErr } = await supabase.storage

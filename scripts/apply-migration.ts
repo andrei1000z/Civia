@@ -4,7 +4,8 @@ import { config } from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-config({ path: ".env.local" });
+import { existsSync } from "fs";
+config({ path: existsSync(".env.vercel.local") ? ".env.vercel.local" : ".env.local" });
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

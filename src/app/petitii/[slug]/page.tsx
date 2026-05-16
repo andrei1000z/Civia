@@ -251,7 +251,7 @@ export default async function PetitiePage({
           >
             <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-2 transition-colors">
               <span
-                className="w-5 h-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] grid place-items-center text-[var(--color-text-muted)] group-open:bg-[var(--color-primary-soft)] group-open:text-[var(--color-primary)] transition-colors"
+                className="w-5 h-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] grid place-items-center text-[var(--color-text-muted)] group-open:bg-[var(--color-primary-soft)] group-open:text-[var(--color-primary-on-soft)] transition-colors"
                 aria-hidden="true"
               >
                 <span className="group-open:rotate-90 transition-transform inline-block">▸</span>

@@ -711,7 +711,7 @@ function PetitieForm({
             className={cn(
               "inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-xs)] border text-xs font-medium transition-colors",
               showPreview
-                ? "bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30 text-[var(--color-primary)]"
+                ? "bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30 text-[var(--color-primary-on-soft)]"
                 : "bg-[var(--color-surface-2)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
             )}
           >

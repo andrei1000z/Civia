@@ -6,10 +6,13 @@
   --color-primary: #059669;
   --color-primary-hover: #047857;
   --color-primary-soft: #d1fae5;
+  --color-primary-on-soft: #065f46;
   --color-secondary: #0891b2;
   --color-secondary-soft: #cffafe;
+  --color-secondary-on-soft: #155e75;
   --color-accent: #DC2626;
   --color-accent-soft: #fee2e2;
+  --color-accent-on-soft: #991b1b;
 
   --color-bg: #FAFAFA;
   --color-surface: #FFFFFF;
@@ -75,10 +78,13 @@
   --color-primary: #10b981;
   --color-primary-hover: #34d399;
   --color-primary-soft: #064e3b;
+  --color-primary-on-soft: #a7f3d0;
   --color-secondary: #22d3ee;
   --color-secondary-soft: #083344;
+  --color-secondary-on-soft: #a5f3fc;
   --color-accent: #ef4444;
   --color-accent-soft: #7f1d1d;
+  --color-accent-on-soft: #fecaca;
 
   /* OLED true-black bg (#000000) în loc de #0a0a0a — economie de baterie
      pe ecrane AMOLED + un look „premium black" specific One UI 8.5.
@@ -117,10 +123,13 @@
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
   --color-primary-soft: var(--color-primary-soft);
+  --color-primary-on-soft: var(--color-primary-on-soft);
   --color-secondary: var(--color-secondary);
   --color-secondary-soft: var(--color-secondary-soft);
+  --color-secondary-on-soft: var(--color-secondary-on-soft);
   --color-accent: var(--color-accent);
   --color-accent-soft: var(--color-accent-soft);
+  --color-accent-on-soft: var(--color-accent-on-soft);
 
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);

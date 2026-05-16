@@ -39,7 +39,7 @@ export function InteractiveOrgChart() {
               onClick={() => setSelected(d)}
               className={cn(
                 "bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] px-3 py-2 text-center text-xs font-medium",
-                "hover:bg-[var(--color-primary-soft)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all",
+                "hover:bg-[var(--color-primary-soft)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary-on-soft)] transition-all",
                 "cursor-pointer"
               )}
               title="Click pentru detalii"

@@ -42,9 +42,11 @@ export async function generateStaticParams() {
   return ALL_COUNTIES.map((c) => ({ judet: c.slug }));
 }
 
-// Live data — sesizări + știri + interruptions counts. ISR 5 min keeps
-// the page fresh without ballooning Vercel function-invocation costs.
-export const revalidate = 300;
+// Live data — sesizări + știri + interruptions counts. ISR 30 min (la 5 min
+// se regenera continuu pentru 42 județe × API hits = thrash + Vercel costs).
+// Cache-ul se invalidează on-demand via revalidatePath() când se publică o
+// sesizare nouă (vezi `invalidateSesizariCache` în lib/cached-queries.ts).
+export const revalidate = 1800;
 
 // Hero photo per oraș mare. Fallback gradient pur pentru județele
 // fără poză custom (codul condiționează existența cheii în map).

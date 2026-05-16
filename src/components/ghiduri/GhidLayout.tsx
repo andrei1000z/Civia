@@ -103,7 +103,7 @@ export function GhidLayout({
                   className={cn(
                     "block px-3 py-2 rounded-[var(--radius-xs)] text-sm transition-all border-l-2",
                     activeChapter === ch.id
-                      ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)] font-medium border-[var(--color-primary)]"
+                      ? "bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] font-medium border-[var(--color-primary)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] border-transparent hover:bg-[var(--color-surface-2)]"
                   )}
                 >

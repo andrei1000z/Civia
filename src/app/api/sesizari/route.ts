@@ -14,16 +14,13 @@ import { polishSesizare } from "@/lib/sesizari/polish";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { SESIZARE_TIPURI } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-const VALID_TIPURI = [
-  "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
-  "stalpisori", "canalizare", "semafor", "pietonal",
-  "graffiti", "mobilier", "zgomot", "animale", "transport",
-  "afisaj",
-  "altele",
-] as const;
+// Single source of truth: SESIZARE_TIPURI din src/lib/constants.ts.
+type Tip = (typeof SESIZARE_TIPURI)[number]["value"];
+const VALID_TIPURI = SESIZARE_TIPURI.map((t) => t.value) as readonly Tip[] as [Tip, ...Tip[]];
 
 // Lenient validation: accept empty strings for optional fields
 const createSchema = z.object({
