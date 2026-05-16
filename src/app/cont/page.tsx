@@ -401,7 +401,7 @@ export default function ContPage() {
           {completionPct < 100 && (
             <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 break-words">
                   Profil {completionPct}% complet
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
@@ -678,8 +678,8 @@ export default function ContPage() {
 
       {/* ─── GDPR footer ─────────────────────────────────────────── */}
       <div className="mt-14 pt-8 border-t border-[var(--color-border)]">
-        <h3 className="text-sm font-semibold mb-2 text-[var(--color-text)] uppercase tracking-wider flex items-center gap-2">
-          <ShieldCheck size={14} className="text-[var(--color-primary)]" aria-hidden="true" />
+        <h3 className="text-sm font-semibold mb-2 text-[var(--color-text)] break-words inline-flex items-center gap-2">
+          <ShieldCheck size={14} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
           Drepturile tale (GDPR)
         </h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-4 max-w-2xl leading-relaxed">
