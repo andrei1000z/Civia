@@ -27,11 +27,12 @@ const REDIRECT_EXACT = new Set([
 // Rute sterse care apar inca in analytics (Reddit, Google cache, share-uri
 // vechi). Redirect 308 catre destinatii utile in loc de 404.
 // Update 2026-05-13 dupa audit analytics: /aer, /b/aer, /harti, /b/harti,
-// /cj/harti, /dezvoltatori, /buget, /compara, /calendar-civic, /impact.
+// /cj/harti, /buget, /compara, /calendar-civic, /impact.
+// 2026-05-16: /dezvoltatori a fost reintrodusa (public API v2) — scoasa
+// din LEGACY_REDIRECTS.
 const LEGACY_REDIRECTS: Record<string, string> = {
   "/harti": "/",
   "/aer": "/",
-  "/dezvoltatori": "/",
   "/buget": "/",
   "/compara": "/judete",
   "/calendar-civic": "/proteste",
