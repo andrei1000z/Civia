@@ -214,20 +214,22 @@ export function StiriList() {
                 </button>
               ))}
             </div>
-            <div className="relative flex-1 sm:w-64">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none"
-                size={16}
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Caută în titlu..."
-                aria-label="Caută în titlurile știrilor"
-                className="w-full h-10 pl-9 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              />
+            <div className="flex-1 sm:w-64 lg:self-start">
+              <div className="relative h-10">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none"
+                  size={16}
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Caută în titlu..."
+                  aria-label="Caută în titlurile știrilor"
+                  className="w-full h-10 pl-9 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -296,10 +298,15 @@ export function StiriList() {
               href={`/stiri/${featured.id}`}
               className="group block mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-2)] overflow-hidden hover:shadow-[var(--shadow-4)] hover:-translate-y-0.5 transition-all"
             >
-              <div className="grid md:grid-cols-[1.2fr_1fr]">
+              <div className="grid md:grid-cols-[1.2fr_1fr] md:items-stretch">
                 <div
                   className={cn(
-                    "relative h-56 sm:h-72 md:h-auto md:min-h-[360px] bg-gradient-to-br",
+                    // Aspect-video pe mobile (16:9 garantat sa match-uiasca
+                    // imagini de presa). Pe md+, lasam grid sa stretchuiasca
+                    // dar fortam min-height egal cu text col via h-full +
+                    // self-stretch. Combo asta elimina banda pink/violet care
+                    // aparea cand text col era mai inalt decat min-h-[360px].
+                    "relative aspect-video md:aspect-auto md:h-full md:self-stretch bg-gradient-to-br overflow-hidden",
                     sourceGradients[featured.source] ?? "from-slate-600 to-slate-800"
                   )}
                 >
@@ -308,12 +315,12 @@ export function StiriList() {
                     <img
                       src={featured.image_url}
                       alt={featured.title}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      // LCP candidate pe /stiri — eager + fetchpriority high
-                      // ca să se descarce în primul bath de resurse.
-                      // opacity-90 scos 2026-05-15: lasa gradientul sursei
-                      // (roz/violet) sa transpara la fund, parea ca imaginea
-                      // nu acopera tot cardul.
+                      // object-position center top: cand imaginea e mai
+                      // mica decat containerul (cazul Gândul TV broadcast
+                      // cu ticker pe jos), cropul se duce in josul imaginii
+                      // ca sa pastram fețele / acțiunea principala vizibila.
+                      // scale-110 minor zoom-in ca sa elimine gap-uri marginale.
+                      className="absolute inset-0 w-full h-full object-cover object-center scale-[1.02]"
                       loading="eager"
                       fetchPriority="high"
                       onError={(e) => (e.currentTarget.style.display = "none")}
@@ -364,7 +371,11 @@ export function StiriList() {
               >
                 <div
                   className={cn(
-                    "relative h-40 bg-gradient-to-br",
+                    // aspect-video pe toate viewport-urile garanteaza 16:9
+                    // match cu majoritatea imaginilor de presa. Inlocuieste
+                    // h-40 fixed care la imagini portrait/ultra-wide lasa
+                    // gap-uri vizibile cu gradient-ul source.
+                    "relative aspect-video bg-gradient-to-br overflow-hidden",
                     sourceGradients[stire.source] ?? "from-slate-600 to-slate-800"
                   )}
                 >
@@ -375,7 +386,9 @@ export function StiriList() {
                       alt={stire.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover opacity-90"
+                      // opacity-90 scos: lasa gradientul sursei sa transpara
+                      // si producea acelasi „cadran roz" peste image content.
+                      className="object-cover object-center"
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLElement).style.display = "none";
