@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
+import { repairJsonStrings, extractFieldsRegex } from "@/lib/groq/json-repair";
 import { PETITIE_CATEGORII } from "@/lib/constants";
 
 const ALLOWED_IMAGE_MIME: Record<string, string> = {
@@ -165,6 +166,8 @@ function resolveUrl(maybeRel: string, base: string): string {
 
 const CATEGORY_VALUES = PETITIE_CATEGORII.map((c) => c.value).join(", ");
 
+const PETITIE_FIELDS = ["title", "summary", "body", "category", "slug", "county_code"] as const;
+
 const EXTRACT_PROMPT = (
   url: string,
   rawTitle: string | null,
@@ -273,25 +276,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3) Send to Groq for structured extraction
+    // 3) Send to Groq for structured extraction.
+    // Folosim GROQ_MODEL (llama-3.3-70b-versatile) NU FAST. Modelul 8B
+    // sparge JSON-ul random pe petitii lungi (genereaza `\\n` literal in
+    // loc de `\n` escape, lui Groq json validator nu-i place).
     const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL_FAST,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Ești un asistent care extrage metadata structurată din petiții civice românești. Răspunzi DOAR cu JSON valid — fără markdown, fără text adițional.",
-        },
-        { role: "user", content: EXTRACT_PROMPT(url, rawTitle, ogDescription, mainText) },
-      ],
-      temperature: 0.2,
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
-    });
-
-    const raw = completion.choices[0]?.message?.content?.trim() ?? "";
-    let parsed: {
+    type ParsedExtract = {
       title?: string;
       summary?: string;
       body?: string;
@@ -299,24 +289,62 @@ export async function POST(req: Request) {
       slug?: string;
       county_code?: string;
     };
+    let parsed: ParsedExtract;
+    let raw = "";
     try {
+      const completion = await groq.chat.completions.create({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Esti un asistent care extrage metadata structurata din petitii civice romanesti. Raspunzi DOAR cu JSON valid — fara markdown, fara text aditional. Escape-eaza newlines ca \\n in interiorul stringurilor, NICIODATA literal newline sau \\\\n.",
+          },
+          { role: "user", content: EXTRACT_PROMPT(url, rawTitle, ogDescription, mainText) },
+        ],
+        temperature: 0.2,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+      });
+      raw = completion.choices[0]?.message?.content?.trim() ?? "";
       parsed = JSON.parse(raw);
-    } catch {
-      // Try to recover JSON from a code block
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (!m) {
+    } catch (err) {
+      // Groq returneaza json_validate_failed (400) cand modelul produce
+      // JSON malformat (cazul tipic: `\\n` literal in strings). SDK pune
+      // payload-ul Groq in err.error sau err.body. Recuperam textul brut
+      // din `failed_generation` si repairam manual.
+      let failedRaw: string | null = null;
+      if (err && typeof err === "object") {
+        // groq-sdk APIError -> { error: { failed_generation: "..." } } sau status 400 cu body
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const e = err as any;
+        failedRaw =
+          e?.error?.failed_generation
+          ?? e?.error?.error?.failed_generation
+          ?? e?.response?.data?.error?.failed_generation
+          ?? null;
+      }
+      const repairCandidate = failedRaw ?? raw;
+      if (!repairCandidate) {
         return NextResponse.json(
-          { error: "AI a returnat răspuns malformed — încearcă din nou" },
+          { error: "AI nu a putut genera JSON valid. Reincearca." },
           { status: 502 },
         );
       }
+
+      const repaired = repairJsonStrings(repairCandidate);
       try {
-        parsed = JSON.parse(m[0]);
+        parsed = JSON.parse(repaired) as ParsedExtract;
       } catch {
-        return NextResponse.json(
-          { error: "AI a returnat JSON invalid" },
-          { status: 502 },
-        );
+        // Last resort: extrage cu regex câmpurile principale din raw text.
+        const fields = extractFieldsRegex(repairCandidate, PETITIE_FIELDS);
+        if (!fields.title && !fields.body) {
+          return NextResponse.json(
+            { error: "AI a returnat JSON invalid si nu am putut repara automat." },
+            { status: 502 },
+          );
+        }
+        parsed = fields as ParsedExtract;
       }
     }
 
