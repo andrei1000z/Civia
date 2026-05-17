@@ -314,9 +314,9 @@ export default function ContPage() {
   const completionPct = Math.round((completedCount / completionChecks.length) * 100);
 
   return (
-    <div className="container-narrow py-10 md:py-14">
+    <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
       {/* ─── Header strip ─────────────────────────────────────────── */}
-      <header className="relative mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
+      <header className="relative mb-4 sm:mb-6 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
         <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="absolute -bottom-16 -left-8 w-72 h-72 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
@@ -327,10 +327,10 @@ export default function ContPage() {
                 <img
                   src={form.avatar_url}
                   alt=""
-                  className="w-20 h-20 rounded-full object-cover ring-4 ring-white/30 shadow-lg"
+                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover ring-2 sm:ring-4 ring-white/30 shadow-lg"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm ring-4 ring-white/30 grid place-items-center text-3xl font-bold shadow-lg">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-lg">
                   {initial}
                 </div>
               )}
@@ -338,7 +338,7 @@ export default function ContPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white text-[var(--color-primary)] grid place-items-center shadow-md hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50"
+                className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-[var(--color-primary)] grid place-items-center shadow-md hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50"
                 aria-label="Schimbă poza de profil"
                 title="Schimbă poza de profil"
               >
@@ -359,11 +359,11 @@ export default function ContPage() {
                 className="hidden"
               />
             </div>
-            <div className="min-w-0">
-              <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-extrabold leading-tight">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-[family-name:var(--font-sora)] text-lg sm:text-2xl md:text-3xl font-extrabold leading-tight break-words">
                 Salut, {profile?.display_name?.split(" ")[0] ?? "Cetățean"}!
               </h1>
-              <p className="text-sm text-white/80 truncate max-w-[260px] md:max-w-md">
+              <p className="text-xs sm:text-sm text-white/80 truncate">
                 {profile?.email}
               </p>
               {form.avatar_url && (
@@ -386,10 +386,11 @@ export default function ContPage() {
               toast("Te-ai deconectat. La revedere!", "info");
               router.push("/");
             }}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-full)] bg-white/15 backdrop-blur-sm border border-white/30 text-sm font-medium hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Deconectare"
+            className="shrink-0 inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-4 rounded-[var(--radius-full)] bg-white/15 backdrop-blur-sm border border-white/30 text-xs sm:text-sm font-medium hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <LogOut size={14} aria-hidden="true" />
-            Deconectare
+            <span className="hidden sm:inline">Deconectare</span>
           </button>
         </div>
       </header>
@@ -399,12 +400,12 @@ export default function ContPage() {
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-5">
           {/* Profile completion nudge */}
           {completionPct < 100 && (
-            <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 break-words">
+            <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
+                <span className="text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400 break-words min-w-0">
                   Profil {completionPct}% complet
                 </span>
-                <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
+                <span className="text-[11px] sm:text-xs text-[var(--color-text-muted)] tabular-nums shrink-0">
                   {completedCount}/{completionChecks.length}
                 </span>
               </div>
