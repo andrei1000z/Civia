@@ -28,10 +28,36 @@ if (!url || !key) {
 
 const mode = process.argv[2] === "apply" ? "apply" : "dry-run";
 
+const TRANSITIONS = [
+  "Pentru a rezolva",
+  "Având în vedere",
+  "De asemenea",
+  "În temeiul",
+  "În sprijinul",
+  "În acest sens",
+  "În scopul",
+  "Vă mulțumesc",
+  "Cu stimă",
+  "Cu respect",
+];
+
 function reformat(text: string): string {
   let t = text.replace(/\r\n/g, "\n");
-  // Sparge numerotare inline (1. ... 2. ... 3. ...).
-  t = t.replace(/(\.\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
+  // Sparge numerotare inline (1. ... 2. ... 3. ...) si dupa colon (după
+  // ": 1. ...").
+  t = t.replace(/([.:]\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
+  // Sparge frazele de tranziție inline.
+  for (const phrase of TRANSITIONS) {
+    const re = new RegExp(`(\\.\\s)(${phrase})`, "g");
+    t = t.replace(re, "$1\n\n$2");
+  }
+  // Salut: „Bună ziua, Mă numesc..." → linii separate
+  t = t.replace(/(Bună ziua,)\s+(Mă numesc)/g, "$1\n\n$2");
+  // Semnatura: „Cu stimă, NUME DATA" → fiecare pe linie proprie
+  t = t.replace(
+    /(Cu (?:stimă|respect),)\s+([^\n]+?)\s+(\d{1,2}\s+\w+\s+\d{4})$/m,
+    "$1\n$2\n$3",
+  );
   // Collapse triple+ newlines la 2.
   t = t.replace(/\n{3,}/g, "\n\n");
   return t.trim();

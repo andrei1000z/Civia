@@ -49,10 +49,26 @@ const MAX_PHOTOS = 5;
 const PARAGRAPH_STARTS = [
   /^Bună ziua/i,
   /^Subsemnatul/i,
+  /^Mă numesc/i,
   /^Vă aduc la cunoștință/i,
   /^Vă propun/i,
   /^Vă mulțumesc/i,
   /^Cu (respect|stimă)/i,
+  /^Pentru a rezolva/i,
+  /^Având în vedere/i,
+  /^De asemenea/i,
+  /^În temeiul/i,
+  /^În sprijinul/i,
+  /^În acest sens/i,
+  /^În scopul/i,
+  /^În ultima perioadă/i,
+  /^Recent am/i,
+  /^Astăzi am/i,
+  /^De câteva (zile|săptămâni)/i,
+  /^De multă vreme/i,
+  /^De luni de zile/i,
+  // Numbered list items — fiecare pe propria linie.
+  /^\d{1,2}\.\s+[A-ZĂÂÎȘȚ]/,
 ];
 
 function stripMarkdown(text: string): string {
@@ -79,10 +95,42 @@ function normalizeFormatting(text: string): string {
 
   // Sparge numerotare inline: cand AI emite „1. ... 2. ... 3. ..." pe
   // aceeasi linie, le rupe pe linii separate ca sa fie lizibile in render.
-  // Pattern: caracter „. " urmat de cifra+„. " in mijloc de linie → newline.
-  // Numai cand cifra urmatoare apare DUPA un cuvant (nu la inceput de
-  // text), evitand sa rup data calendaristica gen „18 mai 2026".
-  t = t.replace(/(\.\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
+  // Pattern: caracter „. " sau „: " urmat de cifra+„. " in mijloc → newline.
+  // Lookahead pe litera mare romaneasca → evita data calendaristica gen
+  // „18 mai 2026" (litera dupa cifre e mica).
+  t = t.replace(/([.:]\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
+
+  // Sparge frazele de tranzitie inline („Pentru a rezolva...", „De
+  // asemenea...", „În temeiul...", „Vă mulțumesc...", „Cu stimă...") cand
+  // apar imediat dupa punct/colon fara newline.
+  const TRANSITIONS = [
+    "Pentru a rezolva",
+    "Având în vedere",
+    "De asemenea",
+    "În temeiul",
+    "În sprijinul",
+    "În acest sens",
+    "În scopul",
+    "Vă mulțumesc",
+    "Cu stimă",
+    "Cu respect",
+  ];
+  for (const phrase of TRANSITIONS) {
+    const re = new RegExp(`(\\.\\s)(${phrase})`, "g");
+    t = t.replace(re, "$1\n\n$2");
+  }
+
+  // Salut: „Bună ziua, Mă numesc..." — rupere DUPA virgula intre salut +
+  // deschidere („Bună ziua," ramane pe linia 1, „Mă numesc" incepe paragraf nou).
+  t = t.replace(/(Bună ziua,)\s+(Mă numesc)/g, "$1\n\n$2");
+
+  // Semnatura: „Cu stimă, {NUME} {DATA}" — numele si data pe linii separate.
+  // Match „Cu stimă, X Y Z DD mmm YYYY" → fiecare pe propria linie.
+  // Heuristic: dupa „Cu stimă," numele e pana la cifra primei date.
+  t = t.replace(
+    /(Cu (?:stimă|respect),)\s+([^\n]+?)\s+(\d{1,2}\s+\w+\s+\d{4})$/m,
+    "$1\n$2\n$3",
+  );
 
   // Collapse 3+ newlines → exactly 2
   t = t.replace(/\n{3,}/g, "\n\n");
