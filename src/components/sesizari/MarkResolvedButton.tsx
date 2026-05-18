@@ -45,17 +45,15 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
   }, [open]);
 
   if (status === "rezolvat") return null;
+  // 2026-05-18: doar autorul vede butonul (cetatenii non-author n-au
+  // ce face cu el). Pana acum se afisa la toata lumea cu mesaj de eroare.
+  if (!isAuthor) return null;
 
   const canResolve = !!user && isAuthor;
 
   const handleClick = () => {
     if (!user) {
       openAuthModal();
-      return;
-    }
-    if (!canResolve) {
-      setError("Doar autorul poate marca sesizarea ca rezolvată.");
-      setTimeout(() => setError(null), 4000);
       return;
     }
     setOpen(true);

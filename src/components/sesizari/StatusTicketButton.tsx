@@ -246,13 +246,25 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
               </div>
 
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
-                  Dovadă (opțional, dar puternic)
-                </p>
+                {proposed === "rezolvat" ? (
+                  <div className="rounded-[var(--radius-xs)] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 p-3 mb-2">
+                    <p className="text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300 font-bold mb-1">
+                      📸 Poză cu rezolvarea (recomandat)
+                    </p>
+                    <p className="text-[11px] text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                      O poză cu cum arată ACUM (groapa astupată, trotuarul liber, stâlpișorul montat, etc) face propunerea de „rezolvat" mult mai credibilă. Admin-ul aprobă mult mai rapid cu dovadă vizuală.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
+                    Dovadă (opțional, dar puternic)
+                  </p>
+                )}
                 <DocumentUploader url={proof} onChange={setProof} />
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                  Poză cu intervenția, captură cu emailul, sau PDF cu
-                  răspunsul oficial al instituției.
+                  {proposed === "rezolvat"
+                    ? "Foto „after” cu zona rezolvată — primăria n-o mai poate contesta."
+                    : "Poză cu intervenția, captură cu emailul, sau PDF cu răspunsul oficial al instituției."}
                 </p>
               </div>
 

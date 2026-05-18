@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, Link as LinkIcon, Check, ChevronDown, X } from "lucide-react";
+import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ShareButton } from "./ShareButton";
 import { OverdueBadge } from "./OverdueBadge";
@@ -51,7 +51,6 @@ export function SesizariPublice() {
   );
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [copied, setCopied] = useState(false);
   // Filtre collapsed default. Deschise automat daca user are filtru activ
   // (ex: a venit din /sesizari?tip=parcare → filtrul e vizibil instant).
   const hasActiveFilter =
@@ -78,14 +77,6 @@ export function SesizariPublice() {
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [filterTip, filterStatus, filterCounty, sort, view, router, pathname, county]);
-
-  const copyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch { /* ignore */ }
-  };
 
   // Resolved county filter: route-scoped county wins, otherwise the
   // dropdown selection. When neither is set the API receives no county
@@ -330,7 +321,6 @@ export function SesizariPublice() {
                 {totalCount !== null
                   ? `${totalCount.toLocaleString("ro-RO")} sesizări pe Civia`
                   : `${filtered.length} sesizări`}
-                {" · 🔴 live"}
               </span>
               {pendingNew > 0 && (
                 <button
@@ -343,39 +333,18 @@ export function SesizariPublice() {
                 </button>
               )}
             </span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={copyUrl}
-                className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline font-medium"
-                title="Copiază link cu filtrul curent"
-              >
-                {copied ? <Check size={11} /> : <LinkIcon size={11} />}
-                {copied ? "Link copiat" : "Copiază link"}
-              </button>
-              {(() => {
-                const params = new URLSearchParams();
-                if (filterTip !== "toate") params.set("tip", filterTip);
-                if (filterStatus !== "toate") params.set("status", filterStatus);
-                if (effectiveCounty) params.set("county", effectiveCounty);
-                const exportUrl = `/api/sesizari/export?${params.toString()}`;
-                return (
-                  <a
-                    href={exportUrl}
-                    className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline font-medium"
-                    title="Descarcă CSV cu filtrul curent"
-                  >
-                    📥 Export CSV
-                  </a>
-                );
-              })()}
-            </div>
           </div>
         </div>
       )}
 
 
 
-      {view === "map" && filtered.length > 0 ? (
+      {view === "map" ? (
+        // Hartă mereu vizibila in modul map, indiferent de filtru. Daca
+        // filtered.length = 0 (filtru fara rezultate sau loading initial),
+        // hartă rămane afișata cu zona implicita iar lista de marker e
+        // goala — preveneste flickering-ul cand filtered momentan 0 →
+        // map dispare → error boundary catch → loop infinit retry.
         <SesizariMap limit={50} height="600px" zoom={12} />
       ) : loading && rows.length === 0 ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">

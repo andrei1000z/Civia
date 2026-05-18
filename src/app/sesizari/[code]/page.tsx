@@ -31,7 +31,6 @@ import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
 import { OverdueBadge } from "@/components/sesizari/OverdueBadge";
 import { ReminderButton } from "@/components/sesizari/ReminderButton";
-import { StreetFollowButton } from "@/components/sesizari/StreetFollowButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { GovernmentServiceJsonLd } from "@/components/JsonLd";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
@@ -187,10 +186,6 @@ export default async function SesizareDetailPage({
                 <MapPin size={12} aria-hidden="true" />
                 {sesizare.locatie}
               </span>
-              <StreetFollowButton
-                locatie={sesizare.locatie}
-                county={sesizare.county ?? "b"}
-              />
               <span className="inline-flex items-center gap-1.5">
                 <User size={12} aria-hidden="true" />
                 {sesizare.author_name}
@@ -201,7 +196,14 @@ export default async function SesizareDetailPage({
               </span>
             </div>
             <CosignersBadge code={sesizare.code} />
-            <div className="flex flex-wrap gap-2">
+            {/* Action row: butoane standardizate (h-10 cu wrap) in ordine
+                de prioritate vizuala:
+                  1. „Trimite si tu" (primary highlight) - h-11
+                  2. „Urmaresti / Urmareste" (toggle)
+                  3. „Ai vazut progres? Raporteaza" (amber)
+                  4. „S-a rezolvat" (DOAR autor)
+                  5. „Distribuie" (last, neutral) */}
+            <div className="flex flex-wrap items-stretch gap-2">
               <SignSesizareButton
                 tip={sesizare.tip}
                 titlu={sesizare.titlu}
@@ -213,30 +215,30 @@ export default async function SesizareDetailPage({
                 code={sesizare.code}
                 variant="primary"
               />
-              <MarkResolvedButton
-                code={sesizare.code}
-                status={sesizare.status}
-                isAuthor={isAuthor}
-              />
               <FollowButton
                 code={sesizare.code}
                 initialFollowing={userFollowing}
                 initialCount={sesizare.nr_followers ?? 0}
+              />
+              <StatusTicketButton
+                code={sesizare.code}
+                currentStatus={sesizare.status}
+              />
+              <MarkResolvedButton
+                code={sesizare.code}
+                status={sesizare.status}
+                isAuthor={isAuthor}
               />
               <ShareMenu
                 url={`${SITE_URL}/sesizari/${sesizare.code}`}
                 title={sesizare.titlu}
                 size="md"
               />
-              <StatusTicketButton
-                code={sesizare.code}
-                currentStatus={sesizare.status}
-              />
-              <DeleteSesizareButton
-                code={sesizare.code}
-                isAuthor={isAuthor}
-              />
-              {isAuthor && (
+            </div>
+            {/* Secondary actions: author-only utility row, mai jos pentru
+                separare vizuala de actiunile primary. */}
+            {isAuthor && (
+              <div className="flex flex-wrap items-stretch gap-2 mt-2">
                 <ReminderButton
                   emailInput={{
                     tip: sesizare.tip,
@@ -255,8 +257,12 @@ export default async function SesizareDetailPage({
                   status={sesizare.status}
                   officialResponseAt={sesizare.official_response_at ?? null}
                 />
-              )}
-            </div>
+                <DeleteSesizareButton
+                  code={sesizare.code}
+                  isAuthor={isAuthor}
+                />
+              </div>
+            )}
           </header>
         );
       })()}
