@@ -8,6 +8,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { isProd } from "@/lib/env";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from "@/lib/ai/gemini";
 import { appendGdprClause, repairSesizareLeaks } from "@/lib/sesizari/format-helpers";
+import { objectifyFormalText } from "@/lib/sesizari/objectify";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -312,6 +313,20 @@ Răspunde JSON:
     // [ADRESA] copiat literal. Reparăm post-AI determinist înainte de
     // normalizeFormatting (care pe urmă curăță whitespace-urile lăsate).
     parsed.formal_text = repairSesizareLeaks(parsed.formal_text);
+
+    // Objectify claims subjective („în dreptul domiciliu meu", „în fața
+    // blocului meu", etc). Inlocuieste cu locatia obiectiva ca textul sa
+    // poata fi reutilizat de co-semnatari fara minciuni. EXCEPTIE: cand
+    // locatia problemei = domiciliul cetateanului (match LITERAL pe nr).
+    const { text: objectified, replacements } = objectifyFormalText(parsed.formal_text, {
+      locatie: locatie ?? null,
+      adresaCetatean: adresa ?? null,
+    });
+    if (replacements > 0) {
+      parsed.formal_text = objectified;
+      // Debug header pentru a vedea cate sanitizari aplicam in prod
+      // (Sentry breadcrumb mai bun, dar header e zero-config).
+    }
 
     parsed.formal_text = normalizeFormatting(parsed.formal_text);
 

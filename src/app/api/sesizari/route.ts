@@ -11,6 +11,7 @@ import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { buildSalutation, formatRecipientName } from "@/lib/email/format";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { polishSesizare } from "@/lib/sesizari/polish";
+import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -183,11 +184,27 @@ export async function POST(req: Request) {
       }
     } catch { /* silent — keep original coords */ }
 
+    // Defense-in-depth: sanitize formal_text de claims subjective inainte
+    // de save (cazul cand AI improve dintr-o sesiune veche n-a aplicat
+    // objectify, sau cand user a editat manual textul cu „in dreptul
+    // domiciliu meu"). Sterge expresii relativiste ca textul sa poata fi
+    // reutilizat de co-semnatari fara probleme.
+    const safeFormalText = parsed.formal_text
+      ? objectifyFormalText(parsed.formal_text, {
+          locatie: polished.locatie,
+          // schema sesizari NU pastreaza adresa cetateanului server-side
+          // (ramane doar in mailto la client). Fara verificare exact-match,
+          // sanitize-uim oricum claims-urile subjective.
+          adresaCetatean: null,
+        }).text
+      : parsed.formal_text;
+
     try {
       const row = await createSesizare({
         code,
         user_id: user?.id ?? null,
         ...parsed,
+        formal_text: safeFormalText,
         author_name: sanitizeText(parsed.author_name, 120),
         titlu: polished.titlu,
         locatie: polished.locatie,

@@ -40,6 +40,19 @@ Verificate empiric pe sesizări reale (5/4/2026): AI-ul anterior încălca acest
 
 10. INTERZIS cod JavaScript — niciodată \`new Date()\`, \`+ var\`, \`\${...}\`, sau orice expresie executabilă. Data se scrie LITERAL ca „22 aprilie 2026".
 
+11. INTERZIS claims subjective despre locație raportate la subiect — sesizarea e reutilizată ca template de co-semnatari care NU locuiesc neapărat la locația problemei. Tot ce e relativ la „eu/mie/meu" în privința locației e GREȘIT.
+    ❌ „în dreptul domiciliului meu", „în dreptul casei mele", „în fața blocului meu", „lângă casa mea", „pe strada mea", „în cartierul meu", „blocul meu", „în vecinătatea mea"
+    ✅ Descrie locația OBIECTIV folosind adresa furnizată: „pe Șoseaua Pantelimon nr. 300", „în zona stației de tramvai", „pe trotuarul din fața blocului 38", „la intersecția dintre Calea Victoriei și Bd. Carol"
+    Cetățeanul își poate menționa adresa de domiciliu O SINGURĂ DATĂ în paragraful de deschidere („Mă numesc X, locuiesc în Y"). De acolo încolo, PROBLEMA e descrisă față de LOCAȚIA EI obiectivă, NU față de domiciliul cetățeanului. Co-semnatarii pot folosi același text fără să mintă.
+    EXCEPȚIE rară: dacă LOCAȚIA problemei și DOMICILIUL cetățeanului coincid LITERAL (acelasi nr), poți spune „pe trotuarul din fața blocului unde locuiesc" — dar trebuie să existe match exact pe adresă.
+
+12. GRAMATICĂ — articulare corectă substantive genitive:
+    ❌ „domiciliu meu" (greșit, lipsește articolul „l")
+    ❌ „domiciliul lui" (greșit pentru genitiv posesiv propriu)
+    ✅ „domiciliul meu" (corect — DAR vezi regula 11, evită oricum)
+    ✅ „adresa mea de domiciliu" (alternativ corect)
+    Alte cazuri uzuale: „în fața blocului" (NU „în fața bloc"), „pe trotuarul" (NU „pe trotuar" când e articulat), „la primăria" (când urmează nume specific).
+
 ═════════════════════════════════════════════════════════════════
 TEMPLATE DE STIL — respectă STRUCTURA și TONUL exact:
 
