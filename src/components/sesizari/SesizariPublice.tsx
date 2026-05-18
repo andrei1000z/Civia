@@ -7,7 +7,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, Link as LinkIcon, Check, ChevronDown, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ShareButton } from "./ShareButton";
-import { SectorHeatChart } from "./SectorHeatChart";
 import { OverdueBadge } from "./OverdueBadge";
 
 const SesizariMap = dynamic(() => import("@/components/maps/SesizariMap").then((m) => m.SesizariMap), { ssr: false });
@@ -374,13 +373,7 @@ export function SesizariPublice() {
         </div>
       )}
 
-      {/* Heatmap pe sectoare — vizibil doar pe view List, doar pentru
-          București (county slug „b") sau pe pagina națională unde
-          majoritatea sesizărilor sunt din București. Pentru județe
-          non-București nu se renderează (component-ul returnează null). */}
-      {view === "list" && (!effectiveCounty || effectiveCounty === "b") && (
-        <SectorHeatChart judet="b" />
-      )}
+
 
       {view === "map" && filtered.length > 0 ? (
         <SesizariMap limit={50} height="600px" zoom={12} />
