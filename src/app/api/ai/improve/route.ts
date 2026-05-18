@@ -76,6 +76,14 @@ function stripMarkdown(text: string): string {
 function normalizeFormatting(text: string): string {
   let t = stripMarkdown(text);
   t = t.replace(/\r\n/g, "\n");
+
+  // Sparge numerotare inline: cand AI emite „1. ... 2. ... 3. ..." pe
+  // aceeasi linie, le rupe pe linii separate ca sa fie lizibile in render.
+  // Pattern: caracter „. " urmat de cifra+„. " in mijloc de linie → newline.
+  // Numai cand cifra urmatoare apare DUPA un cuvant (nu la inceput de
+  // text), evitand sa rup data calendaristica gen „18 mai 2026".
+  t = t.replace(/(\.\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
+
   // Collapse 3+ newlines → exactly 2
   t = t.replace(/\n{3,}/g, "\n\n");
   const lines = t.split("\n").map((l) => l.trim());

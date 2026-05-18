@@ -342,8 +342,14 @@ export default async function SesizareDetailPage({
                 </span>
                 Text formal
               </h2>
-              <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 text-xs font-mono whitespace-pre-wrap text-[var(--color-text-muted)] leading-relaxed">
-                {stripPrivateAddress(sesizare.formal_text, sesizare.author_name)}
+              <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 sm:p-5 text-sm leading-relaxed text-[var(--color-text)] space-y-3">
+                {stripPrivateAddress(sesizare.formal_text, sesizare.author_name)
+                  .split(/\n\n+/)
+                  .map((para, i) => (
+                    <p key={i} className="whitespace-pre-line break-words">
+                      {para.trim()}
+                    </p>
+                  ))}
               </div>
               <p className="text-[10px] text-[var(--color-text-muted)] mt-2 italic">
                 Adresa de domiciliu a fost ascunsă automat pentru protecția datelor personale.
