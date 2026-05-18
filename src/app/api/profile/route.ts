@@ -137,6 +137,26 @@ export async function PUT(req: Request) {
       .select()
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Cascade: cand display_name se schimba, propagam la TOATE sesizarile
+    // user-ului — coloana e denormalizata pentru queries publice rapide.
+    // Fire-and-forget: erorile aici nu blocheaza response-ul (admin poate
+    // rerula scriptul de backfill daca cascade-ul cade silent).
+    if (parsed.display_name !== undefined) {
+      const newDisplay = parsed.display_name
+        ? sanitizeText(parsed.display_name, 80)
+        : null;
+      // service-role bypass RLS — user can update only their own sesizari
+      // anyway via user_id match.
+      const { createSupabaseAdmin } = await import("@/lib/supabase/admin");
+      const sa = createSupabaseAdmin();
+      void sa
+        .from("sesizari")
+        .update({ author_display_name: newDisplay })
+        .eq("user_id", user.id)
+        .then(() => { /* silent */ });
+    }
+
     return NextResponse.json({
       data: { ...data, hide_name: await getHideName(user.id) },
     });

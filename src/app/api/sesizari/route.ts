@@ -202,6 +202,23 @@ export async function POST(req: Request) {
         }).text
       : parsed.formal_text;
 
+    // Calculeaza author_display_name pentru render public.
+    // Daca user logat: ia display_name din profile (Google sign-in il
+    // umple cu prenume). Altfel, primul cuvant din author_name (privacy).
+    let authorDisplayName: string | null = null;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      authorDisplayName = profile?.display_name?.trim() || null;
+    }
+    if (!authorDisplayName) {
+      const firstWord = parsed.author_name.trim().split(/\s+/)[0]?.trim();
+      authorDisplayName = firstWord || null;
+    }
+
     try {
       const row = await createSesizare({
         code,
@@ -209,6 +226,7 @@ export async function POST(req: Request) {
         ...parsed,
         formal_text: safeFormalText,
         author_name: sanitizeText(parsed.author_name, 120),
+        author_display_name: authorDisplayName,
         titlu: polished.titlu,
         locatie: polished.locatie,
         descriere: polished.descriere,

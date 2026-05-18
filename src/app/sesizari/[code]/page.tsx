@@ -20,6 +20,7 @@ import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
 import { CosignersBadge } from "@/components/sesizari/CosignersBadge";
+import { publicAuthorName } from "@/lib/sesizari/display-name";
 import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
@@ -188,7 +189,10 @@ export default async function SesizareDetailPage({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <User size={12} aria-hidden="true" />
-                {sesizare.author_name}
+                {publicAuthorName({
+                  display_name: sesizare.author_display_name,
+                  author_name: sesizare.author_name,
+                })}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar size={12} aria-hidden="true" />

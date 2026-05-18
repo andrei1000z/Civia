@@ -14,6 +14,8 @@ export interface SesizareRow {
   code: string;
   user_id: string | null;
   author_name: string;
+  /** Nume afisat public (display_name profile sau primul cuvant author_name). */
+  author_display_name: string | null;
   author_email: string | null;
   tip: string;
   titlu: string;

@@ -141,7 +141,7 @@ export interface ListFilters {
 // instead derive a short formal_text excerpt below. The detail page
 // uses getSesizareByCode which selects the full row.
 const FEED_LIST_COLUMNS =
-  "id,code,user_id,author_name,author_email,titlu,locatie,sector,county,tip,status,formal_text,descriere,imagini,resolved_photo_url,created_at,upvotes,nr_comentarii,voturi_net,publica,moderation_status";
+  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,tip,status,formal_text,descriere,imagini,resolved_photo_url,created_at,upvotes,nr_comentarii,voturi_net,publica,moderation_status";
 
 // Card preview is line-clamp-2 (~150 visible chars). 320 is a safe
 // over-provision that still slashes the average row from ~3 KB to
@@ -279,6 +279,8 @@ export interface CreateSesizareInput {
   /** AI auto-eticheta cand tip="altele". Optional. */
   custom_category?: string | null;
   custom_category_confidence?: number | null;
+  /** Nume afisat public (display_name din profile, sau primul cuvant author_name). */
+  author_display_name?: string | null;
 }
 
 export async function createSesizare(input: CreateSesizareInput): Promise<SesizareRow> {
@@ -302,6 +304,7 @@ export async function createSesizare(input: CreateSesizareInput): Promise<Sesiza
       publica: input.publica ?? true,
       custom_category: input.custom_category ?? null,
       custom_category_confidence: input.custom_category_confidence ?? null,
+      author_display_name: input.author_display_name ?? null,
     })
     .select()
     .single();

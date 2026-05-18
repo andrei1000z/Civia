@@ -6,6 +6,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { leaderboardAuthorName } from "@/lib/sesizari/display-name";
 
 export const metadata: Metadata = {
   title: "Clasament Fix Score — răspuns autorități pe județe",
@@ -71,23 +72,25 @@ async function fetchCountyStats(): Promise<CountyStats[]> {
 
 async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; total: number; rank: number }>> {
   const admin = createSupabaseAdmin();
-  // Pull approved+publica sesizari with author_name, group + count.
+  // Pull approved+publica sesizari cu author_display_name (preferat) sau
+  // fallback la author_name → primul cuvant.
   const { data } = await admin
     .from("sesizari")
-    .select("author_name, status")
+    .select("author_name, author_display_name, status")
     .eq("moderation_status", "approved")
     .eq("publica", true)
     .not("author_name", "is", null);
 
   const buckets = new Map<string, { total: number; resolved: number }>();
   for (const row of data ?? []) {
-    const name = (row.author_name ?? "").trim();
-    if (!name) continue;
-    // Pseudo-anonymize: only the first name + initial of last.
-    const parts = name.split(/\s+/);
-    const display = parts.length > 1
-      ? `${parts[0]} ${parts[parts.length - 1]![0]}.`
-      : parts[0]!;
+    // Privilegiaza display_name din profile (Google sign-in: prenume scurt).
+    // Fallback la „Prenume X." (primul cuvant + initiala ultimului) pentru
+    // sesizari anonime fara display_name.
+    const display = leaderboardAuthorName({
+      display_name: row.author_display_name,
+      author_name: row.author_name,
+    });
+    if (!display || display === "Cetățean") continue;
     let b = buckets.get(display);
     if (!b) {
       b = { total: 0, resolved: 0 };
