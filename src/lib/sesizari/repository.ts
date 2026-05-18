@@ -276,6 +276,9 @@ export interface CreateSesizareInput {
   formal_text?: string | null;
   imagini?: string[];
   publica?: boolean;
+  /** AI auto-eticheta cand tip="altele". Optional. */
+  custom_category?: string | null;
+  custom_category_confidence?: number | null;
 }
 
 export async function createSesizare(input: CreateSesizareInput): Promise<SesizareRow> {
@@ -297,6 +300,8 @@ export async function createSesizare(input: CreateSesizareInput): Promise<Sesiza
       formal_text: input.formal_text ?? null,
       imagini: input.imagini ?? [],
       publica: input.publica ?? true,
+      custom_category: input.custom_category ?? null,
+      custom_category_confidence: input.custom_category_confidence ?? null,
     })
     .select()
     .single();

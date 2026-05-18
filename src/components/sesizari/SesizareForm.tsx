@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { SESIZARE_TIPURI } from "@/lib/constants";
+import { SESIZARE_TIPURI, SESIZARE_TIPURI_ACTIVE } from "@/lib/constants";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
@@ -899,6 +899,37 @@ export function SesizareForm() {
           })
         : data.formal_text || null;
 
+    // Daca tip=altele, cerem AI-ului sa propuna o eticheta custom_category.
+    // Fire-and-forget cu timeout 6s — daca AI cade, sesizarea pleaca fara
+    // category (admin o poate clasifica manual ulterior).
+    let customCategory: string | null = null;
+    let customCategoryConfidence: number | null = null;
+    if (data.tip === "altele") {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 6000);
+        const catRes = await fetch("/api/ai/auto-categorize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            descriere: data.descriere.trim(),
+            titlu: effectiveTitlu,
+          }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(tid);
+        if (catRes.ok) {
+          const j = await catRes.json();
+          if (j.category && typeof j.category === "string") {
+            customCategory = j.category;
+            customCategoryConfidence = typeof j.confidence === "number" ? j.confidence : null;
+          }
+        }
+      } catch {
+        // silent — sesizarea pleaca fara custom_category
+      }
+    }
+
     try {
       const res = await fetch("/api/sesizari", {
         method: "POST",
@@ -914,6 +945,8 @@ export function SesizareForm() {
           lng,
           descriere: data.descriere.trim(),
           formal_text: formalTextForDb,
+          custom_category: customCategory,
+          custom_category_confidence: customCategoryConfidence,
           imagini,
           publica: data.publica,
           _honey: honey,
@@ -1243,7 +1276,7 @@ ${today}`;
               aria-label="Tip problemă"
             >
               <option value="">Alege tipul... (se completează automat din descriere)</option>
-              {SESIZARE_TIPURI.map((t) => (
+              {SESIZARE_TIPURI_ACTIVE.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.icon} {t.label}
                 </option>

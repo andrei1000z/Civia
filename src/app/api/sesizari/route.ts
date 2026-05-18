@@ -37,6 +37,9 @@ const createSchema = z.object({
   lng: z.number().min(20.2).max(29.7),  // Romania lng range (actual)
   descriere: z.string().min(10, "Descrierea trebuie să aibă minim 10 caractere").max(2000),
   formal_text: z.string().max(5000).optional().nullable(),
+  // AI auto-generated category cand tip="altele". Admin vede grupari.
+  custom_category: z.string().max(50).optional().nullable(),
+  custom_category_confidence: z.number().int().min(0).max(100).optional().nullable(),
   imagini: z.array(z.string().url()).max(5).default([]),
   publica: z.boolean().default(true),
   // Honeypot: bots fill all fields, humans don't see this.

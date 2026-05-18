@@ -78,6 +78,22 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     problema_ghid: "afișaj/publicitate ilegală pe domeniul public (afișe sălbatice pe stâlpi/copaci/garduri, panouri publicitare fără autorizație, bannere stradale neavizate) care încalcă Legea 185/2013 privind amplasarea mijloacelor de publicitate",
     propunere: "constatarea contravenției de către Poliția Locală, identificarea beneficiarilor reclamei și înlăturarea materialelor în regim de urgență",
   },
+  banda_transport: {
+    problema_ghid: "lipsa unei benzi dedicate transportului public, care îngreunează deplasarea autobuzelor/troleibuzelor și descurajează folosirea transportului în comun",
+    propunere: "analiza necesității și amenajarea unei benzi dedicate transportului public conform standardelor europene, cu marcaj rutier și semnalizare adecvată",
+  },
+  trecere_pietoni: {
+    problema_ghid: "lipsa unei treceri de pietoni amenajate într-o zonă cu trafic pietonal intens, care obligă pietonii să traverseze prin loc nepermis",
+    propunere: "amenajarea unei treceri de pietoni cu marcaj rutier, indicatoare și, dacă e cazul, semaforizare sau iluminare suplimentară",
+  },
+  rampa_acces: {
+    problema_ghid: "lipsa rampelor de acces pentru persoane cu mobilitate redusă (cărucioare, scaune cu rotile), contrar Legii 448/2006 privind drepturile persoanelor cu handicap",
+    propunere: "amenajarea unei rampe de acces conform standardelor de accesibilitate, la bordură/intrare instituție",
+  },
+  colectare_selectiva: {
+    problema_ghid: "lipsa infrastructurii de colectare selectivă a deșeurilor (containere separate pentru hârtie, plastic, sticlă, biodegradabile), contrar Legii 211/2011 privind regimul deșeurilor",
+    propunere: "amplasarea de containere de colectare selectivă în zona indicată și informarea cetățenilor",
+  },
   altele: {
     problema_ghid: "o situație care necesită intervenția autorităților locale",
     propunere: "verificarea situației la fața locului și luarea măsurilor corespunzătoare",

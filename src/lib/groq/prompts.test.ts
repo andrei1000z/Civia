@@ -35,14 +35,19 @@ describe("Groq system prompts", () => {
     expect(SYSTEM_PROMPT_FORMAL).toMatch(/De câteva zile/);
   });
 
-  it("SYSTEM_PROMPT_CLASSIFIER lists all 17 types", () => {
-    const types = [
+  it("SYSTEM_PROMPT_CLASSIFIER lists all ACTIVE types (post 2026-05-18 cleanup)", () => {
+    // pietonal, zgomot, animale au fost mutate la „deprecated" — nu apar
+    // in classifier prompt (DB inca le accepta pentru sesizari vechi).
+    const activeTypes = [
       "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
-      "stalpisori", "canalizare", "semafor", "pietonal",
-      "graffiti", "mobilier", "zgomot", "animale", "transport",
-      "afisaj", "altele",
+      "stalpisori", "canalizare", "semafor",
+      "graffiti", "mobilier", "transport",
+      "afisaj",
+      // Tipuri noi
+      "banda_transport", "trecere_pietoni", "rampa_acces", "colectare_selectiva",
+      "altele",
     ];
-    for (const t of types) {
+    for (const t of activeTypes) {
       expect(SYSTEM_PROMPT_CLASSIFIER).toContain(t);
     }
   });

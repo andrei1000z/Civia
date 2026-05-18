@@ -102,25 +102,46 @@ export const GHID_DROPDOWN = [
 // ============================================================
 // `short` fits in tight chip-grid layouts (4-col on xs); `label` is the
 // full name shown in selects, headers, and emails.
+//
+// `active: false` = tip DEPRECATED — nu se mai arata in form picker
+// dar e pastrat pentru backwards-compat cu sesizari existente in DB
+// (filter/sort/export/admin ramane functional pe tipul vechi).
+//
+// 2026-05-18: scoase din form picker `animale`, `pietonal`, `zgomot`
+// (utilizare scazuta + ambiguu — primaria nu poate face mult pe astea).
+// Adaugate: `banda_transport`, `trecere_pietoni`, `rampa_acces`,
+// `colectare_selectiva`. `altele` ramane ca fallback + AI auto-eticheteaza
+// in `custom_category`.
 export const SESIZARE_TIPURI = [
-  { value: "groapa", label: "Groapă în asfalt", short: "Groapă", icon: "🕳️" },
-  { value: "trotuar", label: "Trotuar degradat", short: "Trotuar", icon: "🧱" },
-  { value: "iluminat", label: "Iluminat public defect", short: "Iluminat", icon: "💡" },
-  { value: "copac", label: "Copac căzut/periculos", short: "Copac", icon: "🌳" },
-  { value: "gunoi", label: "Gunoi necolectat", short: "Gunoi", icon: "🗑️" },
-  { value: "parcare", label: "Parcare ilegală", short: "Parcare", icon: "🚗" },
-  { value: "stalpisori", label: "Montare stâlpișori anti-parcare", short: "Stâlpișori", icon: "🪧" },
-  { value: "canalizare", label: "Canalizare/inundație", short: "Canalizare", icon: "💧" },
-  { value: "semafor", label: "Semafor/semnalizare defect", short: "Semafor", icon: "🚦" },
-  { value: "pietonal", label: "Traversare pietoni periculoasă", short: "Pietonal", icon: "🚸" },
-  { value: "graffiti", label: "Graffiti/vandalism", short: "Graffiti", icon: "🎨" },
-  { value: "mobilier", label: "Mobilier stradal stricat", short: "Mobilier", icon: "🪑" },
-  { value: "zgomot", label: "Zgomot excesiv/deranj", short: "Zgomot", icon: "🔊" },
-  { value: "animale", label: "Câini periculoși/animale", short: "Animale", icon: "🐕" },
-  { value: "transport", label: "Problemă transport public", short: "Transport", icon: "🚌" },
-  { value: "afisaj", label: "Afișaj/publicitate ilegală", short: "Afișaj", icon: "📢" },
-  { value: "altele", label: "Altele", short: "Altele", icon: "📝" },
+  { value: "groapa", label: "Groapă în asfalt", short: "Groapă", icon: "🕳️", active: true },
+  { value: "trotuar", label: "Trotuar degradat", short: "Trotuar", icon: "🧱", active: true },
+  { value: "iluminat", label: "Iluminat public defect", short: "Iluminat", icon: "💡", active: true },
+  { value: "copac", label: "Copac căzut/periculos", short: "Copac", icon: "🌳", active: true },
+  { value: "gunoi", label: "Gunoi necolectat", short: "Gunoi", icon: "🗑️", active: true },
+  { value: "parcare", label: "Parcare ilegală", short: "Parcare", icon: "🚗", active: true },
+  { value: "stalpisori", label: "Montare stâlpișori anti-parcare", short: "Stâlpișori", icon: "🪧", active: true },
+  { value: "canalizare", label: "Canalizare/inundație", short: "Canalizare", icon: "💧", active: true },
+  { value: "semafor", label: "Semafor/semnalizare defect", short: "Semafor", icon: "🚦", active: true },
+  { value: "graffiti", label: "Graffiti/vandalism", short: "Graffiti", icon: "🎨", active: true },
+  { value: "mobilier", label: "Mobilier stradal stricat", short: "Mobilier", icon: "🪑", active: true },
+  { value: "transport", label: "Problemă transport public", short: "Transport", icon: "🚌", active: true },
+  { value: "afisaj", label: "Afișaj/publicitate ilegală", short: "Afișaj", icon: "📢", active: true },
+  // Tipuri NOI — propuneri de amenajare/creare (nu probleme, ci cereri).
+  { value: "banda_transport", label: "Bandă transport public — cerere", short: "Bandă bus", icon: "🚌", active: true },
+  { value: "trecere_pietoni", label: "Trecere pietoni — cerere amenajare", short: "Zebră nouă", icon: "🚸", active: true },
+  { value: "rampa_acces", label: "Rampă acces persoane cu dizabilități", short: "Rampă", icon: "♿", active: true },
+  { value: "colectare_selectiva", label: "Colectare selectivă — container lipsă", short: "Reciclare", icon: "♻️", active: true },
+  // DEPRECATED — pastrat pentru compat. NU apar in form.
+  { value: "pietonal", label: "Traversare pietoni periculoasă", short: "Pietonal", icon: "🚸", active: false },
+  { value: "zgomot", label: "Zgomot excesiv/deranj", short: "Zgomot", icon: "🔊", active: false },
+  { value: "animale", label: "Câini periculoși/animale", short: "Animale", icon: "🐕", active: false },
+  // FALLBACK — cand niciunul nu se potriveste. AI auto-genereaza
+  // custom_category dinăuntru.
+  { value: "altele", label: "Altele (categoria se creează automat din descriere)", short: "Altele", icon: "📝", active: true },
 ] as const;
+
+/** Tipuri vizibile in form picker. */
+export const SESIZARE_TIPURI_ACTIVE = SESIZARE_TIPURI.filter((t) => t.active !== false);
 
 // Sectoare — doar pentru municipiul București
 export const SECTOARE = [

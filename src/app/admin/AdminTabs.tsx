@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   BarChart3,
   Mail,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const TABS = [
   { href: "/admin/intreruperi", label: "Întreruperi", icon: AlertTriangle, exact: false },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquareText, exact: false },
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail, exact: false },
+  { href: "/admin/categorii-noi", label: "Categorii AI", icon: Sparkles, exact: false },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3, exact: false },
 ] as const;
 

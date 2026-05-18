@@ -160,19 +160,20 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "parcare" — mașini parcate ilegal, pe trotuar, blocaje, parcare sălbatică
 - "stalpisori" — ORICE menționează stâlpișori, bollards, anti-parcare, protecție trotuar, bariere fizice pe trotuar. PRIORITATE MAXIMĂ: dacă textul conține "stâlpișori" sau "stâlpisor" → alege NEAPĂRAT "stalpisori", NU "trotuar".
 - "canalizare" — inundație, capace lipsă, gură canal înfundată
-- "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere
-- "pietonal" — traversare periculoasă, zebră ștearsă, lipsă trecere pietoni
+- "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere (INCL. zebră ștearsă, marcaj rutier necitiibil — distincție de „trecere_pietoni" care e CERERE NOUĂ)
 - "graffiti" — vandalism grafică, pictură ilegală, tagging pe pereți (NU afișe — alege "afisaj")
 - "mobilier" — bancă stricată, coșuri de gunoi lipsă, fântâni nefuncționale
-- "zgomot" — zgomot excesiv, deranj, construcții noaptea, muzică tare
-- "animale" — câini comunitari periculoși, haite, cuiburi de șobolani
-- "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație
-- "afisaj" — afișe sălbatice, panouri publicitare ilegale, bannere fără autorizație, mash-publicitate pe stâlpi/copaci/garduri, billboard-uri neautorizate, reclame stradale ilegale
-- "altele" — orice nu se încadrează în lista de mai sus
+- "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație, intârziere, ruta scoasă
+- "afisaj" — afișe sălbatice, panouri publicitare ilegale, bannere fără autorizație, billboard-uri neautorizate
+- "banda_transport" — CERERE DE AMENAJARE bandă dedicată autobuz/troleibuz, separare carosabil pentru transport public. Cuvinte cheie: „bandă bus", „culoar dedicat", „bandă transport".
+- "trecere_pietoni" — CERERE DE AMENAJARE zebră/trecere pietoni NOUĂ (nu există ÎNCĂ acolo), semaforizare pietoni adăugată. Distincție vs „semafor": zebră ștearsă e „semafor", zebră CERUTĂ unde nu e nicio e „trecere_pietoni".
+- "rampa_acces" — rampă pentru cărucioare/scaune cu rotile, accesibilitate persoane cu dizabilități, lipsă rampă la trotuar/instituție/bordură
+- "colectare_selectiva" — container reciclare lipsă, tomberoane separate (hârtie/plastic/sticlă) cerute, lipsă infrastructură reciclare
+- "altele" — orice nu se încadrează în lista de mai sus. AI-ul va auto-genera apoi o etichetă custom_category mai precisă.
 
 RĂSPUNDE DOAR CU JSON VALID în formatul EXACT:
 {"tip": "..."}
 
-Unde "..." e UNUL dintre cele 17 tipuri de mai sus (lowercase, fără diacritice).
+Unde "..." e UNUL dintre tipurile de mai sus (lowercase, fără diacritice).
 NU adăuga text înainte/după. NU folosi markdown. NU include alte câmpuri în obiectul JSON.`;
 
