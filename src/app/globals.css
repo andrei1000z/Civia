@@ -231,6 +231,13 @@
 
 html, body {
   height: 100%;
+  /* Global safety net: previne scroll orizontal pe TOATĂ aplicația.
+     Cazuri reale care declanșau overflow: grid `1fr` fără minmax(0, 1fr)
+     pe coloana cu cards, text neîntrerupt > viewport width pe mobile,
+     element absolut-pozitiv care iese din container. Per CSS spec,
+     html+body cu overflow-x:hidden NU previne sticky/fixed elements de la
+     a fi vizibile, doar suprimă barele de derulare orizontale. */
+  overflow-x: hidden;
 }
 
 body {

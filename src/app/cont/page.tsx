@@ -395,8 +395,13 @@ export default function ContPage() {
         </div>
       </header>
 
-      {/* ─── Main grid: Profile (left) + Sesizari (right) ─────────── */}
-      <div className="grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8">
+      {/* ─── Main grid: Profile (left) + Sesizari (right) ───────────
+          IMPORTANT: minmax(0, 1fr) NU 1fr — by default „1fr" implicit
+          „minmax(auto, 1fr)" si „auto" = min-content => coloana se
+          extinde la latimea continutului. Daca un card are text neromp-
+          ut (location lung, cod URL), coloana iese din viewport.
+          minmax(0, 1fr) forteaza shrink. */}
+      <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6 lg:gap-8">
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-5">
           {/* Profile completion nudge */}
           {completionPct < 100 && (
@@ -587,7 +592,7 @@ export default function ContPage() {
         </aside>
 
         {/* ─── Sesizari column ────────────────────────────────────── */}
-        <div>
+        <div className="min-w-0">
           {/* Stats */}
           {sesizari.length > 0 && (() => {
             const rezolvate = sesizari.filter((s) => s.status === "rezolvat").length;
@@ -662,12 +667,12 @@ export default function ContPage() {
                         {s.code}
                       </span>
                     </div>
-                    <h3 className="font-semibold mb-1 line-clamp-1">{s.titlu}</h3>
-                    <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-2">
+                    <h3 className="font-semibold mb-1 line-clamp-1 break-words">{s.titlu}</h3>
+                    <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-2 min-w-0">
                       <span className="truncate min-w-0 flex-1">{s.locatie}</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="shrink-0">{formatDate(s.created_at)}</span>
-                      <ExternalLink size={10} className="ml-auto shrink-0" aria-hidden="true" />
+                      <span aria-hidden="true" className="shrink-0">·</span>
+                      <span className="shrink-0 whitespace-nowrap">{formatDate(s.created_at)}</span>
+                      <ExternalLink size={10} className="shrink-0" aria-hidden="true" />
                     </p>
                   </Link>
                 );
