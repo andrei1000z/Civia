@@ -1233,35 +1233,8 @@ ${today}`;
         </Field>
 
         <Field label="Tip problemă" required>
-          {/* Quick-pick chips pentru top 4 tipuri populare (din analytics
-              5/12/2026: stalpisori 19, pietonal 4, trotuar 3, parcare 1 — plus
-              groapa care e clasic). Reduce funnel drop pe „tip-selected" (era
-              72% înainte) — utilizatorul vede acțiunea evidentă, nu trebuie
-              să deschidă select dropdown. */}
-          {!data.tip && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {(["stalpisori", "parcare", "trotuar", "groapa"] as const).map((qt) => {
-                const meta = SESIZARE_TIPURI.find((t) => t.value === qt);
-                if (!meta) return null;
-                return (
-                  <button
-                    key={qt}
-                    type="button"
-                    aria-label={`Alege tipul: ${meta.label}`}
-                    onClick={() => {
-                      update("tip", qt);
-                      setTipDetectedByAI(false);
-                      trackFunnelStep("sesizare-create", "tip-selected", { tip: qt, source: "quick-pick" });
-                    }}
-                    className="inline-flex items-center gap-1 h-8 px-2.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                  >
-                    <span aria-hidden="true">{meta.icon}</span>
-                    <span>{meta.short}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* 2026-05-18: scoase quick-pick chips la cererea user-ului —
+              redundant cu dropdown-ul + AI auto-detect din descriere. */}
           <div className="flex items-center gap-2">
             <select
               value={data.tip}
@@ -1481,7 +1454,7 @@ ${today}`;
             Cine ești
           </h3>
           <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
-            Apar în scrisoare, nu pe site. <strong>Rămân private.</strong>
+            Apar în email, nu pe site. <strong>Rămân private.</strong>
           </p>
         </div>
 
@@ -1511,21 +1484,10 @@ ${today}`;
           />
         </Field>
 
-        <Field label="Email de contact (opțional)">
-          <input
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            value={data.email}
-            onChange={(e) => update("email", e.target.value)}
-            placeholder="nume@exemplu.ro"
-            className={inputClass}
-          />
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-Pentru confirmare + notificări. Nu apare public.
-          </p>
-        </Field>
+        {/* 2026-05-18: scos field „Email de contact (opțional)" la cererea
+            user-ului. Email-ul cetateanului se ia din contul logat (cand exista)
+            sau ramane null. Useri anonimi care vor follow-up trebuie sa-si faca
+            cont. Reduce friction la form + zero PII colectat fara nevoie. */}
 
         {/* AI rewrite e acum automat (vezi prewarmTimerRef useEffect).
             User request 2026-05-15: scoatem butonul mare „Rescrie textul".
@@ -1625,31 +1587,13 @@ Pentru confirmare + notificări. Nu apare public.
               </p>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={mailtoLink()}
-              className={cn(
-                "flex items-center justify-center gap-2 h-10 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
-                !recipients && "opacity-40 pointer-events-none"
-              )}
-              aria-disabled={!recipients}
-            >
-              <Mail size={14} aria-hidden="true" />
-              Email
-            </a>
-            <button
-              type="button"
-              onClick={copyText}
-              className="flex items-center justify-center gap-2 h-10 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              aria-live="polite"
-            >
-              <Copy size={14} aria-hidden="true" />
-              {copied ? "Copiat!" : "Copiază"}
-            </button>
-          </div>
+          {/* 2026-05-18: scoase butoanele Email + Copiază — flow oficial
+              e Trimite Sesizarea la Autorități (de jos), nu copy-paste.
+              EmailChoicePanel apare in SuccessScreen dupa submit, cu UX
+              mult mai clar (Gmail / Outlook / Yahoo / mailto / etc). */}
           {recipients && (
             <p className="text-xs text-[var(--color-text-muted)] mt-4">
-              <strong>Destinatari:</strong> {recipients.primary.map((a) => a.name).join(", ")}
+              <strong>Se trimite la:</strong> {recipients.primary.map((a) => a.name).join(", ")}
               {recipients.cc.length > 0 && <><br /><strong>CC:</strong> {recipients.cc.map((a) => a.name).join(", ")}</>}
             </p>
           )}
