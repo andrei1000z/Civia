@@ -78,6 +78,10 @@ export const KEY = {
 
   // Form abandonment — per form, per step
   formAbandon: "civia:analytics:form-abandon",
+  // Form abandonment per field — granular: `form|field` (ex: „sesizare|descriere").
+  // Adaugat 2026-05-19 ca sa vedem EXACT pe ce field abandoneaza userii
+  // (nu doar coarse step). Step ramane pentru funnel; field e diagnostic.
+  formAbandonFields: "civia:analytics:form-abandon-fields",
 
   // Page time spent — histogram-ish, keyed by path
   timePerPath: "civia:analytics:time-per-path",
@@ -90,6 +94,25 @@ export const KEY = {
 
   // PWA install funnel
   pwaEvents: "civia:analytics:pwa-events",
+
+  // AI vision routing telemetry — pentru endpoint /api/ai/vision-route
+  // care primeste poza si returneaza tip + autoritate + confidence.
+  //   visionConfidence: bucket-uri confidence (0-25/26-50/51-75/76-100/fallback)
+  //   visionTips: distributia tip-urilor returnate de model
+  //   visionAuthorities: distributia autoritatilor returnate
+  //   visionAcceptance: accepted vs overridden de user (client-side track)
+  visionConfidence: "civia:analytics:vision-confidence",
+  visionTips: "civia:analytics:vision-tips",
+  visionAuthorities: "civia:analytics:vision-authorities",
+  visionAcceptance: "civia:analytics:vision-acceptance",
+
+  // Referrer funnel — pe sursa de trafic (reddit/google/twitter/direct...),
+  // numarul de sesiuni (unique vids) si non-bounces (sesiuni cu 2+ pageviews).
+  // Bounce rate = 1 - (nonBounces / sessions). Folosit ca sa vedem cum
+  // converteste fiecare canal (ex: Reddit are 9% trafic dar daca bounce
+  // rate e 85%, postul nu engagement-uieste).
+  sessionsPerReferrer: "civia:analytics:sessions-per-referrer",
+  nonBouncesPerReferrer: "civia:analytics:non-bounces-per-referrer",
 
   // 404 paths — path-level breakdown pentru broken links / URL-uri
   // învechite / typo-uri / bots. Plus referrer-urile de unde vin

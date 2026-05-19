@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { routeFromImage } from "@/lib/groq/vision-routing";
+import { analyticsRedis, KEY } from "@/lib/analytics/redis";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -9,6 +10,13 @@ export const maxDuration = 30;
 const schema = z.object({
   imageUrl: z.string().url(),
 });
+
+function confidenceBucket(c: number): string {
+  if (c < 26) return "0-25";
+  if (c < 51) return "26-50";
+  if (c < 76) return "51-75";
+  return "76-100";
+}
 
 /**
  * POST /api/ai/vision-route { imageUrl }
@@ -40,5 +48,20 @@ export async function POST(req: Request) {
   }
 
   const result = await routeFromImage(parsed.data.imageUrl);
+
+  // Server-side telemetry: vedem confidence-distribution + tip-uri returnate,
+  // independent de ce face client-ul (accepta/override). Fire-and-forget,
+  // nu blocam raspunsul.
+  if (analyticsRedis) {
+    try {
+      const bucket = result.fallback ? "fallback" : confidenceBucket(result.confidence);
+      const pipe = analyticsRedis.pipeline();
+      pipe.hincrby(KEY.visionConfidence, bucket, 1);
+      pipe.hincrby(KEY.visionTips, result.tip || "altele", 1);
+      pipe.hincrby(KEY.visionAuthorities, result.authority || "necunoscut", 1);
+      await pipe.exec();
+    } catch { /* never block response on telemetry */ }
+  }
+
   return NextResponse.json(result);
 }

@@ -4,6 +4,7 @@ import { analyticsRedis, KEY, TTL, VITAL_SAMPLE_CAP, VID_TIMELINE_CAP, VIDS_RECE
 import { sanitizeStr, sanitizeKey, sanitizeId } from "@/lib/analytics/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { referrerSource } from "@/lib/analytics/referrer-source";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -277,7 +278,21 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
       last_pathname: pathname,
       last_referrer: referrer,
     });
-    pipe.hincrby(KEY.vidMeta(visitorId), "pageviews", 1);
+    // Bounce/session telemetry pe sursa de referrer. Incrementam pageviews
+    // pe vidMeta cu un round-trip separat ca sa cunoastem noua valoare:
+    //   1 → prima vizualizare (sesiune noua) → +1 sessionsPerReferrer
+    //   2 → a doua vizualizare (sesiune nu mai e bounce) → +1 nonBouncesPerReferrer
+    //   >2 → deja non-bounce, nu mai numaram
+    // Sursa bucket-uita prin referrerSource (reddit/google/direct/...).
+    try {
+      const newPageviews = await analyticsRedis.hincrby(KEY.vidMeta(visitorId), "pageviews", 1);
+      const source = referrerSource(referrer);
+      if (newPageviews === 1) {
+        await analyticsRedis.hincrby(KEY.sessionsPerReferrer, source, 1);
+      } else if (newPageviews === 2) {
+        await analyticsRedis.hincrby(KEY.nonBouncesPerReferrer, source, 1);
+      }
+    } catch { /* never block pageview on telemetry */ }
     pipe.hsetnx(KEY.vidMeta(visitorId), "first_referrer", referrer);
     pipe.hsetnx(KEY.vidMeta(visitorId), "first_pathname", pathname);
     if (utmSource) {
@@ -493,11 +508,17 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
     return NextResponse.json({ ok: true });
   }
 
-  // Form abandon — which form, which step
+  // Form abandon — which form, which step, optional which field
   if (eventType === "form-abandon") {
     const form = sanitizeKey(body.form, 30) || "(unknown)";
     const step = sanitizeKey(body.step, 40) || "(unknown)";
+    const field = sanitizeKey(body.field, 40);
     pipe.hincrby(KEY.formAbandon, `${form}|${step}`, 1);
+    if (field) {
+      // Tracking granular pe field: pe care input/textarea statea cursorul
+      // cand a parasit pagina. Vede direct in dashboard care field e „greu".
+      pipe.hincrby(KEY.formAbandonFields, `${form}|${field}`, 1);
+    }
     await pipe.exec();
     return NextResponse.json({ ok: true });
   }
@@ -505,6 +526,19 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
   // PWA events — prompt shown / accepted / declined
   if (eventType === "pwa-install-prompt" || eventType === "pwa-installed") {
     pipe.hincrby(KEY.pwaEvents, eventType, 1);
+    await pipe.exec();
+    return NextResponse.json({ ok: true });
+  }
+
+  // AI vision routing acceptance — userul a primit o sugestie de la vision
+  // model si a acceptat-o sau a inlocuit-o manual. Pereche cu telemetry
+  // server-side (confidence + tip distribution) → vedem acceptance rate
+  // per tip + per confidence bucket.
+  if (eventType === "vision-acceptance") {
+    const accepted = sanitizeKey(body.accepted, 10) || "no";
+    const tip = sanitizeKey(body.tip, 30) || "(unknown)";
+    pipe.hincrby(KEY.visionAcceptance, accepted, 1);
+    pipe.hincrby(KEY.visionAcceptance, `${accepted}|${tip}`, 1);
     await pipe.exec();
     return NextResponse.json({ ok: true });
   }
@@ -602,8 +636,15 @@ async function handleSummary() {
     aiUsage,
     authEvents,
     formAbandon,
+    formAbandonFields,
     copyEvents,
     pwaEvents,
+    visionConfidence,
+    visionTips,
+    visionAuthorities,
+    visionAcceptance,
+    sessionsPerReferrer,
+    nonBouncesPerReferrer,
     ...vitalsAndExtras
   ] = await Promise.all([
     analyticsRedis.hgetall<Record<string, string>>(KEY.total),
@@ -636,8 +677,15 @@ async function handleSummary() {
     analyticsRedis.hgetall<Record<string, string>>(KEY.aiUsage),
     analyticsRedis.hgetall<Record<string, string>>(KEY.authEvents),
     analyticsRedis.hgetall<Record<string, string>>(KEY.formAbandon),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.formAbandonFields),
     analyticsRedis.hgetall<Record<string, string>>(KEY.copyEvents),
     analyticsRedis.hgetall<Record<string, string>>(KEY.pwaEvents),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.visionConfidence),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.visionTips),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.visionAuthorities),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.visionAcceptance),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.sessionsPerReferrer),
+    analyticsRedis.hgetall<Record<string, string>>(KEY.nonBouncesPerReferrer),
     // One (ratings, samples) pair per Web Vital — appended to the tuple
     ...VITALS.flatMap((v) => [
       r.hgetall<Record<string, string>>(KEY.vitalRating(v)),
@@ -807,8 +855,15 @@ async function handleSummary() {
     aiUsage: aiUsage || {},
     authEvents: authEvents || {},
     formAbandon: formAbandon || {},
+    formAbandonFields: formAbandonFields || {},
     copyEvents: copyEvents || {},
     pwaEvents: pwaEvents || {},
+    visionConfidence: visionConfidence || {},
+    visionTips: visionTips || {},
+    visionAuthorities: visionAuthorities || {},
+    visionAcceptance: visionAcceptance || {},
+    sessionsPerReferrer: sessionsPerReferrer || {},
+    nonBouncesPerReferrer: nonBouncesPerReferrer || {},
     funnels: funnelData,
     // Insights noi (mai 2026):
     // - rageClicksPerRoute: chei „path|label", values count → top

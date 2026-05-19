@@ -316,6 +316,22 @@ export function SesizareForm() {
   // tip, poza, sau GPS). Inainte fire-uia si pe page views fara
   // interactiune → „before-tip" arata 112 abandons din care 90%+ erau
   // bounces, nu drop-offs reale. Aliniat cu funnel „start".
+  // Update 2026-05-19: tracking granular „pe care field a parasit user-ul" —
+  // captureaza numele field-ului din ultimul `focusin` global pe document.
+  // Trimis ca prop `field` in trackFormAbandon — dashboard arata top
+  // abandon-fields, vede direct unde se blocheaza userii (ex: „adresa" =
+  // 60% din abandons → e prea cere).
+  const lastFocusedFieldRef = useRef<string | null>(null);
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const name = target.getAttribute("name") || target.getAttribute("data-field");
+      if (name) lastFocusedFieldRef.current = name;
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, []);
   useEffect(() => {
     const onUnload = () => {
       if (submitted) return;
@@ -330,7 +346,7 @@ export function SesizareForm() {
         : data.tip && data.descriere.length > 10 ? "before-locatie"
         : data.tip ? "before-descriere"
         : "before-tip";
-      trackFormAbandon("sesizare", step);
+      trackFormAbandon("sesizare", step, lastFocusedFieldRef.current ?? undefined);
     };
     window.addEventListener("pagehide", onUnload);
     return () => window.removeEventListener("pagehide", onUnload);

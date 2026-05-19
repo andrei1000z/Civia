@@ -712,6 +712,20 @@ export function trackAuthEvent(kind: "signup" | "signin" | "signout" | "password
   trackCustomEvent("auth", { kind });
 }
 
-export function trackFormAbandon(form: string, step: string): void {
-  trackCustomEvent("form-abandon", { form, step });
+export function trackFormAbandon(form: string, step: string, field?: string): void {
+  trackCustomEvent("form-abandon", field ? { form, step, field } : { form, step });
+}
+
+/**
+ * AI vision routing — userul a primit o sugestie de la vision model
+ * (tip + autoritate) si fie a acceptat-o, fie a inlocuit-o.
+ *
+ * accepted=true: a folosit sugestia ca atare
+ * accepted=false: a schimbat fie tipul, fie autoritatea (manual override)
+ */
+export function trackVisionAcceptance(accepted: boolean, tip?: string): void {
+  trackCustomEvent("vision-acceptance", {
+    accepted: accepted ? "yes" : "no",
+    tip: tip || "(unknown)",
+  });
 }

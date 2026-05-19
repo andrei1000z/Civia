@@ -52,6 +52,13 @@ interface Summary {
   aiUsage: Record<string, string | number>;
   authEvents: Record<string, string | number>;
   formAbandon: Record<string, string | number>;
+  formAbandonFields?: Record<string, string | number>;
+  visionConfidence?: Record<string, string | number>;
+  visionTips?: Record<string, string | number>;
+  visionAuthorities?: Record<string, string | number>;
+  visionAcceptance?: Record<string, string | number>;
+  sessionsPerReferrer?: Record<string, string | number>;
+  nonBouncesPerReferrer?: Record<string, string | number>;
   copyEvents: Record<string, string | number>;
   pwaEvents: Record<string, string | number>;
   funnels: Record<string, Record<string, string | number>>;
@@ -766,9 +773,149 @@ export function AnalyticsDashboard() {
         <BreakdownList title="Form abandon · unde pleacă user-ii" icon={AlertTriangle} data={data.formAbandon} max={15} />
       )}
 
+      {/* Form abandon per field — granular, complementar cu step de mai sus.
+          „sesizare|descriere" = userul era pe field-ul `descriere` cand a
+          parasit pagina. Util sa vedem direct pe ce input se blocheaza. */}
+      {data.formAbandonFields && sum(data.formAbandonFields) > 0 && (
+        <BreakdownList
+          title="Form abandon · pe ce field a parasit user-ul"
+          icon={AlertTriangle}
+          data={data.formAbandonFields}
+          max={15}
+        />
+      )}
+
+      {/* AI vision routing telemetry — confidence bucket, tip distribution,
+          si acceptance rate. Triplet care raspunde: „cat e de bun
+          modelul + cat de des userii accepta sugestia". */}
+      {data.visionConfidence && sum(data.visionConfidence) > 0 && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <BreakdownList
+            title="AI vision · distributie confidence"
+            icon={AlertTriangle}
+            data={data.visionConfidence}
+            max={6}
+          />
+          {data.visionTips && sum(data.visionTips) > 0 && (
+            <BreakdownList
+              title="AI vision · tipuri detectate"
+              icon={AlertTriangle}
+              data={data.visionTips}
+              max={12}
+            />
+          )}
+          {data.visionAuthorities && sum(data.visionAuthorities) > 0 && (
+            <BreakdownList
+              title="AI vision · autoritati detectate"
+              icon={AlertTriangle}
+              data={data.visionAuthorities}
+              max={10}
+            />
+          )}
+          {data.visionAcceptance && sum(data.visionAcceptance) > 0 && (
+            <BreakdownList
+              title="AI vision · acceptance (accepted vs override)"
+              icon={AlertTriangle}
+              data={data.visionAcceptance}
+              max={15}
+            />
+          )}
+        </div>
+      )}
+
       {/* Error paths — where crashes happen */}
       {sum(data.errorPaths) > 0 && (
         <BreakdownList title="Erori per pagină" icon={AlertTriangle} data={data.errorPaths} max={15} />
+      )}
+
+      {/* Per-judet errors — derivat din errorPaths agregand prefix-ul de
+          county (/cj/... → CJ). Vede care judete au probleme specifice:
+          ex daca CJ are 80% din erori si nu apare niciun alt judet → bug
+          local. Fara key Redis suplimentar — derivat 100% dashboard-side. */}
+      {sum(data.errorPaths) > 0 && (() => {
+        const COUNTY_SLUGS = new Set<string>([
+          "b", "ab", "ag", "ar", "bc", "bh", "bn", "br", "bt", "bv", "bz",
+          "cj", "cl", "cs", "ct", "cv", "db", "dj", "gj", "gl", "gr", "hd",
+          "hr", "if", "is", "mh", "mm", "ms", "nt", "ot", "ph", "sb", "sj",
+          "sm", "sv", "tl", "tm", "tr", "vl", "vn", "vs",
+        ]);
+        const byCounty: Record<string, number> = {};
+        for (const [path, count] of Object.entries(data.errorPaths)) {
+          const c = Number(count) || 0;
+          const slug = path.match(/^\/([a-z]{1,2})(?:\/|$)/)?.[1];
+          if (slug && COUNTY_SLUGS.has(slug)) {
+            byCounty[slug] = (byCounty[slug] ?? 0) + c;
+          } else {
+            byCounty["(national)"] = (byCounty["(national)"] ?? 0) + c;
+          }
+        }
+        if (Object.keys(byCounty).length === 0) return null;
+        return (
+          <BreakdownList
+            title="Erori per județ (derivat din path)"
+            icon={AlertTriangle}
+            data={byCounty}
+            max={15}
+          />
+        );
+      })()}
+
+      {/* Growth funnel: sesiuni + bounce-rate pe sursa de referrer.
+          Sessions = vid-uri unice care au inceput aici. Bounce = sesiuni
+          cu un singur pageview. Util sa vedem care canal converteste
+          (ex: Reddit are X sesiuni dar Y% bounce → engagement). */}
+      {data.sessionsPerReferrer && sum(data.sessionsPerReferrer) > 0 && (
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} className="text-[var(--color-primary)]" />
+            <h3 className="font-semibold text-sm">Growth funnel · pe sursa de referrer</h3>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] border-b border-[var(--color-border)]">
+                <th className="py-2 font-semibold">Sursa</th>
+                <th className="py-2 font-semibold text-right tabular-nums">Sesiuni</th>
+                <th className="py-2 font-semibold text-right tabular-nums">Non-bounces</th>
+                <th className="py-2 font-semibold text-right tabular-nums">Bounce rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.sessionsPerReferrer)
+                .map(([source, sessionsRaw]) => {
+                  const sessions = Number(sessionsRaw) || 0;
+                  const nonBounces = Number(data.nonBouncesPerReferrer?.[source] ?? 0) || 0;
+                  const bounceRate = sessions > 0 ? Math.round((1 - nonBounces / sessions) * 100) : 0;
+                  return { source, sessions, nonBounces, bounceRate };
+                })
+                .sort((a, b) => b.sessions - a.sessions)
+                .slice(0, 12)
+                .map((row) => (
+                  <tr key={row.source} className="border-b border-[var(--color-border)] last:border-0">
+                    <td className="py-2 font-medium text-[var(--color-text)]">{row.source}</td>
+                    <td className="py-2 text-right tabular-nums">{row.sessions.toLocaleString("ro-RO")}</td>
+                    <td className="py-2 text-right tabular-nums text-[var(--color-text-muted)]">
+                      {row.nonBounces.toLocaleString("ro-RO")}
+                    </td>
+                    <td
+                      className={`py-2 text-right tabular-nums font-semibold ${
+                        row.bounceRate >= 80
+                          ? "text-red-600 dark:text-red-400"
+                          : row.bounceRate >= 60
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {row.bounceRate}%
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
+            Bounce = sesiune cu o singura vizualizare (utilizatorul a inchis pagina fara sa
+            mai navigheze). Sub 60% = bun, 60-80% = mediu, peste 80% = atentie.
+          </p>
+        </div>
       )}
 
       {/* Feedback inbox — what users told us */}
