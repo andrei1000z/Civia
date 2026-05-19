@@ -24,7 +24,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "bg-gradient-to-r from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:brightness-110 shadow-md hover:shadow-lg lc-shine lc-magnetic",
   secondary:
-    "lc-glass-2 text-[var(--color-text)] hover:lc-glow-aqua lc-magnetic",
+    "lc-glass-2 text-[var(--color-text)] lc-glow-hover-aqua lc-magnetic",
   outline:
     "border-2 border-[var(--color-primary)] text-[var(--color-primary)] bg-transparent hover:bg-[var(--color-primary-soft)]",
   ghost:
@@ -68,7 +68,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         // Tactile micro-bounce pe :active — feel premium pe touch.
         "transition-all duration-200 ease-out whitespace-nowrap active:scale-[0.97] active:duration-75",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]",
+        // 2026-05-19: focus ring per variant — primary/danger pe gradient
+        // bg au nevoie de outline alb cu offset pe primary background;
+        // celelalte (outline/ghost/secondary) pastreaza emerald.
+        variant === "primary" || variant === "danger"
+          ? "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          : "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]",
         variantStyles[variant],
         sizeStyles[size],
         className

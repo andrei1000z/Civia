@@ -21,6 +21,10 @@ export function CursorGlow() {
   const targetY = useRef(0);
   const currentX = useRef(0);
   const currentY = useRef(0);
+  // Fix 2026-05-19: pe primul mouse move, currentX/Y erau (0,0) si lerp
+  // facea glow-ul sa „zboare" din top-left in pozitia cursorului (1-2 frames
+  // glitch). Acum sarim direct la pozitia mouse-ului pe prima miscare.
+  const initialized = useRef(false);
 
   useEffect(() => {
     // Disable on touch / mobile / reduced motion
@@ -33,6 +37,17 @@ export function CursorGlow() {
     const handleMove = (e: MouseEvent) => {
       targetX.current = e.clientX;
       targetY.current = e.clientY;
+      // First move: sync current to target instantly (no fly-in glitch).
+      if (!initialized.current) {
+        initialized.current = true;
+        currentX.current = e.clientX;
+        currentY.current = e.clientY;
+        // Snap el direct (skip lerp on first frame)
+        const node = glowRef.current;
+        if (node) {
+          node.style.transform = `translate3d(${e.clientX - 150}px, ${e.clientY - 150}px, 0)`;
+        }
+      }
       if (rafRef.current === null) {
         rafRef.current = requestAnimationFrame(animate);
       }

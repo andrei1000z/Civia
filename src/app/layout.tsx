@@ -189,7 +189,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="min-h-full flex flex-col bg-[var(--color-bg)] pt-16"
+        className="min-h-full flex flex-col pt-16"
         // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
         // injectează clase/atribute la body în timpul hydratation. Plus
         // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)

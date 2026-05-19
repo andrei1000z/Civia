@@ -240,22 +240,23 @@ html, body {
   overflow-x: hidden;
 }
 
-body {
-  /* Aurora gradient mesh permanent — fix attachment ca să apară statică
-     sub conținut scrolling. Asta face GLASS-ul VIZIBIL pe orice pagină,
-     orice scroll position. Fără asta, navbar peste body color flat = blur
-     pe nimic = glass invizibil. Cu mesh, navbar/modale/FAB blur peste
-     gradient = efect iOS 26 vizibil instant.
-
-     Light mode: emerald + sky + violet, low-opacity blobs pe fundal alb.
-     Dark mode: emerald + indigo + purple, peste true-black. */
+/* 2026-05-19 Liquid Civic: bg-ul de la nivel `body` a fost MUTAT pe `html`.
+   Motiv: AuroraBackground component (z-index: -10, position: fixed) era
+   acoperit de body's opaque bg layer. Acum:
+     html → var(--color-bg) (color solid)
+     <AuroraBackground /> → aurora layer animat (fixed, z: -10)
+     body → transparent, content normal.
+   Vechiul mesh static din body e replicat in AuroraBackground (animat). */
+html {
   background:
-    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
-    radial-gradient(at 85% 18%, rgba(56, 189, 248, 0.16) 0px, transparent 50%),
-    radial-gradient(at 50% 70%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
-    radial-gradient(at 80% 90%, rgba(244, 114, 182, 0.10) 0px, transparent 50%),
+    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.12) 0px, transparent 55%),
+    radial-gradient(at 85% 18%, rgba(56, 189, 248, 0.10) 0px, transparent 55%),
+    radial-gradient(at 50% 70%, rgba(168, 85, 247, 0.08) 0px, transparent 55%),
     var(--color-bg);
   background-attachment: fixed;
+}
+
+body {
   color: var(--color-text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv11", "ss01";
@@ -332,12 +333,13 @@ html, body { overflow-x: clip; }
 /* Dark-mode aurora — emerald + indigo + purple peste true-black.
    Layered cu radial-gradient ca să respire efectul de „aurora boreală" pe
    OLED. Pe device-uri non-OLED se vede ca subtle accent. */
-.dark body {
+/* 2026-05-19: mesh pe html (dark) — body e transparent ca aurora sa fie vizibila.
+   `.dark` clasa e pe <html>, deci selectorul direct e `html.dark`. */
+html.dark {
   background:
-    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.14) 0px, transparent 55%),
-    radial-gradient(at 85% 18%, rgba(99, 102, 241, 0.16) 0px, transparent 55%),
-    radial-gradient(at 50% 75%, rgba(168, 85, 247, 0.12) 0px, transparent 55%),
-    radial-gradient(at 80% 90%, rgba(244, 63, 94, 0.08) 0px, transparent 55%),
+    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.10) 0px, transparent 55%),
+    radial-gradient(at 85% 18%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
+    radial-gradient(at 50% 75%, rgba(168, 85, 247, 0.10) 0px, transparent 55%),
     var(--color-bg);
   background-attachment: fixed;
 }
@@ -1126,6 +1128,30 @@ textarea:hover:not(:focus):not(:disabled) {
     0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* Combinations — glass + glow simultan FĂRĂ să pierdem inset highlight.
+   Bug 5/19/2026: cand aplicam .lc-glass-1.lc-glow-emerald (cele 2 clase
+   pe acelasi element), `box-shadow` din .lc-glow-emerald overscrie cel
+   din .lc-glass-1. Pierdeam inset highlight-ul de sus. Acum scriem
+   explicit combinatia. */
+.lc-glass-1.lc-glow-emerald {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 8px 24px -8px rgba(16, 185, 129, 0.18),
+    0 16px 32px -12px rgba(0, 0, 0, 0.08);
+}
+.lc-glass-2.lc-glow-emerald {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    0 8px 32px -8px rgba(16, 185, 129, 0.22),
+    0 24px 48px -12px rgba(0, 0, 0, 0.12);
+}
+.lc-glass-3.lc-glow-emerald {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.50),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 16px 64px -16px rgba(16, 185, 129, 0.30);
+}
+
 .lc-glass-2 {
   background: var(--glass-2-bg);
   backdrop-filter: blur(var(--glass-2-blur)) saturate(var(--glass-2-saturate));
@@ -1179,10 +1205,19 @@ textarea:hover:not(:focus):not(:disabled) {
   background-clip: padding-box, border-box;
 }
 
-/* Aurora glow shadows */
+/* Aurora glow shadows — static (always-on) variants */
 .lc-glow-emerald { box-shadow: var(--shadow-glow-emerald); }
 .lc-glow-aqua    { box-shadow: var(--shadow-glow-aqua); }
 .lc-glow-violet  { box-shadow: var(--shadow-glow-violet); }
+
+/* Hover variants — Tailwind nu proceseaza hover: cu clase custom non-utility,
+   asa ca expunem variante explicite. Folosite pe Card variant glass + hover prop. */
+.lc-glow-hover-emerald { transition: box-shadow var(--duration-base) var(--ease-smooth); }
+.lc-glow-hover-emerald:hover { box-shadow: var(--shadow-glow-emerald); }
+.lc-glow-hover-aqua { transition: box-shadow var(--duration-base) var(--ease-smooth); }
+.lc-glow-hover-aqua:hover { box-shadow: var(--shadow-glow-aqua); }
+.lc-glow-hover-violet { transition: box-shadow var(--duration-base) var(--ease-smooth); }
+.lc-glow-hover-violet:hover { box-shadow: var(--shadow-glow-violet); }
 
 /* Spec highlight slide — hover effect for glass buttons.
    Translates a sheen across the surface left-to-right. */
