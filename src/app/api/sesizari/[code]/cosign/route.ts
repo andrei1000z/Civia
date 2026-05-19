@@ -6,13 +6,20 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { sanitizeText } from "@/lib/sanitize";
+import { publicAuthorName } from "@/lib/sesizari/display-name";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
   name: z.string().min(2).max(120).optional(),
   email: z.union([z.string().email(), z.literal(""), z.null()]).optional().transform((v) => (v === "" ? null : v ?? null)),
-  city: z.string().max(120).optional().nullable(),
+  /**
+   * IMPORTANT: NU mai trimitem adresa de domiciliu in `city`. Field-ul
+   * acceptat aici e exclusiv localitatea (Bucuresti, Cluj-Napoca, etc).
+   * Adresa stradala completa NU se mai persista in DB-ul de cosigners
+   * — leak vechi (bug 5/19/2026).
+   */
+  city: z.string().max(60).optional().nullable(),
   message: z.string().max(500).optional().nullable(),
   _honey: z.string().optional(),
 });
@@ -24,13 +31,22 @@ function hashIp(ip: string): string {
 /**
  * POST /api/sesizari/[code]/cosign
  *
- * Real co-signing: persists an identified co-signer (user_id or anon email)
- * in `sesizare_cosigners` + writes a "cosemnat" timeline event so followers
- * see "Un alt cetatean a co-semnat". Dedup pe (sesizare_id, user_id) sau
- * (sesizare_id, email) ca sa nu poata fi pumped de un singur user.
+ * Real co-signing: persistă un co-semnatar in `sesizare_cosigners`. Dedup:
+ *   - user logat: (sesizare_id, user_id)
+ *   - anon cu email: (sesizare_id, lower(email))
+ *   - anon fara email: (sesizare_id, ip_hash)  ← bugfix 5/19/2026
  *
- * Pe form-less calls (body fara name) ramane backwards-compat — doar
- * incrementeaza timeline-ul anonim (vechiul flow „Trimite si tu" cu mailto).
+ * Inainte, daca user nu era logat SI nu da email, ruta INSERA NIMIC si
+ * doar timeline-ul primea eveniment → counter ramanea la 1 chiar daca
+ * 10 cetateni apasau „Trimite si tu". Acum oricine apasa e contorizat,
+ * cu dedup pe IP ca sa nu poata spam de pe acelasi device.
+ *
+ * GET /api/sesizari/[code]/cosign
+ *
+ * Returneaza count + ultimii 5 cosigners cu PII ZERO:
+ *   - first_name (primul cuvant din nume)
+ *   - created_at (data — frontend formateaza „19 mai")
+ * Nu mai expunem nume complet, city, email, ip_hash.
  */
 export async function POST(
   req: Request,
@@ -56,7 +72,7 @@ export async function POST(
   try {
     body = await req.json();
   } catch {
-    // No body → legacy anon counter mode
+    // No body → tot incercam cosign anon cu ip_hash.
   }
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -70,33 +86,44 @@ export async function POST(
 
   const admin = createSupabaseAdmin();
 
-  // Identified co-sign (logged-in or anon-with-email).
+  // Insert UNIVERSAL: oricine apasa „Trimite si tu" → insertam rand cu
+  // dedup adecvat (user/email/ip). Numele e optional (default „Cetățean")
+  // ca anonimul-fara-form sa fie contat. Adresa nu se persista NICIODATA.
   let cosignerInserted = false;
-  if (name && (user || email)) {
-    const insertRow = {
-      sesizare_id: sesizare.id,
-      user_id: user?.id ?? null,
-      name: sanitizeText(name),
-      email: email ?? null,
-      city: city ? sanitizeText(city) : null,
-      message: message ? sanitizeText(message) : null,
-      ip_hash: hashIp(ip),
-    };
+  const safeName = name ? sanitizeText(name).slice(0, 120) : "Cetățean";
+  // City sanitizat la max 60 chars — extra defense impotriva trimiterii
+  // unei adrese complete in field-ul ce ar urma sa stea acolo.
+  const safeCity = city ? sanitizeText(city).slice(0, 60) : null;
+  const insertRow = {
+    sesizare_id: sesizare.id,
+    user_id: user?.id ?? null,
+    name: safeName,
+    email: email ?? null,
+    city: safeCity,
+    message: message ? sanitizeText(message).slice(0, 500) : null,
+    ip_hash: hashIp(ip),
+  };
 
-    const { error: insErr } = await admin.from("sesizare_cosigners").insert(insertRow);
-    if (insErr) {
-      if (insErr.code === "23505") {
-        return NextResponse.json({ error: "Ai co-semnat deja aceasta sesizare." }, { status: 409 });
-      }
-      // Fall through to timeline-only if cosigners table doesn't exist yet
-      // (migration 042 hasn't run): treat as legacy mode.
-    } else {
-      cosignerInserted = true;
+  const { error: insErr } = await admin.from("sesizare_cosigners").insert(insertRow);
+  if (insErr) {
+    if (insErr.code === "23505") {
+      // Deja co-semnat de acelasi user/email/IP — întoarcem count actual.
+      const { count: c } = await admin
+        .from("sesizare_cosigners")
+        .select("id", { count: "exact", head: true })
+        .eq("sesizare_id", sesizare.id);
+      return NextResponse.json(
+        { error: "Ai co-semnat deja această sesizare.", count: c ?? 0 },
+        { status: 409 },
+      );
     }
+    // Alt tip de eroare (table missing, schema mismatch, etc) — fall
+    // through la timeline-only mode.
+  } else {
+    cosignerInserted = true;
   }
 
-  // Timeline event — preserves the legacy „cosemnat" pulse so followers
-  // get notified even when the cosigner table write was skipped.
+  // Timeline event — preservam pulse-ul „cosemnat" pentru followers.
   await admin.from("sesizare_timeline").insert({
     sesizare_id: sesizare.id,
     event_type: "cosemnat",
@@ -104,17 +131,12 @@ export async function POST(
     created_by: user?.id ?? null,
   });
 
-  // Count after insert pentru live UI.
-  let count = 0;
-  if (cosignerInserted) {
-    const { count: c } = await admin
-      .from("sesizare_cosigners")
-      .select("id", { count: "exact", head: true })
-      .eq("sesizare_id", sesizare.id);
-    count = c ?? 0;
-  }
+  const { count } = await admin
+    .from("sesizare_cosigners")
+    .select("id", { count: "exact", head: true })
+    .eq("sesizare_id", sesizare.id);
 
-  return NextResponse.json({ ok: true, identified: cosignerInserted, count });
+  return NextResponse.json({ ok: true, identified: cosignerInserted, count: count ?? 0 });
 }
 
 export async function GET(
@@ -131,12 +153,22 @@ export async function GET(
     .select("id", { count: "exact", head: true })
     .eq("sesizare_id", sesizare.id);
 
+  // PRIVACY: returnam DOAR primul cuvant din nume + data. NU mai expunem:
+  //   - nume complet (fost: „Eduard Andrei Mușat")
+  //   - city/adresa (fost: „Strada Novaci 12, Sector 5")
+  //   - email, ip_hash
+  // Asta respecta GDPR principiul de minimizare a datelor.
   const { data: recent } = await admin
     .from("sesizare_cosigners")
-    .select("name, city, created_at")
+    .select("name, created_at")
     .eq("sesizare_id", sesizare.id)
     .order("created_at", { ascending: false })
     .limit(5);
 
-  return NextResponse.json({ count: count ?? 0, recent: recent ?? [] });
+  const sanitized = (recent ?? []).map((r) => ({
+    first_name: publicAuthorName({ author_name: r.name, display_name: null }),
+    created_at: r.created_at,
+  }));
+
+  return NextResponse.json({ count: count ?? 0, recent: sanitized });
 }

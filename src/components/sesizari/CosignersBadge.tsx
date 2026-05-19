@@ -9,7 +9,29 @@ interface Props {
 
 interface CosignersData {
   count: number;
-  recent: Array<{ name: string; city: string | null; created_at: string }>;
+  /**
+   * PRIVACY: API-ul returneaza DOAR first_name + created_at. Nu mai
+   * primim niciodata nume complet sau adresa (fix bug leak 5/19/2026).
+   */
+  recent: Array<{ first_name: string; created_at: string }>;
+}
+
+/**
+ * Format data scurt: „19 mai", „4 iun". Folosit pe linia de cosigners
+ * sub badge-ul de count. Ro locale, timezone Europe/Bucharest pentru
+ * consistenta server (UTC) ↔ client (local).
+ */
+function formatShortDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("ro-RO", {
+      day: "numeric",
+      month: "short",
+      timeZone: "Europe/Bucharest",
+    });
+  } catch {
+    return "";
+  }
 }
 
 export function CosignersBadge({ code }: Props) {
@@ -44,11 +66,12 @@ export function CosignersBadge({ code }: Props) {
           : `${data.count} cetățeni au co-semnat`}
       </button>
       {open && data.recent.length > 0 && (
-        <ul className="mt-2 space-y-1 text-xs text-[var(--color-text-muted)]">
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
           {data.recent.map((r, i) => (
-            <li key={i} className="inline-flex items-center gap-1.5 mr-3">
-              <span className="font-medium text-[var(--color-text)]">{r.name}</span>
-              {r.city && <span>· {r.city}</span>}
+            <li key={i} className="inline-flex items-center gap-1.5">
+              <span className="font-medium text-[var(--color-text)]">{r.first_name}</span>
+              <span aria-hidden="true">·</span>
+              <time dateTime={r.created_at}>{formatShortDate(r.created_at)}</time>
             </li>
           ))}
           {data.count > data.recent.length && (

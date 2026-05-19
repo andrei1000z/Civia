@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { UserPlus, X, AlertCircle, ArrowRight, Mail, Download, Paperclip } from "lucide-react";
 import { getRecipientsLabel, buildMailtoLink } from "@/lib/sesizari/mailto";
+import { extractLocality } from "@/lib/sesizari/extract-locality";
 import { EmailChoicePanel } from "./EmailChoicePanel";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
@@ -119,17 +120,21 @@ export function SignSesizareButton({
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
     setStep("send");
-    // Record the IDENTIFIED co-sign on the server. Persistă numele +
-    // city + (optional) email în `sesizare_cosigners` ca primăria să
-    // vadă explicit cine co-semnează. Fire-and-forget; eroarea aici
-    // nu blochează send-ul.
+    // Record the IDENTIFIED co-sign on the server. Persistă DOAR numele
+    // + (optional) email + localitatea derivata in `sesizare_cosigners`.
+    //
+    // PRIVACY (bug fix 5/19/2026): inainte trimiteam `city: data.address`
+    // = adresa de domiciliu COMPLETA (ex: „Strada Novaci 12, Sector 5")
+    // care se persista in DB si se afisa public in CosignersBadge.
+    // Acum extragem doar localitatea/sectorul din adresa (ex: „Sector 5"
+    // sau „București") + opional, nimic daca nu putem distinge.
     fetch(`/api/sesizari/${code}/cosign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: data.name,
         email: data.email || null,
-        city: data.address || null,
+        city: extractLocality(data.address),
       }),
     }).catch(() => { /* silent */ });
   };
