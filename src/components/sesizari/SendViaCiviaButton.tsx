@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Send, CheckCircle2, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { playSound } from "@/lib/liquid-civic/sound";
 
 interface Props {
   code: string;
@@ -32,6 +33,7 @@ export function SendViaCiviaButton({ code, className }: Props) {
     if (state === "sending" || state === "sent") return;
     setState("sending");
     setErrorMsg("");
+    playSound("send");
     try {
       const res = await fetch(`/api/sesizari/${code}/send-via-civia`, {
         method: "POST",
@@ -47,13 +49,16 @@ export function SendViaCiviaButton({ code, className }: Props) {
         }
         setState("error");
         setErrorMsg(json.error ?? "Email-ul nu a putut fi trimis.");
+        playSound("error");
         return;
       }
       setState("sent");
       setSentAt(json.sent_at);
+      playSound("success");
     } catch {
       setState("error");
       setErrorMsg("Eroare de retea. Mai incearca.");
+      playSound("error");
     }
   };
 

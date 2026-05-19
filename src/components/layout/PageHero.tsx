@@ -24,23 +24,28 @@ interface PageHeroProps {
  * Brand-consistent page hero used across Civia surfaces. Same shape as
  * /admin, /cont, /sesizari/[code], /petitii, /stiri etc.
  */
+/**
+ * Liquid Civic v2027 — gradient presets refreshed.
+ * Duotone emerald + aqua (verde-albastru) for main, violet for premium.
+ * Toate cu 3 stops (în loc de 4) pentru curb mai lin, mai modern.
+ */
 export const HERO_GRADIENT = {
-  /** Default — emerald → indigo. Action surfaces. */
-  primary: "from-[var(--color-primary)] via-emerald-700 to-indigo-800",
-  /** Civic petitions — purple. */
-  petition: "from-purple-600 via-purple-700 to-indigo-900",
+  /** Default — emerald → aqua. Verde civic + albastru trust. */
+  primary: "from-emerald-600 via-emerald-500 to-cyan-500",
+  /** Civic petitions — violet premium. */
+  petition: "from-violet-600 via-purple-600 to-indigo-700",
   /** News — slate informational. */
-  news: "from-slate-700 via-slate-800 to-indigo-900",
-  /** Success — emerald-teal. */
-  success: "from-emerald-600 via-emerald-700 to-teal-800",
+  news: "from-slate-700 via-slate-800 to-cyan-900",
+  /** Success — emerald glow. */
+  success: "from-emerald-500 via-emerald-600 to-teal-700",
   /** Warning — amber. Use for alerts / interruption pages. */
-  warning: "from-amber-600 via-orange-700 to-rose-800",
-  /** Data — sky-blue analytical. */
-  data: "from-sky-600 via-sky-700 to-indigo-800",
-  /** Civic / authority — slate-purple, formal. */
-  authority: "from-slate-700 via-purple-800 to-indigo-900",
-  /** Health / wellness — teal. */
-  health: "from-teal-600 via-teal-700 to-cyan-800",
+  warning: "from-amber-500 via-orange-600 to-rose-700",
+  /** Data — sky-blue analytical, duotone with aqua. */
+  data: "from-cyan-500 via-sky-600 to-indigo-700",
+  /** Civic / authority — slate emerald, formal. */
+  authority: "from-slate-700 via-emerald-800 to-emerald-900",
+  /** Health / wellness — teal aqua. */
+  health: "from-teal-500 via-cyan-600 to-emerald-700",
 } as const;
 
 export function PageHero({

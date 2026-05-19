@@ -115,14 +115,10 @@ export function Navbar() {
           // anulează sticky). Body's pt-16 din layout creează spațiul
           // ocupat anterior de sticky în normal flow.
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          // Always-glass: tinted backdrop-blur over whatever is behind
-          // (green hero at top, page bg further down). When scrolled past
-          // the hero we strengthen the border + shadow so the navbar
-          // detaches visually from the page content below.
-          "bg-[var(--glass-bg)] [backdrop-filter:blur(var(--glass-blur))_saturate(180%)] [-webkit-backdrop-filter:blur(var(--glass-blur))_saturate(180%)]",
-          scrolled
-            ? "border-b border-[var(--color-border)] shadow-[var(--shadow-1)]"
-            : "border-b border-transparent",
+          // 2026-05-19 Liquid Civic: glass-1 layer (chrome subtle).
+          // Inset specular top highlight pentru depth.
+          "lc-glass-1",
+          scrolled ? "lc-glow-emerald" : "",
         )}
       >
         <div className="container-narrow flex items-center justify-between h-16">

@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { ThemeSettings } from "@/components/ThemeSettings";
+import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
@@ -533,6 +534,8 @@ export default function ContPage() {
             <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
               <SectionTitle icon={Sparkles}>Aspect</SectionTitle>
               <ThemeSettings />
+              {/* 2026-05-19 Liquid Civic: sunete UI opt-in (default off). */}
+              <SoundsToggle />
             </section>
 
             {/* Confidențialitate */}

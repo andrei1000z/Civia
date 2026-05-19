@@ -119,15 +119,13 @@ export function Modal({ open, onClose, title, children, size = "md", className }
 
   return (
     <div
-      // Phase 3 v2: overlay folosește backdrop-blur mai puternic (16px via
-      // glass token --glass-blur prin clasa generică). Black/50 base ca să
-      // suprafețele albe din spate să se vadă atenuate, nu invizibile.
-      // Safe-area top/bottom pentru iPhone notch (landscape) — modalul
-      // nu mai cade sub bezel.
-      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center px-2 py-4 sm:p-4 bg-black/50 backdrop-blur-md overflow-y-auto animate-fade-in"
+      // 2026-05-19 Liquid Civic: backdrop blur-xl + emerald tint subtle.
+      // Safe-area top/bottom pentru iPhone notch (landscape).
+      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center px-2 py-4 sm:p-4 backdrop-blur-xl overflow-y-auto animate-fade-in"
       style={{
         paddingTop: "max(1rem, env(safe-area-inset-top))",
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        background: "radial-gradient(ellipse at center, rgba(16, 185, 129, 0.04), rgba(0, 0, 0, 0.55))",
       }}
       onClick={onClose}
       role="presentation"
@@ -139,10 +137,8 @@ export function Modal({ open, onClose, title, children, size = "md", className }
         aria-label={title ?? undefined}
         tabIndex={-1}
         className={cn(
-          // Phase 3 v2: radius 12 → 24 (radius-lg, squircle), shadow-4 mai
-          // diffused. Border păstrat pentru contrast subtil.
-          "w-full bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] my-8 outline-none animate-modal-pop",
-          "border border-[var(--color-border)]",
+          // Liquid Civic glass-3 — premium floating surface.
+          "w-full lc-glass-3 rounded-[var(--radius-lg)] my-8 outline-none animate-modal-pop",
           sizeClass,
           className
         )}

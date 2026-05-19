@@ -16,17 +16,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rightIcon?: ReactNode;
 }
 
+/**
+ * 2026-05-19 Liquid Civic — variants enhanced with shine + magnetic hover.
+ * Primary now uses gradient emerald→aqua. Outline uses refractive border.
+ */
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] shadow-md hover:shadow-lg",
+    "bg-gradient-to-r from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:brightness-110 shadow-md hover:shadow-lg lc-shine lc-magnetic",
   secondary:
-    "bg-[var(--color-secondary)] text-white hover:brightness-110 shadow-md hover:shadow-lg",
+    "lc-glass-2 text-[var(--color-text)] hover:lc-glow-aqua lc-magnetic",
   outline:
     "border-2 border-[var(--color-primary)] text-[var(--color-primary)] bg-transparent hover:bg-[var(--color-primary-soft)]",
   ghost:
     "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface-2)]",
   danger:
-    "bg-[var(--color-accent)] text-white hover:brightness-110 shadow-md hover:shadow-lg",
+    "bg-[var(--color-accent)] text-white hover:brightness-110 shadow-md hover:shadow-lg lc-shine",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

@@ -992,3 +992,351 @@ textarea:hover:not(:focus):not(:disabled) {
     background: var(--color-surface-2);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ⚡ LIQUID CIVIC v2027 — Aurora glass design language
+   ───────────────────────────────────────────────────────────────
+   Token-uri noi adăugate 2026-05-19 fără să stricăm sistemul vechi.
+   - Aurora palette (emerald + aqua + violet) — duotone primary
+   - Glass-1/2/3 layered surfaces (backdrop-filter)
+   - Motion spring tokens
+   - Specular highlights pe glass
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Aurora palette — green civic + blue trust + violet premium */
+  --civic-emerald-50:  #ECFDF5;
+  --civic-emerald-100: #D1FAE5;
+  --civic-emerald-300: #6EE7B7;
+  --civic-emerald-400: #34D399;
+  --civic-emerald-500: #10B981;
+  --civic-emerald-600: #059669;
+  --civic-emerald-700: #047857;
+  --civic-emerald-900: #064E3B;
+
+  --civic-aqua-50:     #ECFEFF;
+  --civic-aqua-100:    #CFFAFE;
+  --civic-aqua-300:    #67E8F9;
+  --civic-aqua-400:    #22D3EE;
+  --civic-aqua-500:    #06B6D4;
+  --civic-aqua-600:    #0891B2;
+  --civic-aqua-700:    #0E7490;
+  --civic-aqua-900:    #164E63;
+
+  --civic-violet-50:   #F5F3FF;
+  --civic-violet-100:  #EDE9FE;
+  --civic-violet-400:  #A78BFA;
+  --civic-violet-500:  #8B5CF6;
+  --civic-violet-600:  #7C3AED;
+  --civic-violet-700:  #6D28D9;
+  --civic-violet-900:  #4C1D95;
+
+  /* Liquid Civic glass layers — 3 nivele:
+     glass-1: chrome subtle (navbar, sticky bars)
+     glass-2: floating cards (modal content, lifted surfaces)
+     glass-3: hero/premium (CTA mega, splash overlays) */
+  --glass-1-bg: rgba(255, 255, 255, 0.55);
+  --glass-1-border: rgba(255, 255, 255, 0.18);
+  --glass-1-blur: 24px;
+  --glass-1-saturate: 180%;
+
+  --glass-2-bg: rgba(255, 255, 255, 0.65);
+  --glass-2-border: rgba(255, 255, 255, 0.25);
+  --glass-2-blur: 32px;
+  --glass-2-saturate: 200%;
+
+  --glass-3-bg: rgba(255, 255, 255, 0.72);
+  --glass-3-border: rgba(255, 255, 255, 0.35);
+  --glass-3-blur: 40px;
+  --glass-3-saturate: 220%;
+
+  /* Refractive border gradient — verde→albastru→alb pentru edge light */
+  --refractive-border: linear-gradient(135deg,
+    rgba(16, 185, 129, 0.35) 0%,
+    rgba(34, 211, 238, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 100%);
+
+  /* Specular highlight (top reflection) — pentru orice glass surface */
+  --specular: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 35%,
+    transparent 100%);
+
+  /* Aurora glow shadows — emerald + aqua emanating from cards */
+  --shadow-glow-emerald: 0 8px 32px -8px rgba(16, 185, 129, 0.18),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.10);
+  --shadow-glow-aqua:    0 8px 32px -8px rgba(34, 211, 238, 0.20),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.10);
+  --shadow-glow-violet:  0 8px 32px -8px rgba(139, 92, 246, 0.22),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.12);
+
+  /* Motion tokens — natural spring physics + linear linear */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);     /* bouncy overshoot */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);          /* material standard */
+  --ease-snappy: cubic-bezier(0.4, 0, 0, 1);            /* iOS slide */
+  --ease-decel:  cubic-bezier(0, 0, 0.2, 1);            /* deceleration */
+
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --duration-slower: 600ms;
+}
+
+.dark {
+  /* Glass layers dark — tinted emerald wash + brighter borders pentru OLED */
+  --glass-1-bg: rgba(15, 15, 15, 0.55);
+  --glass-1-border: rgba(255, 255, 255, 0.10);
+
+  --glass-2-bg: rgba(20, 20, 20, 0.65);
+  --glass-2-border: rgba(255, 255, 255, 0.14);
+
+  --glass-3-bg: rgba(25, 25, 25, 0.72);
+  --glass-3-border: rgba(255, 255, 255, 0.22);
+
+  /* Refractive border dark — mai luminos pe negru */
+  --refractive-border: linear-gradient(135deg,
+    rgba(52, 211, 153, 0.45) 0%,
+    rgba(103, 232, 249, 0.35) 50%,
+    rgba(255, 255, 255, 0.20) 100%);
+
+  /* Specular dark — alb mai subtil */
+  --specular: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.10) 0%,
+    rgba(255, 255, 255, 0.02) 35%,
+    transparent 100%);
+
+  /* Aurora glows dark — mai puternice ca să fie vizibile */
+  --shadow-glow-emerald: 0 8px 32px -8px rgba(52, 211, 153, 0.25),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.55);
+  --shadow-glow-aqua:    0 8px 32px -8px rgba(103, 232, 249, 0.28),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.55);
+  --shadow-glow-violet:  0 8px 32px -8px rgba(167, 139, 250, 0.30),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.60);
+}
+
+/* ─── Glass layer utilities ─────────────────────────────────── */
+
+.lc-glass-1 {
+  background: var(--glass-1-bg);
+  backdrop-filter: blur(var(--glass-1-blur)) saturate(var(--glass-1-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-1-blur)) saturate(var(--glass-1-saturate));
+  border: 1px solid var(--glass-1-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.lc-glass-2 {
+  background: var(--glass-2-bg);
+  backdrop-filter: blur(var(--glass-2-blur)) saturate(var(--glass-2-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-2-blur)) saturate(var(--glass-2-saturate));
+  border: 1px solid var(--glass-2-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    0 8px 32px -8px rgba(16, 185, 129, 0.08),
+    0 24px 48px -12px rgba(0, 0, 0, 0.12);
+}
+
+.lc-glass-3 {
+  background: var(--glass-3-bg);
+  backdrop-filter: blur(var(--glass-3-blur)) saturate(var(--glass-3-saturate)) brightness(105%);
+  -webkit-backdrop-filter: blur(var(--glass-3-blur)) saturate(var(--glass-3-saturate)) brightness(105%);
+  border: 1px solid var(--glass-3-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.50),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 16px 64px -16px rgba(34, 211, 238, 0.18);
+}
+
+/* Specular highlight — pseudo-element top reflection */
+.lc-specular {
+  position: relative;
+}
+.lc-specular::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--specular);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+.lc-specular > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Refractive border — gradient border with refraction look */
+.lc-refractive {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(var(--color-surface), var(--color-surface)),
+    var(--refractive-border);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Aurora glow shadows */
+.lc-glow-emerald { box-shadow: var(--shadow-glow-emerald); }
+.lc-glow-aqua    { box-shadow: var(--shadow-glow-aqua); }
+.lc-glow-violet  { box-shadow: var(--shadow-glow-violet); }
+
+/* Spec highlight slide — hover effect for glass buttons.
+   Translates a sheen across the surface left-to-right. */
+.lc-shine {
+  position: relative;
+  overflow: hidden;
+}
+.lc-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 70%);
+  transition: left 600ms var(--ease-smooth);
+  pointer-events: none;
+}
+.lc-shine:hover::after {
+  left: 100%;
+}
+
+/* Gradient text — emerald → aqua duotone */
+.lc-text-gradient {
+  background: linear-gradient(135deg, var(--civic-emerald-500), var(--civic-aqua-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.lc-text-gradient-premium {
+  background: linear-gradient(135deg, var(--civic-violet-500), var(--civic-aqua-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Magnetic hover — for primary buttons. Subtle translateY on hover. */
+.lc-magnetic {
+  transition: transform var(--duration-base) var(--ease-spring),
+              box-shadow var(--duration-base) var(--ease-smooth);
+}
+.lc-magnetic:hover {
+  transform: translateY(-2px);
+}
+.lc-magnetic:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--duration-fast);
+}
+
+/* Aurora background — animated blobs behind everything.
+   Used at <body> or specific surfaces. Slow drift 60s. */
+@keyframes lc-aurora-drift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -20px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 30px) rotate(240deg);
+  }
+}
+
+.lc-aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: lc-aurora-drift 60s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-aurora-blob {
+    animation: none;
+  }
+  .lc-shine::after {
+    transition: none;
+  }
+  .lc-magnetic {
+    transition: none;
+  }
+}
+
+/* Performance: dezactivează glass pe save-data sau low-end browsers
+   care nu suportă backdrop-filter (Firefox vechi).
+   Fallback la surface solid. */
+@supports not (backdrop-filter: blur(1px)) {
+  .lc-glass-1, .lc-glass-2, .lc-glass-3 {
+    background: var(--color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Reduced transparency — iOS accessibility setting. Solid fallback. */
+@media (prefers-reduced-transparency: reduce) {
+  .lc-glass-1 { background: var(--color-surface); backdrop-filter: none; }
+  .lc-glass-2 { background: var(--color-surface); backdrop-filter: none; }
+  .lc-glass-3 { background: var(--color-surface-elevated); backdrop-filter: none; }
+  .lc-specular::before { display: none; }
+}
+
+/* ─── Photo treatment — vignette + glass frame pe hover ──────── */
+.lc-photo {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+.lc-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.18) 100%);
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity var(--duration-base) var(--ease-smooth);
+}
+.lc-photo:hover::after {
+  opacity: 0.4;
+}
+.lc-photo > img {
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+.lc-photo:hover > img {
+  transform: scale(1.04);
+}
+
+/* ─── Rainbow mode — Easter egg (Konami) ─────────────────────── */
+.lc-rainbow-mode {
+  animation: lc-rainbow-hue 8s linear infinite;
+}
+@keyframes lc-rainbow-hue {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-rainbow-mode { animation: none; }
+}
+
+/* ─── Cursor glow target — desktop only ──────────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  body.lc-cursor-glow-enabled .lc-glass-1,
+  body.lc-cursor-glow-enabled .lc-glass-2,
+  body.lc-cursor-glow-enabled .lc-glass-3 {
+    transition: box-shadow 200ms var(--ease-smooth);
+  }
+}
+

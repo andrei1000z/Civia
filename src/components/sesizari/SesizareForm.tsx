@@ -51,6 +51,8 @@ import {
 } from "@/lib/sesizari/mailto";
 import { trackFunnelStep, trackAiUsage, trackFormAbandon } from "@/components/analytics/CiviaTracker";
 import { SendViaCiviaButton } from "./SendViaCiviaButton";
+import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
+import { playSound } from "@/lib/liquid-civic/sound";
 import { useCountyOptional } from "@/lib/county-context";
 
 interface FormData {
@@ -1737,6 +1739,8 @@ function SuccessScreen({
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // 2026-05-19 Liquid Civic: success sound (opt-in)
+    playSound("success");
   }, []);
 
   // Auto-open ONLY on desktop. On mobile, programmatic click on
@@ -1787,6 +1791,8 @@ function SuccessScreen({
 
   return (
     <div ref={cardRef} className="max-w-md mx-auto py-8 text-center scroll-mt-4">
+      {/* 2026-05-19 Liquid Civic: Civic Sprite mascot la prima sesizare. */}
+      <CivicSprite type="first-sesizare" persistentKey="first-sesizare" />
       {/* aria-live polite — screen readers announce the submit success
           + the code without interrupting whatever they were reading. */}
       <div role="status" aria-live="polite" className="sr-only">

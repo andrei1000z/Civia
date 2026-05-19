@@ -5,18 +5,25 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   hover?: boolean;
   accentColor?: string;
+  /** 2026-05-19 Liquid Civic — glass variants. */
+  variant?: "solid" | "glass" | "glass-strong" | "flat";
 }
 
-export function Card({ children, hover, accentColor, className, ...props }: CardProps) {
+export function Card({ children, hover, accentColor, variant = "solid", className, ...props }: CardProps) {
+  const variantClass =
+    variant === "glass" ? "lc-glass-2"
+    : variant === "glass-strong" ? "lc-glass-3 lc-glow-emerald"
+    : variant === "flat" ? "bg-[var(--color-surface)] border border-[var(--color-border)]"
+    : "bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-2)]";
+
   return (
     <div
       className={cn(
-        // Phase 3 v2: radius 12px → 16px (--radius-md), shadow-2 default,
-        // shadow-3 on hover. Mai squircle, mai diffused depth — One UI 8.5.
-        "relative bg-[var(--color-surface)] rounded-[var(--radius-md)] p-4 sm:p-5",
-        "border border-[var(--color-border)] shadow-[var(--shadow-2)]",
+        "relative rounded-[var(--radius-md)] p-4 sm:p-5",
+        variantClass,
         "transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
-        hover && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/40 active:translate-y-0 active:shadow-[var(--shadow-2)] active:duration-75",
+        hover && variant !== "glass-strong" && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/40 active:translate-y-0 active:duration-75",
+        hover && (variant === "glass" || variant === "glass-strong") && "lc-magnetic hover:lc-glow-emerald",
         accentColor && "border-l-4",
         className
       )}
