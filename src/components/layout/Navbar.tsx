@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Search as SearchIcon } from "lucide-react";
 import { NAV_LINKS, NAV_MORE, SITE_NAME } from "@/lib/constants";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
+import { SearchModal } from "@/components/ui/SearchModal";
 import { useCountyOptional } from "@/lib/county-context";
 import { cn } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -39,6 +40,7 @@ export function Navbar() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreDropdown, setMoreDropdown] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Debounce close pe dropdown — evită flicker când mouse-ul traversează
   // diagonal între trigger și submenu.
@@ -82,6 +84,27 @@ export function Navbar() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
+
+  // Cmd/Ctrl+K global shortcut deschide search modal. „/" deasemenea, ca
+  // pe GitHub/Linear — power users gasesc instinct. Skip cand cursorul
+  // este intr-un input/textarea ca sa nu blocam tastatura.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inField = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+        return;
+      }
+      if (e.key === "/" && !inField && !searchOpen) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
 
   return (
     <>
@@ -205,9 +228,15 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Search button scos din navbar la cererea user-ului. CommandPalette
-                rămâne accesibil prin ⌘K shortcut (KeyboardShortcuts component
-                listenează în continuare). */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="w-10 h-10 inline-flex items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              aria-label="Caută (Ctrl+K)"
+              title="Caută (Ctrl+K)"
+            >
+              <SearchIcon size={18} />
+            </button>
             <NotificationBell />
             <UserMenu />
             <button
@@ -311,6 +340,8 @@ export function Navbar() {
           )}
         </nav>
       </div>
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }
