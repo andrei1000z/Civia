@@ -33,9 +33,8 @@ const STATIC_PAGES: SearchResult[] = [
   { type: "page", title: "Primari București", url: "/b/istoric", excerpt: "Toți primarii Capitalei din 1990 până azi" },
 
   // Dashboards de date publice
-  { type: "page", title: "Siguranță & criminalitate", url: "/siguranta", excerpt: "Statistici oficiale Poliția Română pe tipuri și județe" },
-  { type: "page", title: "Educație", url: "/educatie", excerpt: "Promovabilitate BAC, top licee, statistici învățământ" },
-  { type: "page", title: "Sănătate", url: "/sanatate", excerpt: "Speranță viață, medici per capita, top spitale publice" },
+  // 2026-05-19: scoase /siguranta /educatie /sanatate (ghost pages).
+  { type: "page", title: "Clasament primării", url: "/clasament-primarii", excerpt: "Rata reală de răspuns a primăriilor — care răspunde, care nu" },
 
   // Dev
 ];

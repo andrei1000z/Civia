@@ -55,6 +55,9 @@ interface SesizareRow {
   status: string;
   created_at: string;
   publica: boolean;
+  // 2026-05-19: track real send vs mailto
+  sent_via_civia?: boolean | null;
+  sent_at?: string | null;
 }
 
 interface FormState {
@@ -662,6 +665,12 @@ export default function ContPage() {
                       <Badge variant="neutral">{s.sector}</Badge>
                       {!s.publica && (
                         <Badge variant="warning" className="text-[10px]">Privat</Badge>
+                      )}
+                      {s.sent_via_civia && (
+                        <Badge variant="success" className="text-[10px] inline-flex items-center gap-1">
+                          <CheckCircle2 size={10} aria-hidden="true" />
+                          Trimis via Civia
+                        </Badge>
                       )}
                       <span className="text-[10px] font-mono text-[var(--color-text-muted)] ml-auto" aria-label={`Cod sesizare ${s.code}`}>
                         {s.code}

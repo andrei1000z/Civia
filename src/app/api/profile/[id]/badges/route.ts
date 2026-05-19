@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { computeBadges } from "@/lib/badges";
+import { computeBadges, computeStreak } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
 // 2026-05-19: 1min → 30min. Badge-urile se ating pe milestone-uri rare,
@@ -30,7 +30,13 @@ export async function GET(
 
   const admin = createSupabaseAdmin();
 
-  const [sesizariRes, votesRes, commentsRes, verifsRes, resolvedRes] =
+  // Pentru streak: ne uitam la timestamps din ultimele 120 zile pe
+  // sesizari + voturi + comentarii + verificari. Limitam la 120 ca sa
+  // nu pull-am o cantitate mare de date inutil.
+  const since = new Date(Date.now() - 120 * 86_400_000).toISOString();
+
+  const [sesizariRes, votesRes, commentsRes, verifsRes, resolvedRes,
+    sesizariTsRes, votesTsRes, commentsTsRes, verifsTsRes] =
     await Promise.all([
       admin
         .from("sesizari")
@@ -53,7 +59,36 @@ export async function GET(
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("status", "rezolvat"),
+      // Pentru streak — doar timestamps in ultimele 120 zile.
+      admin
+        .from("sesizari")
+        .select("created_at")
+        .eq("user_id", userId)
+        .gte("created_at", since),
+      admin
+        .from("sesizare_votes")
+        .select("created_at")
+        .eq("user_id", userId)
+        .gte("created_at", since),
+      admin
+        .from("sesizare_comments")
+        .select("created_at")
+        .eq("user_id", userId)
+        .gte("created_at", since),
+      admin
+        .from("sesizare_verifications")
+        .select("created_at")
+        .eq("user_id", userId)
+        .gte("created_at", since),
     ]);
+
+  const allTimestamps: string[] = [
+    ...(sesizariTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
+    ...(votesTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
+    ...(commentsTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
+    ...(verifsTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
+  ];
+  const streak = computeStreak(allTimestamps);
 
   const counts = {
     sesizari: sesizariRes.count ?? 0,
@@ -61,6 +96,7 @@ export async function GET(
     comments: commentsRes.count ?? 0,
     verifications: verifsRes.count ?? 0,
     resolved: resolvedRes.count ?? 0,
+    streak,
   };
 
   const badges = computeBadges(counts);

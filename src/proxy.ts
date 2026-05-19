@@ -37,6 +37,10 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/compara": "/judete",
   "/calendar-civic": "/proteste",
   "/impact": "/",
+  // 2026-05-19: sterse ghost pages — redirect la /ghiduri (cel mai relevant).
+  "/educatie": "/ghiduri",
+  "/sanatate": "/ghiduri",
+  "/siguranta": "/ghiduri",
 };
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată
@@ -163,6 +167,9 @@ export const config = {
     "/compara",
     "/calendar-civic",
     "/impact",
+    "/educatie",
+    "/sanatate",
+    "/siguranta",
     "/:slug([a-z]{1,3})/harti/:path*",
     "/:slug([a-z]{1,3})/aer/:path*",
     // National-only paths accidentally prefixed cu județ.

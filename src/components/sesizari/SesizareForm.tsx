@@ -50,6 +50,7 @@ import {
   type MailtoInput,
 } from "@/lib/sesizari/mailto";
 import { trackFunnelStep, trackAiUsage, trackFormAbandon } from "@/components/analytics/CiviaTracker";
+import { SendViaCiviaButton } from "./SendViaCiviaButton";
 import { useCountyOptional } from "@/lib/county-context";
 
 interface FormData {
@@ -104,6 +105,14 @@ export function SesizareForm() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [honey, setHoney] = useState(""); // anti-bot honeypot
   const classifyTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Smooth-scroll la error box cand apare (2026-05-19): inainte error
+  // aparea jos in pagina iar utilizatorul nu observa pe mobile.
+  const errorRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [error]);
 
   // National geocoding state — pre-fill from county context if available
   const [detectedCounty, setDetectedCounty] = useState<string | null>(county?.id ?? null);
@@ -406,6 +415,37 @@ export function SesizareForm() {
   // automat" cand l-am gasit din text (keyword-based) ca user-ul sa
   // poata corecta daca am gresit. Reset cand user schimba manual.
   const [sectorDetectedByText, setSectorDetectedByText] = useState(false);
+
+  // 2026-05-19: AI vision auto-routing — la prima poza uploadata, daca
+  // userul nu a ales inca tipul, trimitem poza la /api/ai/vision-route
+  // pentru sugestie de tip + autoritate. Foloseste Llama 4 Scout 17B.
+  // Daca confidence >= 60, set automatic tip (cu badge „detectat din poza").
+  const visionTriedRef = useRef(false);
+  useEffect(() => {
+    if (imagini.length === 0) return;
+    if (visionTriedRef.current) return;
+    if (data.tip && !tipDetectedByAI) return; // userul a ales manual
+    visionTriedRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/ai/vision-route", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: imagini[0] }),
+          signal: AbortSignal.timeout(20_000),
+        });
+        if (!res.ok) return;
+        const j = await res.json();
+        if (j?.tip && typeof j.confidence === "number" && j.confidence >= 60) {
+          setData((d) => (d.tip ? d : { ...d, tip: j.tip }));
+          setTipDetectedByAI(true);
+          trackFunnelStep("sesizare-create", "tip-selected", { tip: j.tip, source: "vision" });
+        }
+      } catch {
+        // silent — vision e best-effort
+      }
+    })();
+  }, [imagini, data.tip, tipDetectedByAI]);
 
   // Debounced auto-classify tip from description (800ms after typing stops)
   useEffect(() => {
@@ -1549,7 +1589,7 @@ ${today}`;
         </label>
 
         {error && (
-          <div role="alert" className="p-3 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+          <div ref={errorRef} role="alert" className="p-3 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
             <AlertCircle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
             <span>{error}</span>
           </div>
@@ -1596,7 +1636,7 @@ ${today}`;
               </span>
             )}
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 mb-4 text-sm leading-relaxed text-[var(--color-text)] max-h-[420px] overflow-y-auto shadow-inner">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 mb-4 text-sm leading-relaxed text-[var(--color-text)] max-h-[60vh] sm:max-h-[420px] overflow-y-auto shadow-inner">
             {previewText.split(/\n\n+/).map((paragraph, i) => (
               <p key={i} className="mb-3 last:mb-0 whitespace-pre-line">
                 {paragraph}
@@ -1762,6 +1802,11 @@ function SuccessScreen({
       <p className="text-[var(--color-text-muted)] mb-5 text-sm">
         Următorul pas: deschide emailul în aplicația ta și apasă <strong>Trimite</strong>.
       </p>
+
+      {/* 2026-05-19: pentru utilizatori logati, oferim flow „Trimite via Civia"
+          (1-click, server-side via Resend). Reduce dropoff-ul ~70% (Reddit
+          feedback Tramagust). Fallback la mailto pentru anonimi. */}
+      <SendViaCiviaButton code={code} className="mb-4" />
 
       {/* PRIMARY ACTION — different per platform.
           - Android: intent:// URL targeting Gmail app directly. Has

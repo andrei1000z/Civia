@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeBadges, BADGES } from "./badges";
+import { computeBadges, BADGES, computeStreak } from "./badges";
 
 const ZERO = { sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0 };
 
@@ -100,5 +100,68 @@ describe("BADGES data integrity", () => {
       for (const b of badges) allIds.push(b.id);
     }
     expect(new Set(allIds).size).toBe(allIds.length);
+  });
+});
+
+describe("computeStreak", () => {
+  const today = () => new Date().toISOString();
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+
+  it("returneaza 0 pentru array gol", () => {
+    expect(computeStreak([])).toBe(0);
+  });
+
+  it("returneaza 1 daca doar azi exista activitate", () => {
+    expect(computeStreak([today()])).toBe(1);
+  });
+
+  it("returneaza 1 daca doar ieri exista activitate (azi inca nu a actionat)", () => {
+    expect(computeStreak([daysAgo(1)])).toBe(1);
+  });
+
+  it("returneaza 0 daca cea mai recenta activitate e mai veche de ieri", () => {
+    expect(computeStreak([daysAgo(2)])).toBe(0);
+    expect(computeStreak([daysAgo(5)])).toBe(0);
+  });
+
+  it("calculeaza streak de 3 zile (azi + ieri + acum 2 zile)", () => {
+    expect(computeStreak([today(), daysAgo(1), daysAgo(2)])).toBe(3);
+  });
+
+  it("calculeaza streak de 7 zile consecutive", () => {
+    const ts = Array.from({ length: 7 }, (_, i) => daysAgo(i));
+    expect(computeStreak(ts)).toBe(7);
+  });
+
+  it("se rupe streak-ul daca lipseste o zi", () => {
+    const ts = [today(), daysAgo(1), daysAgo(3)];
+    expect(computeStreak(ts)).toBe(2);
+  });
+
+  it("dedupe activitatile multiple in aceeasi zi", () => {
+    const t = today();
+    const ts = [t, t, t, daysAgo(1)];
+    expect(computeStreak(ts)).toBe(2);
+  });
+});
+
+describe("computeBadges cu streak", () => {
+  it("acorda streak-7 cand streak >= 7", () => {
+    const result = computeBadges({
+      sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0,
+      streak: 7,
+    });
+    const ids = result.earned.map((e) => e.badge.id);
+    expect(ids).toContain("streak-3");
+    expect(ids).toContain("streak-7");
+    expect(ids).not.toContain("streak-30");
+  });
+
+  it("nu acorda streak-uri daca streak nu e furnizat (backward compat)", () => {
+    const result = computeBadges({
+      sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0,
+    });
+    const ids = result.earned.map((e) => e.badge.id);
+    expect(ids.filter((id) => id.startsWith("streak"))).toHaveLength(0);
   });
 });

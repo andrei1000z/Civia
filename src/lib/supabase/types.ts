@@ -40,6 +40,11 @@ export interface SesizareRow {
   locality: string | null;
   created_at: string;
   updated_at: string;
+  /** 2026-05-19: trimitere via Civia (Resend) — track real send vs mailto. */
+  sent_via_civia?: boolean | null;
+  sent_at?: string | null;
+  sent_to_emails?: string[] | null;
+  resend_message_id?: string | null;
 }
 
 export interface SesizareFeedRow extends SesizareRow {

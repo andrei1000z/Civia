@@ -35,6 +35,7 @@ import {
 } from "@/data/intreruperi";
 import { CountyStatCards, aqiColor } from "@/components/county/CountyStatCards";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { CountyPlaceJsonLd } from "@/components/JsonLd";
 import { SITE_URL, STATUS_COLORS, STATUS_LABELS, sourceTextColor } from "@/lib/constants";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -624,11 +625,10 @@ const PRIMARY_SECTIONS = [
 // SECONDARY_SECTIONS = "Tot despre {judet}" grid. Round 2026-05-04:
 // dezintegrat /statistici, /cum-functioneaza, /bilete, /buget, /compara
 // la cererea user-ului. Rămân doar surfacele păstrate.
+// 2026-05-19: scoase /educatie /sanatate /siguranta — ghost pages cu < 5% CTR.
+// Continutul real e in /ghiduri si in dashboard-ul de statistici.
 const SECONDARY_SECTIONS = [
   { path: "/ghiduri", icon: BookOpen, label: "Ghiduri", color: "#A855F7" },
-  { path: "/educatie", icon: BookOpen, label: "Educație", color: "#0EA5E9" },
-  { path: "/sanatate", icon: Compass, label: "Sănătate", color: "#E11D48" },
-  { path: "/siguranta", icon: ShieldCheck, label: "Siguranță", color: "#4F46E5" },
 ];
 
 export default async function CountyHomePage({
@@ -689,6 +689,14 @@ export default async function CountyHomePage({
           { name: "Acasă", url: SITE_URL },
           { name: county.name, url: `${SITE_URL}/${county.slug}` },
         ]}
+      />
+      <CountyPlaceJsonLd
+        countyName={county.name}
+        countySlug={county.slug}
+        countyId={county.id}
+        description={`Sesizări civice, statistici locale, autorități și știri pentru ${county.name}. Civia agregă date publice și permite cetățenilor să raporteze probleme către primării.`}
+        population={stats?.populatie}
+        url={`${SITE_URL}/${county.slug}`}
       />
 
       {/* ─── HERO ─── (gradient pinned to design tokens — same as

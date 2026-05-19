@@ -426,3 +426,56 @@ export function HistoricalEventJsonLd({
     />
   );
 }
+
+/**
+ * County page schema — Place + AdministrativeArea + LocalGovernment.
+ * Pentru paginile /[judet] (homepage per judet). Ofera context Google ca
+ * pagina e un dashboard civic pentru jurisdictia respectiva, nu doar
+ * un articol generic. Cresc Sitelinks shot pe query-uri tip „sesizari Cluj".
+ */
+export function CountyPlaceJsonLd({
+  countyName,
+  countySlug,
+  countyId,
+  description,
+  population,
+  url,
+  primarName,
+  primarUrl,
+}: {
+  countyName: string;
+  countySlug: string;
+  countyId: string;
+  description: string;
+  population?: number;
+  url: string;
+  primarName?: string;
+  primarUrl?: string;
+}) {
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "AdministrativeArea",
+    name: countyName,
+    description: description.slice(0, 300),
+    url,
+    identifier: countyId,
+    alternateName: countySlug.toUpperCase(),
+    addressCountry: "RO",
+    inLanguage: "ro-RO",
+  };
+  if (population && population > 0) schema.populationSize = population;
+  if (primarName) {
+    schema.subOrganization = {
+      "@type": "GovernmentOrganization",
+      name: `Primăria ${countyName}`,
+      ...(primarUrl ? { url: primarUrl } : {}),
+      employee: { "@type": "Person", name: primarName, jobTitle: "Primar" },
+    };
+  }
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
+    />
+  );
+}

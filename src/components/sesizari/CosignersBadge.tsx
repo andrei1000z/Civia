@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { UserCheck } from "lucide-react";
 
 interface Props {
@@ -38,7 +38,7 @@ export function CosignersBadge({ code }: Props) {
   const [data, setData] = useState<CosignersData | null>(null);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     let cancelled = false;
     fetch(`/api/sesizari/${code}/cosign`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -48,6 +48,20 @@ export function CosignersBadge({ code }: Props) {
       .catch(() => { /* silent */ });
     return () => { cancelled = true; };
   }, [code]);
+
+  useEffect(() => {
+    const cleanup = refresh();
+    return cleanup;
+  }, [refresh]);
+
+  // Listen pentru eveniment custom „civia:cosign-added" dispatch-uit de
+  // SignSesizareButton dupa POST reusit. Optimistic UI: badge se reimprospateaza
+  // imediat fara polling sau page reload. (2026-05-19)
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener("civia:cosign-added", handler);
+    return () => window.removeEventListener("civia:cosign-added", handler);
+  }, [refresh]);
 
   if (!data || data.count === 0) return null;
 

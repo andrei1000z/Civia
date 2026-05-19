@@ -179,12 +179,12 @@ export async function GET(req: Request) {
   let sent = 0;
   let failed = 0;
   for (const sub of subscribers) {
-    const ok = await sendEmail({
+    const result = await sendEmail({
       to: sub.email,
       subject: `Civia — ${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta`,
       html,
     });
-    if (ok) sent++;
+    if (result.ok) sent++;
     else failed++;
     // Throttle: ~10 emails/sec upper bound
     await new Promise((r) => setTimeout(r, 120));

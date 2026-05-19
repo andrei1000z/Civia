@@ -34,6 +34,14 @@ export const BADGES = {
     { id: "first-resolved", name: "Problemă rezolvată!", icon: "🎉", description: "O sesizare de-a ta a fost rezolvată", threshold: 1 },
     { id: "impact-maker", name: "Impact real", icon: "⭐", description: "5 sesizări rezolvate", threshold: 5 },
   ],
+  // 2026-05-19: streak — zile consecutive cu cel putin o actiune civica
+  // (sesizare, vot, comentariu, verificare). Anti-churn retention loop.
+  streak: [
+    { id: "streak-3", name: "Streak 3 zile", icon: "🔥", description: "3 zile consecutiv cu actiune civica", threshold: 3 },
+    { id: "streak-7", name: "Streak o saptamana", icon: "🚀", description: "7 zile consecutiv activ", threshold: 7 },
+    { id: "streak-30", name: "Streak o luna", icon: "💎", description: "30 zile consecutiv activ", threshold: 30 },
+    { id: "streak-100", name: "Streak 100 zile", icon: "👑", description: "100 zile consecutiv — civic guardian", threshold: 100 },
+  ],
 };
 
 export interface UserBadges {
@@ -47,6 +55,7 @@ export function computeBadges(counts: {
   comments: number;
   verifications: number;
   resolved: number;
+  streak?: number;
 }): UserBadges {
   const earned: UserBadges["earned"] = [];
   const next: UserBadges["next"] = [];
@@ -67,6 +76,51 @@ export function computeBadges(counts: {
   checkCategory(BADGES.comments, counts.comments);
   checkCategory(BADGES.verifications, counts.verifications);
   checkCategory(BADGES.resolved, counts.resolved);
+  if (counts.streak !== undefined) checkCategory(BADGES.streak, counts.streak);
 
   return { earned, next };
+}
+
+/**
+ * Calculeaza streak-ul de zile consecutive cu activitate civica.
+ *
+ * Input: array de timestamps (ISO strings) — actiuni ale userului.
+ * Output: numarul de zile consecutive cu macar o actiune, terminand
+ * azi sau ieri (daca azi nu are activitate, streak-ul nu se rupe inca).
+ *
+ * Folosit pe pagina /cont pentru a afisa „Streak: 7 zile" + badge.
+ */
+export function computeStreak(timestamps: string[]): number {
+  if (timestamps.length === 0) return 0;
+
+  // Convert la „zile" UTC (dd) ca sa nu fie sensibil la timezone.
+  const days = new Set<string>();
+  for (const t of timestamps) {
+    try {
+      const d = new Date(t);
+      if (Number.isNaN(d.getTime())) continue;
+      days.add(d.toISOString().slice(0, 10));
+    } catch {
+      // skip invalid
+    }
+  }
+  if (days.size === 0) return 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  // Daca nici azi nici ieri nu are activitate, streak-ul s-a rupt.
+  if (!days.has(today) && !days.has(yesterday)) return 0;
+
+  // Numara consecutiv de la today inapoi
+  let streak = 0;
+  // Start cu azi sau ieri (cel mai recent care are activitate).
+  let cursor = days.has(today) ? today : yesterday;
+  while (days.has(cursor)) {
+    streak += 1;
+    const prev = new Date(`${cursor}T00:00:00Z`);
+    prev.setUTCDate(prev.getUTCDate() - 1);
+    cursor = prev.toISOString().slice(0, 10);
+  }
+  return streak;
 }

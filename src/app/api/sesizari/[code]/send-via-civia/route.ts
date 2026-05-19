@@ -1,0 +1,200 @@
+import { NextResponse } from "next/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSesizareByCode } from "@/lib/sesizari/repository";
+import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { sendEmail } from "@/lib/email/resend";
+import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
+import { buildFormalText } from "@/lib/sesizari/mailto";
+import * as Sentry from "@sentry/nextjs";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+/**
+ * POST /api/sesizari/[code]/send-via-civia
+ *
+ * Trimite sesizarea direct de pe server via Resend, in numele cetateanului.
+ * Reply-To = email-ul user-ului → primaria raspunde direct la cetatean.
+ * BCC = user (sa aibe copie) + civia (deliverability check).
+ *
+ * Asta rezolva bug-ul ~70% dropoff la mailto (Reddit feedback Tramagust):
+ * dupa „Trimite", utilizatorii nu mai apasau pe trimite in app-ul de email.
+ * Acum „Trimite" face POST aici → email pleaca instant, status marcat.
+ *
+ * Requires: user logat + ownership pe sesizare (sau email match).
+ */
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ code: string }> },
+) {
+  const ip = getClientIp(req);
+  const rl = await rateLimitAsync(`send-civia:${ip}`, { limit: 5, windowMs: 60 * 60_000 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Prea multe trimiteri. Mai incearca peste o ora." },
+      { status: 429 },
+    );
+  }
+
+  const { code } = await params;
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "Trebuie sa te autentifici pentru a trimite via Civia. Foloseste optiunea cu emailul tau." },
+      { status: 401 },
+    );
+  }
+
+  const sesizare = await getSesizareByCode(code);
+  if (!sesizare) {
+    return NextResponse.json({ error: "Sesizare negasita" }, { status: 404 });
+  }
+
+  // Ownership check — doar autorul poate trimite via Civia. Alternativ
+  // ar fi sa permitem cosignaturi sa trimita un email separate, dar
+  // pentru moment limitam la owner sa nu confuzam primariile.
+  const isOwner =
+    sesizare.user_id === user.id ||
+    sesizare.author_email?.toLowerCase().trim() === user.email?.toLowerCase().trim();
+  if (!isOwner) {
+    return NextResponse.json(
+      { error: "Doar autorul sesizarii poate trimite via Civia." },
+      { status: 403 },
+    );
+  }
+
+  if (sesizare.sent_via_civia) {
+    return NextResponse.json(
+      {
+        error: "Sesizarea a fost deja trimisa via Civia.",
+        sent_at: sesizare.sent_at,
+        already: true,
+      },
+      { status: 409 },
+    );
+  }
+
+  // Rezolva destinatarii — primary + cc.
+  const recipients = getAuthoritiesFor(
+    sesizare.tip,
+    sesizare.sector,
+    sesizare.county,
+    sesizare.locatie,
+  );
+
+  if (!recipients.primary || recipients.primary.length === 0) {
+    return NextResponse.json(
+      { error: "Nu am putut determina destinatarii pentru aceasta sesizare." },
+      { status: 422 },
+    );
+  }
+
+  // Construieste textul oficial (formal_text generat de AI deja in DB).
+  const formalText = sesizare.formal_text ?? buildFormalText({
+    tip: sesizare.tip,
+    titlu: sesizare.titlu,
+    locatie: sesizare.locatie,
+    sector: sesizare.sector,
+    descriere: sesizare.descriere ?? "",
+    formal_text: sesizare.formal_text,
+    author_name: sesizare.author_name,
+    author_email: user.email ?? null,
+    author_address: null,
+    imagini: sesizare.imagini ?? [],
+    code: sesizare.code,
+  });
+
+  const userEmail = user.email ?? sesizare.author_email ?? "";
+  const subject = `Sesizare: ${sesizare.titlu} — ${sesizare.locatie}`;
+
+  // Format HTML simplu cu paragrafe + atasamente menționate.
+  const paragraphs = formalText.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+  const htmlBody = paragraphs
+    .map((p) => `<p style="margin: 0 0 14px 0; line-height: 1.6;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("\n");
+
+  const civiaSig = `
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;" />
+    <p style="font-size: 11px; color: #666; line-height: 1.5;">
+      Acest email a fost trimis prin <a href="https://civia.ro/sesizari/${sesizare.code}" style="color: #16a34a;">Civia.ro</a>
+      — platforma cetatenilor pentru sesizari civice. Cod sesizare: <strong>${sesizare.code}</strong>.<br/>
+      Raspunsul la acest email ajunge direct la cetateanul care a depus sesizarea.
+    </p>
+  `;
+
+  const html = `<!DOCTYPE html><html lang="ro"><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111; max-width: 720px; margin: 0 auto; padding: 24px;">${htmlBody}${civiaSig}</body></html>`;
+
+  // Atasamente — pozele sesizarii (URL-uri publice Supabase Storage).
+  const attachments = (sesizare.imagini ?? []).slice(0, 5).map((url, i) => ({
+    filename: `${sesizare.code}-poza-${i + 1}.jpg`,
+    path: url,
+  }));
+
+  const primaryEmails = recipients.primary.map((a) => a.email).filter(Boolean);
+  const ccEmails = (recipients.cc ?? []).map((a) => a.email).filter(Boolean);
+
+  // Trimite email-ul.
+  const result = await sendEmail({
+    to: primaryEmails,
+    cc: ccEmails.length > 0 ? ccEmails : undefined,
+    // BCC user-ul ca sa aibe copie in inbox + tracking@civia.ro (daca exista).
+    bcc: userEmail ? [userEmail] : undefined,
+    subject,
+    html,
+    text: formalText,
+    replyTo: userEmail,
+    from: `${sesizare.author_name} via Civia <noreply@civia.ro>`,
+    attachments: attachments.length > 0 ? attachments : undefined,
+  });
+
+  if (!result.ok) {
+    Sentry.captureMessage("send-via-civia failed", {
+      level: "error",
+      tags: { kind: "resend_failure", code: sesizare.code },
+    });
+    return NextResponse.json(
+      { error: "Email-ul nu a putut fi trimis. Foloseste optiunea cu emailul tau." },
+      { status: 500 },
+    );
+  }
+
+  // Marcheaza sesizarea ca trimisa + log timeline event.
+  const admin = createSupabaseAdmin();
+  const now = new Date().toISOString();
+  await admin
+    .from("sesizari")
+    .update({
+      sent_via_civia: true,
+      sent_at: now,
+      sent_to_emails: [...primaryEmails, ...ccEmails],
+      resend_message_id: result.id ?? null,
+      // Marcam status ca „trimis" daca era „nou".
+      ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
+    })
+    .eq("id", sesizare.id);
+
+  await admin.from("sesizare_timeline").insert({
+    sesizare_id: sesizare.id,
+    event_type: "trimis_via_civia",
+    description: `Sesizarea a fost trimisa via Civia catre ${primaryEmails.length} autoritati.`,
+    created_by: user.id,
+  });
+
+  return NextResponse.json({
+    ok: true,
+    sent_at: now,
+    to: primaryEmails,
+    cc: ccEmails,
+    message_id: result.id,
+  });
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}

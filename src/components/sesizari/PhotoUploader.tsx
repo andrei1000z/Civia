@@ -248,7 +248,7 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
       {error && <p role="alert" className="text-xs text-red-500 mt-2">{error}</p>}
 
       {(urls.length > 0 || pending.length > 0) && (
-        <div className="grid grid-cols-5 gap-2 mt-3">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
           {urls.map((url, i) => (
             <div
               key={url}

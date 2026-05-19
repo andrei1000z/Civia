@@ -23,7 +23,7 @@ const COUNTY_PAGES = [
   // 308-redirecteaza, deci scos din sitemap ca sa nu indexam redirect-uri.
   // Sub-pages pentru date publice — au fost adăugate ca pagini per-județ
   // în refactor-ul național dar lipseau din sitemap.
-  "/educatie", "/sanatate", "/siguranta",
+  // 2026-05-19: scoase /educatie /sanatate /siguranta — pagini ghost, sterse.
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -48,9 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/urmareste`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/legal/confidentialitate`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/legal/termeni`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/siguranta`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/educatie`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/sanatate`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    // 2026-05-19: scoase /siguranta /educatie /sanatate.
+    { url: `${base}/clasament-primarii`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
     { url: `${base}/autoritati`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },

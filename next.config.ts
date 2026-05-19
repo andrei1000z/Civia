@@ -141,6 +141,27 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=2592000, s-maxage=31536000, stale-while-revalidate=2592000" },
         ],
       },
+      {
+        // Admin + API: no index/follow (defense-in-depth peste meta robots).
+        // Inca un strat impotriva crawlerilor care ignora <meta>.
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
+        // /cont (profil personal) — date private, nu indexat.
+        source: "/cont/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
     ];
   },
 };

@@ -15,40 +15,48 @@ export function getResendClient(): Resend | null {
 const FROM = process.env.RESEND_FROM_EMAIL || "Civia <onboarding@resend.dev>";
 
 /**
- * Send email via Resend. Returns true on success, false on failure.
+ * Send email via Resend. Returns { ok, id? } pe succes / failure.
  * Silently fails if Resend is not configured (no API key).
+ *
+ * 2026-05-19: extins cu suport pentru:
+ *   - to multi-recipient (array)
+ *   - cc / bcc
+ *   - attachments via URL (Resend trage automat din URL-uri publice)
+ *   - from override (pentru flow „trimite via Civia" cu Reply-To user)
  */
 export async function sendEmail(params: {
-  to: string;
+  to: string | string[];
+  cc?: string | string[];
+  bcc?: string | string[];
   subject: string;
   html: string;
   /** Optional plain-text fallback for clients that block HTML. */
   text?: string;
   /** Optional Reply-To override (default: same as FROM). */
   replyTo?: string;
-}): Promise<boolean> {
+  /** Override sender — keep brand consistent dar with custom display name. */
+  from?: string;
+  /** Atașamente — array de URL-uri publice (Resend fetch-uieste automat). */
+  attachments?: Array<{ filename: string; path?: string; content?: string }>;
+}): Promise<{ ok: boolean; id?: string }> {
   const resend = getResendClient();
   if (!resend) {
-    // Only log in dev — in production this is silent (Resend key
-    // is expected to be present in real deployment).
     if (!isProd()) {
       console.log("[email] Resend not configured, skipping:", params.subject);
     }
-    return false;
+    return { ok: false };
   }
   try {
-    const { error } = await resend.emails.send({
-      from: FROM,
+    const { data, error } = await resend.emails.send({
+      from: params.from ?? FROM,
       to: params.to,
+      ...(params.cc ? { cc: params.cc } : {}),
+      ...(params.bcc ? { bcc: params.bcc } : {}),
       subject: params.subject,
       html: params.html,
-      // Multipart — lots of corporate mail filters drop HTML-only
-      // mail. If the caller didn't provide text, synth it from the
-      // subject so we at least have something.
       text: params.text ?? `${params.subject}\n\n—\nVezi conținutul complet pe civia.ro`,
       ...(params.replyTo ? { replyTo: params.replyTo } : {}),
-      // List-Unsubscribe so Gmail / Apple Mail get a native
-      // unsubscribe button at the top of notification emails.
+      ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {
         "List-Unsubscribe": `<${ENV.SITE_URL()}/cont?unsubscribe=1>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -56,12 +64,12 @@ export async function sendEmail(params: {
     });
     if (error) {
       if (!isProd()) console.error("[email] Resend error:", error);
-      return false;
+      return { ok: false };
     }
-    return true;
+    return { ok: true, id: data?.id };
   } catch (e) {
     if (!isProd()) console.error("[email] Send failed:", e);
-    return false;
+    return { ok: false };
   }
 }
 

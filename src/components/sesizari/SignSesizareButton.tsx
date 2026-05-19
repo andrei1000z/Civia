@@ -113,30 +113,58 @@ export function SignSesizareButton({
       .catch(() => setProfileLoaded(true));
   }, [user, profileLoaded]);
 
-  const handleContinue = (e: React.FormEvent) => {
+  const [cosignSyncing, setCosignSyncing] = useState(false);
+  const [cosignError, setCosignError] = useState<string | null>(null);
+  // Honeypot — un input invisible care bots-ii tind sa-l completeze
+  // automat. Daca e completat, abandonam silent (false success).
+  const [honey, setHoney] = useState("");
+
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!data.name || !data.address) return;
+    // Bot detection: nu trimitem nimic la server daca honey e populat.
+    if (honey) {
+      setStep("send");
+      return;
+    }
     if (remember && typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
-    setStep("send");
-    // Record the IDENTIFIED co-sign on the server. Persistă DOAR numele
-    // + (optional) email + localitatea derivata in `sesizare_cosigners`.
-    //
-    // PRIVACY (bug fix 5/19/2026): inainte trimiteam `city: data.address`
-    // = adresa de domiciliu COMPLETA (ex: „Strada Novaci 12, Sector 5")
-    // care se persista in DB si se afisa public in CosignersBadge.
-    // Acum extragem doar localitatea/sectorul din adresa (ex: „Sector 5"
-    // sau „București") + opional, nimic daca nu putem distinge.
-    fetch(`/api/sesizari/${code}/cosign`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email || null,
-        city: extractLocality(data.address),
-      }),
-    }).catch(() => { /* silent */ });
+    // Race condition fix (5/19/2026): inainte mailto se deschidea
+    // INAINTE ca POST /cosign sa termine. Daca request-ul esua tacit
+    // (network drop, server timeout), userul deschidea Gmail dar
+    // cosemnatura nu era inregistrata.
+    // Acum asteptam fetch-ul (cu spinner), apoi mutam la step="send".
+    setCosignSyncing(true);
+    setCosignError(null);
+    try {
+      const res = await fetch(`/api/sesizari/${code}/cosign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email || null,
+          city: extractLocality(data.address),
+          _honey: honey,
+        }),
+      });
+      // 409 = deja co-semnat (idempotent) — nu blocam send-ul.
+      if (!res.ok && res.status !== 409) {
+        const txt = await res.text().catch(() => "");
+        // Logam dar nu blocam — userul tot trebuie sa poata trimite emailul.
+        console.warn("Cosign failed:", res.status, txt);
+      } else if (res.ok) {
+        // Notifica CosignersBadge sa refresh (optimistic UI).
+        window.dispatchEvent(new CustomEvent("civia:cosign-added"));
+      }
+    } catch (err) {
+      // Network error — userul tot poate continua, dar marcam.
+      console.warn("Cosign network error:", err);
+      setCosignError("Cosemnatura nu a putut fi sincronizata. Emailul va fi trimis oricum.");
+    } finally {
+      setCosignSyncing(false);
+      setStep("send");
+    }
   };
 
   const canContinue = data.name.length >= 2 && data.address.length >= 3;
@@ -210,7 +238,19 @@ export function SignSesizareButton({
             </header>
 
             {step === "form" ? (
-              <form onSubmit={handleContinue} className="p-5 space-y-4">
+              <form onSubmit={handleContinue} className="p-5 space-y-4" autoComplete="on">
+                {/* Honeypot — invisible to humans, attractive to bots. */}
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honey}
+                  onChange={(e) => setHoney(e.target.value)}
+                  aria-hidden="true"
+                  className="absolute opacity-0 pointer-events-none -z-10"
+                  style={{ position: "absolute", left: "-9999px" }}
+                />
                 <div className="rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] p-3 text-xs text-[var(--color-text-muted)]">
                   <p className="font-semibold text-[var(--color-text)] mb-1">Despre sesizare:</p>
                   <p className="line-clamp-2">{titlu}</p>
@@ -263,12 +303,26 @@ export function SignSesizareButton({
 
                 <button
                   type="submit"
-                  disabled={!canContinue}
+                  disabled={!canContinue || cosignSyncing}
                   className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
                 >
-                  Pregătește emailul
-                  <ArrowRight size={16} aria-hidden="true" />
+                  {cosignSyncing ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                      Se inregistreaza cosemnatura...
+                    </>
+                  ) : (
+                    <>
+                      Pregătește emailul
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </>
+                  )}
                 </button>
+                {cosignError && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1" role="alert">
+                    {cosignError}
+                  </p>
+                )}
               </form>
             ) : isMobile ? (
               // ─── MOBILE FLOW: 1 ecran cu disclaimer poze + 1 buton mailto ───
@@ -289,9 +343,10 @@ export function SignSesizareButton({
                           key={url}
                           type="button"
                           onClick={() => void downloadImageAsJpeg(url, `${code}-poza-${i + 1}`)}
-                          className="inline-flex items-center gap-1 h-8 px-2 rounded-[var(--radius-xs)] bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-800 text-[11px] font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+                          // Touch target WCAG 2.5.5: min-h-11 (44px) — inainte h-8.
+                          className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-[var(--radius-xs)] bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-800 text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
                         >
-                          <Download size={11} aria-hidden="true" />
+                          <Download size={14} aria-hidden="true" />
                           Poza {i + 1}
                         </button>
                       ))}

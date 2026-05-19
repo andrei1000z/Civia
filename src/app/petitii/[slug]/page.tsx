@@ -302,6 +302,46 @@ export default async function PetitiePage({
             </div>
           )}
 
+          {/* 2026-05-19 — Feature J: Petitie → Sesizare pipeline.
+              Sugereaza utilizatorului ce poate face LOCAL: dupa ce a
+              semnat petitia nationala, depune si o sesizare concreta
+              catre primarie. Cross-pollination civic. */}
+          {(() => {
+            // Map de la categoria petitiei la tipul de sesizare relevant.
+            const PETITIE_TO_SESIZARE: Record<string, { tip: string; pitch: string }> = {
+              Mediu: { tip: "copac", pitch: "Vezi un copac taiat, gunoi pe spatiu verde sau alta problema de mediu in cartierul tau?" },
+              Transport: { tip: "transport", pitch: "Banda autobuz blocata, semafor stricat, sau o problema de transport in zona ta?" },
+              Sănătate: { tip: "altele", pitch: "Vezi probleme locale legate de sanatate publica (gunoi netoxic, lipsa servicii)?" },
+              Locuințe: { tip: "trotuar", pitch: "Vezi probleme de urbanism in cartierul tau (trotuare, spatii verzi, mobilier urban)?" },
+              Siguranță: { tip: "iluminat", pitch: "Iluminat stricat, parcare ilegala, sau alte probleme de siguranta in zona?" },
+              Animale: { tip: "altele", pitch: "Vezi animale fara stapan, abuzate sau alte probleme legate de drepturile animalelor local?" },
+              Cultură: { tip: "altele", pitch: "Vezi probleme legate de patrimoniu local sau cultura (cladiri istorice degradate)?" },
+            };
+            const mapped = petitie.category ? PETITIE_TO_SESIZARE[petitie.category] : null;
+            if (!mapped) return null;
+            return (
+              <div className="mt-6 p-4 sm:p-5 rounded-[var(--radius-md)] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-300 mb-2 inline-flex items-center gap-1">
+                  <Sparkles size={11} aria-hidden="true" /> Si la nivel local?
+                </p>
+                <h3 className="font-semibold text-sm sm:text-base mb-2 text-[var(--color-text)]">
+                  {mapped.pitch}
+                </h3>
+                <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
+                  Depune o sesizare concreta catre primaria ta — Civia
+                  formalizeaza textul, gaseste autoritatile si trimite. 90 secunde.
+                </p>
+                <Link
+                  href={`/sesizari?tip=${mapped.tip}`}
+                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-xs)] bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                >
+                  Fă o sesizare locală
+                  <ChevronLeft size={14} className="rotate-180" aria-hidden="true" />
+                </Link>
+              </div>
+            );
+          })()}
+
           {/* MOBILE-ONLY share — directly after content (touch within thumb reach) */}
           <div className="lg:hidden mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
             <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-3 inline-flex items-center gap-1">

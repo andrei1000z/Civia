@@ -87,6 +87,7 @@ export const NAV_MORE: Array<{
 }> = [
   { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
   { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
+  { href: "/clasament-primarii", label: "Clasament primării", icon: "🏛️", nationalOnly: true },
   { href: "/judete", label: "Toate județele", icon: "🗺️", nationalOnly: true },
   { href: "/autoritati", label: "Autorități publice", icon: "🏛️", nationalOnly: true },
 ];

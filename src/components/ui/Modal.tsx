@@ -108,10 +108,13 @@ export function Modal({ open, onClose, title, children, size = "md", className }
 
   if (!open) return null;
 
+  // 2026-05-19: responsive sizing — pe mobile (sub 640px) toate dimensiunile
+  // sunt strânse la max-w-full ca să nu se taie pe iPhone SE (360px viewport).
+  // De la sm: in sus revin la dimensiunile original.
   const sizeClass = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
+    sm: "max-w-full sm:max-w-md",
+    md: "max-w-full sm:max-w-lg md:max-w-2xl",
+    lg: "max-w-full sm:max-w-xl md:max-w-4xl",
   }[size];
 
   return (
