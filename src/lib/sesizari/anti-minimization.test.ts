@@ -81,6 +81,39 @@ describe("removeMinimization", () => {
     expect(matched[0]?.toLowerCase()).toContain("pot");
   });
 
+  it("CRITIC: pastreaza paragrafele (\\n\\n) — bug 5/19/2026 din productie 00041", () => {
+    // Inainte de fix, regex-ul de cleanup `\s{2,} → " "` matchuia si
+    // newline-urile si le colapsa. Asta a distrus toate paragrafele din
+    // text. Fix: cleanup-ul nu mai matche-uieste newline.
+    const input = [
+      "Bună ziua,",
+      "",
+      "Mă numesc Andrei și sesizez că mașinile ocupă o parte din spațiul trotuarului.",
+      "",
+      "Pentru a rezolva, vă solicit stâlpișori.",
+      "",
+      "Cu stimă,",
+      "Andrei",
+    ].join("\n");
+    const { text } = removeMinimization(input);
+    // Paragrafele trebuie sa ramana intacte.
+    expect(text.split("\n\n").length).toBeGreaterThanOrEqual(4);
+    expect(text).toContain("Bună ziua,\n\nMă numesc");
+    expect(text).toContain("\n\nPentru a rezolva");
+    expect(text).toContain("\n\nCu stimă,");
+  });
+
+  it("CRITIC: spatii multiple intra-line sunt colapsate, dar newline-urile NU", () => {
+    // Folosesc un text fara minimization match ca sa testam strict cleanup-ul.
+    const input = "Bună ziua,\n\nAm  observat   o problemă pe stradă.";
+    const { text } = removeMinimization(input);
+    // Newline-urile pastrate
+    expect(text).toMatch(/Bună ziua,\n\nAm /);
+    // Spatii multiple intra-line colapsate
+    expect(text).not.toMatch(/Am {2,}/);
+    expect(text).not.toMatch(/observat {2,}/);
+  });
+
   it("bug 00041 — fix complet, fara duplicare 'spațiul'", () => {
     // Cazul exact din productie: ambele reguli trebuie sa actioneze
     // si rezultatul nu trebuie sa contina „spațiul ... spațiul" duplicat.

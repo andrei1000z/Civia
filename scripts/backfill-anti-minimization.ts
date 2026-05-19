@@ -1,9 +1,18 @@
 /**
  * Backfill: scoate fraze de minimizare din formal_text-ul sesizarilor
- * existente. Bug raportat 5/19/2026 pe 00041 — AI emisese frazi gen
- * „pietonilor li se asigura inca suficient spatiu" care SUBMINEAZA
- * sesizarea (zice ca nu e problema, deci primaria n-are de ce sa
- * raspunda).
+ * existente + reaplica paragrafarea (reformatFormalText) ca textele
+ * vechi care au pierdut paragrafele intr-un run anterior (bug colaps
+ * \s{2,} → " ") sa fie reformatate corect.
+ *
+ * Bug raportat 5/19/2026 pe 00041:
+ *   1) AI emisese fraza „pietonilor li se asigura inca suficient
+ *      spatiu" care SUBMINEAZA sesizarea.
+ *   2) removeMinimization avea bug — regex-ul `\s{2,} → " "` colapsa
+ *      newline-urile, distrugand toate paragrafele.
+ *
+ * Acum aplicam si reformatFormalText la backfill ca sa repare textele
+ * deja stricate. Idempotent — re-rularea pe text deja corect nu il
+ * schimba (signature exact match preserved).
  *
  * Usage:
  *   npx tsx scripts/backfill-anti-minimization.ts dry-run
@@ -16,6 +25,7 @@ config({ path: existsSync(".env.vercel.local") ? ".env.vercel.local" : ".env.loc
 
 import { createClient } from "@supabase/supabase-js";
 import { removeMinimization } from "../src/lib/sesizari/anti-minimization";
+import { reformatFormalText } from "../src/lib/sesizari/format-paragraphs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -44,21 +54,30 @@ async function main() {
   let updated = 0;
   for (const r of rows) {
     if (!r.formal_text) continue;
-    const result = removeMinimization(r.formal_text);
-    if (!result.changed) continue;
+    // 1) Anti-minimization
+    const antiMin = removeMinimization(r.formal_text);
+    // 2) Reformat paragrafe (idempotent — daca textul are deja paragrafele
+    //    corecte, output e identic cu input dupa stripping trailing whitespace).
+    const reformatted = reformatFormalText(antiMin.text);
+    // Schimbam doar daca textul final difera de original.
+    const changed = reformatted !== r.formal_text;
+    if (!changed) continue;
     toUpdate += 1;
 
     if (mode === "apply") {
       const { error: upErr } = await admin
         .from("sesizari")
-        .update({ formal_text: result.text })
+        .update({ formal_text: reformatted })
         .eq("id", r.id);
       if (upErr) console.error(`✗ ${r.code}: ${upErr.message}`);
       else updated += 1;
     } else {
-      console.log(`[${r.code}] ${result.replacements} minimizations:`);
-      for (const m of result.matched) {
-        console.log(`  → „${m.slice(0, 80)}${m.length > 80 ? "…" : ""}"`);
+      const reformatOnly = !antiMin.changed && reformatted !== r.formal_text;
+      console.log(
+        `[${r.code}] minimizations=${antiMin.replacements}${reformatOnly ? " (reformat-only)" : ""}`,
+      );
+      for (const m of antiMin.matched) {
+        console.log(`  → ${m.slice(0, 80)}${m.length > 80 ? "..." : ""}`);
       }
     }
   }

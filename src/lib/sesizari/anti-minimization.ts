@@ -108,10 +108,15 @@ export function removeMinimization(formalText: string): AntiMinimizationResult {
 
   // Cleanup gramatical post-replacement: virgule duble, spatii multiple,
   // virgula inainte de „si"/„iar" devenita awkward.
+  // CRITIC: NU colapsam \s{2,} pentru ca asta include si \n\n
+  // (paragraf-breaks). Bug 5/19/2026 — removeMinimization a distrus
+  // toate paragrafele din sesizari pentru ca regex-ul matchuia
+  // newline-uri ca whitespace si le inlocuia cu un singur space.
+  // Solutie: matchuim doar SPACE / TAB, nu newline.
   text = text
-    .replace(/,\s*,/g, ",")
-    .replace(/\s+([.,;:!?])/g, "$1")
-    .replace(/\s{2,}/g, " ");
+    .replace(/,[ \t]*,/g, ",")
+    .replace(/[ \t]+([.,;:!?])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ");
 
   return { text, changed: replacements > 0, replacements, matched };
 }
