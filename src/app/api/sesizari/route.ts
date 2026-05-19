@@ -12,6 +12,7 @@ import { buildSalutation, formatRecipientName } from "@/lib/email/format";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { polishSesizare } from "@/lib/sesizari/polish";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
+import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -192,14 +193,17 @@ export async function POST(req: Request) {
     // objectify, sau cand user a editat manual textul cu „in dreptul
     // domiciliu meu"). Sterge expresii relativiste ca textul sa poata fi
     // reutilizat de co-semnatari fara probleme.
+    // Defense-in-depth: objectify (anti claims subjective) + reformat
+    // paragrafe. Daca AI improve a căzut sau a returnat text monoblock,
+    // pe save ne asiguram ca textul are paragrafe corecte si nu contine
+    // claims relativiste („în dreptul domiciliu meu" etc).
     const safeFormalText = parsed.formal_text
-      ? objectifyFormalText(parsed.formal_text, {
-          locatie: polished.locatie,
-          // schema sesizari NU pastreaza adresa cetateanului server-side
-          // (ramane doar in mailto la client). Fara verificare exact-match,
-          // sanitize-uim oricum claims-urile subjective.
-          adresaCetatean: null,
-        }).text
+      ? reformatFormalText(
+          objectifyFormalText(parsed.formal_text, {
+            locatie: polished.locatie,
+            adresaCetatean: null,
+          }).text,
+        )
       : parsed.formal_text;
 
     // Calculeaza author_display_name pentru render public.

@@ -9,6 +9,7 @@ import { isProd } from "@/lib/env";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from "@/lib/ai/gemini";
 import { appendGdprClause, repairSesizareLeaks } from "@/lib/sesizari/format-helpers";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
+import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -90,50 +91,12 @@ function stripMarkdown(text: string): string {
 }
 
 function normalizeFormatting(text: string): string {
-  let t = stripMarkdown(text);
-  t = t.replace(/\r\n/g, "\n");
+  // 1. Strip markdown leaks (** __ ## etc).
+  // 2. Aplica regulile de paragraf-break via lib reusable (folosit si in
+  //    POST /api/sesizari ca defense-in-depth si in backfill scripts).
+  // 3. Re-aliniaza paragraph starts (Bună ziua, Pentru, Cu stimă, etc).
+  let t = reformatFormalText(stripMarkdown(text));
 
-  // Sparge numerotare inline: cand AI emite „1. ... 2. ... 3. ..." pe
-  // aceeasi linie, le rupe pe linii separate ca sa fie lizibile in render.
-  // Pattern: caracter „. " sau „: " urmat de cifra+„. " in mijloc → newline.
-  // Lookahead pe litera mare romaneasca → evita data calendaristica gen
-  // „18 mai 2026" (litera dupa cifre e mica).
-  t = t.replace(/([.:]\s)(\d{1,2}\.\s)(?=[A-ZĂÂÎȘȚ])/g, "$1\n$2");
-
-  // Sparge frazele de tranzitie inline („Pentru a rezolva...", „De
-  // asemenea...", „În temeiul...", „Vă mulțumesc...", „Cu stimă...") cand
-  // apar imediat dupa punct/colon fara newline.
-  const TRANSITIONS = [
-    "Pentru a rezolva",
-    "Având în vedere",
-    "De asemenea",
-    "În temeiul",
-    "În sprijinul",
-    "În acest sens",
-    "În scopul",
-    "Vă mulțumesc",
-    "Cu stimă",
-    "Cu respect",
-  ];
-  for (const phrase of TRANSITIONS) {
-    const re = new RegExp(`(\\.\\s)(${phrase})`, "g");
-    t = t.replace(re, "$1\n\n$2");
-  }
-
-  // Salut: „Bună ziua, Mă numesc..." — rupere DUPA virgula intre salut +
-  // deschidere („Bună ziua," ramane pe linia 1, „Mă numesc" incepe paragraf nou).
-  t = t.replace(/(Bună ziua,)\s+(Mă numesc)/g, "$1\n\n$2");
-
-  // Semnatura: „Cu stimă, {NUME} {DATA}" — numele si data pe linii separate.
-  // Match „Cu stimă, X Y Z DD mmm YYYY" → fiecare pe propria linie.
-  // Heuristic: dupa „Cu stimă," numele e pana la cifra primei date.
-  t = t.replace(
-    /(Cu (?:stimă|respect),)\s+([^\n]+?)\s+(\d{1,2}\s+\w+\s+\d{4})$/m,
-    "$1\n$2\n$3",
-  );
-
-  // Collapse 3+ newlines → exactly 2
-  t = t.replace(/\n{3,}/g, "\n\n");
   const lines = t.split("\n").map((l) => l.trim());
 
   // Rebuild: insert blank line before paragraph-start keywords if missing
