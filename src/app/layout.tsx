@@ -104,12 +104,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: [
-    // Trebuie să se potrivească cu --color-bg din globals.css ca să nu apară
-    // o linie de discontinuitate între chrome-ul browser-ului și body.
-    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // 2026-05-19: defaultTheme=dark in ThemeProvider → fortam si themeColor
+  // dark pentru ca chrome-ul browserului sa nu apara light pe useri OS-light
+  // care intra prima oara pe site. Userii care comuta la light din /cont
+  // primesc tot #0a0a0a pe chrome — minor (nu pot personaliza per user).
+  themeColor: "#0a0a0a",
   // viewport-fit=cover extends content into iOS safe areas (notch,
   // home indicator). Combined with env(safe-area-inset-*) in layout
   // CSS, the fixed bottom-right MobileFab stays clear of the home

@@ -47,8 +47,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      // 2026-05-19: default dark mode pentru utilizatorii noi (user request).
+      // Inainte: „system" → respecta prefers-color-scheme al OS-ului.
+      // Acum: „dark" default, plus enableSystem={false} ca sa fortam dark
+      // chiar daca user are OS light. User logat poate schimba din /cont/setari,
+      // schimbarea se sincronizeaza cross-device via preferences sync.
+      defaultTheme="dark"
+      enableSystem={false}
       disableTransitionOnChange={false}
     >
       <ThemeBridge />

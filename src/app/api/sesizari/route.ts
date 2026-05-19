@@ -13,6 +13,7 @@ import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { polishSesizare } from "@/lib/sesizari/polish";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
+import { removeMinimization } from "@/lib/sesizari/anti-minimization";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -193,16 +194,20 @@ export async function POST(req: Request) {
     // objectify, sau cand user a editat manual textul cu „in dreptul
     // domiciliu meu"). Sterge expresii relativiste ca textul sa poata fi
     // reutilizat de co-semnatari fara probleme.
-    // Defense-in-depth: objectify (anti claims subjective) + reformat
-    // paragrafe. Daca AI improve a căzut sau a returnat text monoblock,
-    // pe save ne asiguram ca textul are paragrafe corecte si nu contine
-    // claims relativiste („în dreptul domiciliu meu" etc).
+    // Defense-in-depth pipeline pe formal_text inainte de save:
+    //  1. objectifyFormalText — sterge claims subjective („domiciliul meu")
+    //  2. removeMinimization — sterge fraze care submineaza sesizarea
+    //     („pietonilor li se asigura inca suficient spatiu") — BUG critic
+    //     raportat 5/19/2026, AI inversa logica complet.
+    //  3. reformatFormalText — paragrafe corecte
     const safeFormalText = parsed.formal_text
       ? reformatFormalText(
-          objectifyFormalText(parsed.formal_text, {
-            locatie: polished.locatie,
-            adresaCetatean: null,
-          }).text,
+          removeMinimization(
+            objectifyFormalText(parsed.formal_text, {
+              locatie: polished.locatie,
+              adresaCetatean: null,
+            }).text,
+          ).text,
         )
       : parsed.formal_text;
 

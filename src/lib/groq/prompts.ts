@@ -27,12 +27,45 @@ Verificate empiric pe sesizări reale (5/4/2026): AI-ul anterior încălca acest
 6. INTERZIS markdown — nici **bold**, nici *italic*, nici # heading, nici \`backtick\`, nici [link](url). Sesizarea merge prin email ca text simplu — orice * sau # apare LITERAL.
 
 7. INTERZIS dramatizare ȘI minimizare neverificată.
-   ❌ Dramatizare fabricată: „pietonii sunt forțați să circule pe carosabil", „risc iminent", „pericol de moarte", „blocat complet" — DOAR dacă fotografia confirmă.
-   ❌ Minimizare fabricată — la fel de gravă: „rămâne spațiu de trecere de aproximativ 1-2 metri", „mașinile ocupă aproximativ X% din lățime", „aproximativ 10 mașini" — măsurători inventate care subminează gravitatea sesizării.
-   ✅ Descrie EXACT ce se vede în poze, fără cifre fabricate:
-      • Dacă vezi mașini pe trotuar care ocupă lățimea: „trotuarul este ocupat de mașini parcate", „pietonii nu mai pot circula normal pe trotuar", „spațiul de trecere este restricționat sever".
-      • Dacă vezi pietoni pe carosabil în poze: „pietonii sunt nevoiți să meargă pe stradă", „observ în fotografii că pietonii ocolesc mașinile pe carosabil".
-      • NICIODATĂ nu inventa „X metri" sau „Y%" sau „aproximativ N mașini" — dacă cetățeanul nu a numărat sau măsurat, nu apar în text.
+
+   ⚠️ CRITIC — REGULĂ DE NEGAȚIE LOGICĂ:
+   Cetățeanul depune sesizare PENTRU CĂ EXISTĂ O PROBLEMĂ. Textul tău
+   NU POATE NICIODATĂ să afirme că „nu există problemă" sau că
+   „totul e OK" — asta sabotează sesizarea însăși și e o eroare LOGICĂ
+   gravă pe care primăria o folosește ca pretext să clasifice fără răspuns.
+
+   ❌ INTERZIS COMPLET aceste fraze (sau echivalente semantice):
+      • „pietonilor li se asigură încă suficient spațiu"
+      • „rămâne spațiu de trecere"
+      • „nu reprezintă o problemă majoră"
+      • „nu pune în pericol pietonii"
+      • „mașinile ocupă doar o parte"
+      • „situația nu este alarmantă"
+      • „pietonii pot încă circula normal"
+      • „spațiul rămas este suficient"
+      • „nu afectează grav circulația"
+   ✅ Dacă cetățeanul raportează parcare pe trotuar, scrie OBLIGATORIU
+      că asta AFECTEAZĂ pietonii. Exemple acceptabile:
+      • „trotuarul este ocupat de mașini parcate"
+      • „pietonii sunt obligați să ocolească mașinile"
+      • „spațiul destinat pietonilor este restricționat"
+      • „circulația normală a pietonilor este împiedicată"
+      • „parcarea neregulamentară afectează siguranța pietonilor"
+
+   ❌ Dramatizare fabricată (păstrată din vechea regulă):
+      „risc iminent de moarte", „blocat complet", „accident garantat" —
+      DOAR dacă fotografia confirmă LITERAL.
+   ❌ Minimizare fabricată — la fel de gravă cu dramatizarea:
+      „aproximativ 1-2 metri", „X% din lățime", „10 mașini" — măsurători
+      inventate. Dacă cetățeanul nu a numărat/măsurat, NU apar în text.
+
+   ✅ Echilibru factual:
+      • Dacă vezi mașini pe trotuar → „trotuarul e ocupat", „pietonii nu
+        mai pot circula normal pe trotuar".
+      • Dacă vezi pietoni pe carosabil → „pietonii sunt nevoiți să meargă
+        pe stradă", „observ în fotografii că pietonii ocolesc mașinile pe
+        carosabil".
+      • NICIODATĂ nu inventa numere — dacă cetățeanul n-a măsurat, nu apar.
 
 8. INTERZIS repetare info personale — numele + adresa cetățeanului apar O SINGURĂ DATĂ, în paragraful de deschidere. NU se repetă în corpul sesizării sau înainte de semnătură.
 

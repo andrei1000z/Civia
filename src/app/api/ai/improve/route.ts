@@ -10,6 +10,7 @@ import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST } from 
 import { appendGdprClause, repairSesizareLeaks } from "@/lib/sesizari/format-helpers";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
+import { removeMinimization } from "@/lib/sesizari/anti-minimization";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -345,6 +346,19 @@ Răspunde JSON:
       parsed.formal_text = objectified;
       // Debug header pentru a vedea cate sanitizari aplicam in prod
       // (Sentry breadcrumb mai bun, dar header e zero-config).
+    }
+
+    // Anti-minimizare: scoate fraze care submineaza sesizarea („pietonilor
+    // li se asigura inca suficient spatiu" etc). Bug raportat 5/19/2026
+    // pe sesizarea 00041 — AI-ul a scris exact opusul intentiei userului.
+    const antiMin = removeMinimization(parsed.formal_text);
+    if (antiMin.changed) {
+      parsed.formal_text = antiMin.text;
+      Sentry.captureMessage("AI minimization detected and patched", {
+        level: "warning",
+        tags: { kind: "ai_minimization_caught", count: String(antiMin.replacements) },
+        extra: { matched: antiMin.matched },
+      });
     }
 
     parsed.formal_text = normalizeFormatting(parsed.formal_text);
