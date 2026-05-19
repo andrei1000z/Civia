@@ -57,11 +57,10 @@ export const metadata: Metadata = {
   ],
 };
 
-// 30 min ISR — paired with the 6h scrape cycle, this gives users a
-// recent-enough catalog while cutting regenerations 6× vs the old
-// 5-min window. The page is also relatively heavy (full outage
-// list + map), so each save matters.
-export const revalidate = 1800;
+// 2026-05-19: ridicat la 2h (7200s) — scraperul de intreruperi rulează 1x/zi
+// (Vercel Hobby cron). Date noi apar maxim o data/zi, deci 2h e abundent.
+// Inainte: 30min — producea ISR writes inutile (Vercel over-limit).
+export const revalidate = 7200;
 
 export default async function IntreruperiPage() {
   const { items, scrapedCount, lastSeenAt, source } = await loadInterruptions();

@@ -23,8 +23,10 @@ const SOURCE_LOGOS: Record<string, string> = {
 };
 
 // Stire content is immutable once published, AI summary cached in DB.
-// ISR 10 min is plenty for the rare case a summary gets regenerated.
-export const revalidate = 600;
+// 2026-05-19: ridicat de la 10min → 4h (14400s). Cron-ul stiri/fetch
+// ruleaza zilnic, deci nu apar stiri noi mai des. Per-article ISR thrash
+// la 10min a fost mare contributor la Vercel over-limit (445K/200K).
+export const revalidate = 14400;
 export const dynamicParams = true;
 export async function generateStaticParams() {
   return [];

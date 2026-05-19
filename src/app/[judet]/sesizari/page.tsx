@@ -10,6 +10,11 @@ import {
   COUNTY_HERO_GRADIENT,
 } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 6h. Pagina e entry-point pt formularul de sesizare per
+// judet. Continutul nu se schimba (formular static), doar count-ul „rezolvate
+// cu poza" — refresh la 6h e abundent.
+export const revalidate = 21600;
+
 /**
  * Same probe as /sesizari/page.tsx — the "Rezolvate" entry-point card
  * appears only when at least one approved public sesizare in the

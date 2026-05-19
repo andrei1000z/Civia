@@ -4,9 +4,9 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { allowedSourcesForView } from "@/lib/stiri/sources";
 import { analyticsRedis } from "@/lib/analytics/redis";
 
-// 30s cache — paired with client polling at the same cadence so the
-// /stiri page surfaces freshly-fetched RSS articles within ~30s.
-export const revalidate = 300;
+// 2026-05-19: 5min → 30min. Stirile noi apar 1x/zi via cron. Plus
+// self-healing background refresh fires un /api/stiri/fetch oricum.
+export const revalidate = 1800;
 
 // Self-healing background refresh: when the /stiri page is being viewed,
 // kick off /api/stiri/fetch in the background — but throttled so at most

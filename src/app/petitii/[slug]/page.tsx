@@ -21,8 +21,9 @@ import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
 
 // Petition detail content (title, body, AI summary) is essentially
 // frozen after creation. The signature count comes from the external
-// platform, not us. 1 hour ISR is more than enough freshness.
-export const revalidate = 3600;
+// platform, not us.
+// 2026-05-19: 1h → 12h. Content nu se modifica deloc dupa create.
+export const revalidate = 43200;
 
 export async function generateMetadata({
   params,

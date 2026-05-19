@@ -13,6 +13,10 @@ import type { AuthorityContact } from "@/data/autoritati-contact";
 import { Building2, Phone, Globe, Mail, MapPin, Users, Bus, Shield } from "lucide-react";
 import { CountyPageHero, COUNTY_HERO_GRADIENT } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 1 saptamana. Autoritatile (primari, prefecturi, telefoane)
+// se schimba la electii o data/4 ani. 1 sapt e abundent.
+export const revalidate = 604800;
+
 export async function generateMetadata({
   params,
 }: {

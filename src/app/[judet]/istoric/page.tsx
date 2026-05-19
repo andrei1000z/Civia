@@ -11,6 +11,9 @@ import {
   COUNTY_HERO_GRADIENT,
 } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 1 saptamana. Date istorice (primari) — schimbari rare.
+export const revalidate = 604800;
+
 const ChartLoading = () => (
   <div className="h-[260px] rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] animate-pulse" />
 );

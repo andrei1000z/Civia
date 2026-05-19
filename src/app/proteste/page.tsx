@@ -14,7 +14,8 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { ALL_COUNTIES } from "@/data/counties";
 
-export const revalidate = 1800; // 10 min — proteste rare, nu e nevoie de fresh
+// 2026-05-19: 30min → 4h. Proteste se publica rar.
+export const revalidate = 14400;
 
 export const metadata: Metadata = {
   title: "Proteste programate",

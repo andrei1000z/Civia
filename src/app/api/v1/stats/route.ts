@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 900;
+// 2026-05-19: 15min → 6h. Agregate statistici.
+export const revalidate = 21600;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

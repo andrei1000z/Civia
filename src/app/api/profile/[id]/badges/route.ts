@@ -3,7 +3,9 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { computeBadges } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 60; // 1 min — counters nu trebuie să fie real-time
+// 2026-05-19: 1min → 30min. Badge-urile se ating pe milestone-uri rare,
+// nu real-time. Counter-ul se updateaza on-demand cand userul depune sesizare.
+export const revalidate = 1800;
 
 /**
  * GET /api/profile/[id]/badges

@@ -1,7 +1,8 @@
 import { getActiveInterruptions, getInterruptionsForCounty, toIcsCalendar } from "@/data/intreruperi";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 1800;
+// 2026-05-19: 30min → 4h. Subscriberii calendar refresh-eaza la 1h+ oricum.
+export const revalidate = 14400;
 
 /**
  * GET /api/intreruperi/ics        — întreg calendarul

@@ -7,6 +7,9 @@ import { ghiduri } from "@/data/ghiduri";
 import { Badge } from "@/components/ui/Badge";
 import { CountyPageHero } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 1 saptamana. Ghidurile sunt static-content (data din /data).
+export const revalidate = 604800;
+
 export async function generateMetadata({
   params,
 }: {

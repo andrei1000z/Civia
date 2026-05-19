@@ -20,7 +20,9 @@ import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
  * Inoreader, NetNewsWire all parse different ones.
  */
 
-export const revalidate = 600; // 10 min
+// 2026-05-19: 10min → 2h. Reader-ele RSS poll-uiesc cel mult la 30min,
+// stiri noi apar 1x/zi via cron.
+export const revalidate = 7200;
 
 function escapeXml(s: string): string {
   return s

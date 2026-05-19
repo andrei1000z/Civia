@@ -11,6 +11,10 @@ import {
   COUNTY_HERO_GRADIENT,
 } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 2h. Cron-ul stiri/fetch ruleaza 1x/zi, deci stiri noi
+// apar o data/zi. 2h e fresh enough fara sa explodam ISR writes.
+export const revalidate = 7200;
+
 export async function generateMetadata({
   params,
 }: {

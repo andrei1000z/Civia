@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getSesizariStatsCached } from "@/lib/cached-queries";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 900;
+// 2026-05-19: 15min → 6h. Statistici agregate, schimbari lente.
+export const revalidate = 21600;
 
 /**
  * Lightweight count-based summary for homepage widgets.

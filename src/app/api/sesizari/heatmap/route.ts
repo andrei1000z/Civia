@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 300; // 5 min — date relativ statice, sectoare nu se schimbă rapid
+// 2026-05-19: 5min → 1h. Heatmap pe sectoare se schimba lent (sesizari noi
+// in fiecare sector ~1x/zi). 1h e fresh enough.
+export const revalidate = 3600;
 
 /**
  * GET /api/sesizari/heatmap?judet=b

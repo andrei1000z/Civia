@@ -59,7 +59,9 @@ const HOMEPAGE_FAQ = [
   },
 ];
 
-export const revalidate = 1800;
+// 2026-05-19: 30min → 4h. Homepage are doar count-uri statice + features list.
+// Counter-ul refresh-eaza la 4h, sesizarile noi apar via on-demand revalidate.
+export const revalidate = 14400;
 
 /**
  * Fetch total approved sesizari count for the homepage social-proof line.

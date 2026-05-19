@@ -36,16 +36,16 @@
       "maxDuration": 60
     },
     "src/app/api/intreruperi/refresh/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 180
     },
     "src/app/api/intreruperi/buildings/warm/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 120
     },
     "src/app/api/intreruperi/buildings/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 30
     },
     "src/app/intreruperi/[id]/page.tsx": {
-      "maxDuration": 60
+      "maxDuration": 30
     },
     "src/app/api/newsletter/digest/route.ts": {
       "maxDuration": 60

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 900;
+// 2026-05-19: 15min → 1h. Petitii noi se adauga rar (admin manual).
+export const revalidate = 3600;
 
 /**
  * Count active petitions — folosit de LiveStatsBar pe homepage.

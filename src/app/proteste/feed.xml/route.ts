@@ -3,9 +3,8 @@ import { SITE_URL, SITE_NAME } from "@/lib/constants";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { ALL_COUNTIES } from "@/data/counties";
 
-// Hourly ISR — feed readers poll once per hour typically; faster
-// invalidation isn't needed and keeps origin cost low.
-export const revalidate = 3600;
+// 2026-05-19: 1h → 6h. Proteste apar rar, feed readers poll oricum la 1h.
+export const revalidate = 21600;
 
 function escapeXml(unsafe: string): string {
   return unsafe

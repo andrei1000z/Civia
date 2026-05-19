@@ -5,7 +5,9 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 // ISR — regenerated hourly by the framework, served from CDN
 // between. "force-dynamic" was previously set alongside revalidate,
 // which is contradictory (forces dynamic = no ISR). Removed.
-export const revalidate = 3600; // 1 hour
+// 2026-05-19: 1h → 6h. RSS feed master, citit de readeri care fac poll
+// la min 1h oricum.
+export const revalidate = 21600;
 
 function escapeXml(unsafe: string): string {
   return unsafe

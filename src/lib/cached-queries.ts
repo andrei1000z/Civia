@@ -50,7 +50,7 @@ export const getSesizariStatsCached = unstable_cache(
     };
   },
   ["sesizari-stats"],
-  { revalidate: 300, tags: ["sesizari-stats"] }
+  { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
 /** Top voted sesizari — home widget + /impact */
@@ -66,7 +66,7 @@ export const getTopVotedCached = unstable_cache(
     return data ?? [];
   },
   ["sesizari-top-voted"],
-  { revalidate: 300, tags: ["sesizari-stats"] }
+  { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
 /** County-level sesizari counts (sum per county) — used on /impact + county pages */
@@ -92,7 +92,7 @@ export const getSesizariByCountyCached = unstable_cache(
       .sort((a, b) => b.count - a.count);
   },
   ["sesizari-by-county"],
-  { revalidate: 300, tags: ["sesizari-stats"] }
+  { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
 /**
@@ -212,7 +212,7 @@ export const getImpactDataCached = unstable_cache(
     };
   },
   ["impact-data"],
-  { revalidate: 300, tags: ["sesizari-stats"] }
+  { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
 /** County-level metadata (name, authorities, latest sesizari) — expensive combined query */
@@ -239,7 +239,7 @@ export const getCountyOverviewCached = unstable_cache(
     };
   },
   ["county-overview"],
-  { revalidate: 300, tags: ["county-overview", "sesizari-stats"] }
+  { revalidate: 1800, tags: ["county-overview", "sesizari-stats"] }
 );
 
 /**

@@ -17,7 +17,9 @@ import { SITE_URL, SITE_NAME } from "@/lib/constants";
  * cause "no new articles" warnings in Search Console.
  */
 
-export const revalidate = 600; // 10 min
+// 2026-05-19: 10min → 2h. Google News crawl-uieste cel mult la 30min.
+// Cron-ul de stiri ruleaza 1x/zi, deci news noi apar maxim o data/zi.
+export const revalidate = 7200;
 
 function escapeXml(s: string): string {
   return s

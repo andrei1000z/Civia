@@ -24,8 +24,10 @@ import { aqiColor, aqiLabel } from "@/components/county/CountyStatCards";
 import { STATUS_COLORS, STATUS_LABELS, SITE_URL } from "@/lib/constants";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
-// ISR: county authorities rarely change; sesizari list is small. 5 min refresh.
-export const revalidate = 1800;
+// ISR: county authorities rarely change; sesizari list is small.
+// 2026-05-19: 30min → 6h. 42 judete × 30min producea ~60K writes/luna. La 6h
+// asta scade la 5K/luna. Authority data e cvasi-stabila.
+export const revalidate = 21600;
 
 interface DbCounty {
   id: string;

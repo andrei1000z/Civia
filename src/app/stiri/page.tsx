@@ -21,7 +21,8 @@ export const metadata: Metadata = {
 // deschide pagina, /api/stiri/route.ts trigger-uiește background fetch
 // dacă a trecut > 5 min de la ultima rulare (Redis lock). Combinația dă
 // retenție foarte fresh fără să stresăm Supabase pentru fiecare visit.
-export const revalidate = 1800;
+// 2026-05-19: 30min → 2h, ISR Writes over-limit pe Vercel.
+export const revalidate = 7200;
 
 export default function StiriPage() {
   return (

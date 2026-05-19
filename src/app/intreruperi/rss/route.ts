@@ -5,7 +5,8 @@ import {
 } from "@/data/intreruperi";
 import { SITE_URL } from "@/lib/constants";
 
-export const revalidate = 1800;
+// 2026-05-19: 30min → 4h. RSS readers poll-uiesc 1x/h cel mult.
+export const revalidate = 14400;
 
 function esc(s: string): string {
   return s

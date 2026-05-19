@@ -6,7 +6,11 @@ import { evenimente } from "@/data/evenimente";
 import { getAllInterruptions } from "@/data/intreruperi";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
-export const revalidate = 3600; // hourly
+// 2026-05-19: 1h → 12h. Sitemap-ul are MII de URL-uri (42 judete × ~10 rute
+// + 200+ sesizari + 50 outages + 100+ stiri). Regenerarea era cel mai mare
+// outage de bandwidth (sitemap.xml era >2MB). Google crawl-uieste o data/zi
+// oricum, 12h e mai mult decat suficient.
+export const revalidate = 43200;
 
 // Toate sub-page-urile per județ. Trebuie să rămână sincronizat cu
 // `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,

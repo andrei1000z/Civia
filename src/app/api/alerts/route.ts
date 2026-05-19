@@ -4,7 +4,8 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 // 5-minute ISR cache. An EMSC quake in Romania is rare enough that 5 min
 // latency is acceptable; the AlertBanner client polls every 5 min anyway.
 // Route handlers use `revalidate` directly (not `dynamic`) for ISR semantics.
-export const revalidate = 1800;
+// 2026-05-19: 30min → 4h. Alerts sunt rare (1-2/saptamana), client poll 5min.
+export const revalidate = 14400;
 
 interface AlertPayload {
   id: string;

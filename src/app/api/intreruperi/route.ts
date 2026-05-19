@@ -6,9 +6,9 @@ import { loadInterruptions, maybeTriggerBackgroundRefresh } from "@/lib/intrerup
 // Page-side polling can be aggressive; 5 min is short enough that the
 // admin queue feels live but long enough that 1000 viewers don't beat
 // up Supabase reads.
-// 15 min (de la 5 min) — reduce ISR Writes Vercel Hobby. Date scraped
-// se schimbă rar (zilnic via cron), 15 min e suficient.
-export const revalidate = 900;
+// 2026-05-19: 15min → 1h. Scraper-ul ruleaza 1x/zi via cron, deci 1h
+// e abundent. Reduce semnificativ ISR Writes pe Vercel.
+export const revalidate = 3600;
 
 /**
  * GET /api/intreruperi

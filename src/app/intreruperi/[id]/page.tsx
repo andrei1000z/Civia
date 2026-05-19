@@ -81,11 +81,12 @@ export async function generateMetadata({
 
 // Outage detail content is essentially fixed after the scrape:
 // provider, addresses, start/end times don't change. Status flips
-// occasionally (programat → in-desfasurare → finalizat). 1 hour
-// ISR strikes the balance — fresh enough that a status change
-// surfaces within the day, gentle enough on origin transfer to
-// not regenerate every 5 min × 50 outages.
-export const revalidate = 3600;
+// occasionally (programat → in-desfasurare → finalizat).
+// 2026-05-19: ridicat de la 1h → 6h (21600s) — Vercel ISR Writes
+// over-limit. Cu ~50 outages × 24 writes/zi = 36K/lună la 1h.
+// 6h = 6K/lună. Status flip-uri rare oricum, refresh activ via
+// /api/intreruperi/refresh care apoi face revalidatePath.
+export const revalidate = 21600;
 
 // 60s function budget so the inline Overpass fallback (up to ~45s on
 // the slow kumi.systems mirror) can complete on a cache-cold page,
@@ -165,15 +166,15 @@ export default async function InterruptionDetail({
     const cached = await getCachedBuildings(item.id);
     let polygons = cached;
     if (!polygons) {
+      // 2026-05-19: Vercel Fluid CPU over-limit. Inainte: race de 50s
+      // pe Overpass — fiecare cache-miss costa 50s CPU. Acum: 8s race +
+      // fire after() warm in background. User-ul vede pagina rapid,
+      // buildings apare la next visit (cache populat de warm-er).
       try {
-        // 50s race so even a slow kumi.systems response (~45s observed
-        // on whole-cluster queries) gets through before the page
-        // renders. maxDuration=60 above gives us headroom plus room
-        // for the after() warmer that follows.
         polygons = await Promise.race([
           getBuildingsForOutage(item.id, item.lat, item.lng, radiusM),
           new Promise<typeof cached>((resolve) =>
-            setTimeout(() => resolve(null), 50_000),
+            setTimeout(() => resolve(null), 8_000),
           ),
         ]);
       } catch {

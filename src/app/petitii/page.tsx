@@ -11,7 +11,8 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 // handful per week. 60 s ISR was burning regenerations for no UX
 // gain; 30 min still keeps the page feeling current and slashes
 // origin transfer ~30×.
-export const revalidate = 1800;
+// 2026-05-19: 30min → 2h. Petitiile noi se adauga rar (admin manual).
+export const revalidate = 7200;
 
 export const metadata: Metadata = {
   title: "Petiții civice",

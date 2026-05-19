@@ -30,7 +30,8 @@ import type {
   AftermathSource,
 } from "@/lib/proteste/aftermath";
 
-export const revalidate = 1800;
+// 2026-05-19: 30min → 6h. Detalii protest static dupa creare.
+export const revalidate = 21600;
 
 interface Protest {
   id: string;

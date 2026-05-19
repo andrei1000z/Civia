@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
-export const revalidate = 900; // 5 min cache
+// 2026-05-19: 15min → 6h. Statistici agregate pe judete se schimba lent.
+export const revalidate = 21600;
 
 interface SesRow {
   sector: string;

@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/clasament" },
 };
 
-// ISR — leaderboard se schimba slow. 1 ora e suficient.
-export const revalidate = 3600;
+// 2026-05-19: 1h → 6h. Leaderboard county-level, schimbari de pozitie rare.
+export const revalidate = 21600;
 
 type CountyStats = {
   countyId: string;

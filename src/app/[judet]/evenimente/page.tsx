@@ -21,6 +21,9 @@ import {
   COUNTY_HERO_GRADIENT,
 } from "@/components/county/CountyPageHero";
 
+// 2026-05-19: ISR 1 zi. Evenimentele sunt static-content din /data/evenimente.
+export const revalidate = 86400;
+
 const categoryIcons: Record<EvenimentCategory, React.ElementType> = {
   accident: Car,
   incendiu: Flame,

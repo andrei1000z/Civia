@@ -25,7 +25,9 @@ interface PageProps {
   params: Promise<{ county: string }>;
 }
 
-export const revalidate = 600; // 10 min — date publice, nu se schimba prea repede
+// 2026-05-19: 10min → 2h. Embed-urile sunt iframe-uri pe site-uri externe,
+// nu trebuie real-time. 2h suficient.
+export const revalidate = 7200;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { county: countySlug } = await params;
