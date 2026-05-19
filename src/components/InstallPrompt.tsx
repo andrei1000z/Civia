@@ -15,8 +15,12 @@ const UPDATE_DISMISS_KEY = "civia_sw_update_dismissed";
 // instalări — bump la 6 vizite + 60 zile între dismiss-uri. Userii care
 // chiar vor PWA o vor instala oricum manual; restul beneficiază de un
 // site mai liniștit.
-const MIN_VISITS_BEFORE_PROMPT = 6;
-const DISMISS_TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+// 10 vizite minimum — utilizatorul s-a obișnuit cu site-ul. Era 6, dar
+// rata de dismiss confirmă că „6 vizite" nu inseamna user angajat.
+const MIN_VISITS_BEFORE_PROMPT = 10;
+// 90 days TTL — user a dismis prompt-ul, nu il bombardam. Analytics
+// 5/19/2026: 88% dismiss-before-submit pe install prompt → mult prea agresiv.
+const DISMISS_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 /** Already running as a standalone PWA — don't show install UI. */
 function isStandalone(): boolean {
@@ -133,10 +137,18 @@ export function InstallPrompt() {
     const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) ?? "0", 10);
     if (visitCount < MIN_VISITS_BEFORE_PROMPT) return;
 
+    // Skip prompt pe paginile critice de flow — utilizatorul e in mijlocul
+    // unei sesizari/petitii si popup-ul intrerupe. Mai bine surfacing pe
+    // pagini calme (sesizare detail, /cont, homepage post-action).
+    const path = window.location.pathname;
+    const interruptiveRoutes = ["/sesizari", "/petitii/initiaza", "/sesizari/voce"];
+    if (interruptiveRoutes.some((r) => path === r)) return;
+
     // iOS Safari path — no `beforeinstallprompt` event exists; we
-    // surface manual A2HS instructions instead.
+    // surface manual A2HS instructions instead. Delay 15s — generos
+    // pentru ca userul sa intre in lectura, nu sa primeasca popup la load.
     if (isIOSSafari()) {
-      const t = setTimeout(() => setIosVisible(true), 5000);
+      const t = setTimeout(() => setIosVisible(true), 15_000);
       return () => clearTimeout(t);
     }
 
@@ -144,9 +156,9 @@ export function InstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show after longer delay (5s) so it doesn't surprise — the user
-      // had time to start engaging cu pagina înainte să apară popup.
-      setTimeout(() => setVisible(true), 5000);
+      // Delay 15s (de la 5s) — analytics 5/19/2026 a aratat ca 88% dismiss
+      // inainte de submit. Userul nu apucase sa se obisnuiasca cu site-ul.
+      setTimeout(() => setVisible(true), 15_000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);

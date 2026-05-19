@@ -131,6 +131,7 @@ export const SESIZARE_TIPURI = [
   { value: "trecere_pietoni", label: "Trecere pietoni — cerere amenajare", short: "Zebră nouă", icon: "🚸", active: true },
   { value: "rampa_acces", label: "Rampă acces persoane cu dizabilități", short: "Rampă", icon: "♿", active: true },
   { value: "colectare_selectiva", label: "Colectare selectivă — container lipsă", short: "Reciclare", icon: "♻️", active: true },
+  { value: "fumat_interzis", label: "Fumat în locuri interzise (Legea 15/2016)", short: "Fumat", icon: "🚭", active: true },
   // DEPRECATED — pastrat pentru compat. NU apar in form.
   { value: "pietonal", label: "Traversare pietoni periculoasă", short: "Pietonal", icon: "🚸", active: false },
   { value: "zgomot", label: "Zgomot excesiv/deranj", short: "Zgomot", icon: "🔊", active: false },

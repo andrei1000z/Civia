@@ -6,16 +6,7 @@ import {
   TYPE_ICONS,
   TYPE_LABELS,
 } from "@/data/intreruperi";
-
-function relativeTime(iso: string): string {
-  const t = new Date(iso).getTime();
-  const now = Date.now();
-  const diffMin = Math.round((t - now) / 60_000);
-  if (diffMin < 0) return "acum";
-  if (diffMin < 60) return `în ${diffMin}m`;
-  if (diffMin < 24 * 60) return `în ${Math.round(diffMin / 60)}h`;
-  return `în ${Math.round(diffMin / 1440)}z`;
-}
+import { UpcomingClock } from "@/components/ui/UpcomingClock";
 
 /**
  * Homepage widget — arată următoarele 4 întreruperi care pornesc curând.
@@ -78,7 +69,11 @@ export async function IntreruperiWidget() {
                   }}
                 >
                   <Clock size={9} aria-hidden="true" />
-                  {i.status === "in-desfasurare" ? "acum" : relativeTime(i.startAt)}
+                  {i.status === "in-desfasurare" ? (
+                    "acum"
+                  ) : (
+                    <UpcomingClock date={i.startAt} />
+                  )}
                 </span>
               </div>
               <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-0.5">

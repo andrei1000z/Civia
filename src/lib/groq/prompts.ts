@@ -169,6 +169,7 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "trecere_pietoni" — CERERE DE AMENAJARE zebră/trecere pietoni NOUĂ (nu există ÎNCĂ acolo), semaforizare pietoni adăugată. Distincție vs „semafor": zebră ștearsă e „semafor", zebră CERUTĂ unde nu e nicio e „trecere_pietoni".
 - "rampa_acces" — rampă pentru cărucioare/scaune cu rotile, accesibilitate persoane cu dizabilități, lipsă rampă la trotuar/instituție/bordură
 - "colectare_selectiva" — container reciclare lipsă, tomberoane separate (hârtie/plastic/sticlă) cerute, lipsă infrastructură reciclare
+- "fumat_interzis" — fumat in locuri publice interzise (Legea 15/2016): stații transport, scări de bloc, terase închise, locuri de joacă, școli, spitale, restaurante interior
 - "altele" — orice nu se încadrează în lista de mai sus. AI-ul va auto-genera apoi o etichetă custom_category mai precisă.
 
 RĂSPUNDE DOAR CU JSON VALID în formatul EXACT:

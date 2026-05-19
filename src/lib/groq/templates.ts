@@ -94,6 +94,10 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     problema_ghid: "lipsa infrastructurii de colectare selectivă a deșeurilor (containere separate pentru hârtie, plastic, sticlă, biodegradabile), contrar Legii 211/2011 privind regimul deșeurilor",
     propunere: "amplasarea de containere de colectare selectivă în zona indicată și informarea cetățenilor",
   },
+  fumat_interzis: {
+    problema_ghid: "fumat în spații publice în care fumatul este interzis (Legea 15/2016 — incinta unor locuri publice precum stații de transport, scări de bloc, locuri de joacă, școli, spitale, restaurante interior)",
+    propunere: "control al Poliției Locale în zona indicată, amenzi conform Legii 15/2016 (între 100 și 500 lei pentru persoane fizice) și instalarea de plăcuțe „Fumatul interzis” vizibile",
+  },
   altele: {
     problema_ghid: "o situație care necesită intervenția autorităților locale",
     propunere: "verificarea situației la fața locului și luarea măsurilor corespunzătoare",
