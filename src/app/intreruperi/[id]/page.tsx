@@ -31,6 +31,8 @@ import {
 import { ShareButton } from "./ShareButton";
 import { MapClient } from "./MapClient";
 import { CalendarMenu } from "./CalendarMenu";
+import { getCountyBySlug } from "@/data/counties";
+import { CountyIntreruperiContent } from "../_county-content";
 
 export async function generateMetadata({
   params,
@@ -38,6 +40,17 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+
+  // Dispatch: cand id = county slug, returnam metadata pentru county page.
+  const county = getCountyBySlug(id);
+  if (county) {
+    return {
+      title: `Întreruperi programate — ${county.name}`,
+      description: `Întreruperi de apă, caldură, gaz, curent + lucrări la stradă în ${county.name}. Catalogat din anunțuri oficiale ale operatorilor locali.`,
+      alternates: { canonical: `/intreruperi/${county.slug}` },
+    };
+  }
+
   const item = await getInterruptionById(id);
   if (!item) return {};
   const title = `${TYPE_ICONS[item.type]} ${TYPE_LABELS[item.type]} — ${item.addresses[0] ?? item.reason}`;
@@ -110,6 +123,15 @@ export default async function InterruptionDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Dispatch: cand id e un county slug (b, cj, is, …) randam pagina
+  // dedicata de county in loc de pagina de outage detail. Asta permite
+  // URL-uri tip /intreruperi/b in loc de /b/intreruperi.
+  const county = getCountyBySlug(id);
+  if (county) {
+    return <CountyIntreruperiContent county={county} />;
+  }
+
   const item = await getInterruptionById(id);
   if (!item) notFound();
 

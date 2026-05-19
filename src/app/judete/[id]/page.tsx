@@ -511,7 +511,7 @@ export default async function CountyDetailPage({
             <ul className="grid grid-cols-2 gap-2">
               {[
                 { href: `/${slug}/stiri`, label: "Știri", emoji: "📰" },
-                { href: `/${slug}/intreruperi`, label: "Întreruperi", emoji: "⚠️" },
+                { href: `/intreruperi/${slug}`, label: "Întreruperi", emoji: "⚠️" },
                 { href: `/${slug}/autoritati`, label: "Autorități", emoji: "🏛️" },
                 { href: `/${slug}/sesizari`, label: "Sesizări", emoji: "📋" },
               ].map((l) => (

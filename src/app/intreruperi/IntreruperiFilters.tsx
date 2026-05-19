@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   MapPin,
   Clock,
@@ -24,6 +25,7 @@ import {
   STATUS_LABELS,
   STATUS_COLORS,
 } from "@/data/intreruperi";
+import { ALL_COUNTIES } from "@/data/counties";
 
 const IntreruperiMap = dynamic(() => import("./IntreruperiMap"), {
   ssr: false,
@@ -141,7 +143,16 @@ function durationLabel(startAt: string, endAt: string): string {
   return `${d} ${d === 1 ? "zi" : "zile"}`;
 }
 
-export function IntreruperiFilters({ items }: { items: Interruption[] }) {
+export function IntreruperiFilters({
+  items,
+  hideCountyFilter = false,
+}: {
+  items: Interruption[];
+  /** Cand este folosit pe pagina /intreruperi/[county-slug], judetul e deja
+   *  fixat in URL — ascundem dropdown-ul de judet ca sa nu fie redundant. */
+  hideCountyFilter?: boolean;
+}) {
+  const router = useRouter();
   const [view, setView] = useState<ViewMode>("list");
   const [type, setType] = useState<TypeFilter>("toate");
   const [county, setCounty] = useState<string>("toate");
@@ -249,19 +260,39 @@ export function IntreruperiFilters({ items }: { items: Interruption[] }) {
             })}
           </div>
 
-          <select
-            value={county}
-            onChange={(e) => setCounty(e.target.value)}
-            aria-label="Filtrează după județ"
-            className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          >
-            <option value="toate">Toate județele</option>
-            {counties.map((c) => (
-              <option key={c} value={c}>
-                {c === "B" ? "București" : c}
-              </option>
-            ))}
-          </select>
+          {!hideCountyFilter && (
+            <select
+              value={county}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Pe pagina nationala: schimbarea judetului navigheaza la
+                // /intreruperi/[county-slug]. Eliminam state-ul local de filtru
+                // pentru ca pagina dedicata are URL bookmark-abil + SEO.
+                if (val === "toate") {
+                  setCounty("toate");
+                  return;
+                }
+                const targetCounty = ALL_COUNTIES.find((c) => c.id === val);
+                if (targetCounty) {
+                  router.push(`/intreruperi/${targetCounty.slug}`);
+                } else {
+                  setCounty(val);
+                }
+              }}
+              aria-label="Schimbă județul (deschide pagina dedicată)"
+              className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            >
+              <option value="toate">Toate județele</option>
+              {counties.map((c) => {
+                const cnt = ALL_COUNTIES.find((co) => co.id === c);
+                return (
+                  <option key={c} value={c}>
+                    {cnt?.name ?? (c === "B" ? "București" : c)}
+                  </option>
+                );
+              })}
+            </select>
+          )}
 
           <button
             type="button"

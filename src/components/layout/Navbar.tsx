@@ -211,7 +211,9 @@ export function Navbar() {
                           "nationalOnly" in link && link.nationalOnly
                             ? link.href
                             : countySlug
-                            ? `/${countySlug}${link.href}`
+                            ? "countySuffix" in link && link.countySuffix
+                              ? `${link.href}/${countySlug}`
+                              : `/${countySlug}${link.href}`
                             : link.href
                         }
                         onClick={() => setMoreDropdown(false)}
@@ -315,7 +317,9 @@ export function Navbar() {
                       "nationalOnly" in link && link.nationalOnly
                         ? link.href
                         : countySlug
-                        ? `/${countySlug}${link.href}`
+                        ? "countySuffix" in link && link.countySuffix
+                          ? `${link.href}/${countySlug}`
+                          : `/${countySlug}${link.href}`
                         : link.href
                     }
                     onClick={() => setMobileOpen(false)}

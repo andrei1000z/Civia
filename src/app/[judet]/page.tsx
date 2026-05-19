@@ -187,7 +187,7 @@ function HeroQuickTiles({
       color: "#DC2626",
     },
     {
-      href: `/${judet}/intreruperi`,
+      href: `/intreruperi/${judet}`,
       label: "Întreruperi azi",
       value: intreruperiCount.toLocaleString("ro-RO"),
       hint: intreruperiCount === 0 ? "nimic activ" : "apă/curent/gaz",
@@ -465,7 +465,7 @@ function ActiveInterruperiColumn({
           Întreruperi active
         </h3>
         <Link
-          href={`/${countySlug}/intreruperi`}
+          href={`/intreruperi/${countySlug}`}
           className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
         >
           Toate <ArrowRight size={11} aria-hidden="true" />
@@ -734,7 +734,7 @@ export default async function CountyHomePage({
                   Fă o sesizare
                 </Link>
                 <Link
-                  href={`/${judet}/intreruperi`}
+                  href={`/intreruperi/${judet}`}
                   className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-white/10 text-white border border-white/20 font-semibold hover:bg-white/20 active:scale-[0.97] backdrop-blur-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <AlertCircle size={18} aria-hidden="true" />

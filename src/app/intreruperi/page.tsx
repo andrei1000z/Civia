@@ -14,6 +14,7 @@ import {
 } from "@/data/intreruperi";
 import { loadInterruptions } from "@/lib/intreruperi/store";
 import { SITE_URL } from "@/lib/constants";
+import { ALL_COUNTIES } from "@/data/counties";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -171,6 +172,47 @@ export default async function IntreruperiPage() {
           );
         })}
       </div>
+
+      {/* County picker — navigheaza la /intreruperi/[county-slug] pentru
+          o pagina dedicata per judet. Ordonat dupa numarul de intreruperi
+          active descrescator, ca user-ul sa vada judetele „fierbinti" primele. */}
+      {(() => {
+        const countsByCounty = new Map<string, number>();
+        for (const i of all) {
+          countsByCounty.set(i.county, (countsByCounty.get(i.county) ?? 0) + 1);
+        }
+        const countiesWithActivity = ALL_COUNTIES
+          .map((c) => ({ ...c, count: countsByCounty.get(c.id) ?? 0 }))
+          .filter((c) => c.count > 0)
+          .sort((a, b) => b.count - a.count);
+        if (countiesWithActivity.length === 0) return null;
+        return (
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold mb-3 text-[var(--color-text)] flex items-center gap-2">
+              <MapPin size={14} aria-hidden="true" />
+              Vezi pe județe
+              <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                · {countiesWithActivity.length}{" "}
+                {countiesWithActivity.length === 1 ? "județ activ" : "județe active"}
+              </span>
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {countiesWithActivity.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/intreruperi/${c.slug}`}
+                  className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[var(--radius-full)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary-soft)] transition-colors"
+                >
+                  <span className="font-medium">{c.name}</span>
+                  <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
+                    {c.count}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {all.length === 0 ? (
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-8 text-center">

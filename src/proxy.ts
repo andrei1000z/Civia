@@ -40,8 +40,10 @@ const LEGACY_REDIRECTS: Record<string, string> = {
 };
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată
-// ca /autoritati. Versiunea per-județ există ca /{slug}/intreruperi și
-// e accesibilă separat, dar bara de URL /intreruperi arată toate județele.
+// ca /autoritati. Versiunea per-județ a fost mutată (2026-05-19) de la
+// /{slug}/intreruperi la /intreruperi/{slug} (ex: /intreruperi/b,
+// /intreruperi/cj). Vechea URL /{slug}/intreruperi rămâne ca redirect 308
+// permanent gestionat de page.tsx-ul din /app/[judet]/intreruperi/.
 
 // Paths care există DOAR ca național (NU au /[judet]/<path> echivalent).
 // Conform AGENTS.md: /sesizari, /petitii, /ghiduri sunt action surfaces

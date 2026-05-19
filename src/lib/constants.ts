@@ -72,8 +72,20 @@ export const NAV_LINKS = [
 
 // „Explorează" dropdown: items care nu se incarca in top-level, dar
 // raman accesibile. Mai bine ascuns aici decat lipsa cu totul.
-export const NAV_MORE: Array<{ href: string; label: string; icon: string; nationalOnly?: boolean; countyOnly?: boolean }> = [
-  { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡" },
+export const NAV_MORE: Array<{
+  href: string;
+  label: string;
+  icon: string;
+  nationalOnly?: boolean;
+  countyOnly?: boolean;
+  /**
+   * Cand e setat true, ruta finala in Navbar e `{href}/{countySlug}` (NU
+   * `/{countySlug}{href}` — comportamentul default). Util pentru rute
+   * gen /intreruperi care detin propriul namespace pentru judete.
+   */
+  countySuffix?: boolean;
+}> = [
+  { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
   { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
   { href: "/judete", label: "Toate județele", icon: "🗺️", nationalOnly: true },
   { href: "/autoritati", label: "Autorități publice", icon: "🏛️", nationalOnly: true },

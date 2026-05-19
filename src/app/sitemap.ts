@@ -14,7 +14,9 @@ export const revalidate = 3600; // hourly
 const COUNTY_PAGES = [
   "", "/sesizari", "/stiri", "/ghiduri",
   "/autoritati", "/evenimente", "/istoric",
-  "/intreruperi",
+  // 2026-05-19: /intreruperi mutat la /intreruperi/[county-slug]
+  // (vezi countyIntreruperiRoutes mai jos). Vechiul /{slug}/intreruperi
+  // 308-redirecteaza, deci scos din sitemap ca sa nu indexam redirect-uri.
   // Sub-pages pentru date publice — au fost adăugate ca pagini per-județ
   // în refactor-ul național dar lipseau din sitemap.
   "/educatie", "/sanatate", "/siguranta",
@@ -100,6 +102,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Intreruperi per-county pages — /intreruperi/[county-slug]. 42 routes.
+  const countyIntreruperiRoutes: MetadataRoute.Sitemap = ALL_COUNTIES.map((c) => ({
+    url: `${base}/intreruperi/${c.slug}`,
+    lastModified: now,
+    changeFrequency: "daily" as const,
+    priority: 0.65,
+  }));
+
   // Dynamic sesizari + stiri + proteste (all pulled in parallel)
   let sesizariRoutes: MetadataRoute.Sitemap = [];
   let stiriRoutes: MetadataRoute.Sitemap = [];
@@ -167,6 +177,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...ghiduriRoutes,
     ...evenimenteRoutes,
     ...intreruperiRoutes,
+    ...countyIntreruperiRoutes,
     ...sesizariRoutes,
     ...stiriRoutes,
     ...protesteRoutes,
