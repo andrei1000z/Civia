@@ -1,0 +1,35 @@
+{
+  "ci": {
+    "collect": {
+      "settings": {
+        "preset": "desktop",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "cpuSlowdownMultiplier": 1
+        }
+      },
+      "numberOfRuns": 1
+    },
+    "assert": {
+      "preset": "lighthouse:no-pwa",
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.85 }],
+        "categories:accessibility": ["error", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["error", { "minScore": 0.9 }],
+        "csp-xss": "off",
+        "uses-text-compression": ["warn"],
+        "render-blocking-resources": ["warn", { "maxLength": 3 }],
+        "unused-javascript": ["warn", { "maxLength": 5 }],
+        "color-contrast": ["error"],
+        "image-alt": ["error"],
+        "html-has-lang": ["error"],
+        "meta-description": ["warn"]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

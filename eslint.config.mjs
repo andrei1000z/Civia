@@ -24,6 +24,39 @@ const eslintConfig = defineConfig([
           destructuredArrayIgnorePattern: "^_",
         },
       ],
+      // Force all app code through src/lib/supabase/{client,server,admin}
+      // wrappers — direct imports bypass the cookie + auth conventions
+      // and bite us in subtle ways. Type-only imports are fine (e.g.
+      // `import type { SupabaseClient } from "@supabase/supabase-js"`).
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@supabase/ssr",
+              importNames: [
+                "createBrowserClient",
+                "createServerClient",
+              ],
+              message:
+                "Importă din @/lib/supabase/{client,server,admin} (AGENTS.md). Wrapper-ele au cookie + auth setup corect.",
+            },
+            {
+              name: "@supabase/supabase-js",
+              importNames: ["createClient"],
+              message:
+                "Importă din @/lib/supabase/{client,server,admin} (AGENTS.md). Direct usage bypasses wrappers.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Wrappers themselves need direct access — exempt them.
+  {
+    files: ["src/lib/supabase/**"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   // Override default ignores of eslint-config-next.

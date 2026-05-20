@@ -214,7 +214,7 @@ export function CiviaAssistant() {
                   key={p}
                   type="button"
                   onClick={() => handleSend(p)}
-                  className="text-[11px] px-2.5 py-1 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-primary-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  className="text-[11px] px-2.5 py-1 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-primary-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary-on-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 >
                   {p}
                 </button>

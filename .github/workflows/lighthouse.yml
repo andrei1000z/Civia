@@ -1,0 +1,49 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "next.config.ts"
+      - "package.json"
+      - "package-lock.json"
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Start server
+        run: |
+          npx next start -p 3000 &
+          npx wait-on http://localhost:3000 -t 60000
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/sesizari
+            http://localhost:3000/petitii
+            http://localhost:3000/stiri
+            http://localhost:3000/judete
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: "./.lighthouserc.json"
+        continue-on-error: true

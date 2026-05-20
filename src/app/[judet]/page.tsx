@@ -44,13 +44,10 @@ export async function generateStaticParams() {
 }
 
 // Live data — sesizări + știri + interruptions counts.
-// 2026-05-19: ridicat de la 30 min → 4h (14400s) ca răspuns la depășirea
-// limitei ISR Writes pe Vercel (445K/200K). Cu 42 județe × multiple sub-rute,
-// 30min × 42 producea ~60K writes/lună doar pentru pagina principală.
-// Cache-ul se invalidează ON-DEMAND via revalidatePath() când se publică o
-// sesizare nouă (vezi `invalidateSesizariCache` în lib/cached-queries.ts),
-// deci 4h e doar fallback — date proaspete când se întâmplă ceva.
-export const revalidate = 14400;
+// 2026-05-20: ridicat de la 4h → 24h (86400s). Cu invalidare on-demand prin
+// revalidatePath() la fiecare sesizare nouă (vezi invalidateSesizariCache),
+// 24h e doar fallback. Reduce încă ~45% Vercel ISR Writes vs 4h.
+export const revalidate = 86400;
 
 // Hero photo per oraș mare. Fallback gradient pur pentru județele
 // fără poză custom (codul condiționează existența cheii în map).
