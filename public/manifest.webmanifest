@@ -45,6 +45,21 @@
       "name": "Petiții",
       "short_name": "Petiții",
       "url": "/petitii"
+    },
+    {
+      "name": "Clasament primării",
+      "short_name": "Clasament",
+      "url": "/clasament-primarii"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/sesizari",
+    "method": "GET",
+    "params": {
+      "title": "titlu",
+      "text": "descriere",
+      "url": "ref"
+    }
+  },
+  "prefer_related_applications": false
 }
