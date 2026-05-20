@@ -665,10 +665,18 @@ export function SesizareForm() {
   // Pana cand user-ul apasa Trimite, formal_text e deja generat — zero
   // wait time perceput. Daca user e foarte rapid, fallback la AI in
   // handleSubmit prinde cazul.
+  //
+  // CRITICAL fix 2026-05-20: profileLoaded gating + nume/adresa in deps.
+  // Bug raportat: textul formal se genera ÎNAINTE ca /api/profile sa
+  // raspunda cu nume + adresa → AI primea string-uri goale → text final
+  // „Mă numesc  și doresc..." fara identitate. Acum prewarm-ul asteapta
+  // explicit ca profilul sa fi raspuns. Pentru useri anonimi (no auth),
+  // profileLoaded devine true imediat dupa fallback-ul localStorage.
   const prewarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (data.formal_text) return; // deja generat
     if (aiLoading) return; // deja ruleaza
+    if (!profileLoaded) return; // așteptăm identity de pe profile/localStorage
     if (data.descriere.length < 30) return; // not enough context
     if (!data.tip) return;
     if (data.locatie.length < 3) return;
@@ -680,7 +688,7 @@ export function SesizareForm() {
       if (prewarmTimerRef.current) clearTimeout(prewarmTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.descriere, data.tip, data.locatie, data.formal_text]);
+  }, [data.descriere, data.tip, data.locatie, data.formal_text, data.nume, data.adresa, profileLoaded]);
 
   const getLocation = () => {
     if (!navigator.geolocation) {

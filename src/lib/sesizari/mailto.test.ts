@@ -509,3 +509,80 @@ Florin Răzvan Vărzaru
     }
   });
 });
+
+// Bug raportat user 5/20/2026 — sesizarea 00042 generată cu nume gol.
+// Mail-ul rezultat avea „Cu stimă, 20 mai 2026" single-line lăsat de
+// pipeline + „Cu stimă, Eduard, 20 mai 2026" appendat la final → DUPLICAT.
+// Fix: sigReInline acoperă layout-ul single-line.
+describe("buildFormalText — signature rewrite single-line", () => {
+  const BASE_USER = {
+    tip: "trotuar",
+    titlu: "T",
+    locatie: "Strada X 1",
+    descriere: "d",
+    author_name: "Eduard Andrei Mușat",
+    author_address: "Strada Y 2",
+  };
+
+  it("înlocuiește semnătura single-line 'Cu stimă, DATA' fără a duplica", () => {
+    const aiTextInline = `Bună ziua,
+
+Mă numesc Eduard Andrei Mușat, locuiesc în Strada Y 2 și doresc să raportez.
+
+Cu stimă, 20 mai 2026`;
+    const out = buildFormalText({ ...BASE_USER, formal_text: aiTextInline });
+    const sigMatches = out.match(/Cu\s+stimă,/gi) ?? [];
+    expect(sigMatches.length).toBe(1);
+    expect(out).toContain("Eduard Andrei Mușat");
+  });
+
+  it("înlocuiește semnătura multi-line 'Cu stimă,\\nName\\nDate' fără a duplica", () => {
+    const aiTextMulti = `Bună ziua,
+
+Mă numesc Eduard Andrei Mușat, locuiesc în Strada Y 2 și doresc să raportez.
+
+Cu stimă,
+Eduard Andrei Mușat
+19 mai 2026`;
+    const out = buildFormalText({ ...BASE_USER, formal_text: aiTextMulti });
+    const sigMatches = out.match(/Cu\s+stimă,/gi) ?? [];
+    expect(sigMatches.length).toBe(1);
+  });
+
+  it("appendează semnătură când lipsește complet", () => {
+    const aiTextNoSig = `Bună ziua,\n\nMă numesc Eduard Andrei Mușat, locuiesc în Strada Y 2 și doresc să raportez.`;
+    const out = buildFormalText({ ...BASE_USER, formal_text: aiTextNoSig });
+    const sigMatches = out.match(/Cu\s+stimă,/gi) ?? [];
+    expect(sigMatches.length).toBe(1);
+    expect(out).toContain("Eduard Andrei Mușat");
+  });
+});
+
+// Bug 5/20/2026 (același raport): „Mă numesc  și doresc..." cu nume gol
+// nu intra prin regex-urile newStyleRe/legacyRe (lipsește „locuiesc").
+// Fix: detectăm explicit „Mă numesc [SPACE/PLACEHOLDER]" + verb și
+// reconstruim opener-ul.
+describe("buildFormalText — identity injection cu nume gol în AI output", () => {
+  const BASE_USER = {
+    tip: "trotuar",
+    titlu: "T",
+    locatie: "Strada X 1",
+    descriere: "d",
+    author_name: "Eduard Andrei Mușat",
+    author_address: "Strada Y 2, Sector 5",
+  };
+
+  it("repara Ma numesc + si doresc cu nume gol - injecteaza nume + adresa", () => {
+    const broken = `Bună ziua,\n\nMă numesc  și doresc să raportez o problemă.\n\nCu stimă, 20 mai 2026`;
+    const out = buildFormalText({ ...BASE_USER, formal_text: broken });
+    expect(out).toContain("Mă numesc Eduard Andrei Mușat, locuiesc în Strada Y 2, Sector 5");
+    expect(out).not.toMatch(/Mă numesc\s+și/);
+  });
+
+  it("repara Ma numesc [NUMELE] si doresc - injecteaza nume + adresa", () => {
+    const broken = `Bună ziua,\n\nMă numesc [NUMELE] și doresc să raportez.`;
+    const out = buildFormalText({ ...BASE_USER, formal_text: broken });
+    expect(out).toContain("Mă numesc Eduard Andrei Mușat");
+    expect(out).not.toMatch(/\[NUMELE\]/);
+  });
+});

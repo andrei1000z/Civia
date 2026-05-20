@@ -391,4 +391,34 @@ describe("repairSesizareLeaks", () => {
     expect(out).not.toMatch(/,\s*,/);
     expect(out).not.toMatch(/  /);
   });
+
+  // Bug raportat user 5/20/2026 pe sesizarea 00042. AI a primit nume gol
+  // (race condition: prewarm a rulat înainte ca /api/profile să răspundă),
+  // a generat "Mă numesc [NUMELE] și doresc...", iar repairSesizareLeaks
+  // stripping de placeholder lăsa "Mă numesc  și doresc..." (cu double
+  // space ulterior colapsat la single). Fix: elimină complet „Mă numesc "
+  // când e urmat direct de verb.
+  it("elimina Ma numesc orfan urmat de si doresc (placeholder gol)", () => {
+    const input = "Bună ziua,\n\nMă numesc [NUMELE] și doresc să vă aduc la cunoștință o problemă.";
+    const out = repairSesizareLeaks(input);
+    expect(out).not.toMatch(/Mă numesc\s+și/);
+    expect(out).not.toMatch(/\[NUMELE\]/);
+  });
+
+  it("elimina Ma numesc orfan urmat de doresc / solicit / va aduc", () => {
+    const inputs = [
+      "Mă numesc  doresc să raportez problema.",
+      "Mă numesc  solicit intervenția.",
+      "Mă numesc  vă aduc la cunoștință situația.",
+    ];
+    for (const input of inputs) {
+      const out = repairSesizareLeaks(input);
+      expect(out).not.toMatch(/Mă numesc\s+(și|şi|si|doresc|solicit|vă\s+aduc)/i);
+    }
+  });
+
+  it("nu atinge Ma numesc Ion cand are nume valid", () => {
+    const input = "Mă numesc Ion și doresc să raportez.";
+    expect(repairSesizareLeaks(input)).toBe(input);
+  });
 });

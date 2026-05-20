@@ -171,6 +171,21 @@ export function repairSesizareLeaks(text: string): string {
   // Spațiu dublu între cuvinte (lăsat de strip-uri)
   t = t.replace(/[ \t]{2,}/g, " ");
 
+  // CRITICAL fix 2026-05-20: dacă stripping-ul de placeholder a lăsat
+  // „Mă numesc " urmat direct de un verb („și doresc", „doresc", „vă aduc",
+  // „solicit", „mă adresez", „semnalez", „vreau"), opener-ul e gol. Eliminăm
+  // complet „Mă numesc " ca fraza să curgă: „Bună ziua, doresc să..." sau
+  // „... și doresc..." rămâne natural. Bug raportat user 5/20/2026 pe
+  // sesizarea 00042 unde apărea „Mă numesc  și doresc..." cu nume gol.
+  t = t.replace(
+    /\bM[ăa]\s+numesc\s+(?=(?:și|şi|si)\s+\w|doresc|solicit|v[ăa]\s+aduc|m[ăa]\s+adresez|semnal(?:ez|au)|vreau)/gi,
+    "",
+  );
+  // După strip-ul de mai sus poate rămâne „Bună ziua, și doresc" cu
+  // virgulă + și — normalizăm la „Bună ziua, doresc" sau „Bună ziua,\n\ndoresc"
+  // depinzând de context. Aici doar curățăm „, și " → „, " la început de fraza.
+  t = t.replace(/(Bun[ăa]\s+ziua,)\s*(și|şi|si)\s+/gi, "$1\n\n");
+
   return t;
 }
 

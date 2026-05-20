@@ -124,6 +124,16 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
     );
     text = text.replace(legacyRe, (m) => buildReplacement(m));
 
+    // Edge case (raportat 2026-05-20): AI poate produce „Mă numesc  și
+    // doresc..." cu spațiu gol în locul numelui — sau „Mă numesc [NUMELE]
+    // și doresc..." cu placeholder neînlocuit. Niciunul nu trece prin
+    // regex-urile de mai sus (lipsește „locuiesc"). Detectăm explicit și
+    // injectăm identitatea în acea poziție.
+    const naked = /M[ăa]\s+numesc(?:\s+\[(?:NUME|NUMELE|nume)\])?\s+(?=(?:și|si|şi)\s+\w|doresc|solicit|v[ăa]\s+aduc|vreau)/i;
+    if (naked.test(text)) {
+      text = text.replace(naked, `Mă numesc ${name}, locuiesc în ${address} `);
+    }
+
     // Fallback: no identity line at all — inject after "Bună ziua,"
     if (!/M[ăa]\s+numesc/i.test(text) && !/Subsemnat/i.test(text)) {
       text = text.replace(
@@ -133,13 +143,23 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
     }
   }
 
-  // 3. Rewrite the signature block. "Cu stimă," or "Cu respect," then
-  // name then date.
+  // 3. Rewrite the signature block. Two layouts the AI/template emits:
+  //  (a) multi-line:  „Cu stimă,\nName\nDate"   — captured by `sigReMulti`
+  //  (b) single-line: „Cu stimă, 20 mai 2026"   — captured by `sigReInline`
+  //
+  // 2026-05-20 fix: regex anterior cerea STRICT layout (a) — când AI scria
+  // single-line (cazul când userul n-avea nume completat la generare),
+  // rewrite-ul nu match-uia și appendea o A DOUA semnătură la final.
+  // Acum încercăm ambele pattern-uri și fallback-uim la append doar dacă
+  // chiar nu există nicio semnătură.
   if (name) {
-    const sigRe = /Cu\s+(respect|stim[ăa]),?\s*\n[^\n]*(?:\n[^\n]*)?$/i;
+    const sigReMulti = /Cu\s+(?:respect|stim[ăa]),?\s*\n[^\n]*(?:\n[^\n]*)?$/i;
+    const sigReInline = /Cu\s+(?:respect|stim[ăa]),?\s+[^\n]+$/i;
     const sigBlock = `Cu stimă,\n${name}\n${today}`;
-    if (sigRe.test(text)) {
-      text = text.replace(sigRe, sigBlock);
+    if (sigReMulti.test(text)) {
+      text = text.replace(sigReMulti, sigBlock);
+    } else if (sigReInline.test(text)) {
+      text = text.replace(sigReInline, sigBlock);
     } else {
       text = `${text.trimEnd()}\n\n${sigBlock}`;
     }
