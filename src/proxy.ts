@@ -1,5 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { generateNonce, buildCspWithNonce } from "@/lib/csp/nonce";
+
+// Opt-in via env flag — when CSP_NONCE_MODE=on, we generate a per-request
+// nonce and forward it via x-csp-nonce header so Server Components can
+// read it via headers(). When OFF (default), the static CSP from
+// next.config.ts is used. Allows a safe gradual rollout.
+const NONCE_MODE_ON = process.env.CSP_NONCE_MODE === "on";
+
+function withNonce(res: NextResponse, request: NextRequest): NextResponse {
+  if (!NONCE_MODE_ON) return res;
+  const nonce = generateNonce();
+  // Forward to RSC via request headers (echoed back as response header).
+  request.headers.set("x-csp-nonce", nonce);
+  res.headers.set("x-csp-nonce", nonce);
+  res.headers.set("Content-Security-Policy", buildCspWithNonce(nonce));
+  return res;
+}
 
 const COUNTY_SLUGS = new Set([
   "ab","ar","ag","bc","bh","bn","bt","br","bv","b","bz","cl","cs","cj","ct",
@@ -94,7 +111,7 @@ export default function proxy(request: NextRequest) {
       // Homepage picker — no caching (varies by cookie presence)
       res.headers.set("Cache-Control", "private, no-store");
       res.headers.set("Vary", "Cookie");
-      return res;
+      return withNonce(res, request);
     }
     const saved = request.cookies.get(COOKIE_NAME)?.value?.toLowerCase();
     if (saved && COUNTY_SLUGS.has(saved)) {
@@ -115,7 +132,7 @@ export default function proxy(request: NextRequest) {
     const res = NextResponse.next();
     res.headers.set("Cache-Control", "private, no-store");
     res.headers.set("Vary", "Cookie");
-    return res;
+    return withNonce(res, request);
   }
 
   // ─── National-only paths accidentally county-prefixed ──────────────
@@ -139,7 +156,7 @@ export default function proxy(request: NextRequest) {
   }
 
   // ─── County-scoped path shortcuts ───────────────────────────────
-  if (!REDIRECT_EXACT.has(pathname)) return NextResponse.next();
+  if (!REDIRECT_EXACT.has(pathname)) return withNonce(NextResponse.next(), request);
 
   const savedCounty = request.cookies.get(COOKIE_NAME)?.value;
   const county = savedCounty && COUNTY_SLUGS.has(savedCounty) ? savedCounty : DEFAULT_COUNTY;

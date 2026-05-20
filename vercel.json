@@ -18,6 +18,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/streaks/at-risk",
+      "schedule": "0 19 * * *"
+    },
+    {
       "path": "/api/cron/slow-pages",
       "schedule": "0 10 * * *"
     }

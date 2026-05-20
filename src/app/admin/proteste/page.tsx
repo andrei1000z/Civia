@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { ALL_COUNTIES } from "@/data/counties";
+import { Field, Section } from "@/components/admin/AdminFormPrimitives";
 
 export const dynamic = "force-dynamic";
 
@@ -1239,37 +1240,6 @@ Mai mult text aici.`}
 
 const inputCls =
   "w-full h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function Section({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: typeof Calendar;
-  children: React.ReactNode;
-}) {
-  return (
-    <fieldset className="space-y-3">
-      <legend className="font-[family-name:var(--font-sora)] font-bold text-sm inline-flex items-center gap-2 mb-1">
-        <Icon size={14} className="text-[var(--color-primary)]" aria-hidden="true" />
-        {title}
-      </legend>
-      {children}
-    </fieldset>
-  );
-}
 
 function ListGroup({
   title,

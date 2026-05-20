@@ -31,6 +31,7 @@ import { ThemeSettings } from "@/components/ThemeSettings";
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
+import { StreakWidget } from "@/components/profile/StreakWidget";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 
 interface Profile {
@@ -576,6 +577,9 @@ export default function ContPage() {
               </button>
             </div>
           </form>
+
+          {/* Civic Streak — retention loop. Prominent deasupra badges. */}
+          {user && <StreakWidget userId={user.id} />}
 
           {/* Insigne civice — calculate dinamic din count-uri (sesizari,
               voturi, comentarii, verificari, sesizari rezolvate). Public
