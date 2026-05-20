@@ -305,6 +305,34 @@ export function SesizareForm() {
     }
   }, [data.descriere, data.tip, imagini.length, data.lat]);
 
+  // 2026-05-20 Funnel completion — track granular steps pentru a vedea
+  // EXACT unde abandoneaza userii. Folosit in /admin/analytics funnels.
+  const photoFiredRef = useRef(false);
+  useEffect(() => {
+    if (!photoFiredRef.current && imagini.length > 0) {
+      photoFiredRef.current = true;
+      trackFunnelStep("sesizare-create", "photo-uploaded", { count: imagini.length });
+    }
+  }, [imagini.length]);
+
+  const locationFiredRef = useRef(false);
+  useEffect(() => {
+    if (!locationFiredRef.current && data.lat !== null && data.locatie.length > 5) {
+      locationFiredRef.current = true;
+      trackFunnelStep("sesizare-create", "location-set", { has_coords: 1 });
+    }
+  }, [data.lat, data.locatie]);
+
+  const descriptionFiredRef = useRef(false);
+  useEffect(() => {
+    if (!descriptionFiredRef.current && data.descriere.length >= 30) {
+      descriptionFiredRef.current = true;
+      trackFunnelStep("sesizare-create", "description-complete", {
+        chars: data.descriere.length,
+      });
+    }
+  }, [data.descriere]);
+
   // beforeunload guard — dacă user încearcă să închidă tab-ul în timpul
   // submit-ului, prevenim pierderea silentă a datelor / imaginilor
   // unloaded. Listener-ul stă on doar cât durează submit-ul efectiv.
