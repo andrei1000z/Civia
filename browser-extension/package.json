@@ -1,0 +1,13 @@
+{
+  "name": "civia-lens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser extension pentru sesizari rapide pe Civia.ro din orice site",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "pack": "npm run build && cd dist && zip -r ../civia-lens-v$npm_package_version.zip ."
+  },
+  "license": "MIT",
+  "homepage": "https://civia.ro"
+}

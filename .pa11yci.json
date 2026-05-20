@@ -1,0 +1,35 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "wait": 2000,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+    },
+    "ignore": [
+      "warning",
+      "notice",
+      "WCAG2AA.Principle1.Guideline1_4.1_4_3.G145.Fail"
+    ]
+  },
+  "urls": [
+    "http://localhost:3000",
+    "http://localhost:3000/sesizari",
+    "http://localhost:3000/petitii",
+    "http://localhost:3000/stiri",
+    "http://localhost:3000/proteste",
+    "http://localhost:3000/ghiduri",
+    "http://localhost:3000/intreruperi",
+    "http://localhost:3000/judete",
+    "http://localhost:3000/autoritati",
+    "http://localhost:3000/clasament-primarii",
+    "http://localhost:3000/civic-quiz",
+    "http://localhost:3000/civic-awards",
+    "http://localhost:3000/dezvoltatori",
+    "http://localhost:3000/cont"
+  ]
+}
