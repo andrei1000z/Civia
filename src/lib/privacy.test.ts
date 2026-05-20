@@ -62,6 +62,24 @@ describe("stripPrivateAddress", () => {
     const r = stripPrivateAddress("Contact: a@a.ro și b@b.ro pentru info.");
     expect((r.match(/\[email protejat\]/g) ?? []).length).toBe(2);
   });
+
+  // Self-healing pentru sesizari vechi (5/20/2026): formal_text salvat
+  // inainte de fix avea „Ma numesc  si doresc..." cu nume gol. Display
+  // time, dupa adaugarea repairSesizareLeaks ca step 0, ar trebui sa
+  // returneze text curat fara fragment orfan.
+  it("self-heals OLD broken 'Mă numesc  și doresc' from DB at display time", () => {
+    const oldBroken = "Bună ziua,\n\nMă numesc  și doresc să vă aduc la cunoștință o problemă pe Strada X.\n\nCu stimă, 20 mai 2026";
+    const r = stripPrivateAddress(oldBroken);
+    expect(r).not.toMatch(/Mă numesc\s+și/);
+    expect(r).toContain("doresc să vă aduc la cunoștință");
+  });
+
+  it("self-heals '[NUMELE]' placeholder leftover at display time", () => {
+    const broken = "Bună ziua,\n\nMă numesc [NUMELE] și doresc să raportez.";
+    const r = stripPrivateAddress(broken);
+    expect(r).not.toContain("[NUMELE]");
+    expect(r).not.toMatch(/Mă numesc\s+și/);
+  });
 });
 
 describe("stripForPreview", () => {

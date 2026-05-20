@@ -13,6 +13,7 @@
     "scrape:intreruperi": "node scripts/scrape-intreruperi.mjs",
     "verify:populations": "tsx scripts/verify-populations.ts",
     "verify:emails": "tsx scripts/verify-emails.ts",
+    "backfill:formal-text": "tsx scripts/backfill-formal-text.ts",
     "test": "vitest run || vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",

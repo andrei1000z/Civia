@@ -13,13 +13,22 @@
  */
 
 import { scrubFormalTextForPublic } from "./sesizari/scrub-public";
+import { repairSesizareLeaks } from "./sesizari/format-helpers";
 
 export function stripPrivateAddress(text: string, authorName?: string | null): string {
   if (!text) return text;
 
+  // 0. Self-healing pentru formal_text salvat înainte de fix-urile din
+  //    repairSesizareLeaks (5/20/2026): sesizări vechi care au în DB
+  //    artefacte de tip „Mă numesc  și doresc..." (placeholder strippat
+  //    cu spațiu orfan) sau „Subsemnatul ..., domiciliat în [ADRESA]"
+  //    nepatchat. Aplicăm cleanup-ul ÎNAINTE de scrub-ul public ca să
+  //    afișăm text curat fără a necesita backfill DB.
+  let result = repairSesizareLeaks(text);
+
   // 1. Address + name redaction (handles both "Mă numesc X, locuiesc..."
   //    and legacy "Subsemnatul X, domiciliat în..." openers + signature).
-  let result = scrubFormalTextForPublic(text, {
+  result = scrubFormalTextForPublic(result, {
     authorName: authorName ?? null,
     hideName: true,
   });
