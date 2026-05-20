@@ -54,6 +54,7 @@ import { SendViaCiviaButton } from "./SendViaCiviaButton";
 import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { playSound } from "@/lib/liquid-civic/sound";
 import { DuplicateDetector } from "./DuplicateDetector";
+import { announce } from "@/components/ui/LiveAnnouncer";
 import { useCountyOptional } from "@/lib/county-context";
 
 interface FormData {
@@ -1057,9 +1058,14 @@ export function SesizareForm() {
         localStorage.removeItem(DRAFT_KEY);
       }
       setSubmitted({ code: json.data.code });
+      // A11y: announce success cu codul pentru screen readers
+      announce(`Sesizare inregistrata cu succes. Codul tau este ${json.data.code.split("").join(" ")}`);
       trackFunnelStep("sesizare-create", "submitted", { hasPhotos: imagini.length > 0 ? 1 : 0 });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare trimitere");
+      const msg = e instanceof Error ? e.message : "Eroare trimitere";
+      setError(msg);
+      // A11y: anunta eroarea asertiv (intrerupe screen reader)
+      announce(`Eroare la trimitere: ${msg}`, "assertive");
     } finally {
       setSubmitting(false);
     }

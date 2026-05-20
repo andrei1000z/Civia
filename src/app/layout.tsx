@@ -24,6 +24,7 @@ import { CursorGlow } from "@/components/liquid-civic/CursorGlow";
 import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
 import { KonamiEasterEgg } from "@/components/liquid-civic/KonamiEasterEgg";
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
+import { GlobalLiveAnnouncer } from "@/components/ui/LiveAnnouncer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -209,6 +210,8 @@ export default function RootLayout({
         <CursorGlow />
         <FirstLoadSplash />
         <KonamiEasterEgg />
+        {/* A11y: global screen reader announcer (always mounted, sr-only) */}
+        <GlobalLiveAnnouncer />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[var(--z-toast)] focus:px-4 focus:py-2 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-[var(--radius-xs)] focus:shadow-lg"
