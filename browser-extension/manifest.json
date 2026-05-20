@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Civia Lens",
+  "version": "0.1.0",
+  "description": "Sesizeaza rapid orice problema vizibila pe web pe Civia.ro.",
+  "author": "Civia.ro",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["contextMenus", "storage", "activeTab"],
+  "host_permissions": ["https://civia.ro/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/*"],
+      "js": ["content/facebook-badges.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
