@@ -1,0 +1,34 @@
+import type { Metadata } from "next";
+import { CivicQuizClient } from "./CivicQuizClient";
+import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { GraduationCap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Civic Quiz — testează-ți cunoștințele despre drepturi civice",
+  description:
+    "15 intrebari despre OG 27/2002, Legea 544, GDPR, Constitutie. Castiga badge Cetatean Informat. 5 minute.",
+  alternates: { canonical: "/civic-quiz" },
+};
+
+export const revalidate = 86400;
+
+export default function CivicQuizPage() {
+  return (
+    <div className="container-narrow py-8 md:py-12">
+      <PageHero
+        title="Civic Quiz"
+        icon={GraduationCap}
+        gradient={HERO_GRADIENT.data}
+        description={
+          <>
+            Testează-ți cunoștințele civice — 10 întrebări random din 15.
+            Despre <strong>OG 27/2002</strong>, <strong>Legea 544</strong>,{" "}
+            <strong>GDPR</strong>, Constituția României. ~5 minute.
+          </>
+        }
+        tagline={"Raspunzi corect la 8+/10 → primesti badge Cetatean Informat 🏆"}
+      />
+      <CivicQuizClient />
+    </div>
+  );
+}

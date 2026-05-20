@@ -1,0 +1,339 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Sparkles, X, Send, Loader2, RefreshCw } from "lucide-react";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const STORAGE_KEY = "civia:chat-history-v1";
+const INITIAL_GREETING = "Salut! 👋 Sunt Civia Assistant. Te ajut sa intelegi drepturile tale civice si sa depui sesizari. Cu ce te pot ajuta?";
+
+const QUICK_PROMPTS = [
+  "Cum depun o sesizare?",
+  "Cum contest o amenda?",
+  "Ce drepturi am la informatii publice?",
+  "Cat timp are primaria sa raspunda?",
+];
+
+/**
+ * F1 Civia Assistant — floating chat bottom-right.
+ *
+ * Folosește Groq free tier (Llama 3.1 8B) cu system prompt civic.
+ * Rate-limit 10 mesaje/15min/IP. Persistence localStorage (max 10 turns).
+ *
+ * Activat via buton flotant bottom-right pe TOATE paginile (mounted in layout).
+ */
+export function CiviaAssistant() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Load history on first open
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Message[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    setMessages([{ role: "assistant", content: INITIAL_GREETING }]);
+  }, [open]);
+
+  // Save history on change
+  useEffect(() => {
+    if (messages.length === 0) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-20)));
+    } catch { /* ignore */ }
+  }, [messages]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  // Autofocus input on open
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  const handleSend = async (text?: string) => {
+    const content = (text ?? input).trim();
+    if (!content || loading) return;
+
+    const userMsg: Message = { role: "user", content };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput("");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Eroare AI");
+        return;
+      }
+      setMessages((prev) => [...prev, { role: "assistant", content: json.reply }]);
+    } catch {
+      setError("Eroare retea. Reincearca.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setMessages([{ role: "assistant", content: INITIAL_GREETING }]);
+    setError(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <>
+      {/* Floating button — bottom-right, desktop only (mobile uses fab) */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Deschide Civia Assistant"
+        className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 hidden md:inline-flex items-center justify-center lc-shine ${
+          open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
+        }`}
+      >
+        <Sparkles size={22} aria-hidden="true" />
+      </button>
+
+      {/* Chat panel */}
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Civia Assistant"
+          aria-modal="false"
+          className="fixed bottom-6 right-6 z-40 w-[calc(100vw-3rem)] sm:w-[400px] max-w-[400px] h-[calc(100vh-6rem)] sm:h-[600px] max-h-[600px] flex flex-col lc-glass-3 rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] animate-modal-pop"
+        >
+          {/* Header */}
+          <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[var(--color-border)]">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] flex items-center justify-center text-white shrink-0">
+                <Sparkles size={14} aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm text-[var(--color-text)] truncate">
+                  Civia Assistant
+                </h2>
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  AI civic — Beta
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={handleReset}
+                aria-label="Reseteaza conversatia"
+                title="Reset"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
+                <RefreshCw size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Inchide"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </header>
+
+          {/* Messages */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
+          >
+            {messages.map((m, i) => (
+              <div
+                key={i}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-[var(--color-surface-2)] text-[var(--color-text)]"
+                  }`}
+                >
+                  {renderMessage(m.content)}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-[var(--color-surface-2)] rounded-2xl px-3 py-2 inline-flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-[var(--color-text-muted)]" aria-hidden="true" />
+                  <span className="text-xs text-[var(--color-text-muted)]">Civia gandeste...</span>
+                </div>
+              </div>
+            )}
+            {error && (
+              <p role="alert" className="text-xs text-red-600 dark:text-red-400 px-2">
+                {error}
+              </p>
+            )}
+          </div>
+
+          {/* Quick prompts (only when no user messages) */}
+          {messages.filter((m) => m.role === "user").length === 0 && !loading && (
+            <div className="px-4 py-2 border-t border-[var(--color-border)] flex flex-wrap gap-1.5">
+              {QUICK_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleSend(p)}
+                  className="text-[11px] px-2.5 py-1 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-primary-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="px-3 py-3 border-t border-[var(--color-border)] flex items-end gap-2"
+          >
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Intreaba ceva..."
+              rows={1}
+              maxLength={2000}
+              disabled={loading}
+              className="flex-1 px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] resize-none max-h-32"
+              aria-label="Scrie mesajul tau"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || loading}
+              aria-label="Trimite"
+              className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            >
+              <Send size={16} aria-hidden="true" />
+            </button>
+          </form>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Render markdown links + bold + bullets in chat message.
+ * Simple version — no nested elements.
+ */
+function renderMessage(content: string): React.ReactNode {
+  const lines = content.split("\n");
+  return lines.map((line, i) => {
+    if (line.trim().startsWith("- ")) {
+      return (
+        <div key={i} className="flex gap-1.5 my-0.5">
+          <span aria-hidden="true">•</span>
+          <span className="flex-1">{renderInline(line.trim().slice(2))}</span>
+        </div>
+      );
+    }
+    if (line.trim() === "") return <div key={i} className="h-2" />;
+    return (
+      <div key={i} className={i > 0 ? "mt-2" : ""}>
+        {renderInline(line)}
+      </div>
+    );
+  });
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Pattern: [label](/path) or **bold**
+  const parts: React.ReactNode[] = [];
+  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push(text.slice(lastIdx, match.index));
+    }
+    if (match[1] && match[2]) {
+      // Link
+      const href = match[2];
+      if (href.startsWith("/") || href.startsWith("https://civia.ro")) {
+        parts.push(
+          <Link
+            key={key++}
+            href={href}
+            className="underline hover:no-underline text-current font-semibold"
+          >
+            {match[1]}
+          </Link>,
+        );
+      } else {
+        parts.push(
+          <a
+            key={key++}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:no-underline text-current font-semibold"
+          >
+            {match[1]}
+          </a>,
+        );
+      }
+    } else if (match[3]) {
+      parts.push(
+        <strong key={key++} className="font-bold">
+          {match[3]}
+        </strong>,
+      );
+    }
+    lastIdx = match.index + match[0].length;
+  }
+  if (lastIdx < text.length) {
+    parts.push(text.slice(lastIdx));
+  }
+  return parts;
+}

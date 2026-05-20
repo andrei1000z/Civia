@@ -23,6 +23,7 @@ import { AuroraBackground } from "@/components/liquid-civic/AuroraBackground";
 import { CursorGlow } from "@/components/liquid-civic/CursorGlow";
 import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
 import { KonamiEasterEgg } from "@/components/liquid-civic/KonamiEasterEgg";
+import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -230,6 +231,8 @@ export default function RootLayout({
                 <InstallPrompt />
                 <MobileFab />
                 <NewsletterNudge />
+                {/* F1 Civia Assistant — AI civic chat (desktop floating button) */}
+                <CiviaAssistant />
               </DeferredClientMount>
             </ToastProvider>
           </AuthProvider>

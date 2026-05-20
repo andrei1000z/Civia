@@ -53,6 +53,7 @@ import { trackFunnelStep, trackAiUsage, trackFormAbandon } from "@/components/an
 import { SendViaCiviaButton } from "./SendViaCiviaButton";
 import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { playSound } from "@/lib/liquid-civic/sound";
+import { DuplicateDetector } from "./DuplicateDetector";
 import { useCountyOptional } from "@/lib/county-context";
 
 interface FormData {
@@ -1501,6 +1502,17 @@ ${today}`;
             )}
           </Field>
         )}
+
+        {/* F2 Duplicate Detection — caut sesizari similare nearby (50m) cu
+            acelasi tip in ultimele 7 zile. Daca match → user vede sugestii
+            cu cosign in loc de duplicate. */}
+        <DuplicateDetector
+          tip={data.tip || null}
+          lat={data.lat}
+          lng={data.lng}
+          sector={data.sector || null}
+          enabled={!!data.tip && data.lat != null && data.lng != null}
+        />
 
         {/* IDENTITATE — collected at the END after the user has invested
             time describing the problem, attaching photos, picking a
