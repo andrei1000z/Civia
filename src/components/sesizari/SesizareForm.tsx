@@ -22,6 +22,8 @@ import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
 import { cn } from "@/lib/utils";
 import nextDynamic from "next/dynamic";
 import { PhotoUploader } from "./PhotoUploader";
+// FormField primitive extras la sprint 10 — local Field e acum alias.
+import { FormField as Field, FORM_INPUT_CLASS as inputClass } from "./FormField";
 // Parking-specific UI — heavy (Tesseract.js + canvas work). Only mount
 // when the user actually picks tip="parcare" so the rest of the form
 // ships without the OCR bundle.
@@ -1731,28 +1733,6 @@ ${today}`;
   );
 }
 
-// text-base (16px) pe mobile previne zoom-ul auto iOS Safari pe focus.
-// Pe sm+ revenim la text-sm (14px) ca sa nu fie textul prea mare in formulare.
-// Aceeasi convenție folosită în restul platformei după pass-ul mobil 2026-05-14.
-const inputClass = "w-full h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium mb-1.5 text-[var(--color-text)]">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
+// Field + inputClass extras în ./FormField.tsx (sprint 10). Importate ca
+// aliases la topul fisierului (Field = FormField, inputClass = FORM_INPUT_CLASS).
 
