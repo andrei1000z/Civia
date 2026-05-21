@@ -156,49 +156,58 @@ export function CookieBanner() {
       aria-labelledby="cookie-banner-title"
       aria-describedby="cookie-banner-desc"
       aria-modal="false"
-      className="glass-surface-strong fixed left-4 right-4 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-5 animate-fade-in-up"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
     >
-      <div className="flex items-start gap-3">
-        <Cookie size={20} className="text-[var(--color-primary)] mt-0.5 shrink-0" aria-hidden="true" />
-        <div className="flex-1 text-sm">
-          <p id="cookie-banner-title" className="font-semibold mb-1">
-            Cookies și viața ta privată
+      <div className="flex items-start gap-2 md:gap-3">
+        <Cookie size={18} className="text-[var(--color-primary)] mt-0.5 shrink-0" aria-hidden="true" />
+        <div className="flex-1 text-sm min-w-0">
+          {/* Pe mobile: compact one-liner. Pe desktop: title + paragraf descriere.
+              Bug raportat 5/21/2026: banner-ul de 400px ocupa 70% din viewport-ul
+              mobil si bloca harta + cardurile. Acum stripa subtire. */}
+          <p id="cookie-banner-title" className="font-semibold mb-0.5 md:mb-1 text-xs md:text-sm">
+            <span className="md:hidden">Cookies?</span>
+            <span className="hidden md:inline">Cookies și viața ta privată</span>
           </p>
-          <p id="cookie-banner-desc" className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
+          <p id="cookie-banner-desc" className="hidden md:block text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
             Folosim doar cookies <strong>strict necesare</strong> (autentificare, temă,
             consimțământ). Nu folosim Google Analytics, nu te trackăm pe alte site-uri, nu
             vindem date. Conform GDPR și Directivei ePrivacy, ai libertatea totală să
             accepți sau să respingi orice cookie non-esențial.
           </p>
+          {/* Mobile one-liner (~30 chars). Detalii via „Personalizează" */}
+          <p className="md:hidden text-[11px] text-[var(--color-text-muted)] mb-2 leading-tight">
+            Strict necesare. Fără tracking.
+          </p>
 
           {!showCustom && (
             <>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 md:gap-2">
                 <button
                   type="button"
                   onClick={acceptAll}
-                  className="h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
+                  className="h-8 md:h-9 px-3 md:px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-[11px] md:text-xs font-medium hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
                 >
-                  Accept toate
+                  Accept
                 </button>
                 <button
                   type="button"
                   onClick={rejectAll}
-                  className="h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
+                  className="h-8 md:h-9 px-3 md:px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[11px] md:text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
                 >
-                  Respinge non-esențiale
+                  Respinge
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCustom(true)}
-                  className="h-9 px-3 rounded-[var(--radius-xs)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-1 transition-colors"
+                  className="h-8 md:h-9 px-2 md:px-3 rounded-[var(--radius-xs)] text-[11px] md:text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-1 transition-colors"
                 >
                   <Settings2 size={12} aria-hidden="true" />
-                  Personalizează
+                  <span className="md:hidden">Setări</span>
+                  <span className="hidden md:inline">Personalizează</span>
                 </button>
               </div>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+              <p className="hidden md:block text-[10px] text-[var(--color-text-muted)] mt-2">
                 Detalii complete în{" "}
                 <Link
                   href="/legal/confidentialitate#cookies"

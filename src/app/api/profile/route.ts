@@ -25,7 +25,11 @@ const updateSchema = z.object({
 export async function GET() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Auth required" }, { status: 401 });
+  // Anonymous on public pages: return 200 with data:null instead of 401.
+  // Pages like /sesizari-publice render BadgesSection/StreakWidget client
+  // components that probe /api/profile to detect login; 401 spams Sentry +
+  // browser console for normal anon traffic.
+  if (!user) return NextResponse.json({ data: null });
 
   const { data, error } = await supabase
     .from("profiles")

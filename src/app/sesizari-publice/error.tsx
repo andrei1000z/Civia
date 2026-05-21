@@ -78,8 +78,9 @@ export default function Error({
             Sesizările publice nu se pot încărca
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-md mx-auto">
-            Am încercat de 3 ori automat — pare o problemă persistentă a conexiunii.
-            Reîncearcă manual mai târziu sau trimite o sesizare nouă.
+            {AUTO_RETRY_DELAYS_MS.length === 0
+              ? `Pagina nu se poate încărca momentan. Apasă „Reîncearcă” sau verifică conexiunea. Dacă persistă, trimite o sesizare nouă.`
+              : `Am încercat de ${AUTO_RETRY_DELAYS_MS.length} ori automat — pare o problemă persistentă a conexiunii. Reîncearcă manual mai târziu sau trimite o sesizare nouă.`}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
