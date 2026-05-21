@@ -4,7 +4,8 @@ import { Building2, Trophy, Clock, CheckCircle2, AlertTriangle, ArrowRight } fro
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { ALL_COUNTIES } from "@/data/counties";
-import { STATUS_LABELS } from "@/lib/constants";
+import { STATUS_LABELS, SITE_URL } from "@/lib/constants";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
 export const metadata: Metadata = {
   title: "Clasament primării — care primării răspund cel mai bine?",
@@ -122,6 +123,12 @@ export default async function ClasamentPrimariiPage() {
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Clasament primării", url: `${SITE_URL}/clasament-primarii` },
+        ]}
+      />
       <PageHero
         title="Clasament primării"
         icon={Trophy}

@@ -7,6 +7,8 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { leaderboardAuthorName } from "@/lib/sesizari/display-name";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Clasament Fix Score — răspuns autorități pe județe",
@@ -133,6 +135,12 @@ export default async function ClasamentPage() {
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Clasament Fix Score", url: `${SITE_URL}/clasament` },
+        ]}
+      />
       <PageHero
         title="Clasament Fix Score"
         icon={Trophy}
