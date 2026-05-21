@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 import { getCountyBySlug, ALL_COUNTIES } from "@/data/counties";
 
-// Edge runtime — getCountyBySlug + ALL_COUNTIES sunt pure in-memory data
-// (zero Supabase, zero fs). ImageResponse e edge-compatible. Cold start
-// ~40ms vs ~200ms Node Lambda. 42 OG images per-county.
-export const runtime = "edge";
+// Node runtime — generateStaticParams (jos) prerenders 42 PNG-uri per
+// build, ceea ce e incompatibil cu Edge runtime (Next 16 enforces).
+// Edge runtime ar permite -150ms cold start, dar prerendering elimina
+// cold start oricum (PNG-urile sunt servite din cache CDN).
+export const runtime = "nodejs";
 export const alt = "Civia — platformă civică pe județul tău";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
