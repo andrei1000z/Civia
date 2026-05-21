@@ -15,9 +15,9 @@
 // eliminating the radius "flash" at hydration.
 function Shimmer({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`animate-pulse bg-[var(--color-surface-2)] rounded-[var(--radius-md)] ${className}`}
-    />
+    // skeleton-shimmer = gradient sweep animation (mai elegant decat
+    // animate-pulse). Defined in globals.css cu prefers-reduced-motion fallback.
+    <div className={`skeleton-shimmer rounded-[var(--radius-md)] ${className}`} />
   );
 }
 

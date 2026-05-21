@@ -79,7 +79,15 @@ export function Lightbox({ open, onClose, url, kind = "auto", caption, title }: 
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal)] flex items-stretch justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+      // safe-area-inset pentru iOS landscape — notch + home indicator nu mai
+      // taie din header/footer-ul dialog-ului. Min 16px ca p-4 garantat.
+      style={{
+        paddingTop: "max(1rem, env(safe-area-inset-top))",
+        paddingRight: "max(1rem, env(safe-area-inset-right))",
+        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        paddingLeft: "max(1rem, env(safe-area-inset-left))",
+      }}
+      className="fixed inset-0 z-[var(--z-modal)] flex items-stretch justify-center bg-black/85 backdrop-blur-md animate-fade-in"
       onClick={onClose}
       role="presentation"
     >
