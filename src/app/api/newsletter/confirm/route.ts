@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { analyticsRedis } from "@/lib/analytics/redis";
 
@@ -83,6 +84,12 @@ export async function GET(req: Request) {
     .eq("id", existing.id);
 
   if (error) {
+    // Bug fix 5/22/2026 — silent failure inainte: user vedea „Eroare" dar
+    // admin n-avea cum sa stie de ce. Acum Sentry capture cu context.
+    Sentry.captureException(error, {
+      tags: { kind: "newsletter_confirm_failed" },
+      extra: { subscriberId: existing.id },
+    });
     return htmlResponse(
       "Eroare",
       `<h1>Eroare</h1><p>Nu am putut confirma chiar acum. Încearcă din nou peste câteva minute.</p>`,

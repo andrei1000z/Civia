@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
+import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,15 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  // Rate limit defensiv pe IP — chiar daca admin compromised.
+  const rl = await rateLimitAsync(`admin-proteste-post:${getClientIp(req)}`, {
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Prea multe proteste." }, { status: 429 });
+  }
 
   try {
     const body = await req.json();

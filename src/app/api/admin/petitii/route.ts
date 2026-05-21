@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { rateLimitAsync } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,16 @@ async function requireAdmin() {
 export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  // Rate limit defensiv chiar si pe admin endpoints — previne script
+  // runaway / compromised admin account de la a crea bulk de petitii.
+  const rl = await rateLimitAsync(`admin-petitii-post:${auth.userId}`, {
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Prea multe petitii — asteapta un minut." }, { status: 429 });
+  }
 
   try {
     const body = await req.json();

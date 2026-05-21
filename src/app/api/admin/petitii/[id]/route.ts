@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,16 @@ export async function PATCH(
 ) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  // Defensiv pe admin endpoint — limita pe IP previne abuse din script
+  // chiar daca admin account compromised.
+  const rl = await rateLimitAsync(`admin-petitii-patch:${getClientIp(req)}`, {
+    limit: 60,
+    windowMs: 60_000,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Prea multe modificari." }, { status: 429 });
+  }
 
   try {
     const { id } = await params;
