@@ -60,10 +60,14 @@ interface LeafletMapProps {
   flyToTarget?: { coords: [number, number]; zoom?: number } | null;
 }
 
+// Leaflet are nevoie de un tick dupa mount ca sa-si reseteze size-ul
+// (parintele isi termina layout-ul). 100ms = un cadru @ 60fps + buffer.
+const MAP_INVALIDATE_DELAY_MS = 100;
+
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    const timeout = setTimeout(() => map.invalidateSize(), 100);
+    const timeout = setTimeout(() => map.invalidateSize(), MAP_INVALIDATE_DELAY_MS);
     return () => clearTimeout(timeout);
   }, [map]);
   return null;

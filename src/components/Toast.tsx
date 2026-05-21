@@ -66,10 +66,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             t.type === "success" ? CheckCircle2 :
             t.type === "error" ? AlertCircle :
             t.type === "warning" ? AlertCircle : Info;
+          // Tokens-based — match cu design system, inheritable de la theme.
+          // CSS vars sunt setate la root in globals.css.
           const color =
-            t.type === "success" ? "#059669" :
-            t.type === "error" ? "#DC2626" :
-            t.type === "warning" ? "#F59E0B" : "#2563EB";
+            t.type === "success" ? "var(--color-primary)" :
+            t.type === "error" ? "var(--color-accent, #DC2626)" :
+            t.type === "warning" ? "var(--color-warning, #F59E0B)" :
+            "var(--color-info, #2563EB)";
           return (
             <div
               key={t.id}

@@ -63,10 +63,15 @@ export function CivicSprite({ type, persistentKey }: Props) {
         // localStorage blocked — show anyway
       }
     }
-    // Delay 400ms ca să nu intre over alt content care abia se renderizează
-    const showTimer = setTimeout(() => setShow(true), 400);
-    const exitTimer = setTimeout(() => setExiting(true), 5400);
-    const removeTimer = setTimeout(() => setShow(false), 5900);
+    // Timings sprite-animation: show dupa 400ms (sa nu calce content fresh),
+    // exit start 5000ms dupa show (~5s visible), unmount 500ms dupa exit
+    // (cat dureaza animatia CSS de exit).
+    const SPRITE_SHOW_DELAY_MS = 400;
+    const SPRITE_EXIT_DELAY_MS = 5400;
+    const SPRITE_REMOVE_DELAY_MS = 5900;
+    const showTimer = setTimeout(() => setShow(true), SPRITE_SHOW_DELAY_MS);
+    const exitTimer = setTimeout(() => setExiting(true), SPRITE_EXIT_DELAY_MS);
+    const removeTimer = setTimeout(() => setShow(false), SPRITE_REMOVE_DELAY_MS);
     return () => {
       clearTimeout(showTimer);
       clearTimeout(exitTimer);
