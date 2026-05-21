@@ -192,4 +192,41 @@ Florin Răzvan Vărzaru
     // Numele ramane afisat — owner-ul a ales sa il faca public.
     expect(out).toContain("Florin Răzvan Vărzaru");
   });
+
+  // Bug raportat user 5/21/2026 pe sesizarea 00045: AI genereaza
+  // „Ma numesc X. Doresc..." fara clauza „locuiesc in Y" cand
+  // profilul nu are adresa. Vechiul newOpener cerea STRICT „locuiesc"
+  // → nu match-uia → numele ramanea vizibil. Fix cu nakedOpener.
+  it("[regression 5/21/2026] redacts Ma numesc X. (no locuiesc clause)", () => {
+    const text = `Bună ziua,\n\nMă numesc Adrian. Doresc să vă aduc la cunoștință o problemă.`;
+    const out = scrubFormalTextForPublic(text, {
+      authorName: "Adrian",
+      hideName: true,
+    });
+    expect(out).not.toContain("Adrian");
+    expect(out).toContain("[nume]");
+    expect(out).toContain("Doresc să vă aduc");
+  });
+
+  it("[regression 5/21/2026] redacts Ma numesc X before si-verb (no period)", () => {
+    const text = `Mă numesc Adrian și doresc să raportez o groapă.`;
+    const out = scrubFormalTextForPublic(text, {
+      authorName: "Adrian",
+      hideName: true,
+    });
+    expect(out).not.toContain("Adrian");
+    expect(out).toContain("[nume]");
+  });
+
+  it("[regression 5/21/2026] redacts both first name (in text) and last name (only in DB)", () => {
+    // DB has author_name="Adrian Mușat" full, but AI shortened to „Adrian"
+    const text = `Mă numesc Adrian. Doresc să raportez. Mușat declara.`;
+    const out = scrubFormalTextForPublic(text, {
+      authorName: "Adrian Mușat",
+      hideName: true,
+    });
+    expect(out).not.toContain("Adrian");
+    expect(out).not.toContain("Mușat");
+    expect(out).toContain("[nume]");
+  });
 });

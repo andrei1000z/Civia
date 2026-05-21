@@ -94,14 +94,36 @@ export function scrubFormalTextForPublic(text: string, opts: ScrubOptions): stri
     );
   }
 
-  // 5. Any leftover literal occurrences of the real name mid-text —
-  // e.g., the AI sometimes drops the name in a "Eu, {Name}," aside.
-  // Only redact when hiding, and only when the name is ≥ 3 chars to
-  // avoid false positives on common words.
+  // 5. „Mă numesc X." sau „Mă numesc X și doresc/etc" FĂRĂ clauza locuiesc.
+  //    AI generează acest pattern când profilul user-ului nu are adresă.
+  //    Bug raportat 5/21/2026 pe 00045: name "Adrian" apărea vizibil.
+  //    Pattern: „Mă numesc <word(s)>" până la punct, virgulă sau verb.
+  const NAKED_OPENER_END = String.raw`(?=\s*(?:\s+(?:și|si|şi)\s+\w|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|semnal(?:ez|au)|aduc|vreau)\b|[.?!]|\n|$))`;
+  const nakedOpener = new RegExp(
+    String.raw`M[ăa]\s+numesc\s+[A-ZĂÂÎȘȚ][^,.\n]*?${NAKED_OPENER_END}`,
+    "gim",
+  );
+  out = out.replace(nakedOpener, `Mă numesc ${nameRedacted}`);
+
+  // 6. Any leftover literal occurrences of the real name mid-text —
+  // redactăm și NUMELE COMPLET și fiecare cuvânt individual ≥3 chars.
+  // Asta acoperă cazul când DB stochează „Adrian Mușat" (full) dar
+  // AI a generat doar „Adrian" (prenume) — fără split per cuvânt,
+  // redactarea pe full name nu match-uiește prenumele singur.
   if (opts.hideName && opts.authorName && opts.authorName.trim().length >= 3) {
-    const esc = opts.authorName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    out = out.replace(new RegExp(`\\b${esc}\\b`, "g"), NAME_REDACTED);
+    const fullEsc = opts.authorName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`\\b${fullEsc}\\b`, "gi"), NAME_REDACTED);
+    // Redact fiecare cuvânt din nume (prenume, nume de familie, etc.)
+    for (const word of opts.authorName.trim().split(/\s+/)) {
+      if (word.length < 3) continue;
+      // Skip cuvinte care arată ca prepoziții / conector (Andrei „de la"...)
+      if (/^(de|la|al|sau|si|și)$/i.test(word)) continue;
+      const wEsc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(new RegExp(`\\b${wEsc}\\b`, "gi"), NAME_REDACTED);
+    }
   }
+  // Curăță „[nume] [nume]" → „[nume]" (după redactare per-cuvânt).
+  out = out.replace(/(\[nume\])\s+\[nume\](\s+\[nume\])*/g, "$1");
 
   return out;
 }
