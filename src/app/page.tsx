@@ -99,32 +99,20 @@ export default async function HomePage() {
           în paralel cu HTML parsing, nu așteaptă să întâlnească CSS-ul
           care îl referă. ~200-500ms LCP improvement pe primul paint.
           Next 15+ hoistează automat <link> elements la <head>. */}
-      <link
-        rel="preload"
-        as="image"
-        href="/images/home/hero-national.jpg"
-        // fetchPriority high — bate restul resursele non-critical
-      />
       {/* HERO — `-mt-16` cancels body's pt-16 (compensare pentru navbar-ul
           fixed h-16 = 64px) ca gradient-ul să înceapă la y=0 viewport,
           iar navbar-ul să plutească pe el cu backdrop-blur.
-          Inner padding adds back the 16 so visible content stays in
-          the same place. Two CTAs only — sesizare (primary action) +
-          petiții (secondary). The "alege-ți județul" link removed
-          from hero — the picker section right below is the entry. */}
+          5/22/2026 — scos imaginea de fundal hero-national.jpg la cererea
+          user-ului. Acum doar gradient curat emerald → dark + 2 radiale
+          subtle pentru profunzime. -300ms LCP (no image fetch) + look
+          mai curat. */}
       <section className="relative overflow-hidden -mt-16 bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] text-white">
-        {/* Background photo — hero-national. mix-blend-overlay + opacity
-            păstrează lizibilitatea text-ului + identitatea cromatică
-            verde-Civia, dar adaugă textură reală (peisaj România) în
-            locul gradient-ului plat. */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity"
-          style={{ backgroundImage: "url('/images/home/hero-national.jpg')" }}
-          aria-hidden="true"
-        />
+        {/* Radial accents pentru profunzime — fara imagine, doar gradient layers. */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_30%,rgba(56,189,248,0.18),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_20%_80%,rgba(16,185,129,0.20),transparent)]" />
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/40 via-transparent to-transparent" />
 
         <div className="container-narrow relative z-10 pt-32 pb-16 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">

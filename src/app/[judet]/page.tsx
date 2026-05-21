@@ -51,9 +51,10 @@ export const revalidate = 86400;
 
 // Hero photo per oraș mare. Fallback gradient pur pentru județele
 // fără poză custom (codul condiționează existența cheii în map).
-// Adăugare poză nouă: drop fișier în public/images/home/ + adaugă
-// cheia aici (slug → cale relativă).
-const HERO_PHOTO_BY_SLUG: Record<string, string> = {
+// 5/22/2026 — hero photo per oraș dezactivat la cererea user-ului. Map-ul
+// stays pentru re-activare facilă (drop file + reintrodu render block).
+// Prefix `_` = ESLint ignora unused-var rule.
+const _HERO_PHOTO_BY_SLUG: Record<string, string> = {
   b: "/images/home/hero-bucuresti.webp",
   cj: "/images/home/hero-cluj.webp",
   bv: "/images/home/hero-brasov.webp",
@@ -673,14 +674,10 @@ export default async function CountyHomePage({
   const prefectura = PREFECTURI[county.id];
   const politialocala = POLITIA_LOCALA_JUDET[county.id];
 
-  // Preload hero photo dacă există pentru oraș — LCP boost ~200-500ms.
-  const heroPhoto = HERO_PHOTO_BY_SLUG[judet];
+  // 5/22/2026 — hero photo scos. Nu mai preload-am imagine.
 
   return (
     <>
-      {heroPhoto && (
-        <link rel="preload" as="image" href={heroPhoto} />
-      )}
       <BreadcrumbJsonLd
         items={[
           { name: "Acasă", url: SITE_URL },
@@ -699,17 +696,20 @@ export default async function CountyHomePage({
       {/* ─── HERO ─── (gradient pinned to design tokens — same as
           the national homepage hero so they read as one product). */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] text-white">
-        {/* City-specific hero photo background (5 orașe mari).
-            Fallback la gradient pur pentru județele fără poză custom. */}
-        {HERO_PHOTO_BY_SLUG[judet] && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity"
-            style={{ backgroundImage: `url('${HERO_PHOTO_BY_SLUG[judet]}')` }}
-            aria-hidden="true"
-          />
-        )}
+        {/* 5/22/2026 — user a cerut sa scoata imaginile de fundal cu orase.
+            Pastram doar gradient curat cu 3 radiale pentru profunzime.
+            _HERO_PHOTO_BY_SLUG ramane definit (poate fi reactivat) dar nu
+            mai e folosit aici. */}
         <div
           className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),transparent)]"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_30%,rgba(56,189,248,0.18),transparent)]"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_20%_80%,rgba(16,185,129,0.20),transparent)]"
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-grid-pattern opacity-10" aria-hidden="true" />

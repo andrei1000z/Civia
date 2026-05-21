@@ -432,21 +432,24 @@ export function SesizariPublice() {
               >
                 <div className="flex items-start justify-between mb-3 gap-2 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <Badge bgColor={STATUS_COLORS[s.status]} color="white">
-                      {STATUS_LABELS[s.status]}
-                    </Badge>
+                    {/* Bug fix 5/22/2026 — status badge cu fallback la „Nou"
+                        cand status-ul e gol sau invalid. Inainte: badge gol
+                        invizibil (00044, 00046 raportate de user). */}
+                    {STATUS_LABELS[s.status] ? (
+                      <Badge bgColor={STATUS_COLORS[s.status]} color="white">
+                        {STATUS_LABELS[s.status]}
+                      </Badge>
+                    ) : (
+                      <Badge bgColor={STATUS_COLORS["nou"]} color="white">
+                        {STATUS_LABELS["nou"]}
+                      </Badge>
+                    )}
                     <Badge variant="neutral">
                       <span className="mr-1" aria-hidden="true">{tipIcon}</span>
                       {tipLabel}
                     </Badge>
-                    {s.formal_text && (
-                      <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-[10px] font-medium"
-                        title="Text rescris în limbaj formal"
-                      >
-                        <span aria-hidden="true">✨</span> Formal
-                      </span>
-                    )}
+                    {/* Badge „Formal" sters 5/22/2026 — userul a cerut sa
+                        nu mai apara nicaieri in site (era zgomot pe card). */}
                     <OverdueBadge
                       createdAt={s.created_at}
                       status={s.status}

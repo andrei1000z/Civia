@@ -94,6 +94,21 @@ export function AuroraBackground() {
           animationDelay: "-40s",
         }}
       />
+      {/* Bug fix 5/22/2026 — al 4-lea blob (emerald, jos-dreapta) ca sa
+          umpla colțul de jos-dreapta unde înainte era „bandă neagră" sub
+          gradient-ul radial al html. */}
+      <div
+        className="lc-aurora-blob"
+        style={{
+          bottom: "-15%",
+          right: "-10%",
+          width: "50vw",
+          height: "50vw",
+          background: "radial-gradient(circle, var(--civic-emerald-400) 0%, transparent 60%)",
+          opacity: 0.22,
+          animationDelay: "-60s",
+        }}
+      />
     </div>
   );
 }
