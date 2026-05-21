@@ -15,6 +15,17 @@ export function formatDate(input: string | Date, locale = "ro-RO"): string {
   });
 }
 
+/** Format scurt — „13 mai 2026" cu luna abreviată („mai", „ian"). */
+export function formatDateShort(input: string | Date, locale = "ro-RO"): string {
+  const date = typeof input === "string" ? new Date(input) : input;
+  return date.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Europe/Bucharest",
+  });
+}
+
 export function formatDateTime(input: string | Date, locale = "ro-RO"): string {
   const date = typeof input === "string" ? new Date(input) : input;
   // Timezone EXPLICIT → altfel server-ul Vercel (UTC) și browser-ul

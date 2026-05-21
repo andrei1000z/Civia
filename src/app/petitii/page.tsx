@@ -6,6 +6,7 @@ import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { formatDateShort } from "@/lib/utils";
 
 // Petitions list barely changes hour-to-hour — moderators add a
 // handful per week. 60 s ISR was burning regenerations for no UX
@@ -20,10 +21,6 @@ export const metadata: Metadata = {
     "Petiții civice cu impact real. Click → vezi argumentele, semnezi pe site-ul oficial. Mai multe voci = autoritățile răspund.",
   alternates: { canonical: "/petitii" },
 };
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default async function PetitiiPage() {
   const petitii = await listPetitii({ status: ["active", "closed"] });
@@ -245,7 +242,7 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
         {p.ends_at && (
           <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
             {p.status === "closed" ? "Încheiată " : "Până "}
-            {formatDate(p.ends_at)}
+            {formatDateShort(p.ends_at)}
           </p>
         )}
       </div>

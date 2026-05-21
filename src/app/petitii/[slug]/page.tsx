@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getPetitieBySlug } from "@/lib/petitii/repository";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
+import { formatDate } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SharePetitie } from "./SharePetitie";
@@ -64,10 +65,6 @@ export async function generateMetadata({
       "og:image:secure_url": ogImages[0]?.url ?? "",
     },
   };
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export default async function PetitiePage({
