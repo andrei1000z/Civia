@@ -25,13 +25,15 @@ import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
 // Code-split cold-path visuals — desktop-only hover effect + easter egg.
 // Saves ~3-4 KB gzip off the root bundle; mounts after hydration.
+// Note: Next 16 nu mai permite ssr:false in Server Components. Componentele
+// sunt deja "use client" deci skipam ssr:false — dynamic() still produce
+// chunk-uri separate, doar ca run pe server ca shells (zero efect — useEffect
+// nu ruleaza pe server anyway).
 const CursorGlow = dynamic(
   () => import("@/components/liquid-civic/CursorGlow").then((m) => m.CursorGlow),
-  { ssr: false },
 );
 const KonamiEasterEgg = dynamic(
   () => import("@/components/liquid-civic/KonamiEasterEgg").then((m) => m.KonamiEasterEgg),
-  { ssr: false },
 );
 import { GlobalLiveAnnouncer } from "@/components/ui/LiveAnnouncer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
