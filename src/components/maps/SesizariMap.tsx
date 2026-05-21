@@ -62,39 +62,54 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
       .catch(() => setMarkers([]));
   }, [limit]);
 
-  // Realtime inserts
+  // Realtime inserts — OPTIONAL. Daca esueaza (rate limit, network drop,
+  // free tier concurrency limit), pagina continua sa functioneze fara
+  // live updates. NU vrem ca un esec de subscribe sa propage in error
+  // boundary si sa arate „Conexiunea cu baza e instabila".
   useEffect(() => {
-    const supabase = createSupabaseBrowser();
-    // Unique channel name per mount — Strict Mode dev rerun would reuse
-    // a subscribed channel and trigger „cannot add callbacks after subscribe".
-    const channelName = `map-sesizari-realtime-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "sesizari" },
-        (payload: { new: SesizareFeedRow }) => {
-          const r = payload.new as SesizareFeedRow;
-          if (!r.publica) return;
-          setMarkers((prev) => {
-            const next: MarkerData = {
-              id: r.id,
-              code: r.code,
-              titlu: r.titlu,
-              locatie: r.locatie,
-              status: r.status,
-              data: r.created_at,
-              voturi: 0,
-              comentarii: 0,
-              coords: [r.lat, r.lng],
-            };
-            return [next, ...prev].slice(0, limit);
-          });
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<ReturnType<typeof createSupabaseBrowser>["channel"]> | null = null;
+    let removed = false;
+    try {
+      const supabase = createSupabaseBrowser();
+      const channelName = `map-sesizari-realtime-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "sesizari" },
+          (payload: { new: SesizareFeedRow }) => {
+            try {
+              const r = payload.new as SesizareFeedRow;
+              if (!r.publica) return;
+              setMarkers((prev) => {
+                const next: MarkerData = {
+                  id: r.id,
+                  code: r.code,
+                  titlu: r.titlu,
+                  locatie: r.locatie,
+                  status: r.status,
+                  data: r.created_at,
+                  voturi: 0,
+                  comentarii: 0,
+                  coords: [r.lat, r.lng],
+                };
+                return [next, ...prev].slice(0, limit);
+              });
+            } catch { /* silent */ }
+          },
+        )
+        .subscribe();
+    } catch {
+      // Realtime subscribe failed — degradare grațioasă, fără re-throw.
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (channel && !removed) {
+        try {
+          const supabase = createSupabaseBrowser();
+          supabase.removeChannel(channel);
+          removed = true;
+        } catch { /* silent */ }
+      }
     };
   }, [limit]);
 

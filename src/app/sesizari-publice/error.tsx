@@ -11,7 +11,10 @@ import { AlertTriangle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
  * fundal (3 incercari, 2s/4s/8s spacing) inainte sa mai vada user-ul
  * eroarea, plus si „Reincearca" manual ramane pentru cazuri persistente.
  */
-const AUTO_RETRY_DELAYS_MS = [2000, 4000, 8000];
+// Retry rapid pentru transient errors (Supabase realtime drop, network blip).
+// Prima incercare imediata (500ms) — daca a fost glitch, pagina apare instant.
+// Restul cu backoff scurt pana la 3s. Total max ~5s (vs 14s anterior).
+const AUTO_RETRY_DELAYS_MS = [500, 1500, 3000];
 
 export default function Error({
   error,

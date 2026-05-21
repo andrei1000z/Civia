@@ -136,26 +136,40 @@ export function SesizariPublice() {
       .catch(() => { /* silent — fallback la rows.length */ });
   }, []);
   useEffect(() => {
-    const supabase = createSupabaseBrowser();
-    const channelName = `sesizari-realtime-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "sesizari" },
-        (payload: { new: SesizareFeedRow }) => {
-          const row = payload.new as SesizareFeedRow;
-          if (!row.publica || row.moderation_status !== "approved") return;
-          if (effectiveCounty && row.county && row.county !== effectiveCounty) return;
-          if (filterTip !== "toate" && row.tip !== filterTip) return;
-          if (filterStatus !== "toate" && row.status !== filterStatus) return;
-          setPendingNew((n) => n + 1);
-        },
-      )
-      .subscribe();
-
+    // Realtime OPTIONAL — daca esueaza (rate limit, free tier
+    // concurrency), pagina functioneaza fara live updates. NU lasam un
+    // throw aici sa cada in error boundary (mesaj „DB instabilă").
+    let channel: ReturnType<ReturnType<typeof createSupabaseBrowser>["channel"]> | null = null;
+    try {
+      const supabase = createSupabaseBrowser();
+      const channelName = `sesizari-realtime-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "sesizari" },
+          (payload: { new: SesizareFeedRow }) => {
+            try {
+              const row = payload.new as SesizareFeedRow;
+              if (!row.publica || row.moderation_status !== "approved") return;
+              if (effectiveCounty && row.county && row.county !== effectiveCounty) return;
+              if (filterTip !== "toate" && row.tip !== filterTip) return;
+              if (filterStatus !== "toate" && row.status !== filterStatus) return;
+              setPendingNew((n) => n + 1);
+            } catch { /* silent */ }
+          },
+        )
+        .subscribe();
+    } catch {
+      /* realtime offline — degradare grațioasă */
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          const supabase = createSupabaseBrowser();
+          supabase.removeChannel(channel);
+        } catch { /* silent */ }
+      }
     };
   }, [effectiveCounty, filterTip, filterStatus, sort]);
 
