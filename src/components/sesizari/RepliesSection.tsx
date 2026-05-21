@@ -24,6 +24,8 @@ interface Reply {
   user_confirmed: boolean | null;
   user_corrected_status: string | null;
   trusted_sender: boolean;
+  ai_authenticity_score: number | null;
+  ai_authenticity_reasoning: string | null;
   received_at: string;
 }
 
@@ -116,21 +118,54 @@ export function RepliesSection({ code, isOwner }: Props) {
                       <span className="font-semibold text-[var(--color-text)]">
                         {r.authority_name ?? r.from_name ?? r.from_email}
                       </span>
-                      {r.trusted_sender ? (
-                        <span
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-wider"
-                          title="Domeniu instituțional verificat"
-                        >
-                          <ShieldCheck size={9} aria-hidden="true" /> Verificat
-                        </span>
-                      ) : (
-                        <span
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-wider"
-                          title="Expeditor neverificat — atenție la conținut"
-                        >
-                          <ShieldAlert size={9} aria-hidden="true" /> Neverificat
-                        </span>
-                      )}
+                      {(() => {
+                        // Badge inteligent bazat pe authenticity_score combinat
+                        // (semnale tehnice + AI semantic analysis). Inlocuieste
+                        // vechiul „Neverificat" care depindea doar de domain
+                        // whitelist (prea conservator — penaliza orice non-gov
+                        // chiar daca text-ul era authentic).
+                        const auth = r.ai_authenticity_score;
+                        if (auth === null || auth === undefined) {
+                          // Reply vechi pre-migration 059 — fallback la
+                          // trusted_sender
+                          return r.trusted_sender ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-wider"
+                              title="Domeniu instituțional verificat"
+                            >
+                              <ShieldCheck size={9} aria-hidden="true" /> Verificat
+                            </span>
+                          ) : null;
+                        }
+                        if (auth >= 80) {
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-wider"
+                              title={r.ai_authenticity_reasoning ?? "AI a verificat autenticitatea"}
+                            >
+                              <ShieldCheck size={9} aria-hidden="true" /> Verificat ({auth}%)
+                            </span>
+                          );
+                        }
+                        if (auth >= 50) {
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[10px] font-semibold uppercase tracking-wider"
+                              title={r.ai_authenticity_reasoning ?? "Verificare parțială"}
+                            >
+                              <ShieldCheck size={9} aria-hidden="true" /> Probabil real ({auth}%)
+                            </span>
+                          );
+                        }
+                        return (
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-rose-500/10 text-rose-700 dark:text-rose-400 text-[10px] font-semibold uppercase tracking-wider"
+                            title={r.ai_authenticity_reasoning ?? "Posibil fake — atenție"}
+                          >
+                            <ShieldAlert size={9} aria-hidden="true" /> Suspect ({auth}%)
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">
                       {r.from_email} ·{" "}
@@ -185,9 +220,17 @@ export function RepliesSection({ code, isOwner }: Props) {
                   </div>
                 ) : null}
 
-                {/* Owner controls — confirm / correct */}
+                {/* Owner controls.
+                    - Daca auto_applied=true: NU aratam butoane Confirm/Corecteaza
+                      (AI a verificat autenticitatea, status aplicat direct).
+                      Aratam DOAR link discret „A greșit AI?" pentru override.
+                    - Altfel (autenticitate slaba SAU confidence mic): aratam
+                      flow-ul de confirmare normal. */}
                 {isOwner && r.user_confirmed === null && !r.auto_applied ? (
-                  <OwnerControls replyId={r.id} aiStatus={r.ai_status ?? "necunoscut"} />
+                  <OwnerControls replyId={r.id} aiStatus={r.ai_status ?? "necunoscut"} mode="full" />
+                ) : null}
+                {isOwner && r.auto_applied ? (
+                  <OwnerControls replyId={r.id} aiStatus={r.ai_status ?? "necunoscut"} mode="correct-only" />
                 ) : null}
                 {wasCorrected ? (
                   <div className="text-[11px] text-[var(--color-text-muted)] mt-1 italic">
@@ -225,7 +268,19 @@ export function RepliesSection({ code, isOwner }: Props) {
   );
 }
 
-function OwnerControls({ replyId, aiStatus }: { replyId: string; aiStatus: string }) {
+function OwnerControls({
+  replyId,
+  aiStatus,
+  mode,
+}: {
+  replyId: string;
+  aiStatus: string;
+  /** „full" = arata atat Confirm cat si Corecteaza (cand AI NU a auto-aplicat).
+      „correct-only" = arata DOAR un link discret „A greșit AI? Corectează"
+      (cand auto-applied — userul nu trebuie să confirme, doar să corecteze
+      dacă AI a greșit). */
+  mode: "full" | "correct-only";
+}) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<"confirmed" | "corrected" | null>(null);
 
@@ -262,6 +317,33 @@ function OwnerControls({ replyId, aiStatus }: { replyId: string; aiStatus: strin
     );
   }
 
+  // Mode „correct-only" — discret, doar pentru override pe auto-applied.
+  if (mode === "correct-only") {
+    return (
+      <details className="inline-block mt-2">
+        <summary className="cursor-pointer text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] list-none inline-flex items-center gap-1">
+          🤖 A greșit AI? Corectează →
+        </summary>
+        <div className="mt-2 flex flex-wrap gap-1">
+          {(Object.entries(STATUS_META) as [string, { label: string }][])
+            .filter(([k]) => k !== aiStatus && k !== "necunoscut")
+            .map(([key, m]) => (
+              <button
+                key={key}
+                type="button"
+                disabled={busy}
+                onClick={() => send("correct", key)}
+                className="text-[11px] px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] disabled:opacity-50"
+              >
+                {m.label}
+              </button>
+            ))}
+        </div>
+      </details>
+    );
+  }
+
+  // Mode „full" — confirmare manuală (AI nu a auto-aplicat).
   return (
     <div className="flex items-center gap-2 flex-wrap mt-2">
       <button

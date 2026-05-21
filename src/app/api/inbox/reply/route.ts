@@ -4,7 +4,8 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { extractSesizareCode } from "@/lib/inbox/extract-code";
 import { identifySender } from "@/lib/inbox/sender-identity";
-import { classifyReply, shouldAutoApply } from "@/lib/inbox/classify";
+import { classifyReply } from "@/lib/inbox/classify";
+import { scoreAuthenticity, shouldAutoApplyEnhanced } from "@/lib/inbox/authenticity";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { getClientIp } from "@/lib/ratelimit";
 
@@ -167,19 +168,34 @@ export async function POST(req: Request) {
     }
   }
 
-  // ─── 6. Classify with AI ────────────────────────────────────────
+  // ─── 6. Classify + authenticity score (parallel for latency) ────
   const cleanBody = body_text || stripHtml(body_html) || "";
-  const classification = await classifyReply({
-    subject,
-    body: cleanBody,
-    sender_name: sender?.authority_name ?? sender?.email,
-    authority_hint: sender?.authority_name,
-  });
+  const [classification, authenticity] = await Promise.all([
+    classifyReply({
+      subject,
+      body: cleanBody,
+      sender_name: sender?.authority_name ?? sender?.email,
+      authority_hint: sender?.authority_name,
+    }),
+    scoreAuthenticity({
+      from,
+      subject: subject || "",
+      body_text: cleanBody,
+      headers,
+      received_at: new Date().toISOString(),
+    }),
+  ]);
 
-  // ─── 7. Save reply row ──────────────────────────────────────────
-  const autoApply = sesizareId !== null && shouldAutoApply({
-    classification,
-    trusted_sender: sender?.trusted ?? false,
+  // ─── 7. Decide auto-apply with combined signals ─────────────────
+  // Enhanced 5/21/2026: nu mai depindem doar de trusted_sender (whitelist
+  // de domenii) — folosim authenticity_score care combina semnale tehnice
+  // (AUTH catalog, DKIM/SPF, gov TLD) cu analiza semantica AI (formal
+  // limbaj, semnatura institutionala, referinte juridice).
+  const autoApply = sesizareId !== null && shouldAutoApplyEnhanced({
+    classification_confidence: classification.confidence,
+    classification_status: classification.status,
+    authenticity_score: authenticity.score,
+    is_spam: classification.is_spam,
   });
 
   const { data: replyRow, error: insertErr } = await admin
@@ -202,8 +218,19 @@ export async function POST(req: Request) {
       ai_deadline: classification.deadline,
       ai_suggested_action: classification.suggested_action,
       ai_raw_response: classification.raw ?? null,
+      ai_authenticity_score: authenticity.score,
+      ai_authenticity_reasoning: authenticity.reasoning,
+      ai_authenticity_signals: {
+        signals: authenticity.signals,
+        ai_score: authenticity.ai_score,
+        technical_score: authenticity.technical_score,
+      },
       auto_applied: autoApply,
       trusted_sender: sender?.trusted ?? false,
+      // user_confirmed=true cand auto-applied (skip confirmation step
+      // pentru ca AI a verificat deja autenticitatea). User poate
+      // CORRIGE clasificarea daca crede ca AI a greșit.
+      user_confirmed: autoApply ? true : null,
       processed_at: new Date().toISOString(),
     })
     .select("id")

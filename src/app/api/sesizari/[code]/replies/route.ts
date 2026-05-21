@@ -44,6 +44,7 @@ export async function GET(
       subject, body_text,
       ai_status, ai_confidence, ai_summary, ai_nr_inregistrare,
       ai_deadline, ai_suggested_action,
+      ai_authenticity_score, ai_authenticity_reasoning,
       auto_applied, user_confirmed, user_corrected_status,
       trusted_sender, received_at
     `)
