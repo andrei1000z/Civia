@@ -87,7 +87,12 @@ const payloadSchema = z.object({
     .default([]),
 });
 
+// Route version marker (helps confirm which build is deployed)
+// v2 = with authenticity scoring (5/21/2026)
+const ROUTE_VERSION = "inbox-reply-v2";
+
 export async function POST(req: Request) {
+  void ROUTE_VERSION;
   // Capture body upfront so we can log it even if downstream fails.
   let rawBody: string | null = null;
   try {
