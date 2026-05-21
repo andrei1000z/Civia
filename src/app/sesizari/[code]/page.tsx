@@ -30,6 +30,7 @@ import { FollowButton } from "@/components/sesizari/FollowButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
+import { RepliesSection } from "@/components/sesizari/RepliesSection";
 import { OverdueBadge } from "@/components/sesizari/OverdueBadge";
 import { ReminderButton } from "@/components/sesizari/ReminderButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
@@ -366,6 +367,11 @@ export default async function SesizareDetailPage({
               </p>
             </section>
           )}
+
+          {/* AI-tracked replies from authorities (feature 5/21/2026) —
+              afișează doar dacă există măcar un răspuns primit. */}
+          <RepliesSection code={sesizare.code} isOwner={sesizare.user_id === user?.id} />
+
 
           {/* Photos */}
           {sesizare.imagini.length > 0 && (

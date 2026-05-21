@@ -116,16 +116,12 @@ export async function POST(
     .map((p) => `<p style="margin: 0 0 14px 0; line-height: 1.6;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
     .join("\n");
 
-  const civiaSig = `
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;" />
-    <p style="font-size: 11px; color: #666; line-height: 1.5;">
-      Acest email a fost trimis prin <a href="https://civia.ro/sesizari/${sesizare.code}" style="color: #16a34a;">Civia.ro</a>
-      — platforma cetatenilor pentru sesizari civice. Cod sesizare: <strong>${sesizare.code}</strong>.<br/>
-      Raspunsul la acest email ajunge direct la cetateanul care a depus sesizarea.
-    </p>
-  `;
-
-  const html = `<!DOCTYPE html><html lang="ro"><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111; max-width: 720px; margin: 0 auto; padding: 24px;">${htmlBody}${civiaSig}</body></html>`;
+  // Quick Polish (5/21/2026 user feedback): scos brandingul Civia complet.
+  // Email-ul arată ACUM exact ca un email personal — nicio mențiune
+  // „via Civia", niciun footer cu trimitere la civia.ro. Singura urmă
+  // (necesară din motive tehnice): adresa expeditor sesizari@civia.ro
+  // (vizibilă doar dacă funcționarul apasă „expand from").
+  const html = `<!DOCTYPE html><html lang="ro"><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111; max-width: 720px; margin: 0 auto; padding: 24px;">${htmlBody}</body></html>`;
 
   // Atasamente — pozele sesizarii (URL-uri publice Supabase Storage).
   const attachments = (sesizare.imagini ?? []).slice(0, 5).map((url, i) => ({
@@ -136,17 +132,28 @@ export async function POST(
   const primaryEmails = recipients.primary.map((a) => a.email).filter(Boolean);
   const ccEmails = (recipients.cc ?? []).map((a) => a.email).filter(Boolean);
 
+  // Reply-To cu plus-addressing: răspunsul primăriei ajunge la
+  // sesizari+CODE@civia.ro, Cloudflare Email Routing îl forwardează
+  // la Worker, Worker → POST la /api/inbox/reply, AI clasifică,
+  // status update + push notification. Vezi src/lib/inbox/.
+  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
+
+  // From: doar numele user-ului + adresa sesizari@civia.ro.
+  // Display name = nume cetățean ca primăria să vadă cine reclamă,
+  // fără branding-ul „via Civia".
+  const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
+
   // Trimite email-ul.
   const result = await sendEmail({
     to: primaryEmails,
     cc: ccEmails.length > 0 ? ccEmails : undefined,
-    // BCC user-ul ca sa aibe copie in inbox + tracking@civia.ro (daca exista).
+    // BCC user-ul ca sa aibe copie in inbox.
     bcc: userEmail ? [userEmail] : undefined,
     subject,
     html,
     text: formalText,
-    replyTo: userEmail,
-    from: `${sesizare.author_name} via Civia <noreply@civia.ro>`,
+    replyTo,
+    from: fromHeader,
     attachments: attachments.length > 0 ? attachments : undefined,
   });
 
