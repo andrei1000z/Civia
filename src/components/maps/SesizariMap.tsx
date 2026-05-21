@@ -45,18 +45,30 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
       .then((r) => r.json())
       .then((j) => {
         const rows = (j.data as SesizareFeedRow[]) ?? [];
+        // Defense 5/21/2026: filtreaza rows fara lat/lng valid INAINTE
+        // de a le da la Leaflet. Daca API esueaza sa returneze coords
+        // (sau o sesizare are NULL in DB), Leaflet arunca „Invalid
+        // LatLng object: (undefined, undefined)" si harta cade in
+        // error boundary.
         setMarkers(
-          rows.map((r) => ({
-            id: r.id,
-            code: r.code,
-            titlu: r.titlu,
-            locatie: r.locatie,
-            status: r.status,
-            data: r.created_at,
-            voturi: r.voturi_net,
-            comentarii: r.nr_comentarii,
-            coords: [r.lat, r.lng],
-          }))
+          rows
+            .filter((r) =>
+              typeof r.lat === "number" &&
+              typeof r.lng === "number" &&
+              !Number.isNaN(r.lat) &&
+              !Number.isNaN(r.lng),
+            )
+            .map((r) => ({
+              id: r.id,
+              code: r.code,
+              titlu: r.titlu,
+              locatie: r.locatie,
+              status: r.status,
+              data: r.created_at,
+              voturi: r.voturi_net,
+              comentarii: r.nr_comentarii,
+              coords: [r.lat, r.lng] as [number, number],
+            })),
         );
       })
       .catch(() => setMarkers([]));

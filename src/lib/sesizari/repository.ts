@@ -137,11 +137,17 @@ export interface ListFilters {
 
 // Columns the public list cards actually render (SesizariPublice.tsx).
 // We deliberately skip large fields the card never shows (formal_text
-// in full, lat/lng, address, author_email, AI metadata, etc.) and
-// instead derive a short formal_text excerpt below. The detail page
-// uses getSesizareByCode which selects the full row.
+// in full, address, author_email, AI metadata, etc.) and instead derive
+// a short formal_text excerpt below. The detail page uses
+// getSesizareByCode which selects the full row.
+//
+// CRITICAL fix 5/21/2026: lat,lng INCLUDED. SesizariMap foloseste
+// acelasi endpoint pentru a randa markeri pe harta — fara lat/lng,
+// Leaflet arunca „Invalid LatLng object: (undefined, undefined)" si
+// pagina /sesizari-publice?view=map cade in error boundary. Cost: 16
+// bytes per row.
 const FEED_LIST_COLUMNS =
-  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,tip,status,formal_text,descriere,imagini,resolved_photo_url,created_at,upvotes,nr_comentarii,voturi_net,publica,moderation_status";
+  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,status,formal_text,descriere,imagini,resolved_photo_url,created_at,upvotes,nr_comentarii,voturi_net,publica,moderation_status";
 
 // Card preview is line-clamp-2 (~150 visible chars). 320 is a safe
 // over-provision that still slashes the average row from ~3 KB to
