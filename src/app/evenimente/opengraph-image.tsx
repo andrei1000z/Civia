@@ -2,7 +2,8 @@ import { ImageResponse } from "next/og";
 import { buildOgCard, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og-helpers";
 import { evenimente } from "@/data/evenimente";
 
-export const runtime = "nodejs";
+// Edge runtime — static data + pure JSX. Cold start ~40ms vs ~200ms Node.
+export const runtime = "edge";
 export const alt = "Evenimente majore România — Civia";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
