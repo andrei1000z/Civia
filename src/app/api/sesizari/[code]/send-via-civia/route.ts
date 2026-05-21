@@ -232,7 +232,7 @@ export async function POST(
   const { error: tlError } = await admin.from("sesizare_timeline").insert({
     sesizare_id: sesizare.id,
     event_type: "trimis_via_civia",
-    description: `Sesizarea a fost trimisa via Civia catre ${primaryEmails.length} autoritati.`,
+    description: `Email trimis automat de Civia către ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"} oficiale. Așteptăm răspunsul.`,
     created_by: user.id,
   });
   if (tlError) {

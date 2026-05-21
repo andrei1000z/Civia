@@ -97,6 +97,11 @@ export default function ContPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Bug #8 fix 5/22/2026 — newsletter auto-save fetch poate complete dupa
+  // ce userul navigeaza away; setState pe unmounted component arunca warning
+  // si leak. AbortController + mounted ref garanteaza cleanup.
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -113,19 +118,27 @@ export default function ContPage() {
     newsletter_email_optin?: boolean;
     newsletter_sms_optin?: boolean;
   }) => {
+    const ctrl = new AbortController();
     try {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
+        signal: ctrl.signal,
       });
-      if (!res.ok) return;
+      if (!res.ok || !mountedRef.current) return;
       setNewsletterSavedAt(Date.now());
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setNewsletterSavedAt((t) => (t && Date.now() - t >= 1500 ? null : t));
       }, 1700);
-    } catch {
-      // Silent — user can hit Save to retry, or change the toggle again.
+    } catch (e) {
+      // AbortError = navigated away, silent. Alte erori → silent (user
+      // poate retoggle pentru retry). NU log Sentry — autoSave failures
+      // sunt non-critical (Save button explicit acopera).
+      if (e instanceof Error && e.name !== "AbortError") {
+        // silent
+      }
     }
   };
 
