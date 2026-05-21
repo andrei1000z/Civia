@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
 import { getCountyBySlug, ALL_COUNTIES } from "@/data/counties";
 
-// Node runtime — the county lookup uses a plain JS import which can't run
-// in edge. One PNG per county, generated statically.
-export const runtime = "nodejs";
+// Edge runtime — getCountyBySlug + ALL_COUNTIES sunt pure in-memory data
+// (zero Supabase, zero fs). ImageResponse e edge-compatible. Cold start
+// ~40ms vs ~200ms Node Lambda. 42 OG images per-county.
+export const runtime = "edge";
 export const alt = "Civia — platformă civică pe județul tău";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
