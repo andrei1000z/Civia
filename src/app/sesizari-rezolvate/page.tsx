@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, MapPin, Calendar, Send } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { SESIZARE_TIPURI } from "@/lib/constants";
+import { SESIZARE_TIPURI, SITE_URL } from "@/lib/constants";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { formatDate } from "@/lib/utils";
 import type { SesizareRow } from "@/lib/supabase/types";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -64,6 +65,12 @@ export default async function SesizariResolvatePage() {
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Sesizări rezolvate", url: `${SITE_URL}/sesizari-rezolvate` },
+        ]}
+      />
       <PageHero
         backHref="/sesizari"
         backLabel="Trimit și eu o sesizare"

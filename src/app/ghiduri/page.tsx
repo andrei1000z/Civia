@@ -4,6 +4,8 @@ import { BookOpen, Clock, ArrowRight } from "lucide-react";
 import { ghiduri } from "@/data/ghiduri";
 import { Badge } from "@/components/ui/Badge";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { SITE_URL } from "@/lib/constants";
 
 const TOTAL = ghiduri.length;
 
@@ -24,6 +26,12 @@ const dificultateMap = {
 export default function GhiduriPage() {
   return (
     <div className="container-narrow py-8 md:py-12">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Ghiduri", url: `${SITE_URL}/ghiduri` },
+        ]}
+      />
       {/* PageHero card pattern — aliniat cu /stiri, /petitii, /proteste,
           /intreruperi (user request 5/12/2026, „standarde Civia UI"). */}
       <PageHero
