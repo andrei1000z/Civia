@@ -35,6 +35,32 @@ const MINIMIZATION_RULES: ReplaceRule[] = [
     pattern: /r[ăa]m[âa]ne\s+(?:[îi]nc[ăa]\s+)?suficient\s+(?:spa[țt]iu|loc)(?:\s+(?:de|pentru)\s+(?:trecere|circula[țt]ie|pietoni))?/gi,
     replacement: "spațiul destinat pietonilor este restricționat",
   },
+  // „rămâne spațiu/loc de trecere pentru pietoni" (FĂRĂ „suficient")
+  // Bug 5/22/2026 — userul a vazut „rămânând spațiu de trecere pentru
+  // pietoni" in sesizare productie. Pattern-ul anterior cerea „suficient";
+  // acum prinde si fara cuvantul ăla.
+  {
+    pattern: /r[ăa]m[âa]ne\s+spa[țt]iu\s+(?:de|pentru)\s+(?:trecere|circula[țt]ie|pietoni)(?:\s+pentru\s+pietoni)?/gi,
+    replacement: "spațiul destinat pietonilor este restricționat",
+  },
+  // „rămânând spațiu/loc de trecere" — GERUNZIU (forma „cars ocupă X,
+  // rămânând spațiu pentru Y"). Apare des in sesizari unde AI vrea sa
+  // adauge o nuanta echilibrata, dar contradicte sesizarea.
+  {
+    pattern: /r[ăa]m[âa]n[âa]nd\s+(?:[îi]nc[ăa]\s+)?(?:spa[țt]iu|loc)(?:\s+(?:de|pentru)\s+(?:trecere|circula[țt]ie|pietoni))?(?:\s+pentru\s+pietoni)?/gi,
+    replacement: "iar spațiul destinat pietonilor este restricționat",
+  },
+  // „lăsând spațiu/loc" — alt phrasing cu gerunziu („mașinile ocupă X,
+  // lăsând spațiu de trecere"). Logic identic cu „rămânând".
+  {
+    pattern: /l[ăa]s[âa]nd\s+(?:[îi]nc[ăa]\s+)?(?:spa[țt]iu|loc)(?:\s+(?:de|pentru)\s+(?:trecere|circula[țt]ie|pietoni))?(?:\s+pentru\s+pietoni)?/gi,
+    replacement: "iar spațiul destinat pietonilor este restricționat",
+  },
+  // „mai există spațiu/loc pentru pietoni" — variant ablativ
+  {
+    pattern: /(?:mai|[îi]nc[ăa])\s+exist[ăa]\s+(?:spa[țt]iu|loc)\s+pentru\s+pietoni/gi,
+    replacement: "spațiul destinat pietonilor este restricționat",
+  },
   // „pietonii pot încă circula" / „pot circula normal"
   {
     pattern: /pietonii\s+pot\s+(?:[îi]nc[ăa]\s+)?circula(?:\s+normal)?/gi,

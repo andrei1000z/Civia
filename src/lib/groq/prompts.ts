@@ -141,17 +141,16 @@ REGULI ANTI-CLIȘEU (OBLIGATORII):
 1. INTERZIS să folosești formule generice care nu se potrivesc cu realitatea din poze:
    - "pietonii sunt forțați să circule pe carosabil" → scrie asta DOAR dacă se vede în poză că trotuarul e complet blocat.
    - "risc iminent de accident", "pericol de viață", "blocat complet", "acces imposibil" → numai dacă se vede în poză.
-2. Dacă descrierea cetățeanului și/sau pozele arată că trotuarul e lat și pietonii au loc, scrie EXACT ce se vede: "mașinile ocupă aprox. jumătate din lățimea trotuarului, rămâne spațiu de trecere, însă parcarea neregulamentară afectează confortul pietonilor și poate obstrucționa accesul cu cărucioare sau al persoanelor cu dizabilități." SAU, mai bine, omite fraza de pericol dacă nu e real.
-3. NU inventa copii, vârstnici, persoane cu dizabilități, biciclete, animale care NU sunt menționate de cetățean și nici vizibile în poze.
-4. Paragraful narativ de mijloc: 2-4 propoziții, fără repetiții, fără "în plus"/"de asemenea" folosite în exces.
-5. Lista numerotată: 2-4 acțiuni, fiecare începe cu "Titlu: detaliu." — NU mai mult.
-6. TOTAL: 150-280 cuvinte. Dacă depășești, scurtează paragraful narativ.
-7. Diacritice corecte întotdeauna (ă, â, î, ș, ț).
-8. Rânduri libere între fiecare bloc pentru lizibilitate.
-9. NU folosi superlative goale ("foarte gravă", "extrem de periculoasă"). Folosește cifre, dimensiuni, durate concrete când le ai.
-10. NU traduce numele de străzi / instituții / persoane. Păstrează ortografia originală.
-11. Dacă cetățeanul scrie laconic / informal ("e o groapă mare aici"), formalizezi tonul DAR păstrezi faptele exact așa cum le-a spus — nu inflama, nu minimaliza.
-12. Dacă lipsește o informație esențială (ex: dimensiunea aproximativă), scrie simplu "dimensiune aproximativă neidentificată" — NU inventa.
+2. NU inventa copii, vârstnici, persoane cu dizabilități, biciclete, animale care NU sunt menționate de cetățean și nici vizibile în poze.
+3. Paragraful narativ de mijloc: 2-4 propoziții, fără repetiții, fără "în plus"/"de asemenea" folosite în exces.
+4. Lista numerotată: 2-4 acțiuni, fiecare începe cu "Titlu: detaliu." — NU mai mult.
+5. TOTAL: 150-280 cuvinte. Dacă depășești, scurtează paragraful narativ.
+6. Diacritice corecte întotdeauna (ă, â, î, ș, ț).
+7. Rânduri libere între fiecare bloc pentru lizibilitate.
+8. NU folosi superlative goale ("foarte gravă", "extrem de periculoasă"). Folosește cifre, dimensiuni, durate concrete când le ai.
+9. NU traduce numele de străzi / instituții / persoane. Păstrează ortografia originală.
+10. Dacă cetățeanul scrie laconic / informal ("e o groapă mare aici"), formalizezi tonul DAR păstrezi faptele exact așa cum le-a spus — nu inflama, nu minimaliza.
+11. Dacă lipsește o informație esențială (ex: dimensiunea aproximativă), scrie simplu "dimensiune aproximativă neidentificată" — NU inventa.
 
 ACORD GRAMATICAL GEN — vezi dacă numele e de bărbat sau femeie, dar cu noul template "Mă numesc X" nu mai contează gramatical. Totuși, dacă referi la "cetățean/cetățeană" sau "locuitor/locuitoare" undeva, acordă.
 

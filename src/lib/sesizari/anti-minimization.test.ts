@@ -20,6 +20,39 @@ describe("removeMinimization", () => {
     expect(text).toContain("spațiul destinat pietonilor este restricționat");
   });
 
+  // Bug 5/22/2026: regex anterior cerea „suficient" intre „rămâne" si „spațiu",
+  // dar AI a emis „rămânând spațiu de trecere pentru pietoni" — fara „suficient".
+  it("inlocuieste 'ramanand spatiu de trecere pentru pietoni' (gerunziu, fara 'suficient')", () => {
+    const input =
+      "Astăzi am observat că pe trotuarul acestei străzi sunt parcate mai multe mașini, care ocupă o parte din lățimea trotuarului, rămânând spațiu de trecere pentru pietoni.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(true);
+    expect(text).not.toMatch(/r[ăa]m[âa]n[âa]nd\s+spa[țt]iu/i);
+    expect(text).toContain("spațiul destinat pietonilor este restricționat");
+  });
+
+  it("inlocuieste 'ramane spatiu de trecere' (fara 'suficient')", () => {
+    const input = "Mașinile parchează pe trotuar, dar rămâne spațiu de trecere pentru pietoni.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(true);
+    expect(text).not.toMatch(/r[ăa]m[âa]ne\s+spa[țt]iu/i);
+    expect(text).toContain("spațiul destinat pietonilor este restricționat");
+  });
+
+  it("inlocuieste 'lasand spatiu de trecere' (gerunziu alternativ)", () => {
+    const input = "Mașinile ocupă jumătate din trotuar, lăsând spațiu pentru pietoni.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(true);
+    expect(text).not.toMatch(/l[ăa]s[âa]nd\s+spa[țt]iu/i);
+  });
+
+  it("inlocuieste 'mai exista spatiu pentru pietoni' (variant ablativ)", () => {
+    const input = "Mașinile parcate pe trotuar nu blochează complet, mai există spațiu pentru pietoni.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(true);
+    expect(text).not.toMatch(/mai\s+exist[ăa]\s+spa[țt]iu/i);
+  });
+
   it("inlocuieste 'pietonii pot inca circula normal'", () => {
     const input = "Există parcare ilegală, însă pietonii pot încă circula normal.";
     const { text, changed } = removeMinimization(input);

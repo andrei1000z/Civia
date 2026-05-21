@@ -175,12 +175,12 @@ export async function POST(req: Request) {
 
 REGULI VISION (OBLIGATORII):
 1. INTERZIS să scrii "pietonii sunt forțați să circule pe carosabil" decât dacă se VEDE clar că trotuarul e complet blocat și nu mai au pe unde merge.
-2. Dacă se vede trotuar lat cu mașini doar pe o parte → scrie EXACT: "mașinile ocupă X% din lățimea trotuarului, rămâne spațiu de trecere de aproximativ Y metri."
-3. Dacă se vede trotuar îngust/blocat → atunci poți menționa blocarea pietonilor.
-4. Numără mașinile parcate în poze și menționează numărul concret.
-5. Descrie doar fapte observabile: tip de stradă, lățime, număr mașini, starea pavajului, prezența/absența stâlpișorilor existenți, lăți­mea spațiului liber.
+2. INTERZIS să minimizezi efectul. Cetățeanul depune sesizare PENTRU CĂ EXISTĂ o problemă; sesizarea nu poate spune că „totul e ok" sau „rămâne spațiu de trecere". Dacă vezi parcare pe trotuar, descrie faptic: "trotuarul este ocupat de mașini parcate", "spațiul destinat pietonilor este restricționat", "parcarea neregulamentară afectează circulația pietonilor".
+3. NU inventa măsurători (procente, metri) — dacă cetățeanul nu a măsurat, scrie observații calitative ("trotuarul e ocupat", "mai multe mașini parcate") NU cantitative ("ocupă X%", "rămâne Y metri").
+4. Numără mașinile parcate în poze DOAR dacă vezi exact câte sunt; altfel "mai multe mașini" / "câteva mașini".
+5. Descrie doar fapte observabile: tip de stradă, prezența mașinilor, starea pavajului, prezența/absența stâlpișorilor existenți. NU inventa.
 6. NU inventa copii, persoane cu dizabilități, biciclete, animale care nu se văd în poze.
-7. Dacă descrierea cetățeanului spune "blocat complet" dar pozele arată că pietonii au loc, CORECTEAZĂ în sesizare pe baza pozelor.
+7. Dacă descrierea cetățeanului dramatizează („blocat complet", „pericol de moarte") și pozele NU confirmă, atenuează la fapte: „trotuarul e ocupat" în loc de „blocat complet". NU minimizezi în direcția opusă — sesizarea rămâne validă.
 
 Răspunde JSON:
 { "formal_text": "...", "descriere_rafinata": "propoziție scurtă (1-2 rânduri) care descrie fidelis ce vezi în poze, fără dramatizare" }`
