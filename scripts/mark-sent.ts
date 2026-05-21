@@ -67,14 +67,9 @@ async function main() {
     process.exit(1);
   }
 
-  const { error: tlErr } = await sa.from("sesizare_timeline").insert({
-    sesizare_id: sesizare.id,
-    event_type: "trimis_via_civia",
-    description: `Sesizarea a fost trimisa via Civia catre ${emails.length} autoritati (marcare retroactiva).`,
-  });
-  if (tlErr) {
-    console.warn("Timeline insert failed (non-fatal):", tlErr.message);
-  }
+  // NU mai inseram event suplimentar — DB trigger pe sesizari.status
+  // creează automat „Status actualizat la: trimis". Event redundant ar
+  // produce spam de notificari (raportat user 5/21/2026).
 
   console.log(`✓ ${code} marcată ca trimisă către:`);
   for (const e of emails) console.log(`  - ${e}`);

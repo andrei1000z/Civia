@@ -48,6 +48,17 @@ export function NotificationBell() {
 
   const addNotification = useCallback((n: Notification) => {
     setNotifs((prev) => {
+      // Dedupe (5/21/2026): daca acelasi tip+code+message a venit in
+      // ultimele 60s, NU mai adaugam. Cauzeaza spam la rollback-uri
+      // de status sau retry-uri server-side (raportat user).
+      const dedupeWindow = 60_000;
+      const isDuplicate = prev.some((p) =>
+        p.sesizareCode === n.sesizareCode &&
+        p.type === n.type &&
+        p.message === n.message &&
+        new Date(n.createdAt).getTime() - new Date(p.createdAt).getTime() < dedupeWindow,
+      );
+      if (isDuplicate) return prev;
       const next = [n, ...prev].slice(0, MAX_STORED);
       saveStored(next);
       return next;

@@ -273,14 +273,12 @@ export async function POST(req: Request) {
           level: "warning",
           extra: { error: updateErr.message, sesizare_id: sesizareId, newStatus },
         });
-      } else {
-        // Timeline event
-        await admin.from("sesizare_timeline").insert({
-          sesizare_id: sesizareId,
-          event_type: newStatus,
-          description: `${sender?.authority_name ?? "Autoritatea"}: ${classification.summary}`,
-        });
       }
+      // NU mai inseram un timeline event aditional aici. Trigger-ul DB
+      // pe sesizari.status creează automat „Status actualizat la: X".
+      // AI summary cu detalii e in sesizare_replies.ai_summary, vizibil
+      // pe pagina detail in sectiunea „Răspunsuri primite" (5/21/2026:
+      // user reported notification spam din event-uri duplicate).
     }
   }
 

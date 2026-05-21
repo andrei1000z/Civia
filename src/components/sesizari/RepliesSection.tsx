@@ -238,15 +238,22 @@ export function RepliesSection({ code, isOwner }: Props) {
                   </div>
                 ) : null}
 
-                {/* Toggle full body */}
-                <button
-                  type="button"
-                  onClick={() => setExpanded((s) => ({ ...s, [r.id]: !s[r.id] }))}
-                  className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--color-primary)] hover:underline focus:outline-none"
-                >
-                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  {isExpanded ? "Ascunde textul" : "Arată textul integral"}
-                </button>
+                {/* Toggle full body — DOAR daca avem body (owner-only).
+                    Pentru public viewer, body_text e null, ascundem butonul. */}
+                {r.body_text ? (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((s) => ({ ...s, [r.id]: !s[r.id] }))}
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--color-primary)] hover:underline focus:outline-none"
+                  >
+                    {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {isExpanded ? "Ascunde textul" : "Arată textul integral"}
+                  </button>
+                ) : (
+                  <p className="text-[11px] text-[var(--color-text-muted)] italic mt-2">
+                    Detaliile complete sunt vizibile doar pentru autorul sesizării.
+                  </p>
+                )}
               </div>
 
               {/* Full body */}
