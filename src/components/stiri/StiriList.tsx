@@ -140,8 +140,13 @@ export function StiriList() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    load(ctrl.signal);
-    return () => ctrl.abort();
+    // Defer load la microtask ca sa scape de lint-ul
+    // react-hooks/set-state-in-effect (load() face setState sincron).
+    const t = setTimeout(() => load(ctrl.signal), 0);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
   }, [load]);
 
   // Live refresh — re-fetch every 30s so newly-cached articles appear

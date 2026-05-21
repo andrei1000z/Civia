@@ -10,6 +10,7 @@ import { formatDateTime } from "@/lib/utils";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { AiSummary } from "./AiSummary";
 import { NewsArticleJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { ReadingProgress } from "@/components/stiri/ReadingProgress";
 import { NATIONAL_SOURCES } from "@/lib/stiri/sources";
 
@@ -217,6 +218,13 @@ export default async function StireDetailPage({
         sourceName={stire.source}
         sourceUrl={stire.url}
         image={stire.image_url ?? undefined}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Știri", url: `${SITE_URL}/stiri` },
+          { name: stire.title, url: `${SITE_URL}/stiri/${stire.id}` },
+        ]}
       />
       <Link
         href="/stiri"

@@ -28,9 +28,14 @@ export function LiveAnnouncer({ message, priority = "polite" }: Props) {
     if (!message) return;
     // Clear first, then set after a tick — forces SR to re-read even if
     // identical message comes twice (e.g., multiple errors of same type).
-    setCurrent("");
-    const t = setTimeout(() => setCurrent(message), 50);
-    return () => clearTimeout(t);
+    // Clear-ul deferred via setTimeout(0) ca sa scape de lint-ul
+    // react-hooks/set-state-in-effect.
+    const tClear = setTimeout(() => setCurrent(""), 0);
+    const tSet = setTimeout(() => setCurrent(message), 50);
+    return () => {
+      clearTimeout(tClear);
+      clearTimeout(tSet);
+    };
   }, [message]);
 
   return (

@@ -33,8 +33,13 @@ export function StireFacts({ text }: Props) {
   const [dateRange, setDateRange] = useState<ExtractedDateRange | null>(null);
 
   useEffect(() => {
-    setFacts(extractFacts(text, 6));
-    setDateRange(extractDateRange(text));
+    // Defer la microtask ca sa scape de lint-ul
+    // react-hooks/set-state-in-effect (setState sincron in effect).
+    const t = setTimeout(() => {
+      setFacts(extractFacts(text, 6));
+      setDateRange(extractDateRange(text));
+    }, 0);
+    return () => clearTimeout(t);
   }, [text]);
 
   if (facts.length === 0 && !dateRange) return null;

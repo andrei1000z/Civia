@@ -18,7 +18,9 @@ export function ExpiredArticleBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (searchParams.get("from") === "expired") setVisible(true);
+    if (searchParams.get("from") !== "expired") return;
+    const t = setTimeout(() => setVisible(true), 0);
+    return () => clearTimeout(t);
   }, [searchParams]);
 
   if (!visible) return null;

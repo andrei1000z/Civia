@@ -96,7 +96,7 @@ function normalizeFormatting(text: string): string {
   // 2. Aplica regulile de paragraf-break via lib reusable (folosit si in
   //    POST /api/sesizari ca defense-in-depth si in backfill scripts).
   // 3. Re-aliniaza paragraph starts (Bună ziua, Pentru, Cu stimă, etc).
-  let t = reformatFormalText(stripMarkdown(text));
+  const t = reformatFormalText(stripMarkdown(text));
 
   const lines = t.split("\n").map((l) => l.trim());
 

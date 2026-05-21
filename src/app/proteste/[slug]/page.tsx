@@ -269,11 +269,25 @@ export default async function ProtestDetailPage({
           [p.location_name, p.city, county].filter(Boolean).join(", "),
         )}`;
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Acasă", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Proteste", item: `${SITE_URL}/proteste` },
+      { "@type": "ListItem", position: 3, name: p.title, item: `${SITE_URL}/proteste/${p.slug}` },
+    ],
+  };
+
   return (
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       <PageHero

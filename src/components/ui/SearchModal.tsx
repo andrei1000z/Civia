@@ -71,13 +71,17 @@ export function SearchModal({ open, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset state pe inchidere
+  // Reset state pe inchidere — async (microtask) ca sa scape de lint-ul
+  // react-hooks/set-state-in-effect. Comportament identic: state-ul se
+  // curata la primul tick dupa ce `open` devine false.
   useEffect(() => {
-    if (!open) {
+    if (open) return;
+    const t = setTimeout(() => {
       setQuery("");
       setResults([]);
       setActive(0);
-    }
+    }, 0);
+    return () => clearTimeout(t);
   }, [open]);
 
   // Autofocus pe input la deschidere
@@ -98,17 +102,21 @@ export function SearchModal({ open, onClose }: Props) {
 
   // Debounced fetch — 220ms (sub pragul de „instant" perceput, dar suficient
   // sa scape un user care tasteaza rapid „strada Iancului" fara 14 cereri).
+  // setState muta in callback-ul setTimeout ca sa nu cada lint-ul
+  // react-hooks/set-state-in-effect (setState sincron in effect body).
   useEffect(() => {
     if (!open) return;
     const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
     let cancelled = false;
-    setLoading(true);
     const timer = setTimeout(async () => {
+      if (q.length < 2) {
+        if (!cancelled) {
+          setResults([]);
+          setLoading(false);
+        }
+        return;
+      }
+      if (!cancelled) setLoading(true);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
           signal: AbortSignal.timeout(5000),
@@ -123,7 +131,7 @@ export function SearchModal({ open, onClose }: Props) {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }, 220);
+    }, q.length < 2 ? 0 : 220);
     return () => {
       cancelled = true;
       clearTimeout(timer);

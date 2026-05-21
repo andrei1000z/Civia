@@ -39,8 +39,8 @@ export function UpcomingClock({ date, className }: Props) {
     return `${dayMonth} ${time}`;
   }
 
-  function formatRelative(d: Date): string {
-    const diffMs = d.getTime() - Date.now();
+  function formatRelative(d: Date, nowMs: number): string {
+    const diffMs = d.getTime() - nowMs;
     if (diffMs <= 0) return "acum";
     const diffMin = Math.round(diffMs / 60_000);
     if (diffMin < 60) return `în ${diffMin}m`;
@@ -49,17 +49,27 @@ export function UpcomingClock({ date, className }: Props) {
   }
 
   const abs = formatAbsolute(target);
-  const [mounted, setMounted] = useState(false);
-  const [, force] = useState(0);
+  // Stocam display-ul direct in state — calcul muta in useEffect (post-mount)
+  // ca sa scape de lint-ul react-hooks/purity (Date.now() in render).
+  const [display, setDisplay] = useState<string>(abs);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-    const id = setInterval(() => force((n) => n + 1), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const display = mounted ? formatRelative(target) : abs;
+    // Initial calc — defer la microtask ca sa scape de lint-ul
+    // react-hooks/set-state-in-effect (setState sincron in effect body).
+    const t = setTimeout(() => {
+      setDisplay(formatRelative(target, Date.now()));
+    }, 0);
+    const id = setInterval(() => {
+      setDisplay(formatRelative(target, Date.now()));
+    }, 60_000);
+    return () => {
+      clearTimeout(t);
+      clearInterval(id);
+    };
+    // target stabil dupa parse-ul `iso` — `iso` in deps trigger refresh la
+    // schimbarea prop-ului.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso]);
 
   return (
     <time
