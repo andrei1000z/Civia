@@ -225,7 +225,11 @@ export default function AdminProtestePage() {
     fetch("/api/admin/proteste")
       .then((r) => r.json())
       .then((j) => setRows(j.data ?? []))
-      .catch(() => {})
+      .catch((e) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[admin/proteste] fetch failed:", e);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -391,6 +395,10 @@ export default function AdminProtestePage() {
   };
 
   const save = async () => {
+    // Bug fix #9-10 (5/22/2026) — guard pentru double-click. Daca save() e
+    // deja in progress, ignoram apel-urile subsecvente. Inainte: user dubla
+    // click pe „Salvează" trimitea 2 POST → 2 proteste create.
+    if (saving) return;
     if (!draft.title.trim() || !draft.location_name.trim() || !draft.start_at) {
       toast("Completează cel puțin: titlu, locație, dată început.", "error");
       return;

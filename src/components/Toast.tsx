@@ -18,10 +18,25 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+/**
+ * Toast durations centralizate (5/22/2026) — magic numbers scattered prin
+ * codebase: 1800ms (AiSummary), 2000ms (Lightbox, SharePetitie), 2500ms
+ * (cont/saved), 4000ms (default). Standardizat 3 niveluri tokens-based:
+ */
+export const TOAST_DURATION = {
+  /** Confirmari quick (success, copied, saved). ~1.8s — sub pragul „abia
+   *  am observat dar a disparut deja". */
+  short: 1800,
+  /** Default — confirmari + info. Suficient sa citesti 5-8 cuvinte. */
+  medium: 4000,
+  /** Mesaje cu actiune (undo, retry). Lung sa apuci sa apesi. */
+  long: 6000,
+} as const;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((message: string, type: ToastType = "info", duration = 4000) => {
+  const toast = useCallback((message: string, type: ToastType = "info", duration: number = TOAST_DURATION.medium) => {
     const id = Math.random().toString(36).slice(2, 9);
     setToasts((prev) => [...prev, { id, type, message, duration }]);
     setTimeout(() => {

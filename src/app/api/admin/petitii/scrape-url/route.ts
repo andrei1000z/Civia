@@ -315,13 +315,22 @@ export async function POST(req: Request) {
       // din `failed_generation` si repairam manual.
       let failedRaw: string | null = null;
       if (err && typeof err === "object") {
-        // groq-sdk APIError -> { error: { failed_generation: "..." } } sau status 400 cu body
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const e = err as any;
+        // groq-sdk APIError shape — typed via Record<string, unknown> nested.
+        // Mai sigur decat `as any` care permitea typo silent in path-uri.
+        type GroqErrorShape = {
+          error?: {
+            failed_generation?: string;
+            error?: { failed_generation?: string };
+          };
+          response?: {
+            data?: { error?: { failed_generation?: string } };
+          };
+        };
+        const e = err as GroqErrorShape;
         failedRaw =
-          e?.error?.failed_generation
-          ?? e?.error?.error?.failed_generation
-          ?? e?.response?.data?.error?.failed_generation
+          e.error?.failed_generation
+          ?? e.error?.error?.failed_generation
+          ?? e.response?.data?.error?.failed_generation
           ?? null;
       }
       const repairCandidate = failedRaw ?? raw;

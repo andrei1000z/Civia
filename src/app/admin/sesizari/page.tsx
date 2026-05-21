@@ -65,17 +65,27 @@ export default function AdminSesizariPage() {
   const [pendingTickets, setPendingTickets] = useState<number>(0);
 
   useEffect(() => {
+    // Bug fix #18 (5/22/2026) — log catch errors in non-prod ca dev sa
+    // vada loading-loop. Productie ramane silent (degradare gratioasa).
     fetch("/api/sesizari?limit=200")
       .then((r) => r.json())
       .then((j) => setRows(j.data ?? []))
-      .catch(() => {})
+      .catch((e) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[admin/sesizari] fetch failed:", e);
+        }
+      })
       .finally(() => setLoading(false));
     // Surface the "Tickets" tab badge — count of pending citizen
     // proposals waiting for admin decision.
     fetch("/api/admin/status-tickets?decision=pending&limit=200")
       .then((r) => r.json())
       .then((j) => setPendingTickets((j.data ?? []).length))
-      .catch(() => {});
+      .catch((e) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[admin/sesizari] pending tickets fetch failed:", e);
+        }
+      });
   }, []);
 
   const del = async (code: string, titlu: string) => {
@@ -89,7 +99,12 @@ export default function AdminSesizariPage() {
     setActing(`del-${code}`);
     try {
       const res = await fetch(`/api/admin/sesizari/${code}`, { method: "DELETE" });
-      const j = await res.json().catch(() => ({}));
+      const j = await res.json().catch((e) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.error(`[admin/sesizari] JSON parse failed on DELETE /${code}:`, e);
+        }
+        return {};
+      });
       if (!res.ok) throw new Error(j.error || "Eroare ștergere");
       setRows((prev) => prev.filter((r) => r.code !== code));
       toast(`Sesizarea ${code} a fost ștearsă`, "success");
