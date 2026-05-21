@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { reverseGeocode } from "@/lib/geo/reverse-geocode";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 
+// Edge runtime — toate dependintele (Upstash REST, ALL_COUNTIES static,
+// fetch la Nominatim) sunt edge-compatible. Cold start <50ms vs ~200ms
+// pe Node Lambda — important pentru un endpoint chemat pe „Detect Auto"
+// din SesizareForm cand userul abia clica buton-ul.
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 /**
