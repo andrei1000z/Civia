@@ -108,7 +108,13 @@ export async function POST(
   });
 
   const userEmail = user.email ?? sesizare.author_email ?? "";
-  const subject = `Sesizare: ${sesizare.titlu} — ${sesizare.locatie}`;
+  // Subject include codul sesizarii ca PRIMUL token. Bug raportat user
+  // 5/21/2026: Cloudflare Email Routing nu onoreaza plus-addressing
+  // (sesizari+CODE@civia.ro) cand destinatia rulei e Worker — toate
+  // emailurile cu plus erau drop-uite in catch-all (6/6 dropped). Fix:
+  // codul ajunge in subject in loc, Worker il extrage de acolo cand
+  // primaria face Reply (subject devine „Re: Sesizare CODE — ...").
+  const subject = `Sesizare ${sesizare.code} — ${sesizare.titlu}`;
 
   // Format HTML simplu cu paragrafe + atasamente menționate.
   const paragraphs = formalText.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
@@ -132,11 +138,17 @@ export async function POST(
   const primaryEmails = recipients.primary.map((a) => a.email).filter(Boolean);
   const ccEmails = (recipients.cc ?? []).map((a) => a.email).filter(Boolean);
 
-  // Reply-To cu plus-addressing: răspunsul primăriei ajunge la
-  // sesizari+CODE@civia.ro, Cloudflare Email Routing îl forwardează
-  // la Worker, Worker → POST la /api/inbox/reply, AI clasifică,
-  // status update + push notification. Vezi src/lib/inbox/.
-  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
+  // Reply-To: sesizari@civia.ro (FĂRĂ plus-addressing). Răspunsul
+  // primăriei ajunge aici → Cloudflare Email Routing → Worker → POST la
+  // /api/inbox/reply → AI extrage codul DIN SUBJECT (e prefix in
+  // „Re: Sesizare CODE — ...") → clasificare + status update + push.
+  //
+  // 5/21/2026: anterior aveam plus-addressing („sesizari+CODE@civia.ro")
+  // dar Cloudflare drop-a toate emailurile (6/6 dropped) — sub-addressing
+  // nu se onoreaza cand destinatia rulei e Worker, doar la simple forwards.
+  // Subject-based code extraction merge la fel de bine si e robust si la
+  // mail relays care strip-uiesc plus-addressing.
+  const replyTo = `sesizari@civia.ro`;
 
   // From: doar numele user-ului + adresa sesizari@civia.ro.
   // Display name = nume cetățean ca primăria să vadă cine reclamă,
