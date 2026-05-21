@@ -55,6 +55,8 @@ export function AuroraBackground() {
       className="fixed inset-0 pointer-events-none -z-10 overflow-hidden will-change-transform"
       style={{ transform: "translate3d(0, 0, 0)" }}
     >
+      {/* 5/22/2026 v2 — opacities boosted (35→50, 30→45, 20→35, 22→38)
+          pentru ca user-ul a raportat ca background-ul ramane negru. */}
       {/* Emerald blob — top-left, primary green civic */}
       <div
         className="lc-aurora-blob"
@@ -64,7 +66,7 @@ export function AuroraBackground() {
           width: "55vw",
           height: "55vw",
           background: "radial-gradient(circle, var(--civic-emerald-400) 0%, transparent 60%)",
-          opacity: 0.35,
+          opacity: 0.50,
           animationDelay: "0s",
         }}
       />
@@ -77,11 +79,11 @@ export function AuroraBackground() {
           width: "60vw",
           height: "60vw",
           background: "radial-gradient(circle, var(--civic-aqua-400) 0%, transparent 60%)",
-          opacity: 0.30,
+          opacity: 0.45,
           animationDelay: "-20s",
         }}
       />
-      {/* Violet blob — bottom-left, premium accent (smaller, subtler) */}
+      {/* Violet blob — bottom-left, premium accent */}
       <div
         className="lc-aurora-blob"
         style={{
@@ -90,13 +92,11 @@ export function AuroraBackground() {
           width: "45vw",
           height: "45vw",
           background: "radial-gradient(circle, var(--civic-violet-400) 0%, transparent 60%)",
-          opacity: 0.20,
+          opacity: 0.35,
           animationDelay: "-40s",
         }}
       />
-      {/* Bug fix 5/22/2026 — al 4-lea blob (emerald, jos-dreapta) ca sa
-          umpla colțul de jos-dreapta unde înainte era „bandă neagră" sub
-          gradient-ul radial al html. */}
+      {/* Emerald blob bottom-right — umple coltul „mort" jos-dreapta. */}
       <div
         className="lc-aurora-blob"
         style={{
@@ -105,7 +105,7 @@ export function AuroraBackground() {
           width: "50vw",
           height: "50vw",
           background: "radial-gradient(circle, var(--civic-emerald-400) 0%, transparent 60%)",
-          opacity: 0.22,
+          opacity: 0.38,
           animationDelay: "-60s",
         }}
       />
