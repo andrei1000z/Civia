@@ -27,11 +27,15 @@ export function SuccessScreen({
   code,
   emailInput,
   onAnother,
+  isFirstSesizare = true,
 }: {
   code: string;
   emailInput: MailtoInput;
   imaginiCount: number;
   onAnother: () => void;
+  /** Daca userul are deja sesizari prior, sprite-ul „prima sesizare"
+   *  nu se afiseaza (bug user 5/22/2026). */
+  isFirstSesizare?: boolean;
 }) {
   const router = useRouter();
   type Platform = "ios" | "android" | "desktop";
@@ -100,7 +104,11 @@ export function SuccessScreen({
 
   return (
     <div ref={cardRef} className="max-w-md mx-auto py-8 text-center scroll-mt-4">
-      <CivicSprite type="first-sesizare" persistentKey="first-sesizare" />
+      <CivicSprite
+        type="first-sesizare"
+        persistentKey="first-sesizare"
+        enabled={isFirstSesizare}
+      />
       <div role="status" aria-live="polite" className="sr-only">
         Sesizare înregistrată cu succes. Cod: {code.split("").join(" ")}
       </div>

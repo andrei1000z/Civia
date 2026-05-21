@@ -7,6 +7,14 @@ interface Props {
   type: "first-sesizare" | "streak-3" | "streak-7" | "streak-30" | "resolved" | "cosign-10";
   /** Persistent flag — daca am aratat deja pentru acest tip in session/localStorage. */
   persistentKey?: string;
+  /**
+   * Hard gate — daca false, sprite-ul NU se arata indiferent de localStorage.
+   * Folosit pentru „first-sesizare" cand userul are deja sesizari (NU e prima).
+   * Bug fix 5/22/2026: localStorage poate fi clear-uit (incognito, settings
+   * browser), atunci sprite-ul reaparea la fiecare submit. Acum verificam si
+   * un signal real (count sesizari prior).
+   */
+  enabled?: boolean;
 }
 
 const MESSAGES: Record<Props["type"], { emoji: string; title: string; subtitle: string }> = {
@@ -48,12 +56,14 @@ const MESSAGES: Record<Props["type"], { emoji: string; title: string; subtitle: 
  * Auto-dismiss after 5s, click to dismiss. Spring entrance + confetti
  * particles. Persistent flag previne arat de mai multe ori per tip.
  */
-export function CivicSprite({ type, persistentKey }: Props) {
+export function CivicSprite({ type, persistentKey, enabled = true }: Props) {
   const [show, setShow] = useState(false);
   const [exiting, setExiting] = useState(false);
   const msg = MESSAGES[type];
 
   useEffect(() => {
+    // Hard gate: skip indiferent de localStorage.
+    if (!enabled) return;
     if (persistentKey) {
       try {
         const seen = localStorage.getItem(`civia:sprite:${persistentKey}`);
@@ -77,7 +87,7 @@ export function CivicSprite({ type, persistentKey }: Props) {
       clearTimeout(exitTimer);
       clearTimeout(removeTimer);
     };
-  }, [persistentKey]);
+  }, [enabled, persistentKey]);
 
   if (!show) return null;
 

@@ -126,6 +126,11 @@ export function SesizareForm() {
   const [error, setError] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [honey, setHoney] = useState(""); // anti-bot honeypot
+  // Bug fix 5/22/2026 — Civic Sprite „prima sesizare" se afisa la fiecare
+  // submit pentru ca localStorage poate fi clear-uit. Acum verificam si
+  // count-ul real al sesizarilor user-ului (autenticat). Anonim → fallback
+  // la localStorage in CivicSprite (singura sursa).
+  const [priorSesizariCount, setPriorSesizariCount] = useState<number | null>(null);
   const classifyTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Smooth-scroll la error box cand apare (2026-05-19): inainte error
   // aparea jos in pagina iar utilizatorul nu observa pe mobile.
@@ -411,6 +416,22 @@ export function SesizareForm() {
     return () => window.removeEventListener("pagehide", onUnload);
 
   }, [data.tip, data.descriere, data.locatie, data.lat, imagini.length, submitted]);
+
+  // Fetch user's prior sesizari count — used to decide if „Prima sesizare"
+  // sprite arata sau nu. Anonim → null → fallback la localStorage only.
+  useEffect(() => {
+    if (!user) {
+      setPriorSesizariCount(null);
+      return;
+    }
+    fetch("/api/profile/sesizari")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const data = j?.data;
+        setPriorSesizariCount(Array.isArray(data) ? data.length : 0);
+      })
+      .catch(() => setPriorSesizariCount(null));
+  }, [user]);
 
   // Auto-fill from profile (auth) or localStorage (anonymous)
   useEffect(() => {
@@ -933,7 +954,22 @@ export function SesizareForm() {
     const lng = data.lng ?? 24.9668;
     // Auto-detect sector from coords — only for București, null elsewhere
     const isInBucharest = lat >= 44.33 && lat <= 44.55 && lng >= 25.97 && lng <= 26.25;
-    const sector = isInBucharest ? (data.sector || detectSectorFromCoords(lat, lng) || "S3") : null;
+    // Bug fix user 5/22/2026 — daca utilizatorul NU specifica sectorul si
+    // coords sunt imprecise, NU mai fortam fallback la „S3" (acela duce
+    // mailul la primaria gresita). Strategia cascada:
+    //   1. data.sector explicit ales de user
+    //   2. detectSectorFromCoords (precise lat/lng)
+    //   3. detectSectorFromText pe descriere + locatie (keyword-based,
+    //      acoperă „Strada Berceni" → S4, „Drumul Taberei" → S6 etc.)
+    //   4. null → emailul merge doar la primaria Bucuresti (oras-level),
+    //      nu si la primaria sectorului. User-ul vede asta in UI si poate
+    //      reveni sa specifice sectorul.
+    const sector = isInBucharest
+      ? (data.sector
+        || detectSectorFromCoords(lat, lng)
+        || detectSectorFromText(`${data.locatie} ${data.descriere}`)
+        || null)
+      : null;
 
     // OPEN MAIL APP IMMEDIATELY — must happen synchronously inside
     // the click handler, BEFORE the first await, so the user gesture
@@ -1102,7 +1138,14 @@ export function SesizareForm() {
     data.tip === "parcare" && parkingJurisdiction
       ? { jurisdiction: parkingJurisdiction }
       : undefined;
-  const recipients = data.tip
+  // Bug fix user 5/22/2026 — recipients calculate doar daca avem semnal real
+  // de locatie (text adresa SAU lat/lng SAU detectedCounty). Inainte, daca
+  // user-ul alegea „stalpisori" fara sa fi pus inca adresa, recipients
+  // afisa intregul stack de Bucuresti (PMB, ASPMB, BPR, PL Buc) ca default
+  // — gresit pentru ceilalti cetateni din alte orase. Acum asteptam adresa.
+  const hasLocationSignal =
+    !!data.locatie?.trim() || (data.lat != null && data.lng != null) || !!detectedCounty;
+  const recipients = data.tip && hasLocationSignal
     ? getAuthoritiesFor(data.tip, data.sector, detectedCounty, data.locatie, parkingCtx)
     : null;
 
@@ -1214,6 +1257,11 @@ ${today}`;
           code={submitted.code}
           emailInput={emailInput}
           imaginiCount={imagini.length}
+          // Sprite „Prima sesizare" arata DOAR daca:
+          // - user logat cu 0 sesizari prior (count == 0), SAU
+          // - user anonim/fara count fetched (null) — fallback la
+          //   localStorage din CivicSprite.
+          isFirstSesizare={priorSesizariCount === null || priorSesizariCount === 0}
           onAnother={() => {
             setSubmitted(null);
             setData((d) => ({ ...INITIAL, nume: d.nume, adresa: d.adresa, email: d.email }));
@@ -1391,6 +1439,14 @@ ${today}`;
             </p>
           )}
         </Field>
+
+        {!recipients && data.tip && !hasLocationSignal && (
+          <div className="rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 text-xs">
+            <p className="text-amber-900 dark:text-amber-300 flex items-center gap-1">
+              <Mail size={12} aria-hidden="true" /> Destinatarii se determină după ce introduci locația — adresă, oraș sau coordonate GPS.
+            </p>
+          </div>
+        )}
 
         {recipients && (
           <div className="rounded-[var(--radius-xs)] bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-3 text-xs">

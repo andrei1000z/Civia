@@ -448,11 +448,10 @@ export default async function SesizareDetailPage({
             />
           )}
 
-          {/* Similar sesizari (cine a mai sesizat) */}
-          <SimilarSesizari sesizari={similar} />
-
           {/* Timeline — shares the same EVENT_META catalog as /urmareste so
-              labels, icons and colors stay consistent across surfaces. */}
+              labels, icons and colors stay consistent across surfaces.
+              Moved ABOVE „Alții au sesizat" la cererea user 5/22/2026
+              („vreau prima data Status si dupa Alții au sesizat"). */}
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5">
             <div className="flex items-center justify-between mb-5">
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
@@ -516,6 +515,9 @@ export default async function SesizareDetailPage({
               </ol>
             )}
           </div>
+
+          {/* Similar sesizari (cine a mai sesizat) — sub Status & activitate */}
+          <SimilarSesizari sesizari={similar} />
         </aside>
       </div>
     </div>

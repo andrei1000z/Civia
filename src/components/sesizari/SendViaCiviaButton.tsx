@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Send, CheckCircle2, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { playSound } from "@/lib/liquid-civic/sound";
@@ -23,6 +24,7 @@ interface Props {
  */
 export function SendViaCiviaButton({ code, className }: Props) {
   const { user } = useAuth();
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [sentAt, setSentAt] = useState<string | null>(null);
@@ -55,6 +57,12 @@ export function SendViaCiviaButton({ code, className }: Props) {
       setState("sent");
       setSentAt(json.sent_at);
       playSound("success");
+      // User cerut 5/22/2026 — dupa Trimite, redirect direct la pagina
+      // sesizarii (nu mai sta in SuccessScreen). Delay 800ms ca user-ul
+      // sa vada „Trimis automat" feedback.
+      setTimeout(() => {
+        router.push(`/sesizari/${code}`);
+      }, 800);
     } catch {
       setState("error");
       setErrorMsg("Eroare de retea. Mai incearca.");
