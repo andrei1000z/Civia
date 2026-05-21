@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import Script from "next/script";
+import dynamic from "next/dynamic";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -20,10 +21,18 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
 import { AuroraBackground } from "@/components/liquid-civic/AuroraBackground";
-import { CursorGlow } from "@/components/liquid-civic/CursorGlow";
 import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
-import { KonamiEasterEgg } from "@/components/liquid-civic/KonamiEasterEgg";
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
+// Code-split cold-path visuals — desktop-only hover effect + easter egg.
+// Saves ~3-4 KB gzip off the root bundle; mounts after hydration.
+const CursorGlow = dynamic(
+  () => import("@/components/liquid-civic/CursorGlow").then((m) => m.CursorGlow),
+  { ssr: false },
+);
+const KonamiEasterEgg = dynamic(
+  () => import("@/components/liquid-civic/KonamiEasterEgg").then((m) => m.KonamiEasterEgg),
+  { ssr: false },
+);
 import { GlobalLiveAnnouncer } from "@/components/ui/LiveAnnouncer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
