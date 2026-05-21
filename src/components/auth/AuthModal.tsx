@@ -196,6 +196,8 @@ export function AuthModal() {
               <input
                 id="auth-email"
                 type="email"
+                inputMode="email"
+                enterKeyHint="send"
                 autoComplete="email"
                 required
                 value={email}

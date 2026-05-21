@@ -92,7 +92,11 @@ Auth on `/api/stiri/fetch` accepts either `Authorization: Bearer ${CRON_SECRET}`
 
 Read `src/lib/groq/prompts.ts → SYSTEM_PROMPT_FORMAL` before changing how sesizari emails are generated. The prompt has anti-cliché rules tuned to real failure modes we've seen ("pietonii sunt forțați să circule pe carosabil" hallucinated when the photo shows a clear sidewalk, etc.). Don't strip those rules — they're load-bearing.
 
+**Critical anti-minimization rule** (bug 5/22/2026): the prompt MUST NOT contain ANY instruction telling the AI to say "rămâne spațiu de trecere", "mașinile ocupă X% / Y metri", or similar phrasing that minimizes the problem. The citizen is reporting a problem; the email contradicting itself ("there's parking on sidewalk BUT pedestrians have enough space") sabotages the sesizare. Rule 7 in SYSTEM_PROMPT_FORMAL is the source of truth — don't add competing rules that contradict it. Defense-in-depth lives in `src/lib/sesizari/anti-minimization.ts` (regex-based post-processor) — extend its patterns if you spot new minimization phrases in production.
+
 Petition synthesis uses a smaller, structured prompt (`src/lib/petitii/ai-summary.ts`) with a "Pe scurt → Ce cere petiția → De ce contează" skeleton. News synthesis uses the same component (`src/app/stiri/[id]/AiSummary.tsx`) on both surfaces — the rendered output supports `**bold**` inline + `- ` bullets + a toolbar (read-time + copy + listen via `SpeechSynthesis`).
+
+Vision auto-route (`src/lib/groq/vision-routing.ts` + `/api/ai/vision-route`) — analyses sesizare photo with Groq Llama 4 Scout, returns `{ tip, authority, confidence, description, evidence }`. Used to pre-fill the form before user clicks submit. Always returns a result (fallback to `confidence: 30` if model fails); no need to guard against null.
 
 ## Tests
 

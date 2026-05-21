@@ -114,6 +114,8 @@ export function FooterFeedback() {
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="email"
+              inputMode="email"
+              enterKeyHint="send"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@exemplu.ro (opțional)"
