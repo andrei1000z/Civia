@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { GhidLayout, Chapter, Callout } from "@/components/ghiduri/GhidLayout";
+import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Ghid cetățean — drepturile tale în relația cu administrația locală",
@@ -20,6 +22,14 @@ const chapters = [
 
 export default function GhidCetateanPage() {
   return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Ghiduri", url: `${SITE_URL}/ghiduri` },
+          { name: "Ghid cetățean", url: `${SITE_URL}/ghiduri/ghid-cetatean` },
+        ]}
+      />
     <GhidLayout
       title="Drepturile tale, pe bucăți mici"
       subtitle="Primăria, consiliul local, prefectura — ce îți datorează prin lege și cum să ceri. Fără jargon juridic, doar pașii reali care funcționează."
@@ -241,5 +251,6 @@ export default function GhidCetateanPage() {
         </Callout>
       </Chapter>
     </GhidLayout>
+    </>
   );
 }
