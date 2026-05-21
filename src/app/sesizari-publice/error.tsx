@@ -11,11 +11,10 @@ import { AlertTriangle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
  * fundal (3 incercari, 2s/4s/8s spacing) inainte sa mai vada user-ul
  * eroarea, plus si „Reincearca" manual ramane pentru cazuri persistente.
  */
-// Retry cu backoff conservator. Anterior aveam 500ms prima retry, dar
-// asta cauza render loop care omora renderer-ul Firefox („This page
-// couldn't load" — raportat user 5/21/2026). Acum: 1.5s/3s/6s — destul
-// timp pentru react reconciliation + microtasks intre retry-uri.
-const AUTO_RETRY_DELAYS_MS = [1500, 3000, 6000];
+// Auto-retry DISABLED 5/21/2026 — Firefox renderer crash raportat user
+// la orice retry rapid. Dacă pagina aruncă, ARATĂM eroarea imediat și
+// userul apasă „Reîncearcă" manual. Zero render loops.
+const AUTO_RETRY_DELAYS_MS: number[] = [];
 
 export default function Error({
   error,
@@ -28,6 +27,21 @@ export default function Error({
 
   useEffect(() => {
     console.error("[sesizari-publice]", error);
+    // Log la server pentru ca dev-ul sa vada eroarea reala fara
+    // sa fie nevoie de Sentry sau client-side console access.
+    fetch("/api/inbox/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "page-error",
+        page: "/sesizari-publice",
+        message: error?.message ?? String(error),
+        digest: error?.digest ?? null,
+        stack: error?.stack?.slice(0, 2000) ?? null,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        href: typeof location !== "undefined" ? location.href : null,
+      }),
+    }).catch(() => { /* silent */ });
   }, [error]);
 
   // Auto-retry cu backoff -- ruleaza in fundal pe primele 3 erori,
