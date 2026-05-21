@@ -1,171 +1,194 @@
 /**
- * Civia Inbox Email Worker
- * ========================
+ * Civia Inbox Email Worker — v2 SIMPLIFIED
+ * =========================================
  *
- * Runs on Cloudflare Email Routing. When a reply arrives at
- * `sesizari@civia.ro` (or sesizari+CODE@civia.ro via plus-addressing),
- * this Worker:
+ * Runs on Cloudflare Email Routing. When an email arrives at
+ * `sesizari@civia.ro` (with optional +CODE plus-addressing), this Worker:
  *
- *   1. Parses the incoming MIME email
- *   2. Extracts From, To, Subject, body text + HTML, attachments meta
- *   3. POSTs to https://civia.ro/api/inbox/reply with Bearer secret
- *   4. Forwards a copy to andrei@civia.ro as fail-safe (so even if the
- *      webhook fails, the user sees the email in Gmail)
+ *   1. Pings /api/inbox/heartbeat to prove we received the email (no-auth,
+ *      always logs). This way even if main webhook fails, we KNOW the
+ *      Worker is firing.
+ *   2. Reads the raw email (standard Cloudflare API: new Response(message.raw))
+ *   3. Extracts From, To, Subject, body from MIME using a minimal parser
+ *   4. POSTs to /api/inbox/reply with Bearer auth + structured payload
+ *   5. Forwards the email to FORWARD_TO (Gmail) as a fail-safe so user
+ *      ALWAYS sees the email even if Civia processing breaks
  *
- * Deployment:
- *   1. On Cloudflare → Workers & Pages → existing `civia-inbox-handler`
- *   2. Replace the default code with this entire file
- *   3. Settings → Variables and Secrets:
- *        - Secret: INBOX_WEBHOOK_SECRET = <same as Vercel>
- *        - Plain text: WEBHOOK_URL = https://civia.ro/api/inbox/reply
- *        - Plain text: FORWARD_TO = musateduardandrei10@gmail.com
- *   4. Save and deploy
- *   5. Email → Email Routing → Email Workers tab
- *   6. Find civia-inbox-handler in the list and connect it to the
- *      sesizari@civia.ro routing rule
+ * Deploy:
+ *   1. Cloudflare → Workers & Pages → civia-inbox-handler → Edit code
+ *   2. Replace EVERYTHING with this file
+ *   3. Save and Deploy
+ *
+ * Required env variables (Settings → Variables and Secrets):
+ *   Secret:     INBOX_WEBHOOK_SECRET = <same as Vercel>
+ *   Plain text: WEBHOOK_URL = https://www.civia.ro/api/inbox/reply
+ *   Plain text: HEARTBEAT_URL = https://www.civia.ro/api/inbox/heartbeat
+ *   Plain text: FORWARD_TO = musateduardandrei10@gmail.com
+ *
+ * ⚠️ IMPORTANT: WEBHOOK_URL and HEARTBEAT_URL MUST use `www.civia.ro`
+ * (NOT `civia.ro` without www). civia.ro redirects to www.civia.ro with
+ * 307 and the redirect drops the Authorization header.
  */
+
+const WORKER_VERSION = "2.0.0";
 
 export default {
   /**
    * Email handler — entry point for inbound emails from Email Routing.
-   * @param {ForwardableEmailMessage} message
-   * @param {{ INBOX_WEBHOOK_SECRET: string, WEBHOOK_URL: string, FORWARD_TO?: string }} env
-   * @param {ExecutionContext} ctx
    */
   async email(message, env, ctx) {
-    try {
-      // 1. Read raw email
-      const rawSize = message.rawSize ?? 0;
-      // Cap at 5MB to keep memory reasonable. Bigger emails get truncated
-      // (attachments excluded but text body should fit).
-      const reader = message.raw.getReader();
-      const chunks = [];
-      let totalBytes = 0;
-      const MAX_BYTES = 5 * 1024 * 1024;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) {
-          chunks.push(value);
-          totalBytes += value.byteLength;
-          if (totalBytes > MAX_BYTES) break;
-        }
+    const startMs = Date.now();
+
+    // ─── 0. Validate env config (loud failure if missing) ────────
+    if (!env.WEBHOOK_URL || !env.INBOX_WEBHOOK_SECRET) {
+      // Forward to Gmail so user sees the email, but log warning to console.
+      console.error("Missing env: WEBHOOK_URL or INBOX_WEBHOOK_SECRET");
+      if (env.FORWARD_TO) {
+        try { await message.forward(env.FORWARD_TO); } catch {}
       }
-      const raw = new TextDecoder("utf-8", { fatal: false }).decode(concat(chunks));
+      return;
+    }
 
-      // 2. Parse minimal headers + body (no full MIME parser — we only
-      // need a few fields, regex is enough for >95% of cases)
-      const parsed = parseEmail(raw);
-
-      // 3. Build payload for webhook
-      const payload = {
-        from: message.from || parsed.from || "",
-        to: message.to || parsed.to || "",
-        subject: parsed.subject || "",
-        body_text: parsed.text || "",
-        body_html: parsed.html || "",
-        headers: parsed.headers,
-        attachments: parsed.attachments,
-      };
-
-      // 4. POST to webhook (Civia)
+    // ─── 1. Heartbeat ping (no-auth, can never fail meaningfully) ──
+    const heartbeatBody = {
+      worker_version: WORKER_VERSION,
+      from: message.from || "unknown",
+      to: message.to || "unknown",
+      received_at: new Date().toISOString(),
+    };
+    if (env.HEARTBEAT_URL) {
       try {
-        const webhookRes = await fetch(env.WEBHOOK_URL, {
+        await fetch(env.HEARTBEAT_URL, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${env.INBOX_WEBHOOK_SECRET}`,
-            "Content-Type": "application/json",
-            "User-Agent": "Civia-Inbox-Worker/1.0",
-          },
-          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json", "User-Agent": `civia-inbox-worker/${WORKER_VERSION}` },
+          body: JSON.stringify(heartbeatBody),
+          // Critical: don't follow redirects manually — let fetch do it.
+          // BUT if redirect strips auth, the heartbeat is no-auth anyway
+          // so we don't care for this call.
+          redirect: "follow",
         });
-        if (!webhookRes.ok) {
-          console.error(`Webhook returned ${webhookRes.status}`, await webhookRes.text());
-        }
       } catch (e) {
-        console.error("Webhook POST failed:", e?.message ?? e);
+        console.error("Heartbeat failed:", e?.message ?? e);
       }
+    }
 
-      // 5. Forward to user's Gmail as fail-safe (so they ALWAYS see the
-      // email, even if our webhook breaks)
-      if (env.FORWARD_TO) {
-        try {
-          await message.forward(env.FORWARD_TO);
-        } catch (e) {
-          console.error("Forward failed:", e?.message ?? e);
-        }
-      }
+    // ─── 2. Read raw email content ───────────────────────────────
+    let rawEmail = "";
+    try {
+      rawEmail = await new Response(message.raw).text();
     } catch (e) {
-      console.error("Email handler crashed:", e?.stack ?? e?.message ?? e);
-      // Don't reject — Cloudflare retries rejected emails which could
-      // multiply spam/duplicates. Forward as last resort.
+      console.error("Reading raw email failed:", e?.message ?? e);
+      // Forward anyway so user sees it.
       if (env.FORWARD_TO) {
-        try {
-          await message.forward(env.FORWARD_TO);
-        } catch {}
+        try { await message.forward(env.FORWARD_TO); } catch {}
+      }
+      return;
+    }
+
+    // ─── 3. Parse minimal MIME ───────────────────────────────────
+    const parsed = parseEmail(rawEmail);
+
+    const payload = {
+      from: message.from || parsed.from || "",
+      to: message.to || parsed.to || "",
+      subject: parsed.subject || "",
+      body_text: parsed.text || "",
+      body_html: parsed.html || "",
+      headers: parsed.headers,
+      attachments: parsed.attachments,
+    };
+
+    // ─── 4. POST to webhook with Bearer auth ─────────────────────
+    let webhookStatus = 0;
+    let webhookBody = "";
+    try {
+      const res = await fetch(env.WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.INBOX_WEBHOOK_SECRET}`,
+          "Content-Type": "application/json",
+          "User-Agent": `civia-inbox-worker/${WORKER_VERSION}`,
+        },
+        body: JSON.stringify(payload),
+        redirect: "follow", // ⚠️ may drop Authorization if redirected cross-host!
+      });
+      webhookStatus = res.status;
+      try { webhookBody = (await res.text()).slice(0, 500); } catch {}
+      console.log(`Webhook ${webhookStatus}: ${webhookBody}`);
+    } catch (e) {
+      console.error("Webhook POST failed:", e?.message ?? e);
+      webhookBody = `FETCH_ERROR: ${e?.message ?? e}`;
+    }
+
+    // ─── 5. Log result via heartbeat (so we have visibility) ─────
+    if (env.HEARTBEAT_URL) {
+      try {
+        await fetch(env.HEARTBEAT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "User-Agent": `civia-inbox-worker/${WORKER_VERSION}` },
+          body: JSON.stringify({
+            phase: "post-webhook",
+            worker_version: WORKER_VERSION,
+            webhook_url: env.WEBHOOK_URL,
+            webhook_status: webhookStatus,
+            webhook_response_preview: webhookBody.slice(0, 200),
+            duration_ms: Date.now() - startMs,
+          }),
+        });
+      } catch {}
+    }
+
+    // ─── 6. ALWAYS forward to Gmail as fail-safe ─────────────────
+    if (env.FORWARD_TO) {
+      try { await message.forward(env.FORWARD_TO); } catch (e) {
+        console.error("Forward failed:", e?.message ?? e);
       }
     }
   },
 
   /**
-   * Health check via HTTP — visit https://civia-inbox-handler.<sub>.workers.dev/
-   * to verify the worker is deployed.
+   * Health check via HTTP — visit Worker's URL to verify deploy.
    */
-  async fetch(request) {
-    return new Response("Civia Inbox Email Worker — OK", {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === "/__config") {
+      return new Response(JSON.stringify({
+        version: WORKER_VERSION,
+        webhook_url: env.WEBHOOK_URL ?? "MISSING",
+        heartbeat_url: env.HEARTBEAT_URL ?? "MISSING",
+        forward_to: env.FORWARD_TO ?? "MISSING",
+        has_secret: !!env.INBOX_WEBHOOK_SECRET,
+      }, null, 2), {
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
+    return new Response(`Civia Inbox Email Worker v${WORKER_VERSION} — OK`, {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────
+// ─── MIME parsing (minimal but robust) ────────────────────────────
 
-function concat(chunks) {
-  const total = chunks.reduce((acc, c) => acc + c.byteLength, 0);
-  const out = new Uint8Array(total);
-  let offset = 0;
-  for (const c of chunks) {
-    out.set(c, offset);
-    offset += c.byteLength;
-  }
-  return out;
-}
-
-/**
- * Minimal email parser. Extracts:
- *   - subject, from, to (from headers)
- *   - text body (text/plain part)
- *   - html body (text/html part)
- *   - attachment names + types (NOT the content — we don't need it)
- *
- * Doesn't handle every edge case of MIME but covers ~95% of real
- * authority replies (which are simple HTML emails with no nested
- * multipart trees beyond plain+html alternatives).
- */
 function parseEmail(raw) {
   const headers = {};
   const lines = raw.split(/\r?\n/);
-
-  // Find end of headers (blank line)
   let bodyStart = 0;
   let lastKey = null;
+
+  // Read headers until blank line
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line === "") {
-      bodyStart = i + 1;
-      break;
-    }
-    // Header continuation (folded line)
+    if (line === "") { bodyStart = i + 1; break; }
     if (/^[ \t]/.test(line) && lastKey) {
       headers[lastKey] = (headers[lastKey] || "") + " " + line.trim();
       continue;
     }
-    const colonIdx = line.indexOf(":");
-    if (colonIdx > 0) {
-      const key = line.slice(0, colonIdx).toLowerCase().trim();
-      const value = line.slice(colonIdx + 1).trim();
-      headers[key] = value;
+    const ci = line.indexOf(":");
+    if (ci > 0) {
+      const key = line.slice(0, ci).toLowerCase().trim();
+      headers[key] = line.slice(ci + 1).trim();
       lastKey = key;
     }
   }
@@ -174,8 +197,8 @@ function parseEmail(raw) {
   const from = headers["from"] || "";
   const to = headers["to"] || "";
   const contentType = headers["content-type"] || "";
-
   const body = lines.slice(bodyStart).join("\n");
+
   const isMultipart = /multipart\//i.test(contentType);
   const boundaryMatch = contentType.match(/boundary="?([^";]+)"?/i);
 
@@ -187,41 +210,39 @@ function parseEmail(raw) {
     const boundary = boundaryMatch[1];
     const parts = splitMultipart(body, boundary);
     for (const part of parts) {
-      const partHeaders = parseHeaders(part.headers);
-      const partCt = partHeaders["content-type"] || "";
-      const disposition = partHeaders["content-disposition"] || "";
-      const cte = (partHeaders["content-transfer-encoding"] || "").toLowerCase();
+      const ph = parseHeaders(part.headers);
+      const pct = ph["content-type"] || "";
+      const disp = ph["content-disposition"] || "";
+      const cte = (ph["content-transfer-encoding"] || "").toLowerCase();
       const decoded = decodeBody(part.body, cte);
 
-      if (/attachment|inline/i.test(disposition) && /filename/i.test(disposition)) {
-        const fnMatch = disposition.match(/filename="?([^";]+)"?/i);
+      if (/attachment|inline/i.test(disp) && /filename/i.test(disp)) {
+        const fn = disp.match(/filename="?([^";]+)"?/i);
         attachments.push({
-          filename: fnMatch ? fnMatch[1] : "unknown",
-          content_type: partCt.split(";")[0].trim(),
+          filename: fn ? fn[1] : "unknown",
+          content_type: pct.split(";")[0].trim(),
           size: decoded.length,
         });
-      } else if (/text\/html/i.test(partCt)) {
+      } else if (/text\/html/i.test(pct)) {
         html = decoded;
-      } else if (/text\/plain/i.test(partCt)) {
+      } else if (/text\/plain/i.test(pct)) {
         text = decoded;
-      } else if (/multipart\//i.test(partCt)) {
-        // Recursively parse nested multipart (e.g., alternative inside mixed)
-        const nestedBoundary = partCt.match(/boundary="?([^";]+)"?/i);
-        if (nestedBoundary) {
-          const nestedParts = splitMultipart(part.body, nestedBoundary[1]);
-          for (const np of nestedParts) {
+      } else if (/multipart\//i.test(pct)) {
+        const nb = pct.match(/boundary="?([^";]+)"?/i);
+        if (nb) {
+          const nps = splitMultipart(part.body, nb[1]);
+          for (const np of nps) {
             const nph = parseHeaders(np.headers);
             const nct = nph["content-type"] || "";
             const ncte = (nph["content-transfer-encoding"] || "").toLowerCase();
-            const ndecoded = decodeBody(np.body, ncte);
-            if (/text\/html/i.test(nct) && !html) html = ndecoded;
-            else if (/text\/plain/i.test(nct) && !text) text = ndecoded;
+            const nd = decodeBody(np.body, ncte);
+            if (/text\/html/i.test(nct) && !html) html = nd;
+            else if (/text\/plain/i.test(nct) && !text) text = nd;
           }
         }
       }
     }
   } else {
-    // Non-multipart
     const cte = (headers["content-transfer-encoding"] || "").toLowerCase();
     const decoded = decodeBody(body, cte);
     if (/text\/html/i.test(contentType)) html = decoded;
@@ -234,18 +255,15 @@ function parseEmail(raw) {
 function splitMultipart(body, boundary) {
   const dash = "--" + boundary;
   const parts = body.split(dash);
-  // First piece is preamble (ignore); last piece may be "--" closer (ignore)
   const result = [];
   for (let i = 1; i < parts.length; i++) {
     let chunk = parts[i];
     if (chunk.startsWith("--")) break;
-    // Strip leading \r\n
     chunk = chunk.replace(/^\r?\n/, "");
-    const emptyLineIdx = chunk.search(/\r?\n\r?\n/);
-    if (emptyLineIdx === -1) continue;
-    const headersBlob = chunk.slice(0, emptyLineIdx);
-    let bodyBlob = chunk.slice(emptyLineIdx).replace(/^\r?\n\r?\n/, "");
-    // Strip trailing \r\n before next boundary
+    const empty = chunk.search(/\r?\n\r?\n/);
+    if (empty === -1) continue;
+    const headersBlob = chunk.slice(0, empty);
+    let bodyBlob = chunk.slice(empty).replace(/^\r?\n\r?\n/, "");
     bodyBlob = bodyBlob.replace(/\r?\n--?\s*$/, "");
     result.push({ headers: headersBlob, body: bodyBlob });
   }
@@ -261,11 +279,10 @@ function parseHeaders(blob) {
       out[lastKey] = (out[lastKey] || "") + " " + line.trim();
       continue;
     }
-    const colonIdx = line.indexOf(":");
-    if (colonIdx > 0) {
-      const key = line.slice(0, colonIdx).toLowerCase().trim();
-      const value = line.slice(colonIdx + 1).trim();
-      out[key] = value;
+    const ci = line.indexOf(":");
+    if (ci > 0) {
+      const key = line.slice(0, ci).toLowerCase().trim();
+      out[key] = line.slice(ci + 1).trim();
       lastKey = key;
     }
   }
@@ -287,16 +304,14 @@ function decodeQP(str) {
 }
 
 function decodeMime(s) {
-  // Decode RFC 2047 encoded headers: =?UTF-8?B?...?= or =?UTF-8?Q?...?=
   if (!s) return s;
   return s.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, enc, text) => {
     try {
       if (enc.toUpperCase() === "B") {
         const bytes = atob(text);
         return new TextDecoder(charset).decode(Uint8Array.from(bytes, (c) => c.charCodeAt(0)));
-      } else {
-        return decodeQP(text.replace(/_/g, " "));
       }
+      return decodeQP(text.replace(/_/g, " "));
     } catch {
       return text;
     }

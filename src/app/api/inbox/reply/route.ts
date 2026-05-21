@@ -6,9 +6,46 @@ import { extractSesizareCode } from "@/lib/inbox/extract-code";
 import { identifySender } from "@/lib/inbox/sender-identity";
 import { classifyReply, shouldAutoApply } from "@/lib/inbox/classify";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
+import { getClientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+
+async function logDebug(opts: {
+  admin: ReturnType<typeof createSupabaseAdmin>;
+  req: Request;
+  http_status: number;
+  rawBody: string | null;
+  error_message?: string | null;
+}) {
+  try {
+    const headers: Record<string, string> = {};
+    for (const [k, v] of opts.req.headers.entries()) {
+      const kl = k.toLowerCase();
+      // Skip cookies. Keep authorization but redact value (we want to
+      // see if it was sent + whether it had a Bearer prefix).
+      if (kl === "cookie") continue;
+      if (kl === "authorization") {
+        headers[k] = v.startsWith("Bearer ")
+          ? `Bearer [${v.length - 7} chars]`
+          : `[${v.length} chars, no Bearer prefix]`;
+        continue;
+      }
+      headers[k] = v;
+    }
+    await opts.admin.from("inbox_debug_log").insert({
+      endpoint: "reply",
+      source: opts.req.headers.get("user-agent") ?? "unknown",
+      http_status: opts.http_status,
+      request_headers: headers,
+      request_body: opts.rawBody?.slice(0, 50_000) ?? null,
+      source_ip: getClientIp(opts.req),
+      error_message: opts.error_message ?? null,
+    });
+  } catch {
+    // best-effort
+  }
+}
 
 /**
  * POST /api/inbox/reply
@@ -50,22 +87,40 @@ const payloadSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Capture body upfront so we can log it even if downstream fails.
+  let rawBody: string | null = null;
+  try {
+    rawBody = await req.text();
+  } catch {
+    /* network reset */
+  }
+  const admin = createSupabaseAdmin();
+
   // ─── 1. Auth ────────────────────────────────────────────────────
   const secret = process.env.INBOX_WEBHOOK_SECRET;
   if (!secret) {
     Sentry.captureMessage("INBOX_WEBHOOK_SECRET not configured", { level: "error" });
+    await logDebug({
+      admin, req, http_status: 500, rawBody,
+      error_message: "INBOX_WEBHOOK_SECRET missing on server",
+    });
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${secret}`) {
+    await logDebug({
+      admin, req, http_status: 401, rawBody,
+      error_message: `Auth header mismatch. Got: ${auth ? `${auth.slice(0, 7)}...` : "MISSING"}`,
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // ─── 2. Parse payload ───────────────────────────────────────────
   let body: unknown;
   try {
-    body = await req.json();
+    body = rawBody ? JSON.parse(rawBody) : {};
   } catch {
+    await logDebug({ admin, req, http_status: 400, rawBody, error_message: "Invalid JSON in body" });
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const parsed = payloadSchema.safeParse(body);
@@ -74,11 +129,15 @@ export async function POST(req: Request) {
       level: "warning",
       extra: { issues: parsed.error.issues },
     });
+    await logDebug({
+      admin, req, http_status: 400, rawBody,
+      error_message: `Schema validation failed: ${JSON.stringify(parsed.error.issues).slice(0, 500)}`,
+    });
     return NextResponse.json({ error: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
   }
   const { from, to, subject, body_text, body_html, headers, attachments } = parsed.data;
 
-  const admin = createSupabaseAdmin();
+  // Success path — log at the end (after processing) with status 200.
 
   // ─── 3. Extract code ────────────────────────────────────────────
   const extraction = extractSesizareCode({
@@ -214,6 +273,11 @@ export async function POST(req: Request) {
       });
     }
   }
+
+  await logDebug({
+    admin, req, http_status: 200, rawBody,
+    error_message: `OK | code=${extraction.code ?? "NULL"} | source=${extraction.source} | sesizare=${sesizareId?.slice(0, 8) ?? "NOMATCH"} | ai=${classification.status} | conf=${classification.confidence} | auto=${autoApply}`,
+  });
 
   return NextResponse.json({
     ok: true,
