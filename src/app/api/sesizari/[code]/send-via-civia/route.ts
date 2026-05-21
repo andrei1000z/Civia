@@ -162,9 +162,16 @@ export async function POST(
   }
 
   // Marcheaza sesizarea ca trimisa + log timeline event.
+  //
+  // CRITICAL fix 2026-05-21: anterior `.update()` era await-uit fara
+  // sa-l checkam pentru error → daca esua silent (typo coloana, RLS
+  // policy nepatchata, trigger violation), userul vedea „Trimis automat"
+  // dar DB-ul ramanea sent_via_civia=false → la o re-tentativa,
+  // ramaneam fara „already" check si trimiteam din nou emailul (sau
+  // primaria primea duplicate). Acum: error→Sentry + 500 la client.
   const admin = createSupabaseAdmin();
   const now = new Date().toISOString();
-  await admin
+  const { error: updateError } = await admin
     .from("sesizari")
     .update({
       sent_via_civia: true,
@@ -176,12 +183,46 @@ export async function POST(
     })
     .eq("id", sesizare.id);
 
-  await admin.from("sesizare_timeline").insert({
+  if (updateError) {
+    Sentry.captureMessage("send-via-civia: DB update failed AFTER email sent", {
+      level: "error",
+      tags: { kind: "send_civia_db_update_fail", code: sesizare.code },
+      extra: {
+        sesizare_id: sesizare.id,
+        message_id: result.id,
+        primary_emails: primaryEmails,
+        update_error: updateError.message,
+        update_code: updateError.code,
+        update_details: updateError.details,
+      },
+    });
+    // Emailul a plecat real — nu putem da rollback. Returnam succes la
+    // user (ar fi misleading sa-i spunem ca a esuat, primaria a primit).
+    // Dar log-uim CRITICAL ca sa stim sa reparam DB manual + sa investigam
+    // de ce update-ul nu trece.
+    return NextResponse.json({
+      ok: true,
+      sent_at: now,
+      to: primaryEmails,
+      cc: ccEmails,
+      message_id: result.id,
+      warning: "Email trimis dar DB tracking partial — verifică /api/sesizari/[code] în câteva minute",
+    });
+  }
+
+  const { error: tlError } = await admin.from("sesizare_timeline").insert({
     sesizare_id: sesizare.id,
     event_type: "trimis_via_civia",
     description: `Sesizarea a fost trimisa via Civia catre ${primaryEmails.length} autoritati.`,
     created_by: user.id,
   });
+  if (tlError) {
+    Sentry.captureMessage("send-via-civia: timeline insert failed", {
+      level: "warning",
+      tags: { kind: "send_civia_timeline_fail", code: sesizare.code },
+      extra: { sesizare_id: sesizare.id, tl_error: tlError.message, tl_code: tlError.code },
+    });
+  }
 
   return NextResponse.json({
     ok: true,

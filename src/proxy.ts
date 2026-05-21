@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { generateNonce, buildCspWithNonce } from "@/lib/csp/nonce";
+import { updateSupabaseSession } from "@/lib/supabase/proxy";
 
 // Opt-in via env flag — when CSP_NONCE_MODE=on, we generate a per-request
 // nonce and forward it via x-csp-nonce header so Server Components can
@@ -76,7 +77,21 @@ const LEGACY_REDIRECTS: Record<string, string> = {
 // și similar pe alte județe.
 const NATIONAL_ONLY_PATHS = ["petitii", "ghiduri", "sesizari-publice"] as const;
 
-export default function proxy(request: NextRequest) {
+/**
+ * Per-request supabase session refresh. CRITICAL pentru auth persistence:
+ * fără un getUser() call în middleware, access-token-ul JWT (default
+ * TTL 1h) expiră silent → utilizatorul „logged out" la re-vizită chiar
+ * dacă refresh-token-ul e valid. Bug raportat user 5/21/2026.
+ *
+ * Returnează (response, refreshed) — caller folosește `response` ca
+ * obiect base, sau ignoră refresh-ul când redirect-uim (cookie nu mai
+ * trebuie atașat la redirect).
+ */
+async function refreshAuth(request: NextRequest, baseRes: NextResponse): Promise<NextResponse> {
+  return updateSupabaseSession(request, baseRes);
+}
+
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ─── Legacy routes 308 redirects (rute sterse, vezi LEGACY_REDIRECTS) ──
@@ -111,7 +126,7 @@ export default function proxy(request: NextRequest) {
       // Homepage picker — no caching (varies by cookie presence)
       res.headers.set("Cache-Control", "private, no-store");
       res.headers.set("Vary", "Cookie");
-      return withNonce(res, request);
+      return refreshAuth(request, withNonce(res, request));
     }
     const saved = request.cookies.get(COOKIE_NAME)?.value?.toLowerCase();
     if (saved && COUNTY_SLUGS.has(saved)) {
@@ -127,12 +142,12 @@ export default function proxy(request: NextRequest) {
       // eu am selectat București").
       res.headers.set("Cache-Control", "private, no-store");
       res.headers.set("Vary", "Cookie");
-      return res;
+      return refreshAuth(request, res);
     }
     const res = NextResponse.next();
     res.headers.set("Cache-Control", "private, no-store");
     res.headers.set("Vary", "Cookie");
-    return withNonce(res, request);
+    return refreshAuth(request, withNonce(res, request));
   }
 
   // ─── National-only paths accidentally county-prefixed ──────────────
@@ -156,7 +171,9 @@ export default function proxy(request: NextRequest) {
   }
 
   // ─── County-scoped path shortcuts ───────────────────────────────
-  if (!REDIRECT_EXACT.has(pathname)) return withNonce(NextResponse.next(), request);
+  if (!REDIRECT_EXACT.has(pathname)) {
+    return refreshAuth(request, withNonce(NextResponse.next(), request));
+  }
 
   const savedCounty = request.cookies.get(COOKIE_NAME)?.value;
   const county = savedCounty && COUNTY_SLUGS.has(savedCounty) ? savedCounty : DEFAULT_COUNTY;
@@ -171,27 +188,19 @@ export default function proxy(request: NextRequest) {
   return res;
 }
 
+// Matcher expandat 5/21/2026 ca proxy.ts sa ruleze pe TOATE paginile,
+// nu doar pe rutele specifice. Critic pentru auth persistence:
+// updateSupabaseSession() trebuie să aibă oportunitatea să refresh-eze
+// cookie-urile de sesiune ÎN MIDDLEWARE, înainte ca RSC să le citească.
+// Fără asta, access-token-ul JWT (TTL 1h) expira silent și userul ajungea
+// „logged out" la reîntoarcere chiar dacă refresh-token-ul era valid.
+//
+// Excludem: assets static, API routes (own auth via cookies oricum),
+// _next internal, favicon/manifest/sw, .well-known.
 export const config = {
   matcher: [
-    "/",
-    "/bilete",
-    "/istoric",
-    // Legacy routes redirects (paginile au fost sterse).
-    "/harti",
-    "/aer",
-    "/dezvoltatori",
-    "/buget",
-    "/compara",
-    "/calendar-civic",
-    "/impact",
-    "/educatie",
-    "/sanatate",
-    "/siguranta",
-    "/:slug([a-z]{1,3})/harti/:path*",
-    "/:slug([a-z]{1,3})/aer/:path*",
-    // National-only paths accidentally prefixed cu județ.
-    "/:slug([a-z]{1,3})/petitii/:path*",
-    "/:slug([a-z]{1,3})/ghiduri/:path*",
-    "/:slug([a-z]{1,3})/sesizari-publice/:path*",
+    // Run on everything EXCEPT static files & internal Next paths.
+    // Pattern echivalent cu „toate paginile + bypass static".
+    "/((?!_next/static|_next/image|_next/data|favicon\\.ico|icon-|apple-icon|manifest\\.webmanifest|robots\\.txt|sitemap\\.xml|sw\\.js|opengraph-image|geojson/|images/|sounds/|fonts/|\\.well-known/).*)",
   ],
 };
