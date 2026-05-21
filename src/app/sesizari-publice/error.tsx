@@ -11,10 +11,11 @@ import { AlertTriangle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
  * fundal (3 incercari, 2s/4s/8s spacing) inainte sa mai vada user-ul
  * eroarea, plus si „Reincearca" manual ramane pentru cazuri persistente.
  */
-// Retry rapid pentru transient errors (Supabase realtime drop, network blip).
-// Prima incercare imediata (500ms) — daca a fost glitch, pagina apare instant.
-// Restul cu backoff scurt pana la 3s. Total max ~5s (vs 14s anterior).
-const AUTO_RETRY_DELAYS_MS = [500, 1500, 3000];
+// Retry cu backoff conservator. Anterior aveam 500ms prima retry, dar
+// asta cauza render loop care omora renderer-ul Firefox („This page
+// couldn't load" — raportat user 5/21/2026). Acum: 1.5s/3s/6s — destul
+// timp pentru react reconciliation + microtasks intre retry-uri.
+const AUTO_RETRY_DELAYS_MS = [1500, 3000, 6000];
 
 export default function Error({
   error,
