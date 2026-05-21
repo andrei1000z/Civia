@@ -129,6 +129,31 @@ export default async function AuthorityDetailPage({ params }: { params: Promise<
     ...(county
       ? { areaServed: { "@type": "AdministrativeArea", name: county.name } }
       : {}),
+    // Citizen-derived "aggregate rating" — 1-5 stars derivat din resolveRate
+    // (0% → 1.0 stele, 100% → 5.0 stele). Vizibil in SERP la cautari de
+    // tip „primaria sector X". Doar daca avem ≥5 sesizari (statistic
+    // semnificativ pentru Google să accepte ratingul).
+    ...(stats.total >= 5
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: (1 + (stats.resolveRate / 100) * 4).toFixed(1),
+            ratingCount: stats.total,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Acasă", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Autorități", item: `${SITE_URL}/autoritati` },
+      { "@type": "ListItem", position: 3, name: authority.name, item: `${SITE_URL}/autoritati/${authority.id}` },
+    ],
   };
 
   return (
@@ -136,6 +161,10 @@ export default async function AuthorityDetailPage({ params }: { params: Promise<
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       <PageHero

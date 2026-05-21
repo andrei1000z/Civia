@@ -297,3 +297,35 @@ const SOURCE_TEXT_OVERRIDES: Record<string, string> = {
 export function sourceTextColor(source: string): string {
   return SOURCE_TEXT_OVERRIDES[source] ?? SOURCE_COLORS[source] ?? "#64748b";
 }
+
+// Romanian political party colors — single source of truth pentru charts +
+// primari + romania-structura. Brand colors oficiale dupa logo-urile fiecarui
+// partid. „Alții" e neutru gri pentru aggregare.
+export const PARTY_COLORS: Record<string, string> = {
+  PSD: "#DC2626",          // roșu
+  PNL: "#EAB308",          // galben
+  USR: "#2563EB",          // albastru
+  "USR-PLUS": "#2563EB",
+  "PD-L": "#F97316",       // portocaliu
+  PD: "#F97316",
+  PNȚCD: "#0F766E",        // verde închis
+  FSN: "#6366F1",          // indigo (post-revoluție)
+  CDR: "#0F766E",
+  PDSR: "#DC2626",
+  ALDE: "#8B5CF6",         // violet
+  PMP: "#0EA5E9",          // cyan
+  AUR: "#1F2937",          // gri foarte închis
+  USD: "#F97316",
+  "USL (PSD+PNL)": "#DC2626",
+  Alții: "#94A3B8",        // slate-400
+};
+
+// Civic event severity scale — folosit pentru notificari, evenimente, alerts.
+// 4-level: minor (info gri) → moderat (info albastru) → major (warn galben)
+// → critic (error roșu). Toate tokens, nu hardcoded în componente.
+export const EVENT_SEVERITY_COLORS: Record<"minor" | "moderat" | "major" | "critic", string> = {
+  minor: "#94A3B8",     // slate-400
+  moderat: "#2563EB",   // blue-600
+  major: "#EAB308",     // yellow-500
+  critic: "#DC2626",    // red-600
+};

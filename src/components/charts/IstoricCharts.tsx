@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { primari, consiliiGenerale } from "@/data/primari";
+import { PARTY_COLORS } from "@/lib/constants";
 
 const tooltipStyle = {
   backgroundColor: "var(--color-surface)",
@@ -59,24 +60,7 @@ export function CompozitieCGChart() {
     data.some((d) => (d[p] as number) > 0)
   );
 
-  const colorMap: Record<string, string> = {
-    PSD: "#DC2626",
-    PNL: "#EAB308",
-    USR: "#2563EB",
-    "PD-L": "#F97316",
-    PD: "#F97316",
-    PNȚCD: "#0F766E",
-    "USR-PLUS": "#2563EB",
-    FSN: "#6366F1",
-    CDR: "#0F766E",
-    PDSR: "#DC2626",
-    ALDE: "#8B5CF6",
-    PMP: "#0EA5E9",
-    AUR: "#1F2937",
-    USD: "#F97316",
-    "USL (PSD+PNL)": "#DC2626",
-    Alții: "#94A3B8",
-  };
+  const colorMap = PARTY_COLORS;
 
   return (
     <ResponsiveContainer width="100%" height={320}>
