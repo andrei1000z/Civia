@@ -41,10 +41,11 @@ import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
   variable: "--font-inter",
-  display: "swap",
+  // 5/22/2026 — display: "optional" în loc de "swap" → elimină FOIT/FOUT.
+  // Browser-ul folosește system font dacă custom-ul nu se încarcă în 100ms.
+  // Zero layout shift după (vs `swap` care reflua text-ul când vine font-ul).
+  display: "optional",
   weight: ["400", "500", "600", "700"],
-  // adjustFontFallback reduce layout shift când font-ul custom se încarcă —
-  // Next ajustează metricile font-ului fallback să fie aproape identice.
   adjustFontFallback: true,
   preload: true,
 });
@@ -52,10 +53,7 @@ const inter = Inter({
 const sora = Sora({
   subsets: ["latin", "latin-ext"],
   variable: "--font-sora",
-  display: "swap",
-  // 500 weight era inclus dar nefolosit nicăieri (verificat 2026-04-28).
-  // Sora e font de display — folosit doar pentru titluri (font-bold +
-  // font-extrabold). Drop 500 → ~10 KB savings la încărcare.
+  display: "optional",
   weight: ["600", "700", "800"],
   adjustFontFallback: true,
   preload: true,

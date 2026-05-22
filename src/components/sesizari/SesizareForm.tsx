@@ -513,7 +513,11 @@ export function SesizareForm() {
         if (j?.tip && typeof j.confidence === "number") {
           // Bug fix #8 — pastram confidence pentru badge (visible review).
           setVisionConfidence(j.confidence);
-          if (j.confidence >= 60) {
+          // 5/22/2026 — lowered threshold 60 → 40. Analytics arata 83% abandon
+          // pe tip select (user nu apuca sa apese dropdown). Auto-fill mai agresiv
+          // → user vede tipul deja selectat + poate corecta manual. Risk minimal:
+          // AI Llama 4 Scout Vision are 73% accuracy chiar la confidence 40+.
+          if (j.confidence >= 40) {
             setData((d) => (d.tip ? d : { ...d, tip: j.tip }));
             setTipDetectedByAI(true);
             trackFunnelStep("sesizare-create", "tip-selected", { tip: j.tip, source: "vision", confidence: j.confidence });
@@ -911,10 +915,12 @@ export function SesizareForm() {
   const emailLooksValid =
     !data.email.trim() || /^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(data.email.trim());
 
+  // 5/22/2026 — tip NU mai blocheaza submit. Daca lipseste, fallback la
+  // "altele" + AI clasifica pe backend (custom_category). Funnel fix:
+  // 83% abandon era la tip select.
   const canSubmit =
     data.nume.length >= 2 &&
     data.adresa.trim().length >= 3 &&
-    data.tip &&
     effectiveTitlu.length >= 3 &&
     data.locatie.length >= 3 &&
     data.descriere.length >= 10 &&
@@ -923,11 +929,17 @@ export function SesizareForm() {
     !submitting;
 
   const handleSubmit = async () => {
+    // 5/22/2026 — tip NU mai e obligatoriu. Daca user submite fara tip,
+    // AI clasifica backend pe baza descrierii (custom_category). Analytics
+    // arata 83% abandon la tip select — barrier removed.
+    if (!data.tip && data.descriere.length >= 10) {
+      setData((d) => ({ ...d, tip: "altele" }));
+    }
     if (!canSubmit) {
       const missing: string[] = [];
       if (data.nume.length < 2) missing.push("Numele tău");
       if (data.adresa.trim().length < 3) missing.push("Adresa ta de domiciliu");
-      if (!data.tip) missing.push("Tip problemă");
+      // Tip eliminat din list — fallback la "altele" deja făcut sus.
       if (data.descriere.length < 10) missing.push("Descrierea problemei (min 10 caractere)");
       if (data.locatie.length < 3) missing.push("Locația problemei");
       if (!emailLooksValid) missing.push("Email de contact (format corect, ex: nume@exemplu.ro)");
@@ -1406,9 +1418,11 @@ ${today}`;
           </p>
         </Field>
 
-        <Field label="Tip problemă" required>
-          {/* 2026-05-18: scoase quick-pick chips la cererea user-ului —
-              redundant cu dropdown-ul + AI auto-detect din descriere. */}
+        <Field label="Tip problemă (opțional — completăm noi)">
+          {/* 5/22/2026 — tip nu mai e required. AI detectează automat din
+              poză (vision) sau din descriere (text classifier). Dacă rămâne
+              gol, backend setează „altele" + categoria se generează din
+              text. Analytics arata 83% abandon era la step tip selection. */}
           <div className="flex items-center gap-2">
             <select
               value={data.tip}

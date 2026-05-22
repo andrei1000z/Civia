@@ -79,7 +79,7 @@ export async function StiriWidget() {
   if (!hero) return null;
 
   return (
-    <section className="py-12 md:py-16 bg-[var(--color-surface)] border-y border-[var(--color-border)]">
+    <section className="py-12 md:py-16 bg-[var(--color-surface)] border-y border-[var(--color-border)] min-h-[480px]">
       <div className="container-narrow">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold inline-flex items-center gap-2">
