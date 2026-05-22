@@ -252,24 +252,73 @@ self.addEventListener("push", (event) => {
   } catch {
     // Daca data nu e JSON, folosim defaults.
   }
+  // 5/22/2026 — TWA Play Store prep: rich notifications cu actions.
+  // Suportate de Chrome Android 53+ → tap pe „Vezi" deschide direct
+  // pagina sesizării fără să mai apese din UI. Toate actions au icon
+  // 24x24 monochrome pentru consistență cu Material You.
+  const actions = [];
+  if (payload.url) {
+    actions.push({ action: "view", title: "Vezi" });
+  }
+  if (payload.shareUrl) {
+    actions.push({ action: "share", title: "Distribuie" });
+  }
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: payload.icon || "/icon-192.png",
-      badge: "/icon-192.png",
-      tag: payload.tag,
-      data: { url: payload.url || "/" },
-      // Vibratie scurta + actionable — userul tap → deschide pagina
-      vibrate: [120, 80, 120],
-      requireInteraction: false,
-    }),
+    (async () => {
+      await self.registration.showNotification(payload.title, {
+        body: payload.body,
+        icon: payload.icon || "/icon-192.png",
+        // Badge = monochrome icon Android arată în status bar.
+        // Folosim 96x96 dedicat pentru claritate.
+        badge: "/icon-192.png",
+        // Tag = coalescing. Notificări cu același tag se înlocuiesc
+        // (ex: 3 update-uri pe sesizare 00045 → 1 notificare, nu stack).
+        tag: payload.tag,
+        data: { url: payload.url || "/", shareUrl: payload.shareUrl },
+        // Vibratie scurta + actionable
+        vibrate: [120, 80, 120],
+        // requireInteraction=true → notificarea rămâne pe ecran până
+        // userul interactionează (NU dispare după 5s). Recomandăm pentru
+        // răspunsuri primării care sunt importante.
+        requireInteraction: payload.requireInteraction === true,
+        actions: actions.length > 0 ? actions : undefined,
+        // Imagine mare (poza problemei) — vizibilă în expand notification.
+        image: payload.image,
+        // Renotify=true → vibrează din nou chiar dacă tag-ul există.
+        renotify: payload.renotify === true,
+        // Silent=false → sunet + vibrație. true = doar badge.
+        silent: payload.silent === true,
+      });
+
+      // App Badge API — Android launcher arată număr peste icon.
+      // Suportat Chrome 81+ → utilizatorul vede „3" pe icon Civia
+      // fără să deschidă app.
+      if ("setAppBadge" in self.navigator && typeof payload.badgeCount === "number") {
+        try {
+          await self.navigator.setAppBadge(payload.badgeCount);
+        } catch {
+          /* permission denied — silent */
+        }
+      }
+    })(),
   );
 });
 
 // Click pe notification → focus tab existent SAU deschide URL nou.
+// 5/22/2026 — actions support pentru rich notifications (Vezi / Distribuie).
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification?.data?.url || "/";
+  const data = event.notification?.data || {};
+  let targetUrl = data.url || "/";
+
+  // Handle specific actions
+  if (event.action === "share" && data.shareUrl) {
+    // Pentru share, deschidem direct share URL în loc de target
+    targetUrl = data.shareUrl;
+  }
+  // „view" sau click pe body notification → folosim default targetUrl
+  // Acțiuni custom alte → fallback la URL principal
+
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
