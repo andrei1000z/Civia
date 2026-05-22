@@ -94,13 +94,14 @@
   --color-accent-soft: #7f1d1d;
   --color-accent-on-soft: #fecaca;
 
-  /* 5/22/2026 v2 — schimbat din #000000 (pur OLED black) la #050a0a
-     (foarte-foarte usor tinted spre dark-teal). User a raportat ca pe pur
-     negru radialele de fundal nu se vad. Tinted bg + radials cu opacity
-     0.20-0.32 = gradient vizibil pe tot ecranul fara sa-i strice „OLED
-     premium black look" (e literal 5 puncte de luma deasupra negru pur).
-     Surface-uri raman #171717 — contrast preservat. */
-  --color-bg: #050a0a;
+  /* 5/22/2026 v4 — schimbat din #050a0a (cvasi-negru) la #0a1f1f (dark
+     teal vizibil). v3 mai avea probleme: la marginile dintre radial-uri
+     unde fade-uia la transparent, se vedea #050a0a (~pur negru) → user
+     percepe „banda neagra" pe partea de jos a viewport-ului.
+     Acum bg-ul DEFAULT e tinted teal puternic → chiar si fara radial-uri
+     deasupra, pagina arata color. Radialele adauga doar profunzime.
+     Surface-uri raman #171717 — contrast vizibil pastrat. */
+  --color-bg: #0a1f1f;
 
   /* Dark mode — radials STRONG ca sa se vada pe bg-ul intunecat. */
   --bg-radial-emerald: rgba(16, 185, 129, 0.32);
@@ -263,20 +264,26 @@ html, body {
      body → transparent, content normal.
    Vechiul mesh static din body e replicat in AuroraBackground (animat). */
 html {
-  /* Bug fix 5/22/2026 v3 — user a raportat ca light mode are „smear negru"
-     pe alb (radialele rgba(16,185,129,0.32) sunt vizual DARK pe alb), iar
-     dark mode tot avea bg dark dincolo de fold.
-     v3: separate CSS vars per-mode (--bg-radial-* light pastel, dark strong).
-     Acum light mode foloseste 0.05-0.08 opacity tints pastel,
-     dark mode foloseste 0.20-0.32 opacity tints strong. */
+  /* Bug fix 5/22/2026 v4 — user (3rd report cu Gemini diagnostic) tot vede
+     „banda neagra" pe partea de jos a viewport-ului. Cauza identificata:
+     radialele aveau `transparent 50%` → la marginile lor se vedea
+     `--color-bg` = #050a0a (quasi-negru).
+     v4 fixes:
+       (a) `--color-bg` mutat la #0a1f1f (dark teal vizibil tinted) sus
+       (b) Radialele extinse la 70% (era 50%) → mai putin transparent space
+       (c) Adaugat un linear-gradient ULTIM strat sub radiale ca safety net
+           (gradient diagonal emerald → teal → dark teal) — garantat color
+           pe tot viewport-ul, chiar daca radialele s-ar fade total. */
   background:
-    radial-gradient(circle at 10% 5%, var(--bg-radial-emerald) 0px, transparent 50%),
-    radial-gradient(circle at 90% 10%, var(--bg-radial-aqua) 0px, transparent 50%),
-    radial-gradient(circle at 50% 40%, var(--bg-radial-violet) 0px, transparent 55%),
-    radial-gradient(circle at 85% 60%, var(--bg-radial-emerald) 0px, transparent 50%),
-    radial-gradient(circle at 15% 75%, var(--bg-radial-aqua) 0px, transparent 55%),
-    radial-gradient(circle at 50% 95%, var(--bg-radial-violet) 0px, transparent 50%),
-    radial-gradient(circle at 95% 95%, var(--bg-radial-emerald) 0px, transparent 50%),
+    radial-gradient(circle at 10% 5%, var(--bg-radial-emerald) 0px, transparent 70%),
+    radial-gradient(circle at 90% 10%, var(--bg-radial-aqua) 0px, transparent 70%),
+    radial-gradient(circle at 50% 40%, var(--bg-radial-violet) 0px, transparent 75%),
+    radial-gradient(circle at 85% 60%, var(--bg-radial-emerald) 0px, transparent 70%),
+    radial-gradient(circle at 15% 75%, var(--bg-radial-aqua) 0px, transparent 75%),
+    radial-gradient(circle at 50% 95%, var(--bg-radial-violet) 0px, transparent 70%),
+    radial-gradient(circle at 95% 95%, var(--bg-radial-emerald) 0px, transparent 70%),
+    /* Safety net — diagonal linear gradient acopera tot viewport-ul */
+    linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(6, 78, 59, 0.05) 50%, rgba(10, 31, 31, 1) 100%),
     var(--color-bg);
   background-attachment: fixed;
 }
