@@ -140,6 +140,13 @@ export function NewsArticleJsonLd({
       : {}),
     inLanguage: "ro-RO",
     isAccessibleForFree: true,
+    // Plan AI #7 (5/22/2026) — speakable schema pentru voice search +
+    // AI citations (Google Assistant, Alexa, ChatGPT/Perplexity preview).
+    // CSS selectors target headline + first paragraph (TL;DR).
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", "article p:first-of-type", ".ai-summary"],
+    },
   };
 
   // Attribution back to the source publisher when present. Google +
@@ -210,6 +217,11 @@ export function HowToJsonLd({
       text: s.text,
       ...(s.url ? { url: s.url } : {}),
     })),
+    // Plan AI #7 — speakable pentru voice + AI citations.
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", ".howto-step-name", ".howto-step-text"],
+    },
   };
   return (
     <script
