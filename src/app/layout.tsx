@@ -143,7 +143,10 @@ export default function RootLayout({
   return (
     <html
       lang="ro"
-      className={`${inter.variable} ${sora.variable} h-full antialiased`}
+      // 5/22/2026 — dark forever. `dark` class direct pe SSR ca sa nu mai
+      // existe „flash of light mode" pe primul paint inainte sa hidrateze
+      // ThemeProvider. CSS-ul `.dark { --color-bg: ... }` se aplica imediat.
+      className={`${inter.variable} ${sora.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
       <head>

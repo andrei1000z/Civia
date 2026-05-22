@@ -27,7 +27,7 @@ import { useToast } from "@/components/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
-import { ThemeSettings } from "@/components/ThemeSettings";
+// ThemeSettings eliminat 5/22/2026 — dark mode forever, fara toggle.
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
@@ -544,11 +544,11 @@ export default function ContPage() {
               </div>
             </section>
 
-            {/* Aspect */}
+            {/* Aspect — ThemeSettings (light/dark/system toggle) eliminat
+                5/22/2026, dark mode e default permanent. Pastram doar
+                SoundsToggle pentru efectele audio UI. */}
             <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
               <SectionTitle icon={Sparkles}>Aspect</SectionTitle>
-              <ThemeSettings />
-              {/* 2026-05-19 Liquid Civic: sunete UI opt-in (default off). */}
               <SoundsToggle />
             </section>
 

@@ -1,63 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import type { ReactNode } from "react";
-import { writeRemotePreferences, type UserPreferences } from "@/lib/preferences/sync";
 
 /**
- * Bridge intre next-themes si /lib/preferences/sync. Cand userul schimba
- * tema, dam push catre DB (debounced 500ms). Cand civia:prefs-hydrated
- * apare cu un theme remote diferit, setam tema local.
+ * 5/22/2026 — DARK MODE FOREVER. User a eliminat light mode complet.
+ * Nu mai folosim next-themes — adăugăm pur și simplu `dark` class pe
+ * <html> și asta e tot. Niciun toggle, nicio sync cross-device pentru
+ * theme (theme nu mai e o preferință user).
  */
-function ThemeBridge() {
-  const { theme, setTheme } = useTheme();
-
-  // Pe schimbare locala → push catre DB.
-  useEffect(() => {
-    if (!theme) return;
-    if (theme !== "light" && theme !== "dark" && theme !== "system") return;
-    writeRemotePreferences({ theme });
-  }, [theme]);
-
-  // Pe hydrate de la login → preia tema remote daca difera.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<UserPreferences>).detail;
-      if (!detail?.theme) return;
-      if (detail.theme === theme) return;
-      setTheme(detail.theme);
-    };
-    window.addEventListener("civia:prefs-hydrated", handler as EventListener);
-    return () => window.removeEventListener("civia:prefs-hydrated", handler as EventListener);
-  }, [theme, setTheme]);
-
-  return null;
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Add theme-ready class after hydration so CSS transitions activate.
-  // This prevents the flash-of-wrong-theme on initial load.
   useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("dark");
+    // Pastram theme-ready ca sa nu rupem CSS transitions defined în globals.css.
     requestAnimationFrame(() => {
-      document.documentElement.classList.add("theme-ready");
+      root.classList.add("theme-ready");
     });
   }, []);
 
-  return (
-    <NextThemesProvider
-      attribute="class"
-      // 2026-05-19: default dark mode pentru utilizatorii noi (user request).
-      // Inainte: „system" → respecta prefers-color-scheme al OS-ului.
-      // Acum: „dark" default, plus enableSystem={false} ca sa fortam dark
-      // chiar daca user are OS light. User logat poate schimba din /cont/setari,
-      // schimbarea se sincronizeaza cross-device via preferences sync.
-      defaultTheme="dark"
-      enableSystem={false}
-      disableTransitionOnChange={false}
-    >
-      <ThemeBridge />
-      {children}
-    </NextThemesProvider>
-  );
+  return <>{children}</>;
 }

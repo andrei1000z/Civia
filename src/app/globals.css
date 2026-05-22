@@ -1321,13 +1321,8 @@ textarea:hover:not(:focus):not(:disabled) {
   animation: lc-aurora-drift 60s ease-in-out infinite;
 }
 
-/* 5/22/2026 v3 — light mode: reduce opacity la 0.35 (era 0.5+) si MAI
-   blur (100px vs 80px) → tinte color soft, NU smear washed-out alb.
-   Dark mode pastreaza opacities default. */
-html:not(.dark) .lc-aurora-blob {
-  opacity: 0.35 !important;
-  filter: blur(100px);
-}
+/* 5/22/2026 — light mode eliminat. Selector kept ca dead branch (nu mai
+   declanseaza dar nu strica nimic, html primeste mereu `.dark`). */
 
 @media (prefers-reduced-motion: reduce) {
   .lc-aurora-blob {
