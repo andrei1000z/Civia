@@ -20,6 +20,11 @@ if (
 }
 
 const nextConfig: NextConfig = {
+  // Explicit distDir + outputFileTracingRoot — 5/22/2026 Vercel modifyConfig
+  // crapa cu „path must be string, received undefined" pentru ca expecta
+  // aceste optiuni explicit setate, nu fallback la __dirname.
+  distDir: ".next",
+  outputFileTracingRoot: process.cwd(),
   // În producție, eliminăm console.log-urile (dar păstrăm warn/error
   // pentru Sentry). Reduce bundle + previne PII leaking accidental.
   compiler: {
