@@ -21,6 +21,14 @@
   --color-text: #18181B;
   --color-text-muted: #71717A;
 
+  /* Background radial tints — light mode v3 (5/22/2026):
+     0.05-0.08 era prea slab → user vedea „alb-ish smear" (washed out).
+     Acum 0.15-0.22 → tinte COLORATE vizibile pe alb (verde/aqua/violet
+     subtile dar prezente), nu mai e bg pur alb. */
+  --bg-radial-emerald: rgba(16, 185, 129, 0.22);
+  --bg-radial-aqua: rgba(56, 189, 248, 0.18);
+  --bg-radial-violet: rgba(168, 85, 247, 0.15);
+
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.07), 0 4px 10px rgba(0, 0, 0, 0.04);
@@ -93,6 +101,11 @@
      premium black look" (e literal 5 puncte de luma deasupra negru pur).
      Surface-uri raman #171717 — contrast preservat. */
   --color-bg: #050a0a;
+
+  /* Dark mode — radials STRONG ca sa se vada pe bg-ul intunecat. */
+  --bg-radial-emerald: rgba(16, 185, 129, 0.32);
+  --bg-radial-aqua: rgba(56, 189, 248, 0.28);
+  --bg-radial-violet: rgba(168, 85, 247, 0.20);
   --color-surface: #171717;
   --color-surface-2: #262626;
   --color-border: #2e2e2e;
@@ -250,21 +263,20 @@ html, body {
      body → transparent, content normal.
    Vechiul mesh static din body e replicat in AuroraBackground (animat). */
 html {
-  /* Bug fix 5/22/2026 v2 — user a raportat (a doua oara cu screenshot-uri)
-     ca background-ul ramane negru solid. Cauza primei iteratii: --color-bg
-     in dark mode e #000000 (negru PUR), iar radialele cu opacity 0.06-0.12
-     erau aproape invizibile pe negru.
-     v2: opacities crescute la 0.20-0.32 (3-4x mai vizibil) + 7 radiale acopera
-     tot viewport-ul (colțuri + centru). background-attachment: fixed
-     garanteaza ca scroll-ul pastreaza efectul. */
+  /* Bug fix 5/22/2026 v3 — user a raportat ca light mode are „smear negru"
+     pe alb (radialele rgba(16,185,129,0.32) sunt vizual DARK pe alb), iar
+     dark mode tot avea bg dark dincolo de fold.
+     v3: separate CSS vars per-mode (--bg-radial-* light pastel, dark strong).
+     Acum light mode foloseste 0.05-0.08 opacity tints pastel,
+     dark mode foloseste 0.20-0.32 opacity tints strong. */
   background:
-    radial-gradient(circle at 10% 5%, rgba(16, 185, 129, 0.32) 0px, transparent 50%),
-    radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.28) 0px, transparent 50%),
-    radial-gradient(circle at 50% 40%, rgba(168, 85, 247, 0.18) 0px, transparent 55%),
-    radial-gradient(circle at 85% 60%, rgba(16, 185, 129, 0.25) 0px, transparent 50%),
-    radial-gradient(circle at 15% 75%, rgba(56, 189, 248, 0.22) 0px, transparent 55%),
-    radial-gradient(circle at 50% 95%, rgba(168, 85, 247, 0.20) 0px, transparent 50%),
-    radial-gradient(circle at 95% 95%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+    radial-gradient(circle at 10% 5%, var(--bg-radial-emerald) 0px, transparent 50%),
+    radial-gradient(circle at 90% 10%, var(--bg-radial-aqua) 0px, transparent 50%),
+    radial-gradient(circle at 50% 40%, var(--bg-radial-violet) 0px, transparent 55%),
+    radial-gradient(circle at 85% 60%, var(--bg-radial-emerald) 0px, transparent 50%),
+    radial-gradient(circle at 15% 75%, var(--bg-radial-aqua) 0px, transparent 55%),
+    radial-gradient(circle at 50% 95%, var(--bg-radial-violet) 0px, transparent 50%),
+    radial-gradient(circle at 95% 95%, var(--bg-radial-emerald) 0px, transparent 50%),
     var(--color-bg);
   background-attachment: fixed;
 }
@@ -1307,6 +1319,14 @@ textarea:hover:not(:focus):not(:disabled) {
   opacity: 0.6;
   pointer-events: none;
   animation: lc-aurora-drift 60s ease-in-out infinite;
+}
+
+/* 5/22/2026 v3 — light mode: reduce opacity la 0.35 (era 0.5+) si MAI
+   blur (100px vs 80px) → tinte color soft, NU smear washed-out alb.
+   Dark mode pastreaza opacities default. */
+html:not(.dark) .lc-aurora-blob {
+  opacity: 0.35 !important;
+  filter: blur(100px);
 }
 
 @media (prefers-reduced-motion: reduce) {
