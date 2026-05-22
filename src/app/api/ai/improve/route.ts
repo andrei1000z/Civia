@@ -12,6 +12,7 @@ import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
 import { validateFormalText } from "@/lib/sesizari/formal-text-validator";
+import { checkAndIncrementQuota } from "@/lib/ai/budget";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -135,6 +136,20 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: `Prea multe cereri. Reîncearcă în ${Math.ceil(rl.resetIn / 1000)}s.` },
       { status: 429, headers: { "Retry-After": String(Math.ceil(rl.resetIn / 1000)) } }
+    );
+  }
+
+  // Batch 5 (5/22/2026) — quota check inainte de AI call (plan item #74 + #91).
+  // Daca user a atins quota zilnică (50 calls/zi default) sau global
+  // budget e atins → return 429 cu mesaj clar. Previne abuse + cost spike.
+  const quota = await checkAndIncrementQuota({
+    identifier: ip,
+    feature: "improve",
+  });
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: quota.reason ?? "Quota AI atinsă" },
+      { status: 429 },
     );
   }
 

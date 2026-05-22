@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { detectPromptInjection } from "@/lib/ai/pii-mask";
+import { checkAndIncrementQuota } from "@/lib/ai/budget";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -173,6 +174,17 @@ export async function POST(req: Request) {
         error: "Prea multe mesaje. Asteapta 15 minute.",
         resetIn: Math.ceil(rl.resetIn / 1000),
       },
+      { status: 429 },
+    );
+  }
+
+  // Batch 5 (5/22/2026) — daily quota check (plan item #74).
+  // Chat e cel mai accesibil endpoint AI → cel mai abuzat. Default
+  // 50 calls/zi/IP + global 5000/zi. Reset zilnic via TTL Redis.
+  const quota = await checkAndIncrementQuota({ identifier: ip, feature: "chat" });
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: quota.reason ?? "Quota AI atinsa" },
       { status: 429 },
     );
   }

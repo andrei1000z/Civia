@@ -3,6 +3,7 @@ import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { routeFromImage } from "@/lib/groq/vision-routing";
 import { analyticsRedis, KEY } from "@/lib/analytics/redis";
+import { checkAndIncrementQuota } from "@/lib/ai/budget";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -33,6 +34,16 @@ export async function POST(req: Request) {
   const rl = await rateLimitAsync(`vision-route:${ip}`, { limit: 30, windowMs: 60 * 60_000 });
   if (!rl.success) {
     return NextResponse.json({ error: "Prea multe analize. Asteapta o ora." }, { status: 429 });
+  }
+
+  // Batch 5 (5/22/2026) — quota check (plan item #74).
+  // Vision e cel mai costisitor AI call (Groq 17B + image). Strict limit.
+  const quota = await checkAndIncrementQuota({ identifier: ip, feature: "vision" });
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: quota.reason ?? "Quota AI vision atinsa" },
+      { status: 429 },
+    );
   }
 
   let body: unknown;
