@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Megaphone, Camera, Send, Sparkles, Users } from "lucide-react";
+import { ArrowRight, TrendingUp, Megaphone, Send, Users } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { CountyPicker } from "./CountyPicker";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
@@ -214,101 +214,8 @@ export default async function HomePage() {
       {/* INTRERUPERI WIDGET */}
       <IntreruperiWidget />
 
-      {/* HOW IT WORKS — explainer + tail CTA */}
-      <section className="py-16 md:py-20">
-        <div className="container-narrow">
-          <div className="text-center mb-12">
-            <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-2">
-              De la problemă la răspuns oficial — în 3 pași
-            </h2>
-            <p className="text-[var(--color-text-muted)]">
-              Sub 2 minute. Fără formulare complicate, fără drumuri la primărie.
-            </p>
-          </div>
-
-          {/* Connector line behind the cards on desktop — subtle visual
-              cue that the steps are sequential. Hidden on mobile (cards
-              stack vertically; the line would just float). */}
-          <div className="relative grid md:grid-cols-3 gap-6 lg:gap-8 mb-10">
-            <div
-              className="hidden md:block absolute top-8 left-[12%] right-[12%] h-px bg-gradient-to-r from-transparent via-[var(--color-primary)]/30 to-transparent pointer-events-none"
-              aria-hidden="true"
-            />
-            <Step
-              num={1}
-              icon={<Camera size={20} aria-hidden="true" />}
-              title="Fotografiază și localizează"
-              text="O poză clară cu problema + un reper. GPS-ul tău prinde automat adresa și sectorul."
-            />
-            <Step
-              num={2}
-              icon={<Sparkles size={20} aria-hidden="true" />}
-              title="Scrie 2-3 rânduri în română simplă"
-              text="Transformăm textul tău într-o cerere formală cu temei legal (OG 27/2002) și alegem singuri autoritatea competentă."
-            />
-            <Step
-              num={3}
-              icon={<Send size={20} aria-hidden="true" />}
-              title="Trimite și urmărește răspunsul"
-              text="Un click deschide emailul către primărie, deja completat. Primești un cod cu care urmărești răspunsul în cele 30 de zile."
-            />
-          </div>
-
-          <div className="text-center">
-            <Link
-              href="/sesizari"
-              className="inline-flex items-center gap-2 h-12 px-8 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] active:scale-[0.97] transition-all shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-            >
-              Începe — fă o sesizare în 60 de secunde
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* 5/22/2026 — scoasă secțiunea „De la problemă la răspuns oficial
+          — în 3 pași" + funcția Step la cererea user-ului. */}
     </>
-  );
-}
-
-function Step({
-  num,
-  icon,
-  title,
-  text,
-}: {
-  num: number;
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 transition-all">
-      {/* Big numeric badge top-right — gives the eye an anchor when
-          scanning a row of three identical-looking cards. */}
-      <span
-        className="absolute top-4 right-4 text-4xl font-extrabold text-[var(--color-primary)]/10 leading-none tabular-nums select-none pointer-events-none"
-        aria-hidden="true"
-      >
-        {num}
-      </span>
-      <div className="flex items-start gap-4 mb-3">
-        <div
-          className="relative shrink-0 w-12 h-12 rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-emerald-900 flex items-center justify-center text-white shadow-[var(--shadow-2)] z-10"
-          aria-hidden="true"
-        >
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className="inline-block text-[10px] uppercase tracking-wider font-bold text-[var(--color-primary)] mb-1">
-            Pasul {num}
-          </span>
-          <h3 className="font-[family-name:var(--font-sora)] font-bold text-base leading-tight">
-            {title}
-          </h3>
-        </div>
-      </div>
-      <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-        {text}
-      </p>
-    </div>
   );
 }
