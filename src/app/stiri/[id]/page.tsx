@@ -199,7 +199,9 @@ export default async function StireDetailPage({
       ? stire.ai_summary
       : null;
 
-  const related = await getRelatedArticles(stire);
+  // 5/22/2026 — getRelatedArticles call eliminat (sectiunea Știri similare
+  // a fost scoasa la cererea user-ului). Functia ramane definita pentru
+  // potentiala re-activare ulterioara, dar nu mai face Supabase query.
   const sourceColor = SOURCE_COLORS[stire.source] ?? "#64748b";
   // Mid-tone variant for plain-text rendering on neutral surfaces — the
   // raw brand color is sometimes pure black (G4Media) which disappears
@@ -434,65 +436,9 @@ export default async function StireDetailPage({
         </aside>
       </div>
 
-      {/* Related articles */}
-      {related.length > 0 && (
-        <div className="mt-12">
-          <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-bold mb-5 inline-flex items-center gap-2">
-            <span
-              className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] grid place-items-center"
-              aria-hidden="true"
-            >
-              <Tag size={13} />
-            </span>
-            Știri similare
-            <span className="text-[10px] font-normal text-[var(--color-text-muted)]">
-              ({related.length})
-            </span>
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {related.map((r) => (
-              <Link
-                key={r.id}
-                href={`/stiri/${r.id}`}
-                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 hover:border-[var(--color-primary)]/30 transition-all"
-              >
-                <div className="relative h-32 bg-gradient-to-br from-slate-600 to-slate-800">
-                  {r.image_url ? (
-                    <Image
-                      src={r.image_url}
-                      alt={r.title}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      unoptimized
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-4xl font-bold text-white/20">{r.source.charAt(0)}</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute top-2 left-2">
-                    <Badge bgColor={SOURCE_COLORS[r.source] ?? "#64748b"} color={readableTextColor(SOURCE_COLORS[r.source] ?? "#64748b")} className="text-[9px]">
-                      {r.source}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-[var(--color-primary)] transition-colors">
-                    {r.title}
-                  </h3>
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5 inline-flex items-center gap-1">
-                    <Calendar size={10} aria-hidden="true" />
-                    {formatDateTime(r.published_at)}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* „Știri similare" section eliminat 5/22/2026 la cererea user-ului.
+          getRelatedArticles() + queries-le aferente NU mai sunt apelate
+          mai sus (vezi linia ~202). */}
     </div>
   );
 }

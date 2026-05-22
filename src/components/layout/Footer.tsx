@@ -175,24 +175,13 @@ export function Footer() {
 
         {/* Bottom bar — year derived dynamically so the footer doesn't
             need a yearly bump. ISR rebuilds capture the new year on
-            their next regeneration cycle. */}
-        <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+            their next regeneration cycle.
+            5/22/2026 — sters „Făcut cu ❤️ în România" badge la cererea
+            user-ului: redundant pe un site dedicat exclusiv Romaniei. */}
+        <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
           <p className="text-xs text-[var(--color-text-muted)] text-center" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Civia.ro · Toate drepturile rezervate
           </p>
-          {/* „Made in Romania" badge — semnal de identitate locală + GDPR-EU.
-              Tricolor compact: 3 dungi verticale, accesibil cu aria-label. */}
-          <span
-            className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]"
-            aria-label="Realizat în România"
-          >
-            <span className="inline-flex h-3.5 rounded-[2px] overflow-hidden border border-[var(--color-border)]" aria-hidden="true">
-              <span className="w-1.5 bg-[#002B7F]" />
-              <span className="w-1.5 bg-[#FCD116]" />
-              <span className="w-1.5 bg-[#CE1126]" />
-            </span>
-            <span>Făcut cu ❤️ în România</span>
-          </span>
         </div>
       </div>
     </footer>
