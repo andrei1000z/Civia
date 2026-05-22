@@ -55,6 +55,27 @@ Restul:
  */
 export async function routeFromImage(imageUrl: string): Promise<VisionRoutingResult> {
   try {
+    // Bug fix #75 (5/22/2026) — image URL validation strictă.
+    // Trebuie sa fie HTTPS + Supabase storage domain SAU image.civia.ro.
+    // Previne SSRF si image-spoofing prin URL extern.
+    const urlObj = new URL(imageUrl);
+    const allowedHosts = [/\.supabase\.co$/, /^civia\.ro$/, /^www\.civia\.ro$/];
+    if (urlObj.protocol !== "https:" || !allowedHosts.some((p) => p.test(urlObj.hostname))) {
+      return {
+        tip: "altele",
+        authority: "necunoscut",
+        confidence: 0,
+        description: "URL invalid pentru vision (doar Supabase storage acceptat).",
+        evidence: [],
+        fallback: true,
+      };
+    }
+
+    // Bug fix #89 (5/22/2026) — Vision timeout 25s (Vercel max 45s).
+    // Daca Groq vision hang, fallback la text-only nu blocheaza request-ul.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25_000);
+
     const client = getGroqClient();
     const res = await client.chat.completions.create({
       model: GROQ_MODEL_VISION,
@@ -70,7 +91,8 @@ export async function routeFromImage(imageUrl: string): Promise<VisionRoutingRes
       ],
       temperature: 0.1,
       max_tokens: 500,
-    });
+    }, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     const raw = res.choices[0]?.message?.content?.trim() ?? "{}";
     // Strip markdown fence if AI emite ```json...```

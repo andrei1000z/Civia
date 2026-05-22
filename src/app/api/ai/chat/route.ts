@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { detectPromptInjection } from "@/lib/ai/pii-mask";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -86,6 +87,29 @@ export async function POST(req: Request) {
   const userMessages = parsed.data.messages.filter((m) => m.role !== "system");
   if (userMessages.length === 0) {
     return NextResponse.json({ error: "Niciun mesaj" }, { status: 400 });
+  }
+
+  // Bug fix #72 (5/22/2026) — Prompt injection prevention.
+  // Detect „Ignore previous instructions" / „You are now..." in user
+  // messages. Daca match → block + log Sentry pentru pattern analysis.
+  const lastUser = userMessages[userMessages.length - 1];
+  if (lastUser && detectPromptInjection(lastUser.content)) {
+    return NextResponse.json(
+      {
+        error: "Mesaj suspect detectat (prompt injection). Reformuleaza intrebarea ta fara instructiuni de sistem.",
+      },
+      { status: 400 },
+    );
+  }
+
+  // Cap total tokens (~4 chars/token) ca sa nu epuizam budget pe un mesaj
+  // enorm de la un user single.
+  const totalChars = userMessages.reduce((acc, m) => acc + m.content.length, 0);
+  if (totalChars > 8000) {
+    return NextResponse.json(
+      { error: "Conversație prea lungă. Sterge mesajele vechi si reia." },
+      { status: 400 },
+    );
   }
 
   try {
