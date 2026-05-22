@@ -244,16 +244,6 @@ export default function GlosarPage() {
             className="text-[var(--color-primary)] hover:underline"
           >
             contact@civia.ro
-          </a>{" "}
-          sau pe{" "}
-          <a
-            href="https://github.com/andrei1000z/Civia"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-[var(--color-primary)] hover:underline inline-flex items-center gap-1"
-          >
-            GitHub
-            <ExternalLink size={12} aria-hidden="true" />
           </a>
           .
         </p>

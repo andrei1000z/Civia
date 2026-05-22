@@ -17,11 +17,11 @@ export const revalidate = 86400; // 24h — rar se schimba structura
 export async function GET() {
   const content = `# Civia.ro
 
-> Platformă civică open-source pentru România. Cetățenii trimit sesizări formale către primării, semnează petiții civice, urmăresc proteste programate și întreruperi de utilități. Toate cele 42 de județe acoperite.
+> Platformă civică independentă pentru România. Cetățenii trimit sesizări formale către primării, semnează petiții civice, urmăresc proteste programate și întreruperi de utilități. Toate cele 42 de județe acoperite.
 
 Civia automatizează scrierea unei sesizări legale conform OG 27/2002 — utilizatorul descrie problema, AI-ul (Llama 3.3) generează textul oficial, sistemul detectează automat autoritatea competentă (primărie, prefectură, poliție locală, etc.), iar utilizatorul deschide emailul în clientul său cu totul completat. Răspunsul vine în max 30 de zile conform legii.
 
-Platformă independentă, gratuită, fără cont obligatoriu. Cod sursă: github.com/andrei1000z/Civia (licență MIT). Date stocate în UE, GDPR-compliant.
+Platformă independentă, gratuită, fără cont obligatoriu. Date stocate în UE, GDPR-compliant.
 
 ## Surfacele principale
 
@@ -52,15 +52,12 @@ Platformă independentă, gratuită, fără cont obligatoriu. Cod sursă: github
 ## Tehnologie
 
 - Next.js 16, Supabase (Postgres + Auth + Storage), Groq AI (Llama 3.3 70B), Upstash Redis, Resend pentru email, Vercel hosting.
-- 100k+ linii TypeScript, 581 fișiere, 528+ teste unit.
-- Open source MIT, contribuții bine venite via GitHub.
+- 100k+ linii TypeScript, 691+ teste unit.
 
 ## Legal
 
 - [Politica de confidențialitate](https://civia.ro/legal/confidentialitate)
 - [Termenii de utilizare](https://civia.ro/legal/termeni)
-- [Cod de conduită](https://github.com/andrei1000z/Civia/blob/main/CODE_OF_CONDUCT.md)
-- [Securitate](https://github.com/andrei1000z/Civia/blob/main/SECURITY.md)
 `;
 
   return new NextResponse(content, {

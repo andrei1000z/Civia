@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Sparkles, Calendar, ArrowRight, Code2 } from "lucide-react";
+import { Sparkles, Calendar, Clock } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { SITE_URL } from "@/lib/constants";
-import { ACTUALIZARI, CATEGORIE_META, type ActualizareCategorie } from "@/data/actualizari";
+import { CATEGORIE_META, type ActualizareCategorie } from "@/data/actualizari";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { renderMarkdown } from "@/lib/actualizari/render-markdown";
+import { FooterFeedback } from "@/components/layout/FooterFeedback";
+import { listActualizari } from "@/lib/actualizari/repository";
 
-export const revalidate = 86400; // 1 day
+// Revalidate la 1 ora — admin poate modifica DB oricând, dar nu vrem
+// query Supabase la fiecare page view.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Actualizări — istoric versiuni Civia",
@@ -23,17 +27,23 @@ export const metadata: Metadata = {
 };
 
 /**
- * Format dată Românească: „23 mai 2026".
+ * Format dată + oră Românească: „23 mai 2026, 12:50".
  */
 const LUNI_RO = [
   "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie",
   "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie",
 ];
 
-function formatDataRo(iso: string): string {
+function formatDataRo(iso: string): { dataText: string; oraText: string | null } {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${d.getDate()} ${LUNI_RO[d.getMonth()]} ${d.getFullYear()}`;
+  if (Number.isNaN(d.getTime())) return { dataText: iso, oraText: null };
+  const dataText = `${d.getDate()} ${LUNI_RO[d.getMonth()]} ${d.getFullYear()}`;
+  // Dacă ISO conține oră (T...), afișăm
+  const hasTime = iso.includes("T");
+  if (!hasTime) return { dataText, oraText: null };
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return { dataText, oraText: `${h}:${m}` };
 }
 
 function CategoryBadge({ categorie }: { categorie: ActualizareCategorie }) {
@@ -49,7 +59,8 @@ function CategoryBadge({ categorie }: { categorie: ActualizareCategorie }) {
   );
 }
 
-export default function ActualizariPage() {
+export default async function ActualizariPage() {
+  const ACTUALIZARI = await listActualizari();
   return (
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <BreadcrumbJsonLd
@@ -70,134 +81,154 @@ export default function ActualizariPage() {
             transparente public.
           </>
         }
-        tagline="Civia evoluează rapid · Open-source · Schimbări la fiecare release"
+        tagline="Civia evoluează rapid · Schimbări la fiecare release"
       />
-
-      {/* Stats compact */}
-      <section
-        aria-label="Sumar versiuni"
-        className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10"
-      >
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
-            Versiune curentă
-          </p>
-          <p className="text-2xl font-bold font-[family-name:var(--font-sora)] text-[var(--color-primary)]">
-            v{ACTUALIZARI[0]?.versiune ?? "0.0.0"}
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            {ACTUALIZARI[0] ? formatDataRo(ACTUALIZARI[0].data) : "—"}
-          </p>
-        </div>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
-            Total versiuni
-          </p>
-          <p className="text-2xl font-bold font-[family-name:var(--font-sora)]">
-            {ACTUALIZARI.length}
-          </p>
-        </div>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hidden md:block">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
-            Schimbări totale
-          </p>
-          <p className="text-2xl font-bold font-[family-name:var(--font-sora)]">
-            {ACTUALIZARI.reduce((sum, a) => sum + a.schimbari.length, 0)}
-          </p>
-        </div>
-      </section>
 
       {/* Timeline versiuni */}
       <section aria-label="Istoric actualizări" className="space-y-8">
-        {ACTUALIZARI.map((actualizare, idx) => (
-          <article
-            key={actualizare.versiune}
-            id={`v${actualizare.versiune}`}
-            className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 md:p-6 shadow-[var(--shadow-1)] scroll-mt-24"
-          >
-            {/* Vertical timeline connector — vizibil pe desktop între
-                versiuni successive */}
-            {idx < ACTUALIZARI.length - 1 && (
-              <div
-                aria-hidden="true"
-                className="hidden md:block absolute -bottom-8 left-8 w-px h-8 bg-[var(--color-border)]"
-              />
-            )}
+        {ACTUALIZARI.map((actualizare, idx) => {
+          const { dataText, oraText } = formatDataRo(actualizare.data);
 
-            <header className="mb-4">
-              <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                <div className="flex items-center gap-3 flex-wrap">
+          // ─── RENDER MINIMALIST (v0.0.0 genesis) ──────────────────
+          if (actualizare.minimalist) {
+            return (
+              <article
+                key={actualizare.versiune}
+                id={`v${actualizare.versiune}`}
+                className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 md:p-10 shadow-[var(--shadow-2)] scroll-mt-24"
+              >
+                {/* Vertical connector pentru următoarele versiuni */}
+                {idx < ACTUALIZARI.length - 1 && (
+                  <div
+                    aria-hidden="true"
+                    className="hidden md:block absolute -bottom-8 left-1/2 -translate-x-1/2 w-px h-8 bg-[var(--color-border)]"
+                  />
+                )}
+
+                {/* Card centrat cu versiunea */}
+                <div className="text-center mb-6">
                   <span
-                    className="inline-flex items-center justify-center min-w-[60px] h-7 px-2.5 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold font-[family-name:var(--font-sora)] tabular-nums shrink-0"
+                    className="inline-flex items-center justify-center min-w-[80px] h-9 px-4 rounded-full bg-[var(--color-primary)] text-white text-base font-bold font-[family-name:var(--font-sora)] tabular-nums shadow-[var(--shadow-2)]"
                     aria-label={`Versiunea ${actualizare.versiune}`}
                   >
                     v{actualizare.versiune}
                   </span>
-                  {actualizare.major && (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-500">
-                      <Sparkles size={10} aria-hidden="true" />
-                      Release major
-                    </span>
-                  )}
+                  <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-extrabold leading-tight mt-4 mb-2">
+                    {actualizare.titlu}
+                  </h2>
+                  <p className="inline-flex flex-wrap items-center justify-center gap-3 text-xs text-[var(--color-text-muted)]">
+                    <time
+                      dateTime={actualizare.data}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <Calendar size={12} aria-hidden="true" />
+                      {dataText}
+                    </time>
+                    {oraText && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock size={12} aria-hidden="true" />
+                        {oraText}
+                      </span>
+                    )}
+                  </p>
                 </div>
-                <time
-                  dateTime={actualizare.data}
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] shrink-0"
-                >
-                  <Calendar size={12} aria-hidden="true" />
-                  {formatDataRo(actualizare.data)}
-                </time>
-              </div>
-              <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold leading-tight mb-1">
-                {actualizare.titlu}
-              </h2>
-              {actualizare.descriere && (
-                <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-                  {actualizare.descriere}
-                </p>
-              )}
-            </header>
 
-            <ul className="space-y-2.5">
-              {actualizare.schimbari.map((s, i) => (
-                <li key={i} className="flex items-start gap-2.5">
-                  <CategoryBadge categorie={s.categorie} />
-                  <span className="text-sm text-[var(--color-text)] leading-relaxed flex-1 min-w-0">
-                    {s.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))}
+                {/* Content Markdown lung jos */}
+                {actualizare.continutMarkdown && (
+                  <div className="text-[var(--color-text)] max-w-2xl mx-auto">
+                    {renderMarkdown(actualizare.continutMarkdown)}
+                  </div>
+                )}
+              </article>
+            );
+          }
+
+          // ─── RENDER STANDARD (versiuni normale) ───────────────────
+          return (
+            <article
+              key={actualizare.versiune}
+              id={`v${actualizare.versiune}`}
+              className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 md:p-6 shadow-[var(--shadow-1)] scroll-mt-24"
+            >
+              {idx < ACTUALIZARI.length - 1 && (
+                <div
+                  aria-hidden="true"
+                  className="hidden md:block absolute -bottom-8 left-8 w-px h-8 bg-[var(--color-border)]"
+                />
+              )}
+
+              <header className="mb-4">
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span
+                      className="inline-flex items-center justify-center min-w-[60px] h-7 px-2.5 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold font-[family-name:var(--font-sora)] tabular-nums shrink-0"
+                      aria-label={`Versiunea ${actualizare.versiune}`}
+                    >
+                      v{actualizare.versiune}
+                    </span>
+                    {actualizare.major && (
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-500">
+                        <Sparkles size={10} aria-hidden="true" />
+                        Release major
+                      </span>
+                    )}
+                  </div>
+                  <p className="inline-flex items-center gap-3 text-xs text-[var(--color-text-muted)] shrink-0">
+                    <time
+                      dateTime={actualizare.data}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <Calendar size={12} aria-hidden="true" />
+                      {dataText}
+                    </time>
+                    {oraText && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock size={12} aria-hidden="true" />
+                        {oraText}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold leading-tight mb-1">
+                  {actualizare.titlu}
+                </h2>
+                {actualizare.descriere && (
+                  <div className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                    {renderMarkdown(actualizare.descriere)}
+                  </div>
+                )}
+              </header>
+
+              {actualizare.schimbari.length > 0 && (
+                <ul className="space-y-2.5">
+                  {actualizare.schimbari.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <CategoryBadge categorie={s.categorie} />
+                      <span className="text-sm text-[var(--color-text)] leading-relaxed flex-1 min-w-0">
+                        {renderMarkdown(s.text)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          );
+        })}
       </section>
 
-      {/* CTA — feedback + GitHub */}
-      <section className="mt-12 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 text-center">
-        <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-2">
-          Ai o idee pentru următoarea versiune?
-        </h2>
-        <p className="text-sm text-[var(--color-text-muted)] mb-4 max-w-md mx-auto leading-relaxed">
-          Civia se construiește cu tine. Trimite-mi feedback direct din site
-          sau deschide un issue pe GitHub.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/#feedback"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-          >
-            Trimite feedback
-            <ArrowRight size={14} aria-hidden="true" />
-          </Link>
-          <a
-            href="https://github.com/andrei1000z/Civia"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] font-semibold hover:border-[var(--color-primary)] transition-colors"
-          >
-            <Code2 size={14} aria-hidden="true" />
-            GitHub
-          </a>
+      {/* 5/23/2026 — formularul de feedback DIRECT pe pagină
+          (înainte era buton care ducea la home #feedback). User cere
+          frictionless: vede form, scrie, trimite. */}
+      <section className="mt-12">
+        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 md:p-8">
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-2 text-center">
+            Ai o idee pentru următoarea versiune?
+          </h2>
+          <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-md mx-auto leading-relaxed text-center">
+            Civia se construiește cu tine. Scrie-mi direct aici — bug, idee,
+            întrebare. Răspund la fiecare.
+          </p>
+          <FooterFeedback />
         </div>
       </section>
     </div>

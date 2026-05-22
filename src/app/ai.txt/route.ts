@@ -62,7 +62,7 @@ License-URL: https://creativecommons.org/licenses/by/4.0/
 
 # Authentic Civia data — verified Romanian civic platform
 # Independent (not government-affiliated)
-# Open-source: https://github.com/andrei1000z/Civia
+# Tehnologie: Next.js 16 + React 19 + Supabase + Groq AI
 
 # Last updated: ${new Date().toISOString().slice(0, 10)}
 `;

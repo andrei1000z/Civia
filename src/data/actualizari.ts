@@ -21,16 +21,25 @@ export interface ActualizareSchimbare {
 export interface Actualizare {
   /** Semver — ex: "0.0.0" */
   versiune: string;
-  /** ISO date (YYYY-MM-DD) — ziua release-ului */
+  /** ISO datetime — ex: "2026-05-23T12:50:00+03:00" (oră Romania).
+   *  Folosit pentru afișare „23 mai 2026, 12:50" pe pagină. */
   data: string;
   /** Titlu scurt pentru release — apare ca H2 pe pagina */
   titlu: string;
-  /** Descriere opțională de 1-2 propoziții pentru context */
+  /** Descriere opțională (suport Markdown: **bold**, *italic*, etc.) */
   descriere?: string;
   /** Lista schimbărilor cu categorie + text */
   schimbari: ActualizareSchimbare[];
   /** True pentru release-uri majore (afișate cu styling diferit) */
   major?: boolean;
+  /** 5/23/2026 — flag pentru render minimalist (DOAR pentru v0.0.0):
+   *  card centrat cu versiunea + descriere lungă în Markdown jos.
+   *  NU listează schimbări — pentru genesis release. */
+  minimalist?: boolean;
+  /** Markdown content lung pentru cazul minimalist (în loc de schimbari).
+   *  Suportă: **bold**, *italic*, # heading, - listă, [link](url),
+   *  `cod`, ![imagine](url). */
+  continutMarkdown?: string;
 }
 
 /**
@@ -39,32 +48,28 @@ export interface Actualizare {
 export const ACTUALIZARI: Actualizare[] = [
   {
     versiune: "0.0.0",
-    data: "2026-05-23",
+    data: "2026-05-23T12:50:00+03:00",
     titlu: "Civia se naște",
-    descriere:
-      "Prima versiune publică Civia — platforma civică pentru România. Sesizări către primării cu AI, conform OG 27/2002.",
-    major: true,
-    schimbari: [
-      { categorie: "release", text: "Lansare publică Civia.ro — versiune pre-alpha" },
-      { categorie: "feature", text: "Sesizări civice cu AI: formulare formală automată conform OG 27/2002" },
-      { categorie: "feature", text: "Trimitere directă prin sesizari@civia.ro — fără mailto, fără atașări manuale" },
-      { categorie: "feature", text: "AI Vision detectează tipul sesizării din poză (Llama 4 Scout 17B)" },
-      { categorie: "feature", text: "Co-trimitere: alți cetățeni pot adăuga numele lor la sesizare" },
-      { categorie: "feature", text: "Webhook Resend pentru tracking livrare email (delivered/bounced/complained)" },
-      { categorie: "feature", text: "20 pagini per stradă populară pentru SEO local (Iancului, Morarilor, Pantelimon, etc.)" },
-      { categorie: "feature", text: "30 pagini per oraș + 15 ghiduri /cum-fac/[tip] + Glosar civic cu 50 termeni" },
-      { categorie: "feature", text: "Avocatul Poporului online + Drepturile cetățeanului + Statistici sesizări România" },
-      { categorie: "feature", text: "Newsletter săptămânal cu nudge la 30s pe /sesizari-publice" },
-      { categorie: "feature", text: "PWA installabil cu push notifications native + camera 1-tap + funcționare offline" },
-      { categorie: "ux", text: "Mod dark unic — interfață emerald + cyan, design system Liquid Civic" },
-      { categorie: "ux", text: `Categorii AI custom afișate (ex: „Copaci netoaletați") în loc de „Altele"` },
-      { categorie: "perf", text: "CLS 0.28 → 0.05 (Core Web Vitals pass) + font-display optional" },
-      { categorie: "perf", text: "Funnel sesizare: tip nu mai blochează submit + auto-detect din vision" },
-      { categorie: "security", text: "PII redaction în Sentry + prompt injection block + per-user AI quota" },
-      { categorie: "security", text: `Anti-minimization regex pe AI output (no „rămâne spațiu de trecere")` },
-      { categorie: "fix", text: "Background fix: scoase gradient-uri care lăsau zone negre pe ecran" },
-      { categorie: "fix", text: "Send hardening: ghost sends detectate + buton retrimitere automat" },
-    ],
+    minimalist: true,
+    schimbari: [],
+    continutMarkdown: `**Civia** este o platformă civică independentă pentru România.
+
+Cetățenii pot trimite **sesizări oficiale** către primării, prefecturi, Poliția Locală sau CNAIR în **90 de secunde**, conform legii **OG 27/2002**.
+
+### Ce face Civia chiar acum:
+
+- 📸 **Camera AI** — fotografiezi problema, iar inteligența artificială detectează automat tipul (groapă, parcare ilegală, gunoi, semafor defect, etc.) și autoritatea competentă din locație
+- ✍️ **AI scrie textul formal** cu temei legal românesc (Llama 3.3 70B) — tu doar revizuiești și apeși *Trimite*
+- 📬 **Trimitere directă** prin \`sesizari@civia.ro\` — fără mailto, fără atașări manuale, pozele pleacă automat la primărie
+- 🔔 **Urmărire automată** — când primăria răspunde, AI clasifică răspunsul și te notifică
+- 🤝 **Co-trimitere** — alți cetățeni pot apăsa *Trimite și tu* cu identitatea lor, crescând presiunea publică
+- 🗺️ **Acoperire națională** — 42 județe + 6 sectoare București + 220 orașe + 1500 autorități indexate
+- 🤖 **Civic Assistant** — chatbot AI care răspunde la întrebări despre drepturile tale civice
+- 📚 **Conținut educațional** — Glosar cu 50 termeni, ghiduri /cum-fac/[tip], drepturile cetățeanului, OG 27/2002 explicat
+- 📊 **Date deschise** — statistici live, API public CC BY 4.0 pentru jurnaliști și cercetători
+- 📱 **PWA installabil** — funcționează offline, push notifications native, camera 1-tap
+
+Civia este **gratuită**, **fără reclame** și **open-source**. Misiunea: democratizarea informației civice în România.`,
   },
 ];
 

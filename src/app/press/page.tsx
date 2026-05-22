@@ -143,7 +143,7 @@ export default function PressPage() {
             { fapt: "Modele AI folosite", val: "Groq Llama 3.3-70b (text), Llama 4 Scout (vision)" },
             { fapt: "Servere", val: "Frankfurt (Vercel + Supabase EU)" },
             { fapt: "Licență date", val: "CC BY 4.0 (Open Data)" },
-            { fapt: "Cod sursă", val: "Open-source — github.com/andrei1000z/Civia" },
+            { fapt: "Tehnologie", val: "Next.js 16 + React 19 + TypeScript + Supabase + Groq AI" },
             { fapt: "Finanțare", val: "Donații + voluntariat. Zero bani de la primării/partide/guvern" },
             { fapt: "Cost per sesizare", val: "~0.02 EUR (AI + email)" },
           ].map((f) => (
@@ -209,16 +209,6 @@ export default function PressPage() {
           >
             <Mail size={14} aria-hidden="true" />
             press@civia.ro
-          </a>
-          <a
-            href="https://github.com/andrei1000z/Civia"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] font-bold hover:border-[var(--color-primary)] transition-colors"
-          >
-            <Code2 size={14} aria-hidden="true" />
-            GitHub Civia
-            <ExternalLink size={12} aria-hidden="true" />
           </a>
           <Link
             href="/dezvoltatori"

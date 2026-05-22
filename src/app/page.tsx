@@ -41,7 +41,7 @@ const HOMEPAGE_FAQ = [
   {
     question: "E gratis Civia? Trebuie cont?",
     answer:
-      "Da, e gratuit pentru totdeauna și 100% open-source (licență MIT, cod pe github.com/andrei1000z/Civia). Nu trebuie cont pentru a trimite o sesizare — completezi anonim, datele tale sunt folosite doar pentru emailul către primărie. Contul îți permite să-ți vezi istoricul tuturor sesizărilor într-un loc și să primești notificări prin email.",
+      "Da, e gratuit pentru totdeauna. Nu trebuie cont pentru a trimite o sesizare — completezi anonim, datele tale sunt folosite doar pentru emailul către primărie. Contul îți permite să-ți vezi istoricul tuturor sesizărilor într-un loc și să primești notificări prin email.",
   },
   {
     question: "Ce face Civia cu datele mele personale?",
