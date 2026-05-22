@@ -120,12 +120,18 @@ export async function POST(req: Request) {
   }
 
   // Map event type → status
+  // 5/22/2026 v2 — adăugate email.failed (eroare la nivel API înainte de
+  // send, ex: domain neverificat) + email.suppressed (Resend a refuzat
+  // trimiterea pentru că destinatarul e pe bounce-list global). Ambele
+  // sunt critice pentru sesizări — emailul NU a plecat → trebuie retrimitere.
   const statusMap: Record<string, string> = {
     "email.sent": "sent",
     "email.delivered": "delivered",
     "email.bounced": "bounced",
     "email.complained": "complained",
     "email.delivery_delayed": "delayed",
+    "email.failed": "bounced", // map la „bounced" — UI arată Retrimit button
+    "email.suppressed": "bounced",
   };
   const newStatus = statusMap[eventType];
   if (!newStatus) {
@@ -143,12 +149,21 @@ export async function POST(req: Request) {
 
   await admin.from("sesizari").update(updates).eq("id", sesizare.id);
 
-  // Timeline event pentru evenimente importante (bounce, complaint)
-  if (eventType === "email.bounced" || eventType === "email.complained") {
+  // Timeline event pentru evenimente importante (bounce, complaint, failed, suppressed)
+  if (
+    eventType === "email.bounced" ||
+    eventType === "email.complained" ||
+    eventType === "email.failed" ||
+    eventType === "email.suppressed"
+  ) {
     const desc =
       eventType === "email.bounced"
         ? `Email respins de server destinatar: ${event.data.bounce?.message ?? "no reason"}`
-        : `Destinatarul a marcat email-ul ca spam. Investigați configurarea.`;
+        : eventType === "email.complained"
+        ? `Destinatarul a marcat email-ul ca spam. Investigați configurarea.`
+        : eventType === "email.failed"
+        ? `Resend nu a putut trimite emailul (eroare API). Verifică configurarea FROM domain + DKIM.`
+        : `Resend a refuzat trimiterea (destinatar pe bounce-list global). Adresa primăriei e problematică — verifică /autoritati.`;
     await admin.from("sesizare_timeline").insert({
       sesizare_id: sesizare.id,
       event_type: "delivery_problem",
