@@ -11,6 +11,7 @@ import { appendGdprClause, repairSesizareLeaks } from "@/lib/sesizari/format-hel
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
+import { validateFormalText } from "@/lib/sesizari/formal-text-validator";
 
 /** True for upstream 429 (rate limit / token budget exhausted). Works
  *  on both Groq SDK errors and Gemini fetch errors (we synthesise the
@@ -159,15 +160,24 @@ export async function POST(req: Request) {
     const now = new Date();
     const todayRo = `${now.getDate()} ${LUNI_RO[now.getMonth()]} ${now.getFullYear()}`;
 
+    // Bug fix #1 (5/22/2026) — daca nume/adresa lipsesc, NU mai trimitem
+    // placeholder „[NUMELE]"/„[ADRESA]" la AI. AI hallucinează sau le copia
+    // literal. Acum: omit complet randul si in semnatura. Pe submit
+    // final, formul valideaza ca nume + adresa sunt completate.
     const textContext = [
       `Descrierea brută a cetățeanului: ${descriere}`,
       locatie ? `Locație: ${locatie}` : "",
-      nume ? `Nume cetățean: ${nume}` : "Nume: [NUMELE]",
-      adresa ? `Adresa cetățean: ${adresa}` : "Adresa: [ADRESA]",
+      nume ? `Nume cetățean: ${nume}` : "",
+      adresa ? `Adresa cetățean: ${adresa}` : "",
       tip ? `Tip problemă: ${tip}` : "",
       `DATA DE AZI (pune-o literal în semnătură, NU folosi JavaScript / new Date / expresii — doar string exact): ${todayRo}`,
       `Ghid pentru {DESCRIEREA_FORMALA_A_PROBLEMEI}: ${template.problema_ghid}`,
       `Ghid pentru {PROPUNEREA_CONCRETA}: ${template.propunere}`,
+      // Daca lipsesc, instruim AI sa NU foloseasca template-ul „Mă numesc X"
+      // si sa skip-eze direct la „doresc să vă aduc la cunoștință..."
+      !nume || !adresa
+        ? `ATENȚIE: cetățeanul nu a furnizat ${!nume ? "numele" : ""}${!nume && !adresa ? " și " : ""}${!adresa ? "adresa" : ""}. Skip „Mă numesc {NUMELE}, locuiesc în {ADRESA}" si incepe direct cu „Bună ziua,\\n\\nDoresc să vă aduc la cunoștință o problemă...". NU folosi placeholder-uri literal in output.`
+        : "",
     ].filter(Boolean).join("\n");
 
     const visionInstruction = hasPhotos
@@ -362,6 +372,31 @@ Răspunde JSON:
     }
 
     parsed.formal_text = normalizeFormatting(parsed.formal_text);
+
+    // Bug fixes #1, #2, #4, #5, #6 (5/22/2026) — validator post-process:
+    //   - Detectează placeholder-uri neînlocuite
+    //   - Înlocuiește self-references („casa mea") cu adresa obiectivă
+    //   - Strip markdown markers orfane
+    //   - Word count check (warning if < 100 or > 350)
+    //   - Plagiat user→AI similaritate 3-gram (warning if > 0.85)
+    const validation = validateFormalText({
+      text: parsed.formal_text,
+      userDescription: descriere ?? "",
+      locatie,
+    });
+    parsed.formal_text = validation.text;
+    if (validation.meta.hadSelfRefs || validation.meta.hadMarkdownLeak) {
+      Sentry.captureMessage("AI formal_text validator applied fixes", {
+        level: "info",
+        tags: {
+          kind: "ai_validator_patched",
+          had_self_refs: String(validation.meta.hadSelfRefs),
+          had_md_leak: String(validation.meta.hadMarkdownLeak),
+          word_count: String(validation.meta.wordCount),
+          plagiarism: validation.meta.plagiarismScore.toFixed(2),
+        },
+      });
+    }
 
     // Apendix GDPR — adăugat determinist DUPĂ AI generation. Nu lăsăm
     // AI-ul să-l producă (poate să-l rescrie/scape) — îl injectăm exact

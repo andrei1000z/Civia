@@ -162,19 +162,51 @@ export async function classifyReply(args: {
       ? (parsed.suggested_action as SuggestedAction)
       : "wait_for_resolution";
 
+    // Bug fix #10 (5/22/2026) — număr înregistrare hallucinat:
+    // AI poate inventa „nr 1234/2026" cand textul NU contine asta.
+    // Validare strictă cu regex + cross-check că apare în text.
+    let nrInregistrare: string | null = null;
+    if (typeof parsed.nr_inregistrare === "string" && parsed.nr_inregistrare.length > 0) {
+      const cand = parsed.nr_inregistrare.slice(0, 50);
+      // Format: cifre/litere 3-12 caractere, optional /YYYY
+      const isValidFormat = /^[A-Z0-9.\-/]{3,20}(?:\/\d{4})?$/i.test(cand);
+      // Cross-check: numarul TREBUIE sa apara în text-ul original (sau o
+      // variantă apropiată). Daca nu apare deloc, AI a hallucinat.
+      const numCore = cand.replace(/^(?:nr\.?|numar\s*|nr)/i, "").trim();
+      const appearsInText = text.toLowerCase().includes(numCore.toLowerCase());
+      nrInregistrare = isValidFormat && appearsInText ? cand : null;
+    }
+
+    // Bug fix #11 (5/22/2026) — auto-reply detection.
+    // Daca text-ul e auto-reply standard („Vă răspundem în 30 zile",
+    // „Sesizarea a fost primită", etc.) status devine „inregistrata"
+    // (in loc de „necunoscut") + suggested_action = monitor_progress
+    // (in loc de wait_for_resolution care e tacut).
+    const autoReplyPatterns = [
+      /vă\s+răspundem\s+în\s+\d+\s+zile/i,
+      /am\s+primit\s+(?:sesizarea|petiția|cererea)/i,
+      /va\s+fi\s+(?:analizată|soluționată)\s+în\s+termenul\s+legal/i,
+      /conform\s+(?:OG|Ordonanței)\s+27\/2002/i,
+    ];
+    const isAutoReply = autoReplyPatterns.some((p) => p.test(text));
+    let finalStatus = status;
+    let finalAction = suggested_action;
+    if (isAutoReply && status === "necunoscut") {
+      finalStatus = "inregistrata";
+      finalAction = "monitor_progress";
+    }
+
     return {
-      status,
+      status: finalStatus,
       confidence: Math.max(0, Math.min(100, Number(parsed.confidence) || 0)),
-      nr_inregistrare: typeof parsed.nr_inregistrare === "string" && parsed.nr_inregistrare.length > 0
-        ? parsed.nr_inregistrare.slice(0, 50)
-        : null,
+      nr_inregistrare: nrInregistrare,
       summary: typeof parsed.summary === "string"
         ? parsed.summary.slice(0, 300)
         : "Răspuns oficial primit.",
       deadline: typeof parsed.deadline === "string" && parsed.deadline.length > 0
         ? parsed.deadline.slice(0, 100)
         : null,
-      suggested_action,
+      suggested_action: finalAction,
       is_spam: parsed.is_spam === true,
       raw: parsed,
     };

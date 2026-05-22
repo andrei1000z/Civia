@@ -144,5 +144,20 @@ export function removeMinimization(formalText: string): AntiMinimizationResult {
     .replace(/[ \t]+([.,;:!?])/g, "$1")
     .replace(/[ \t]{2,}/g, " ");
 
+  // Bug fix #15 (5/22/2026) — grammar context fixes post-replacement.
+  // Cand replacement schimba subiectul propoziției la jumătate (ex:
+  // „Masinile ocupa X, spatiul destinat pietonilor..."), conjunctia
+  // „iar" face propoziția curgătoare. Aplicam doar daca după virgulă
+  // urmează un substantiv nou (subiect schimbat).
+  if (replacements > 0) {
+    text = text
+      // „..., spațiul" → „..., iar spațiul" (cand virgula urmata de cuv mare)
+      .replace(/,\s+(spa[țt]iul|circula[țt]ia|pietonii)\s+/g, ", iar $1 ")
+      // „...trotuar mașinile ocupă..." → „...trotuar, iar mașinile..."
+      .replace(/\b(trotuar(?:ul)?)\s+(ma[șs]inile|pietonii)\s+/g, "$1, iar $2 ")
+      // Capitalize litera dupa punct (in caz ca replacement a lasat mid-sentence)
+      .replace(/\.\s+([a-z])/g, (m, c: string) => `. ${c.toUpperCase()}`);
+  }
+
   return { text, changed: replacements > 0, replacements, matched };
 }

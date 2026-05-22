@@ -482,6 +482,9 @@ export function SesizareForm() {
   // AI tip detection state
   const [tipDetecting, setTipDetecting] = useState(false);
   const [tipDetectedByAI, setTipDetectedByAI] = useState(false);
+  // Bug fix #8 (5/22/2026) — Vision confidence vizibil userului ca badge,
+  // ca să poată reviewa sugestia manual când AI nu e foarte sigur.
+  const [visionConfidence, setVisionConfidence] = useState<number | null>(null);
   // Sector auto-detect flag — afisam un mic indicator „Sector detectat
   // automat" cand l-am gasit din text (keyword-based) ca user-ul sa
   // poata corecta daca am gresit. Reset cand user schimba manual.
@@ -507,10 +510,14 @@ export function SesizareForm() {
         });
         if (!res.ok) return;
         const j = await res.json();
-        if (j?.tip && typeof j.confidence === "number" && j.confidence >= 60) {
-          setData((d) => (d.tip ? d : { ...d, tip: j.tip }));
-          setTipDetectedByAI(true);
-          trackFunnelStep("sesizare-create", "tip-selected", { tip: j.tip, source: "vision" });
+        if (j?.tip && typeof j.confidence === "number") {
+          // Bug fix #8 — pastram confidence pentru badge (visible review).
+          setVisionConfidence(j.confidence);
+          if (j.confidence >= 60) {
+            setData((d) => (d.tip ? d : { ...d, tip: j.tip }));
+            setTipDetectedByAI(true);
+            trackFunnelStep("sesizare-create", "tip-selected", { tip: j.tip, source: "vision", confidence: j.confidence });
+          }
         }
       } catch {
         // silent — vision e best-effort
@@ -1432,10 +1439,32 @@ ${today}`;
                 Auto
               </span>
             )}
+            {/* Bug fix #8 — Vision confidence badge: verde 70%+, amber 40-70%,
+                rosu <40%. User stie cat de incredere e suggestion-ul AI. */}
+            {visionConfidence !== null && (
+              <span
+                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                  visionConfidence >= 70
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : visionConfidence >= 40
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                      : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
+                }`}
+                title={
+                  visionConfidence >= 70
+                    ? "AI foarte încrezător în acest tip"
+                    : visionConfidence >= 40
+                      ? "AI parțial sigur — verifică sugestia"
+                      : "AI nu e sigur — alege manual tipul corect"
+                }
+              >
+                {visionConfidence}%
+              </span>
+            )}
           </div>
           {tipDetectedByAI && !tipDetecting && (
             <p className="text-xs text-[var(--color-text-muted)] mt-1">
-              Tipul a fost detectat automat din descriere. Poți să-l schimbi dacă vrei altul.
+              Tipul a fost detectat automat din poza/descriere. Poți să-l schimbi dacă vrei altul.
             </p>
           )}
         </Field>

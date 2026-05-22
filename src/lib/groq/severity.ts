@@ -90,25 +90,88 @@ export async function analyzeSeverity(imageUrl: string): Promise<SeverityResult>
 /**
  * Heuristic severity from text only (no vision call). Cheap fallback
  * used when there's no photo. Looks at keywords in tip + descriere.
+ *
+ * Bug fixes 5/22/2026:
+ *   #13 Keywords lista extinsa + diacritics-normalize (ruptă/rupta both work)
+ *   #14 Context check — „in curte privata" downgrade severity
  */
+
+function normalizeForKeywordMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, ""); // remove diacritics
+}
+
 export function severityFromText(
   tip: string,
   descriere: string,
 ): SeverityResult {
-  const text = `${tip} ${descriere}`.toLowerCase();
+  // Bug fix #13 — normalize diacritics ca „ruptă" sa match-uiasca cu „rupta".
+  const text = normalizeForKeywordMatch(`${tip} ${descriere}`);
 
-  const criticalKw = ["cablu", "gaz", "prabusit", "explozie", "incendiu", "structura", "put deschis"];
-  const highKw = ["semafor stricat", "intersectie", "groapa mare", "panou cazut", "canal deschis", "copac cazut"];
-  const lowKw = ["graffiti", "afis", "mobilier", "panou publicitar"];
+  // Extins cu cuvinte missed: rupt[ăa], cazatura, conducta, scurgere etc.
+  const criticalKw = [
+    "cablu", "gaz", "prabusit", "prabusita",
+    "explozie", "incendiu", "structura prabusita",
+    "put deschis", "groapa adanca",
+    "conducta rupta", "conducta sparta",
+    "fir cazut", "stalp cazut",
+    "pericol iminent", "pericol de moarte",
+    "scurgere de gaz", "fum dens",
+  ];
+  const highKw = [
+    "semafor stricat", "semafor defect",
+    "intersectie", "groapa mare", "groapa mare in carosabil",
+    "panou cazut", "panou rupt",
+    "canal deschis", "capac canal lipsa",
+    "copac cazut", "copac rupt", "creanga rupta",
+    "scurgere", "inundatie", "apa pe carosabil",
+    "trecere fara semafor", "lipsa marcaje",
+  ];
+  const lowKw = ["graffiti", "afis", "mobilier", "panou publicitar", "tag", "afis salbatic"];
+
+  // Bug fix #14 — context downgrade: daca e in „curte privata" sau
+  // „proprietate privata", severity nu mai e public-civic responsibility.
+  const privateContextPatterns = [
+    /curte\s+privat[ăa]/,
+    /proprietate\s+privat[ăa]/,
+    /teren\s+privat/,
+    /zona\s+privata/,
+  ];
+  const isPrivateContext = privateContextPatterns.some((p) => p.test(text));
+
+  let level: SeverityResult["level"] = "medium";
+  let confidence = 40;
+  let reason = "Severitate medie estimata din text.";
 
   if (criticalKw.some((kw) => text.includes(kw))) {
-    return { level: "critical", confidence: 65, reason: "Cuvinte cheie de pericol iminent in descriere." };
+    level = "critical";
+    confidence = 65;
+    reason = "Cuvinte cheie de pericol iminent in descriere.";
+  } else if (highKw.some((kw) => text.includes(kw))) {
+    level = "high";
+    confidence = 55;
+    reason = "Risc semnificativ identificat in descriere.";
+  } else if (lowKw.some((kw) => text.includes(kw))) {
+    level = "low";
+    confidence = 50;
+    reason = "Probleme estetice fara risc concret.";
   }
-  if (highKw.some((kw) => text.includes(kw))) {
-    return { level: "high", confidence: 55, reason: "Risc semnificativ identificat in descriere." };
+
+  // Bug #14 — context private: downgrade by 1 level (private property
+  // = not municipal responsibility, severity for citizen is lower).
+  if (isPrivateContext && (level === "critical" || level === "high")) {
+    const downgrade: Record<SeverityResult["level"], SeverityResult["level"]> = {
+      critical: "high",
+      high: "medium",
+      medium: "low",
+      low: "low",
+    };
+    level = downgrade[level];
+    reason = "Context privat — severity ajustată în jos (responsabilitate proprietar, nu publică).";
+    confidence = Math.max(30, confidence - 10);
   }
-  if (lowKw.some((kw) => text.includes(kw))) {
-    return { level: "low", confidence: 50, reason: "Probleme estetice fara risc concret." };
-  }
-  return { level: "medium", confidence: 40, reason: "Severitate medie estimata din text." };
+
+  return { level, confidence, reason };
 }
