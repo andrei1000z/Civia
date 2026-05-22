@@ -1716,19 +1716,55 @@ ${today}`;
             <Sparkles size={11} aria-hidden="true" /> AI rescrie textul în limbaj oficial…
           </p>
         ) : data.formal_text ? (
-          <div className="flex items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
-            <span className="inline-flex items-center gap-1.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
               <Sparkles size={11} className="text-purple-500" aria-hidden="true" />
-              Textul a fost rescris — apare în email și pe pagina publică.
-            </span>
-            <button
-              type="button"
-              onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
-              className="text-[var(--color-primary)] hover:underline font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
-              title="Regenerează textul oficial cu AI"
-            >
-              Regenerează
-            </button>
+              <span>Textul a fost rescris — apare în email și pe pagina publică.</span>
+            </div>
+            {/* Batch 2 UX (5/22/2026) — 3 quick-actions in loc de un singur
+                buton „Regenerează". User poate refine fara sa goleasca tot. */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
+                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                title="Refac textul cu AI"
+              >
+                <Sparkles size={10} aria-hidden="true" />
+                Refac
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  // Append hint to descriere ca AI sa scrie mai scurt
+                  const shortHint = "\n\n[Cerere: scrie mai scurt, max 150 cuvinte]";
+                  setData((d) => ({ ...d, descriere: d.descriere + shortHint }));
+                  setTimeout(() => {
+                    setData((d) => ({ ...d, descriere: d.descriere.replace(shortHint, "") }));
+                    void handleAIImprove({ withPhotos: imagini.length > 0 });
+                  }, 50);
+                }}
+                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                title="Genereaza varianta mai scurta"
+              >
+                Mai scurt
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const urgencyHint = "\n\n[Cerere: adauga sense de urgenta, evidentiaza riscul pentru cetateni]";
+                  setData((d) => ({ ...d, descriere: d.descriere + urgencyHint }));
+                  setTimeout(() => {
+                    setData((d) => ({ ...d, descriere: d.descriere.replace(urgencyHint, "") }));
+                    void handleAIImprove({ withPhotos: imagini.length > 0 });
+                  }, 50);
+                }}
+                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                title="Adauga ton de urgenta"
+              >
+                + Urgenta
+              </button>
+            </div>
           </div>
         ) : null}
 

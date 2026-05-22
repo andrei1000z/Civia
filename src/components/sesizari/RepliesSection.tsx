@@ -195,18 +195,29 @@ export function RepliesSection({ code, isOwner }: Props) {
                       ) : null}
                     </div>
                     <p className="text-sm text-[var(--color-text)] leading-snug">{r.ai_summary}</p>
-                    {r.ai_nr_inregistrare ? (
-                      <p className="mt-1.5 text-xs">
-                        <span className="text-[var(--color-text-muted)]">Nr. înregistrare oficial: </span>
-                        <strong className="font-mono">{r.ai_nr_inregistrare}</strong>
-                      </p>
-                    ) : null}
-                    {r.ai_deadline ? (
-                      <p className="mt-1 text-xs">
-                        <span className="text-[var(--color-text-muted)]">Termen menționat: </span>
-                        <strong>{r.ai_deadline}</strong>
-                      </p>
-                    ) : null}
+                    {/* Bug fix UX (5/22/2026) — reg# + deadline ca BADGES
+                        prominente, NU text inline. User-ul vede clar info
+                        critică (cand a fost inregistrată + cand răspund). */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {r.ai_nr_inregistrare ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-violet-500/15 text-violet-700 dark:text-violet-300 text-[11px] font-medium"
+                          title="Numărul oficial al sesizării la autoritate — păstrează-l pentru orice escaladare"
+                        >
+                          <span className="opacity-70">Nr. înregistrare:</span>
+                          <strong className="font-mono">{r.ai_nr_inregistrare}</strong>
+                        </span>
+                      ) : null}
+                      {r.ai_deadline ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[11px] font-medium"
+                          title="Termenul comunicat de autoritate pentru răspuns"
+                        >
+                          <span className="opacity-70">Termen:</span>
+                          <strong>{r.ai_deadline}</strong>
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
 

@@ -127,10 +127,27 @@ export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSum
   }
 
   if (!summary) {
+    // Bug fix UX (5/22/2026) — fallback elegant cand AI fail:
+    // afișează excerpt-ul original cu label clar „Sinteză indisponibilă"
+    // in loc de italic muted text generic. Userul intelege ca AI a esuat,
+    // dar tot are conținut util.
     return (
-      <p className="text-sm text-[var(--color-text-muted)] italic">
-        {fallbackText || "Nu am putut genera o sinteză pentru acest articol."}
-      </p>
+      <div className="rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] p-4">
+        <div className="flex items-center gap-2 mb-2 text-[10px] uppercase tracking-wider font-semibold text-[var(--color-text-muted)]">
+          <span aria-hidden="true">⚠️</span>
+          Sinteză AI indisponibilă
+        </div>
+        {fallbackText ? (
+          <p className="text-sm text-[var(--color-text)] leading-relaxed">
+            {fallbackText}
+          </p>
+        ) : (
+          <p className="text-sm text-[var(--color-text-muted)] italic">
+            AI-ul nu a putut sumariza acest articol momentan. Citește textul
+            original pentru detalii complete.
+          </p>
+        )}
+      </div>
     );
   }
 
