@@ -4,22 +4,6 @@ import { SITE_NAME } from "@/lib/constants";
 import { CookiePreferencesButton } from "./FooterClientLinks";
 import { FooterFeedback } from "./FooterFeedback";
 
-// Internal-linking block — top 10 jude prin populatie + actiuni
-// principale. Imbunatateste PageRank flow (item #34 audit) + ofera
-// quick discovery la noii vizitatori.
-const TOP_COUNTIES = [
-  { slug: "b", name: "București" },
-  { slug: "cj", name: "Cluj" },
-  { slug: "tm", name: "Timiș" },
-  { slug: "is", name: "Iași" },
-  { slug: "ct", name: "Constanța" },
-  { slug: "bv", name: "Brașov" },
-  { slug: "dj", name: "Dolj" },
-  { slug: "gl", name: "Galați" },
-  { slug: "pr", name: "Prahova" },
-  { slug: "mh", name: "Mureș" },
-];
-
 const linkCls =
   "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors";
 
@@ -66,13 +50,14 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Column 2 — Despre Civia (legal only — API scos la cerere user 5/12/2026) */}
+          {/* Column 2 — Despre Civia */}
           <div>
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Despre Civia
             </h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/clasament" className={linkCls}>Clasament Fix Score</Link></li>
+              <li><Link href="/dezvoltatori" className={linkCls}>API dezvoltatori</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><CookiePreferencesButton /></li>
@@ -133,42 +118,9 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Top judete + actiuni principale — SEO internal linking.
-            Bumps PageRank flow toward county pages (audit item #34). */}
-        <div className="mt-10 pt-8 border-t border-[var(--color-border)]">
-          <h4 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3">
-            Județe & orașe
-          </h4>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm mb-6">
-            {TOP_COUNTIES.map((c) => (
-              <li key={c.slug}>
-                <Link href={`/${c.slug}`} className={linkCls}>
-                  {c.name}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link href="/judete" className={linkCls}>
-                Toate cele 42 →
-              </Link>
-            </li>
-          </ul>
-          <h4 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3">
-            Acțiuni rapide
-          </h4>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
-            <li><Link href="/sesizari" className={linkCls}>Fă o sesizare</Link></li>
-            <li><Link href="/petitii" className={linkCls}>Semnează petiții</Link></li>
-            <li><Link href="/stiri" className={linkCls}>Știri civice</Link></li>
-            <li><Link href="/ghiduri" className={linkCls}>Ghiduri civice</Link></li>
-            <li><Link href="/intreruperi" className={linkCls}>Întreruperi utilități</Link></li>
-            <li><Link href="/autoritati" className={linkCls}>Autorități</Link></li>
-            <li><Link href="/clasament-primarii" className={linkCls}>Clasament primării</Link></li>
-            <li><Link href="/civic-quiz" className={linkCls}>Quiz civic</Link></li>
-            <li><Link href="/dezvoltatori" className={linkCls}>API dezvoltatori</Link></li>
-            <li><Link href="/status" className={linkCls}>Status site</Link></li>
-          </ul>
-        </div>
+        {/* 5/22/2026 — scoase secțiunile „Județe & orașe" + „Acțiuni rapide"
+            la cererea user-ului. API dezvoltatori mutat în „Despre Civia".
+            Status site scos complet (pagina /status eliminată). */}
 
         {/* Feedback — centrat (cerut user 5/12/2026) */}
         <FooterFeedback />
