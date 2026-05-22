@@ -31,7 +31,7 @@ const FAQ = [
   {
     question: "Trebuie să strâng semnături pentru o sesizare?",
     answer:
-      "Nu. O sesizare semnată de o singură persoană are aceeași forță legală — autoritatea e obligată să răspundă în 30 zile (OG 27/2002). Co-semnatarii pot adăuga însă presiune publică.",
+      "Nu. O sesizare semnată de o singură persoană are aceeași forță legală — autoritatea e obligată să răspundă în 30 zile (OG 27/2002). Mai mulți cetățeni care trimit aceeași sesizare adaugă însă presiune publică.",
   },
   {
     question: "Cine răspunde la o petiție colectivă?",
@@ -46,7 +46,7 @@ const FAQ = [
   {
     question: "Pot transforma o sesizare în petiție?",
     answer:
-      "Da. Civia oferă pipeline-ul: dacă sesizarea ta strânge 50+ co-semnatari, primești sugestie de escaladare la petiție colectivă (vezi /petitii/initiaza).",
+      "Da. Civia oferă pipeline-ul: dacă sesizarea ta strânge 50+ trimiteri de la alți cetățeni, primești sugestie de escaladare la petiție colectivă (vezi /petitii/initiaza).",
   },
 ];
 

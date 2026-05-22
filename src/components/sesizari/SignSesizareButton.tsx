@@ -39,7 +39,7 @@ interface UserData {
  *   1. User apasă „Trimite și tu" → modal cu nume + adresa
  *   2. Apasă „Trimite" → POST /api/sesizari/[code]/cosign-send
  *   3. Backend trimite REAL via Resend de la sesizari@civia.ro
- *      cu identitatea co-semnatarului + atașează pozele AUTOMAT
+ *      cu identitatea persoanei care trimite + atașează pozele AUTOMAT
  *   4. Success → arată confirmation + closes modal
  *
  * Zero mailto, zero descărcat poze, zero browser email apps.

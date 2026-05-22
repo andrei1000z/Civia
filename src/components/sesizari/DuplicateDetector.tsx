@@ -98,7 +98,7 @@ export function DuplicateDetector({ tip, lat, lng, sector, enabled = true }: Pro
           </div>
           <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
             <strong>Adaugă vocea ta</strong> la sesizările existente — mai multe
-            cosemnături = prioritate mai mare la primărie decât duplicate noi.
+            trimiteri = prioritate mai mare la primărie decât duplicate noi.
           </p>
           <ul className="space-y-1.5 mb-3">
             {candidates.slice(0, 3).map((c) => (

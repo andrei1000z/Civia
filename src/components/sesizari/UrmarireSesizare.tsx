@@ -176,7 +176,7 @@ export function UrmarireSesizare() {
                       title="Și alți cetățeni au depus aceeași sesizare"
                     >
                       <Users size={10} aria-hidden="true" />
-                      +{cosignCount} {cosignCount === 1 ? "co-semnătură" : "co-semnături"}
+                      +{cosignCount} {cosignCount === 1 ? "trimitere" : "trimiteri"}
                     </span>
                   )}
                 </div>

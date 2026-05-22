@@ -475,7 +475,7 @@ export default async function SesizareDetailPage({
                 return cosemneNr > 0 ? (
                   <span
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 tabular-nums"
-                    aria-label={`${cosemneNr} ${cosemneNr === 1 ? "cetățean a co-semnat" : "cetățeni au co-semnat"}`}
+                    aria-label={`${cosemneNr} ${cosemneNr === 1 ? "cetățean a trimis și el" : "cetățeni au trimis și ei"}`}
                   >
                     <UserPlus size={10} aria-hidden="true" />
                     +{cosemneNr} {cosemneNr === 1 ? "cetățean" : "cetățeni"}

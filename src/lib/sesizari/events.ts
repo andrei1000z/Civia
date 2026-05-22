@@ -37,7 +37,7 @@ export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   // Bug fix 5/22/2026 — send-via-civia emite event_type „trimis_via_civia"
   // dar nu era in catalog, deci aparea „Eveniment" generic in timeline.
   trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#059669" },
-  cosemnat: { label: "Și un alt cetățean a depus sesizarea", icon: UserPlus, color: "#0891B2" },
+  cosemnat: { label: "Un alt cetățean a trimis și el sesizarea", icon: UserPlus, color: "#0891B2" },
   inregistrata: { label: "Înregistrată la registratură", icon: Building2, color: "#7C3AED" },
   rutata: { label: "Trimisă la direcția de resort", icon: Megaphone, color: "#0891B2" },
   redirectionata: { label: "Redirecționată către altă instituție", icon: Shuffle, color: "#0EA5E9" },

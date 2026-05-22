@@ -72,12 +72,12 @@ export function CosignersBadge({ code }: Props) {
         onClick={() => setOpen((s) => !s)}
         className="inline-flex items-center gap-2 h-9 px-3 rounded-[var(--radius-pill)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] text-xs font-semibold hover:brightness-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         aria-expanded={open}
-        aria-label={`${data.count} cetateni au co-semnat aceasta sesizare`}
+        aria-label={`${data.count} cetateni au trimis si ei aceasta sesizare`}
       >
         <UserCheck size={14} aria-hidden="true" />
         {data.count === 1
-          ? "1 cetățean a co-semnat"
-          : `${data.count} cetățeni au co-semnat`}
+          ? "1 cetățean a trimis și el"
+          : `${data.count} cetățeni au trimis și ei`}
       </button>
       {open && data.recent.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">

@@ -47,7 +47,7 @@ export default function StickersPage() {
             <div className="text-3xl mb-2" aria-hidden="true">3️⃣</div>
             <h3 className="font-semibold text-sm mb-1">Lipești</h3>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Pe groapa / trotuar / panou. Trecătorii scanează → ajung pe Civia → co-semnează.
+              Pe groapa / trotuar / panou. Trecătorii scanează → ajung pe Civia → trimit și ei.
             </p>
           </Card>
         </div>

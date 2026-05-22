@@ -29,7 +29,7 @@ export default function SesizariPublicePage() {
         description={
           <>
             Sesizări de la cetățeni. <strong>Votează</strong> sau apasă{" "}
-            <strong>„Trimite și tu"</strong> — co-semnătura crește prioritatea la primărie.
+            <strong>„Trimite și tu"</strong> — mai multe voci = prioritate mai mare la primărie.
           </>
         }
         tagline="Numere mari schimbă prioritatea la primărie."

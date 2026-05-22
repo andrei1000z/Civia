@@ -32,10 +32,10 @@ Raspunzi STRICT in JSON cu acest schema:
 
 Reguli:
 - Exact 3 actiuni, in ordinea: cea mai usoara → cea mai escalatoare.
-- icon = "mail" pt comunicari (consilier local, ONG), "scale" pt institutii de control (Avocatul Poporului, Curtea de Conturi), "users" pt co-semnare/comunitate, "alert" pt media/jurnalisti, "share" pt social.
+- icon = "mail" pt comunicari (consilier local, ONG), "scale" pt institutii de control (Avocatul Poporului, Curtea de Conturi), "users" pt comunitate/vecini, "alert" pt media/jurnalisti, "share" pt social.
 - Nu spune "asteapta". Toate actiunile sunt CONCRETE, executabile in 5-15 minute.
 - Pentru fiecare actiune, reason explica DE CE merge mai departe decat sesizarea initiala.
-- Daca tip-ul sesizarii e local (groapa, gunoi, parcare), prima actiune e in general "Email consilier local" sau "Co-semnare comunitate".
+- Daca tip-ul sesizarii e local (groapa, gunoi, parcare), prima actiune e in general "Email consilier local" sau "Cere și vecinilor să trimită".
 - Daca tip-ul e sistemic (transport, mediu), prima actiune poate fi "Avocatul Poporului" sau "Petitia online".
 - DOAR JSON, fara markdown sau text suplimentar.`;
 
@@ -43,8 +43,8 @@ const GENERIC_FALLBACK: FollowupsResult = {
   fallback: true,
   actions: [
     {
-      label: "Co-semnare vecini",
-      reason: "Cu 5+ co-semnaturi, sesizarea trece pe lista prioritara a primariei.",
+      label: "Cere și vecinilor să trimită",
+      reason: "Cu 5+ trimiteri, sesizarea trece pe lista prioritara a primariei.",
       icon: "users",
     },
     {

@@ -6,7 +6,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 export const metadata: Metadata = {
   title: "Urmărește-ți sesizarea",
   description:
-    "Ai trimis o sesizare prin Civia? Introdu codul primit la trimitere și vezi unde e — pe ce autoritate a ajuns, dacă a fost aprobată public, câți cetățeni au co-semnat.",
+    "Ai trimis o sesizare prin Civia? Introdu codul primit la trimitere și vezi unde e — pe ce autoritate a ajuns, dacă a fost aprobată public, câți cetățeni au trimis și ei.",
   alternates: { canonical: "/urmareste" },
 };
 

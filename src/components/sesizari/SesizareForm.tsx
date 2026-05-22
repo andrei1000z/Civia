@@ -1778,7 +1778,7 @@ ${today}`;
           <div className="flex-1">
             <p className="text-sm font-medium">Publică pe Civia (recomandat)</p>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Alții o pot <strong>vota</strong> și <strong>co-semna</strong>. Mai multe voci = răspuns mai rapid.
+              Alții o pot <strong>vota</strong> și <strong>trimite și ei</strong>. Mai multe voci = răspuns mai rapid.
             </p>
           </div>
         </label>

@@ -45,7 +45,7 @@ const MESSAGES: Record<Props["type"], { emoji: string; title: string; subtitle: 
   },
   "cosign-10": {
     emoji: "🤝",
-    title: "10 cosemnaturi pe sesizările tale!",
+    title: "10 trimiteri pe sesizările tale!",
     subtitle: "Comunitatea te urmează.",
   },
 };

@@ -442,13 +442,13 @@ export const GLOSAR: GlosarTerm[] = [
       "Operatorul termic București. Sesizări pentru conducte rupte, abur în stradă, lipsă căldură.",
   },
   {
-    slug: "co-semnatura",
-    termen: "Co-semnătură",
+    slug: "trimite-si-tu",
+    termen: "Trimite și tu",
     categorie: "petitii",
     definitie:
-      "Mecanism prin care mai mulți cetățeni semnează aceeași sesizare/petiție pentru a crește presiunea asupra autorității.",
+      "Funcție Civia prin care mai mulți cetățeni trimit aceeași sesizare către autorități, cu identitatea fiecăruia. Crește presiunea publică fără să dilueze textul oficial.",
     detaliu:
-      `Pe Civia: butonul „Trimite și tu" adaugă numele tău la sesizarea existentă.`,
+      `Pe Civia: butonul „Trimite și tu" deschide un modal cu nume + adresa. La submit, emailul pleacă REAL de la sesizari@civia.ro către autorități, cu identitatea celui care apasă (nu a autorului original). Pozele se atașează automat.`,
   },
   {
     slug: "fix-score",
@@ -463,7 +463,7 @@ export const GLOSAR: GlosarTerm[] = [
 
 export const GLOSAR_CATEGORII = {
   sesizari: { label: "Sesizări și reclamații", emoji: "📝" },
-  petitii: { label: "Petiții și co-semnături", emoji: "✊" },
+  petitii: { label: "Petiții și trimiteri colective", emoji: "✊" },
   legi: { label: "Legi cheie", emoji: "⚖️" },
   institutii: { label: "Instituții publice", emoji: "🏛️" },
   proceduri: { label: "Proceduri legale", emoji: "📋" },

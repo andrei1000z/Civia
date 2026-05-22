@@ -166,9 +166,10 @@ export async function POST(
   const primaryEmails = recipients.primary.map((a) => a.email).filter(Boolean);
   const ccEmails = (recipients.cc ?? []).map((a) => a.email).filter(Boolean);
 
-  // Subject — explicit „Co-semnătură" prefix ca primăriile să nu confunde
-  // cu o sesizare nouă duplicate. Rămâne pe același cod ca să se grupeze.
-  const subject = `Co-semnătură — Sesizare ${sesizare.code} — ${sesizare.titlu}`;
+  // Subject — IDENTIC cu send-via-civia (sesizarea originală). User cere
+  // explicit: fără prefix „Co-semnătură", emailul să arate ca o sesizare
+  // nouă obișnuită, doar cu identitatea persoanei care trimite acum.
+  const subject = `Sesizare ${sesizare.code} — ${sesizare.titlu}`;
 
   // Reply-To rămâne sesizari@civia.ro (Worker → /api/inbox/reply pipeline)
   const replyTo = `sesizari@civia.ro`;
@@ -225,7 +226,7 @@ export async function POST(
     await admin.from("sesizare_timeline").insert({
       sesizare_id: sesizare.id,
       event_type: "cosign_send",
-      description: `${nume} a co-semnat și a trimis email separat către autorități prin Civia.`,
+      description: `${nume} a trimis și el această sesizare către autorități prin Civia.`,
     });
   } catch {
     // best-effort

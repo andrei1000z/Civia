@@ -264,7 +264,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
         Spune-le și prietenilor — 5 secunde
       </p>
       <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
-        Cu cât mai mulți co-semnează aceeași sesizare, cu atât primăria
+        Cu cât mai mulți cetățeni trimit aceeași sesizare, cu atât primăria
         răspunde mai rapid. Distribuie în cartier:
       </p>
       <div className="grid grid-cols-3 gap-2 mb-2">
