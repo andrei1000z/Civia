@@ -53,6 +53,51 @@ Restul:
  * descriere + evidence. Pe failure (network, model timeout, JSON corrupt),
  * fallback la rezultatul „necunoscut/altele/30%".
  */
+/**
+ * Batch 6 (5/22/2026) — Vision result cache via Upstash Redis.
+ * Hash URL → cache routing decision 7 zile. Plan item #88.
+ *
+ * Aceeasi imagine analizata de 100 useri = 1 AI call, nu 100.
+ * Economie: ~80-90% pe vision pe sesizari publice / similar issues.
+ */
+async function getCachedVision(imageUrl: string): Promise<VisionRoutingResult | null> {
+  try {
+    const { Redis } = await import("@upstash/redis");
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return null;
+    const redis = new Redis({ url, token });
+    // Hash URL — simple djb2 ca sa nu folosim crypto (edge runtime).
+    let hash = 5381;
+    for (let i = 0; i < imageUrl.length; i++) {
+      hash = ((hash << 5) + hash + imageUrl.charCodeAt(i)) | 0;
+    }
+    const key = `vision-cache:${Math.abs(hash).toString(36)}`;
+    const cached = await redis.get<VisionRoutingResult>(key);
+    return cached ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedVision(imageUrl: string, result: VisionRoutingResult): Promise<void> {
+  try {
+    const { Redis } = await import("@upstash/redis");
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return;
+    const redis = new Redis({ url, token });
+    let hash = 5381;
+    for (let i = 0; i < imageUrl.length; i++) {
+      hash = ((hash << 5) + hash + imageUrl.charCodeAt(i)) | 0;
+    }
+    const key = `vision-cache:${Math.abs(hash).toString(36)}`;
+    await redis.set(key, result, { ex: 7 * 24 * 60 * 60 }); // 7 zile
+  } catch {
+    // silent — cache failure NU trebuie sa rupa flow
+  }
+}
+
 export async function routeFromImage(imageUrl: string): Promise<VisionRoutingResult> {
   try {
     // Bug fix #75 (5/22/2026) — image URL validation strictă.
@@ -70,6 +115,11 @@ export async function routeFromImage(imageUrl: string): Promise<VisionRoutingRes
         fallback: true,
       };
     }
+
+    // Batch 6 — check cache inainte de a chema Groq (plan item #88).
+    // Cache hit = zero AI cost + sub-50ms response.
+    const cached = await getCachedVision(imageUrl);
+    if (cached) return cached;
 
     // Bug fix #89 (5/22/2026) — Vision timeout 25s (Vercel max 45s).
     // Daca Groq vision hang, fallback la text-only nu blocheaza request-ul.
@@ -111,7 +161,7 @@ export async function routeFromImage(imageUrl: string): Promise<VisionRoutingRes
     const rawTip = typeof parsed.tip === "string" ? parsed.tip : "altele";
     const tip = TIP_ALIASES[rawTip] ?? rawTip;
 
-    return {
+    const result: VisionRoutingResult = {
       tip,
       authority: typeof parsed.authority === "string" ? parsed.authority : "necunoscut",
       confidence: typeof parsed.confidence === "number" ? Math.max(0, Math.min(100, parsed.confidence)) : 50,
@@ -123,6 +173,12 @@ export async function routeFromImage(imageUrl: string): Promise<VisionRoutingRes
             .map((e: unknown) => String(e).slice(0, 100))
         : [],
     };
+
+    // Batch 6 — cache result 7 zile pentru aceeasi imagine.
+    // Fire-and-forget, nu blocheaza response.
+    void setCachedVision(imageUrl, result);
+
+    return result;
   } catch {
     return {
       tip: "altele",
