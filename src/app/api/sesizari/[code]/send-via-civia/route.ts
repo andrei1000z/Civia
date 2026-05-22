@@ -48,9 +48,63 @@ export async function POST(
     );
   }
 
+  // 5/22/2026 — accept optional body cu nume + adresa daca userul nu le-a
+  // furnizat la submit. Backend update-eaza sesizarea + trimite email-ul
+  // intr-un singur request → flow simplu pentru user.
+  let bodyNume: string | null = null;
+  let bodyAdresa: string | null = null;
+  try {
+    const body = (await req.json().catch(() => ({}))) as { nume?: string; adresa?: string };
+    if (typeof body.nume === "string" && body.nume.trim().length >= 2 && body.nume.trim().length <= 120) {
+      bodyNume = body.nume.trim();
+    }
+    if (typeof body.adresa === "string" && body.adresa.trim().length >= 3 && body.adresa.trim().length <= 300) {
+      bodyAdresa = body.adresa.trim();
+    }
+  } catch {
+    // No body or invalid — proceed cu valorile din sesizare existing.
+  }
+
   const sesizare = await getSesizareByCode(code);
   if (!sesizare) {
     return NextResponse.json({ error: "Sesizare negasita" }, { status: 404 });
+  }
+
+  // 5/22/2026 — daca lipsesc nume/adresa pe sesizare DAR userul le-a
+  // furnizat in body, update sesizare inainte de trimitere.
+  const needsNameUpdate = !sesizare.author_name && bodyNume;
+  const needsAddressUpdate = !sesizare.author_address && bodyAdresa;
+  if (needsNameUpdate || needsAddressUpdate) {
+    const admin = createSupabaseAdmin();
+    const updates: Record<string, string> = {};
+    if (needsNameUpdate && bodyNume) updates.author_name = bodyNume;
+    if (needsAddressUpdate && bodyAdresa) updates.author_address = bodyAdresa;
+    await admin.from("sesizari").update(updates).eq("id", sesizare.id);
+    // Update in-memory ca sa folosim noile valori in email.
+    if (needsNameUpdate && bodyNume) sesizare.author_name = bodyNume;
+    if (needsAddressUpdate && bodyAdresa) sesizare.author_address = bodyAdresa;
+  }
+
+  // Block trimitere daca tot lipsesc nume sau adresa (validare strictă).
+  if (!sesizare.author_name || sesizare.author_name.length < 2) {
+    return NextResponse.json(
+      {
+        error: "Lipsește numele. Completează-l în formular pentru a trimite.",
+        needs_identity: true,
+        missing: { nume: !sesizare.author_name, adresa: !sesizare.author_address },
+      },
+      { status: 400 },
+    );
+  }
+  if (!sesizare.author_address || sesizare.author_address.length < 3) {
+    return NextResponse.json(
+      {
+        error: "Lipsește adresa. Completeaz-o în formular pentru a trimite.",
+        needs_identity: true,
+        missing: { nume: !sesizare.author_name, adresa: !sesizare.author_address },
+      },
+      { status: 400 },
+    );
   }
 
   // Ownership check — doar autorul poate trimite via Civia. Alternativ
