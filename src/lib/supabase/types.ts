@@ -20,6 +20,10 @@ export interface SesizareRow {
   /** 5/22/2026 — adresa cetăţeanului pentru identificare oficială în emailul către primărie (OG 27/2002). */
   author_address?: string | null;
   tip: string;
+  /** 5/22/2026 — categoria custom generată de AI când tip="altele".
+   *  Ex: tip="altele", custom_category="copaci netoaletați". UI afișează
+   *  custom_category capitalizat în loc de label-ul generic. */
+  custom_category?: string | null;
   titlu: string;
   locatie: string;
   sector: string;

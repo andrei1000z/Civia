@@ -12,7 +12,7 @@ import {
   isFollowing,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { VoteButtons } from "@/components/sesizari/VoteButtons";
@@ -103,8 +103,10 @@ export default async function SesizareDetailPage({
   const isResolved = sesizare.status === "rezolvat";
   const hasBeforeAfter = isResolved && beforeUrl && afterUrl;
 
-  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.label ?? sesizare.tip;
-  const tipIcon = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.icon ?? "📝";
+  const { label: tipLabel, icon: tipIcon } = resolveTipLabel(
+    sesizare.tip,
+    (sesizare as unknown as { custom_category?: string | null }).custom_category,
+  );
 
   return (
     <div className="container-narrow py-8 md:py-12">

@@ -158,6 +158,30 @@ export const SESIZARE_TIPURI = [
 /** Tipuri vizibile in form picker. */
 export const SESIZARE_TIPURI_ACTIVE = SESIZARE_TIPURI.filter((t) => t.active !== false);
 
+/**
+ * 5/22/2026 — Resolve label-ul tipului unei sesizări, cu suport pentru
+ * custom_category când tip="altele". Returnează label-ul capitalized
+ * dacă există custom_category, altfel fallback la label-ul din SESIZARE_TIPURI.
+ *
+ * Înainte: pe pagina /sesizari-publice cardul cu „altele" arăta
+ * „Altele (categoria se creează automat din descriere)" — confuz.
+ * Acum: dacă AI a clasificat (ex: „copaci netoaletați") → arătăm asta.
+ */
+export function resolveTipLabel(
+  tip: string,
+  customCategory?: string | null,
+): { label: string; icon: string } {
+  const meta = SESIZARE_TIPURI.find((t) => t.value === tip);
+  // Cand tip="altele" si AI a generat o categorie custom → folosim asta.
+  if (tip === "altele" && customCategory && customCategory.trim().length > 0) {
+    const cleaned = customCategory.trim();
+    // Capitalize prima literă
+    const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    return { label: capitalized, icon: meta?.icon ?? "📝" };
+  }
+  return { label: meta?.label ?? tip, icon: meta?.icon ?? "📝" };
+}
+
 // Sectoare — doar pentru municipiul București
 export const SECTOARE = [
   { id: "S1", label: "Sector 1" },

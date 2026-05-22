@@ -10,7 +10,7 @@ import { ShareButton } from "./ShareButton";
 import { OverdueBadge } from "./OverdueBadge";
 
 const SesizariMap = dynamic(() => import("@/components/maps/SesizariMap").then((m) => m.SesizariMap), { ssr: false });
-import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
 import { timeAgo, cn } from "@/lib/utils";
 import { stripForPreview } from "@/lib/privacy";
@@ -421,8 +421,7 @@ export function SesizariPublice() {
         <>
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
           {filtered.map((s) => {
-            const tipLabel = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.label ?? s.tip;
-            const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";
+            const { label: tipLabel, icon: tipIcon } = resolveTipLabel(s.tip, s.custom_category);
             return (
               <Link
                 key={s.id}
