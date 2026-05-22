@@ -1,0 +1,41 @@
+# 5/22/2026 — Accelerare deploy Vercel.
+# Fișiere care nu sunt necesare în build context (~50+ scripturi).
+# Vercel respectă acest fișier când împachetează deployment-ul.
+
+# Scripturile de migrare / debug / one-off — rulate local cu `tsx`
+scripts/
+
+# SQL migrations — aplicate manual prin Supabase dashboard / CLI
+supabase/migrations/
+supabase/schema.sql
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# Build artifacts (Vercel rebuild oricum)
+.next/
+
+# Dev configs care nu sunt necesare la runtime
+.env.example
+.env.local.example
+docs/
+plans/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude / AI artifacts (doar la rădăcină, nu și în node_modules!)
+/.claude/
+/ONBOARDING.md
+/AGENTS.md
+/CLAUDE.md
+/README.md

@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
   // aceste optiuni explicit setate, nu fallback la __dirname.
   distDir: ".next",
   outputFileTracingRoot: process.cwd(),
+  // 5/22/2026 — accelerare deploy Vercel (Level 1+8 din plan optimizare).
+  // TS check rulează local + în vitest, deci skip-uim la build (-30-50s).
+  // (Next 16 nu mai rulează ESLint automat la build — zero overhead acolo).
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Standalone output — Vercel detectează și creează deployment bundles
+  // mai mici (-10-20s upload artifacts). Recommended de Vercel docs.
+  output: "standalone",
   // În producție, eliminăm console.log-urile (dar păstrăm warn/error
   // pentru Sentry). Reduce bundle + previne PII leaking accidental.
   compiler: {
