@@ -14,7 +14,115 @@ const messageSchema = z.object({
 
 const schema = z.object({
   messages: z.array(messageSchema).min(1).max(20),
+  // Batch 4 (5/22/2026) — context injection pentru chat county-aware.
+  // Cand userul e pe /[judet]/* sau o sesizare specifica, frontend-ul
+  // poate trimite context ca AI sa raspunda personalizat (Prefect-ul
+  // judetului, autoritatile locale, statusul sesizarii).
+  context: z.object({
+    countyCode: z.string().max(3).optional(),
+    countyName: z.string().max(80).optional(),
+    sesizareCode: z.string().max(20).optional(),
+    sesizareTitlu: z.string().max(200).optional(),
+    sesizareStatus: z.string().max(40).optional(),
+    page: z.string().max(120).optional(),
+  }).optional(),
 });
+
+/**
+ * Batch 4 (5/22/2026) — Generate 3 suggested follow-up prompts după
+ * un răspuns AI. Heuristic-based (zero cost), pattern matching pe topic.
+ */
+function generateFollowupSuggestions(
+  lastUserMsg: string,
+  ctx?: NonNullable<z.infer<typeof schema>["context"]>,
+): string[] {
+  const msg = lastUserMsg.toLowerCase();
+
+  // Topic-based suggestions
+  if (msg.includes("sesizar") || msg.includes("plang")) {
+    return [
+      "Cum aleg autoritatea potrivită pentru sesizarea mea?",
+      "Ce fac dacă primăria nu răspunde în 30 de zile?",
+      "Pot să-mi ascund numele pe sesizarea publică?",
+    ];
+  }
+  if (msg.includes("petit")) {
+    return [
+      "Cum inițiez o petiție pe Civia?",
+      "De câte semnături am nevoie pentru impact?",
+      "Pot semna anonim?",
+    ];
+  }
+  if (msg.includes("amend") || msg.includes("contest")) {
+    return [
+      "Care e termenul pentru contestare?",
+      "Ce documente îmi trebuie?",
+      "Pot contesta și online?",
+    ];
+  }
+  if (msg.includes("avocat") || msg.includes("ombudsman") || msg.includes("escala")) {
+    return [
+      "Cum trimit petiție la Avocatul Poporului?",
+      "Când contactez Prefectul?",
+      "Pot acționa autoritatea în instanță?",
+    ];
+  }
+  if (msg.includes("og 27") || msg.includes("544")) {
+    return [
+      "Cum cer informații publice (Legea 544/2001)?",
+      "Ce e diferit între petiție și sesizare?",
+      "Care e termenul de răspuns?",
+    ];
+  }
+
+  // County-aware default
+  if (ctx?.countyCode) {
+    return [
+      `Care sunt autoritățile competente în ${ctx.countyName ?? "județ"}?`,
+      "Cum aleg primăria potrivită pentru sesizare?",
+      "Ce drepturi am ca cetățean local?",
+    ];
+  }
+
+  // Sesizare-aware default
+  if (ctx?.sesizareCode) {
+    return [
+      "Pot escalada sesizarea la Prefect?",
+      "Cât timp aștept până la răspuns?",
+      "Cum verific statusul oficial?",
+    ];
+  }
+
+  // Generic fallback
+  return [
+    "Cum depun o sesizare pe Civia?",
+    "Care sunt drepturile mele constituționale?",
+    "Cum mă pot implica civic?",
+  ];
+}
+
+function buildContextPrompt(ctx: NonNullable<z.infer<typeof schema>["context"]> | undefined): string {
+  if (!ctx) return "";
+  const lines: string[] = [];
+  if (ctx.countyName) {
+    lines.push(`USERUL ESTE PE PAGINA JUDETULUI ${ctx.countyName.toUpperCase()} (${ctx.countyCode ?? ""}).`);
+    lines.push(`- Cand răspunzi despre escaladare/autoritati, mentioneaza specific Prefectul ${ctx.countyName} si autoritatile locale.`);
+    lines.push(`- Pentru detalii contact: directioneaza la /${(ctx.countyCode ?? "").toLowerCase()}/autoritati.`);
+  }
+  if (ctx.sesizareCode) {
+    lines.push(``);
+    lines.push(`USERUL ARE INTREBARI DESPRE SESIZAREA #${ctx.sesizareCode}.`);
+    if (ctx.sesizareTitlu) lines.push(`- Titlu: ${ctx.sesizareTitlu}`);
+    if (ctx.sesizareStatus) lines.push(`- Status curent: ${ctx.sesizareStatus}`);
+    lines.push(`- Daca intreaba „de ce nu s-a rezolvat?" → explica statusul si pasul urmator din workflow.`);
+  }
+  if (ctx.page && !ctx.countyCode && !ctx.sesizareCode) {
+    lines.push(`USERUL ESTE PE PAGINA: ${ctx.page}.`);
+  }
+  return lines.length > 0
+    ? `\n\nCONTEXT ACTUAL UTILIZATOR:\n${lines.join("\n")}\n`
+    : "";
+}
 
 const SYSTEM_PROMPT = `Esti Civia Assistant — un asistent civic pentru cetateni romani.
 
@@ -114,10 +222,12 @@ export async function POST(req: Request) {
 
   try {
     const client = getGroqClient();
+    // Batch 4 — context injection (county-aware + page-aware).
+    const contextPrompt = buildContextPrompt(parsed.data.context);
     const completion = await client.chat.completions.create({
       model: GROQ_MODEL_FAST,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: SYSTEM_PROMPT + contextPrompt },
         ...userMessages.map((m) => ({ role: m.role, content: m.content })),
       ],
       temperature: 0.5,
@@ -132,7 +242,13 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, reply });
+    // Batch 4 — Generate „suggested follow-ups" pe baza ultimei intrebari
+    // + raspuns AI. 3 sugestii prompts contextual. Heuristic local (zero
+    // cost extra AI call) — pattern matching pe topics frecvente.
+    const lastUserMsg = userMessages[userMessages.length - 1]?.content.toLowerCase() ?? "";
+    const suggestions = generateFollowupSuggestions(lastUserMsg, parsed.data.context);
+
+    return NextResponse.json({ ok: true, reply, suggestions });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Eroare AI" },

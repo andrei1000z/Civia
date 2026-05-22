@@ -33,6 +33,8 @@ export function CiviaAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Batch 4 (5/22/2026) — suggested follow-ups după răspuns AI.
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -84,12 +86,34 @@ export function CiviaAssistant() {
     setInput("");
     setLoading(true);
     setError(null);
+    setSuggestions([]); // Clear old suggestions
 
     try {
+      // Batch 4 (5/22/2026) — context injection.
+      // Detectează URL pentru a oferi context page la AI.
+      const ctx: Record<string, string> = {};
+      if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        ctx.page = path;
+        // /[judet]/* → county code
+        const countyMatch = path.match(/^\/([a-z]{1,3})(?:\/|$)/);
+        if (countyMatch && countyMatch[1] && !["api", "admin", "cont", "auth"].includes(countyMatch[1])) {
+          ctx.countyCode = countyMatch[1].toUpperCase();
+        }
+        // /sesizari/[code]
+        const sesizareMatch = path.match(/^\/sesizari\/(\w+)/);
+        if (sesizareMatch?.[1]) {
+          ctx.sesizareCode = sesizareMatch[1];
+        }
+      }
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          messages: newMessages,
+          context: Object.keys(ctx).length > 0 ? ctx : undefined,
+        }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -97,6 +121,10 @@ export function CiviaAssistant() {
         return;
       }
       setMessages((prev) => [...prev, { role: "assistant", content: json.reply }]);
+      // Batch 4 — render suggested follow-ups dupa raspuns AI.
+      if (Array.isArray(json.suggestions)) {
+        setSuggestions(json.suggestions.slice(0, 3));
+      }
     } catch {
       setError("Eroare retea. Reincearca.");
     } finally {
@@ -219,6 +247,28 @@ export function CiviaAssistant() {
                   {p}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Batch 4 (5/22/2026) — Suggested follow-ups după răspuns AI.
+              Visible doar cand sunt mesaje + nu se incarca + avem sugestii. */}
+          {suggestions.length > 0 && !loading && messages.filter((m) => m.role === "user").length > 0 && (
+            <div className="px-4 py-2 border-t border-[var(--color-border)]">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-1.5">
+                Ai putea întreba și
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleSend(s)}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-[var(--color-primary-soft)] hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-primary-on-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
