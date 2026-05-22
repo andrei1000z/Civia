@@ -20,7 +20,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
-import { AuroraBackground } from "@/components/liquid-civic/AuroraBackground";
+// AuroraBackground removed 5/22/2026 v5 — vezi globals.css `html` block.
 import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
 // Code-split cold-path visuals — desktop-only hover effect + easter egg.
@@ -219,8 +219,9 @@ export default function RootLayout({
         <Analytics />
         <NavProgress />
         <ScrollRestoration />
-        {/* Liquid Civic v2027 — aurora bg + cursor glow + splash + konami */}
-        <AuroraBackground />
+        {/* 5/22/2026 v5 — AuroraBackground scoasă complet. Userul a raportat
+            persistent „cacat negru" peste bg din cauza spatiilor dintre blob-uri
+            unde se vedea bg-ul solid. Acum: flat var(--color-bg) uniform. */}
         <CursorGlow />
         <FirstLoadSplash />
         <KonamiEasterEgg />

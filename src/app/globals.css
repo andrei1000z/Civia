@@ -94,14 +94,11 @@
   --color-accent-soft: #7f1d1d;
   --color-accent-on-soft: #fecaca;
 
-  /* 5/22/2026 v4 — schimbat din #050a0a (cvasi-negru) la #0a1f1f (dark
-     teal vizibil). v3 mai avea probleme: la marginile dintre radial-uri
-     unde fade-uia la transparent, se vedea #050a0a (~pur negru) → user
-     percepe „banda neagra" pe partea de jos a viewport-ului.
-     Acum bg-ul DEFAULT e tinted teal puternic → chiar si fara radial-uri
-     deasupra, pagina arata color. Radialele adauga doar profunzime.
-     Surface-uri raman #171717 — contrast vizibil pastrat. */
-  --color-bg: #0a1f1f;
+  /* 5/22/2026 v5 — bg flat fara gradient. Bumped de la #0a1f1f la #0d2e2a
+     (more vibrant emerald-dark) pentru a NU citi ca „negru" pe monitor.
+     User a raportat de 5x ca background-ul pare negru — ridicam saturatia
+     verde ca sa fie distinct vizibil ca tinted dark teal, nu black. */
+  --color-bg: #0d2e2a;
 
   /* Dark mode — radials STRONG ca sa se vada pe bg-ul intunecat. */
   --bg-radial-emerald: rgba(16, 185, 129, 0.32);
@@ -256,36 +253,15 @@ html, body {
   overflow-x: hidden;
 }
 
-/* 2026-05-19 Liquid Civic: bg-ul de la nivel `body` a fost MUTAT pe `html`.
-   Motiv: AuroraBackground component (z-index: -10, position: fixed) era
-   acoperit de body's opaque bg layer. Acum:
-     html → var(--color-bg) (color solid)
-     <AuroraBackground /> → aurora layer animat (fixed, z: -10)
-     body → transparent, content normal.
-   Vechiul mesh static din body e replicat in AuroraBackground (animat). */
+/* 5/22/2026 v5 — STRIP toate gradient-urile.
+   User a raportat de 5 ori „cacatu negru" peste background. Cauza root:
+   orice gradient/radial care fade-ueste la `transparent` lasă bg-ul solid
+   (oricat de tinted ar fi) să fie vizibil în benzile de transparent — pe
+   monitoare mari + OLED se citește ca „banda neagra".
+   Soluție finală: NIMIC peste flat color. Solid emerald-dark uniform pe
+   tot viewport-ul, zero straturi, zero artefacte. */
 html {
-  /* Bug fix 5/22/2026 v4 — user (3rd report cu Gemini diagnostic) tot vede
-     „banda neagra" pe partea de jos a viewport-ului. Cauza identificata:
-     radialele aveau `transparent 50%` → la marginile lor se vedea
-     `--color-bg` = #050a0a (quasi-negru).
-     v4 fixes:
-       (a) `--color-bg` mutat la #0a1f1f (dark teal vizibil tinted) sus
-       (b) Radialele extinse la 70% (era 50%) → mai putin transparent space
-       (c) Adaugat un linear-gradient ULTIM strat sub radiale ca safety net
-           (gradient diagonal emerald → teal → dark teal) — garantat color
-           pe tot viewport-ul, chiar daca radialele s-ar fade total. */
-  background:
-    radial-gradient(circle at 10% 5%, var(--bg-radial-emerald) 0px, transparent 70%),
-    radial-gradient(circle at 90% 10%, var(--bg-radial-aqua) 0px, transparent 70%),
-    radial-gradient(circle at 50% 40%, var(--bg-radial-violet) 0px, transparent 75%),
-    radial-gradient(circle at 85% 60%, var(--bg-radial-emerald) 0px, transparent 70%),
-    radial-gradient(circle at 15% 75%, var(--bg-radial-aqua) 0px, transparent 75%),
-    radial-gradient(circle at 50% 95%, var(--bg-radial-violet) 0px, transparent 70%),
-    radial-gradient(circle at 95% 95%, var(--bg-radial-emerald) 0px, transparent 70%),
-    /* Safety net — diagonal linear gradient acopera tot viewport-ul */
-    linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(6, 78, 59, 0.05) 50%, rgba(10, 31, 31, 1) 100%),
-    var(--color-bg);
-  background-attachment: fixed;
+  background: var(--color-bg);
 }
 
 body {
@@ -362,18 +338,10 @@ html { scroll-padding-top: 4.5rem; }
    (none currently do). Reported via reddit feedback 2026-04. */
 html, body { overflow-x: clip; }
 
-/* Dark-mode aurora — emerald + indigo + purple peste true-black.
-   Layered cu radial-gradient ca să respire efectul de „aurora boreală" pe
-   OLED. Pe device-uri non-OLED se vede ca subtle accent. */
-/* 2026-05-19: mesh pe html (dark) — body e transparent ca aurora sa fie vizibila.
-   `.dark` clasa e pe <html>, deci selectorul direct e `html.dark`. */
+/* 5/22/2026 v5 — html.dark redus la flat solid color, fara radials.
+   Vezi comentariul de pe selectorul `html` mai sus. */
 html.dark {
-  background:
-    radial-gradient(at 15% 12%, rgba(16, 185, 129, 0.10) 0px, transparent 55%),
-    radial-gradient(at 85% 18%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
-    radial-gradient(at 50% 75%, rgba(168, 85, 247, 0.10) 0px, transparent 55%),
-    var(--color-bg);
-  background-attachment: fixed;
+  background: var(--color-bg);
 }
 
 /* Respect user's motion preference — pentru user-ii cu
