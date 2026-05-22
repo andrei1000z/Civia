@@ -4,6 +4,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { ghiduri } from "@/data/ghiduri";
 import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
 import { ORASE_MARI } from "@/data/orase-mari";
+import { STRAZI_POPULARE } from "@/data/strazi-populare";
 import { evenimente } from "@/data/evenimente";
 import { getAllInterruptions } from "@/data/intreruperi";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -112,6 +113,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
+  // /sesizari/strada/[slug] — 20 street SEO pages (long-tail traffic from
+  // analytics: "Iancului", "Soseaua Iancului", "Morarilor", etc.).
+  const strazi: MetadataRoute.Sitemap = STRAZI_POPULARE.map((s) => ({
+    url: `${base}/sesizari/strada/${s.slug}`,
+    lastModified: now,
+    changeFrequency: "daily" as const,
+    priority: 0.7,
+  }));
+
   // Ghiduri
   const ghiduriRoutes: MetadataRoute.Sitemap = ghiduri.map((g) => ({
     url: `${base}/ghiduri/${g.slug}`,
@@ -218,5 +228,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...protesteRoutes,
     ...cumFacRoutes,
     ...oraseRoutes,
+    ...strazi,
   ];
 }

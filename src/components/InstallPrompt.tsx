@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, X, Share, Plus } from "lucide-react";
+import { Download, X, Share, Plus, Bell, Camera, WifiOff } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -316,43 +316,62 @@ export function InstallPrompt() {
       className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-toast)] animate-fade-in-up"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
     >
-      <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4 flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-[var(--color-primary)] to-indigo-900 grid place-items-center text-white">
-          <Download size={18} aria-hidden="true" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p id="install-prompt-title" className="font-semibold text-sm mb-0.5">
-            Pune Civia pe ecranul de start
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)] mb-3">
-            Click rapid din home screen, fără bara de browser. Ghidurile civice
-            rămân disponibile offline — util la dezastre și unde n-ai semnal.
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={install}
-              className="h-9 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
-            >
-              Adaugă pe ecran
-            </button>
-            <button
-              type="button"
-              onClick={dismiss}
-              className="h-9 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
-            >
-              Nu acum
-            </button>
-          </div>
-        </div>
+      {/* 5/22/2026 — rebrand cu beneficii concrete. Analytics arăta 0.5%
+          install rate (3.7k prompts → 18 installs). Acum 3 beneficii
+          vizuale clare → click pe „Instalează acum" devine no-brainer. */}
+      <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4 relative">
         <button
           type="button"
           onClick={dismiss}
-          className="shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] -mt-1 -mr-1 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          className="absolute top-3 right-3 text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           aria-label="Închide promptul de instalare"
         >
           <X size={14} aria-hidden="true" />
         </button>
+        <div className="flex items-start gap-3 mb-3 pr-6">
+          <div className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-[var(--color-primary)] to-emerald-900 grid place-items-center text-white">
+            <Download size={18} aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p id="install-prompt-title" className="font-semibold text-sm mb-0.5">
+              Civia ca aplicație pe telefon
+            </p>
+            <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+              1 tap din home screen, fără bara de browser. Funcționează ca o app nativă.
+            </p>
+          </div>
+        </div>
+        {/* 3 beneficii concrete cu iconuri */}
+        <ul className="space-y-2 mb-3 text-xs">
+          <li className="flex items-start gap-2">
+            <Bell size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+            <span><strong>Notificări push</strong> când primăria răspunde la sesizarea ta</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Camera size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+            <span><strong>Camera 1-tap</strong> pentru sesizare rapidă pe stradă</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <WifiOff size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+            <span><strong>Funcționează offline</strong> — ghiduri + sesizări pendinte</span>
+          </li>
+        </ul>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={install}
+            className="flex-1 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-bold hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
+          >
+            Instalează acum
+          </button>
+          <button
+            type="button"
+            onClick={dismiss}
+            className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
+          >
+            Mai târziu
+          </button>
+        </div>
       </div>
     </div>
   );

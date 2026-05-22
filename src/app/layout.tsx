@@ -116,6 +116,19 @@ export const metadata: Metadata = {
       "x-default": SITE_URL,
     },
   },
+  // 5/22/2026 — verification meta pentru Search Console (Google) + Bing
+  // Webmaster Tools + Yandex. Codes vin din env. DuckDuckGo nu cere
+  // verification — folosește indexul Bing automat. Plausible deja config.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.YANDEX_VERIFICATION,
+    other: {
+      // Bing Webmaster Tools verification meta
+      "msvalidate.01": process.env.BING_SITE_VERIFICATION ?? "",
+      // Yahoo (uses Bing index, but separate verification supported)
+      "y_key": process.env.YAHOO_SITE_VERIFICATION ?? "",
+    },
+  },
 };
 
 export const viewport = {

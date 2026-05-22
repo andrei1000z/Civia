@@ -40,22 +40,32 @@ export function NewsletterNudge() {
     const dismissedAt = parseInt(localStorage.getItem(NUDGE_DISMISS_KEY) ?? "0", 10);
     if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) return;
     // Cross-device dismissed: daca userul a respins nudge-ul pe alt device,
-    // respectam si aici. Check sincron pe localStorage cache (hydrated la
-    // login + actualizat in dismiss()).
+    // respectam si aici.
     void import("@/lib/preferences/sync").then(({ isPromptDismissed }) => {
       if (isPromptDismissed("newsletter_nudge")) return; // skip, no schedule
     });
-    // Visit count gate
-    const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) ?? "0", 10);
-    if (visitCount < MIN_VISITS_BEFORE_NUDGE) return;
+    // 5/22/2026 — user a cerut nudge pe /sesizari-publice indiferent de visit
+    // count (engagement obvious — user citește feed-ul activ). Pe alte pagini
+    // păstrăm gating-ul vechi (3+ vizite). Analytics: doar 9 newsletter subs
+    // total → mai agresiv pe pagini cu intent clar.
+    const isFeedPage =
+      window.location.pathname === "/sesizari-publice" ||
+      window.location.pathname.startsWith("/sesizari-publice/");
+    // Visit count gate — bypass pe /sesizari-publice (engagement deja proven)
+    if (!isFeedPage) {
+      const visitCount = parseInt(localStorage.getItem(VISIT_COUNT_KEY) ?? "0", 10);
+      if (visitCount < MIN_VISITS_BEFORE_NUDGE) return;
+    }
     // GATE: nu apare daca user n-a decis inca despre cookies.
     if (!localStorage.getItem(COOKIE_CONSENT_KEY)) return;
+    // Pe feed page → 30s delay (user a citit ceva conținut). Altfel → 8s.
+    const delayMs = isFeedPage ? 30_000 : 8_000;
     const t = setTimeout(() => {
       // Re-check on fire (in caz ca prefs s-au hydrated intre setup si fire).
       void import("@/lib/preferences/sync").then(({ isPromptDismissed }) => {
         if (!isPromptDismissed("newsletter_nudge")) setVisible(true);
       });
-    }, 8000);
+    }, delayMs);
 
     // Pe hydrate cross-device: daca remote spune ca s-a dismissed, ascundem.
     const onHydrate = () => {
