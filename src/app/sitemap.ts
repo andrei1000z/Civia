@@ -92,6 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/statistici-sesizari-romania`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/press`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/cum-fac`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${base}/actualizari`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
   ];
 
   // /cum-fac/[tip] — 15 ghiduri concrete
