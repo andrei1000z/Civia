@@ -27,6 +27,7 @@ import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
 import { VerifyPanel } from "@/components/sesizari/VerifyPanel";
 import { SimilarSesizari } from "@/components/sesizari/SimilarSesizari";
 import { FollowButton } from "@/components/sesizari/FollowButton";
+import { ResendButton } from "@/components/sesizari/ResendButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
@@ -201,6 +202,18 @@ export default async function SesizareDetailPage({
               </span>
             </div>
             <CosignersBadge code={sesizare.code} />
+            {/* 5/22/2026 — Resend alert pentru ghost-sends / bounces.
+                Vizibil DOAR pentru autor + DOAR dacă există problemă. */}
+            {isAuthor && (
+              <ResendButton
+                code={sesizare.code}
+                deliveryStatus={(sesizare as unknown as { delivery_status?: string | null }).delivery_status ?? null}
+                isGhostSend={
+                  sesizare.sent_via_civia === true &&
+                  !(sesizare as unknown as { resend_message_id?: string | null }).resend_message_id
+                }
+              />
+            )}
             {/* Action row: butoane standardizate (h-10 cu wrap) in ordine
                 de prioritate vizuala:
                   1. „Trimite si tu" (primary highlight) - h-11

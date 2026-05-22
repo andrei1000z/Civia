@@ -6,6 +6,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email/resend";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
+import { ENV } from "@/lib/env";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
@@ -156,7 +157,7 @@ export async function POST(
     formal_text: sesizare.formal_text,
     author_name: sesizare.author_name,
     author_email: user.email ?? null,
-    author_address: null,
+    author_address: sesizare.author_address ?? null,
     imagini: sesizare.imagini ?? [],
     code: sesizare.code,
   });
@@ -234,6 +235,29 @@ export async function POST(
     );
   }
 
+  // 5/22/2026 — STRICT check: result.ok=true DAR result.id missing înseamnă
+  // Resend a returnat success fără ID — semn de configurare gresita (FROM
+  // sandbox, domain neverificat, etc.). Astea sunt „ghost sends" — primăria
+  // nu primește real, dar DB e marcată ca trimisă. Fix: respinge + log.
+  if (!result.id) {
+    Sentry.captureMessage("send-via-civia: Resend returned no message_id (ghost send)", {
+      level: "error",
+      tags: { kind: "resend_no_id", code: sesizare.code },
+      extra: {
+        primary_emails: primaryEmails,
+        from_header: fromHeader,
+        result,
+      },
+    });
+    return NextResponse.json(
+      {
+        error: "Email-ul a fost trimis dar fără confirmare de livrare. Verifică configurarea Resend (FROM email + domain DKIM) sau încearcă din nou.",
+        code: "ghost_send",
+      },
+      { status: 502 },
+    );
+  }
+
   // Marcheaza sesizarea ca trimisa + log timeline event.
   //
   // CRITICAL fix 2026-05-21: anterior `.update()` era await-uit fara
@@ -295,6 +319,54 @@ export async function POST(
       tags: { kind: "send_civia_timeline_fail", code: sesizare.code },
       extra: { sesizare_id: sesizare.id, tl_error: tlError.message, tl_code: tlError.code },
     });
+  }
+
+  // 5/22/2026 — Auto-ack către cetățean. Independent de BCC (BCC nu garantează
+  // livrare la user; multe Gmail-uri filtrează BCC-uri ca spam). Email separat
+  // cu link la pagina sesizării + termen 30 zile + ce să facă dacă nu răspund.
+  // Failure aici nu blochează succes — emailul către primării a plecat deja.
+  if (userEmail) {
+    try {
+      const { emailTemplate } = await import("@/lib/email/resend");
+      const sesizareUrl = `${ENV.SITE_URL()}/sesizari/${sesizare.code}`;
+      const ackBody = `
+        <p>${escapeHtml(sesizare.author_name.split(" ")[0] ?? "Salut")},</p>
+        <p>Sesizarea ta <strong>${escapeHtml(sesizare.titlu)}</strong> a plecat oficial la <strong>${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"}</strong>:</p>
+        <ul style="margin:12px 0;padding-left:20px;color:#475569">
+          ${primaryEmails.map((e) => `<li>${escapeHtml(e)}</li>`).join("")}
+        </ul>
+        <p>Conform <strong>OG 27/2002 art. 8</strong>, primăria are <strong>30 de zile</strong> să răspundă. Civia urmărește automat:</p>
+        <ul>
+          <li>📬 Primim răspunsul lor pe <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">sesizari@civia.ro</code> → te notificăm imediat</li>
+          <li>📋 Numărul de înregistrare îl extragem automat și-l vezi pe pagina sesizării</li>
+          <li>⏰ Dacă nu răspund: la 7/14/30 zile primești reminder + sugestii escaladare</li>
+        </ul>
+        <p style="background:#ecfdf5;padding:12px 16px;border-radius:8px;border-left:3px solid #059669;font-size:13px;color:#065f46;margin:20px 0">
+          💡 <strong>Bună de știut:</strong> Primăriile NU au sistem automat de auto-reply. Funcționarii umani înregistrează manual în 1-5 zile lucrătoare. Lipsa răspunsului imediat e normală.
+        </p>
+        <p style="margin-top:24px"><strong>Cod sesizare:</strong> ${sesizare.code}</p>
+      `;
+      await sendEmail({
+        to: userEmail,
+        subject: `✅ Sesizarea ${sesizare.code} a plecat la primărie`,
+        html: emailTemplate({
+          title: "Sesizarea ta a plecat oficial",
+          kicker: `SESIZARE ${sesizare.code}`,
+          icon: "✅",
+          preheader: `Trimisă la ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"}. Termen răspuns: 30 zile.`,
+          body: ackBody,
+          ctaText: "Vezi sesizarea + status",
+          ctaUrl: sesizareUrl,
+        }),
+      });
+    } catch (ackErr) {
+      // Non-fatal — emailul către primării a plecat OK. Doar log.
+      Sentry.captureMessage("send-via-civia: auto-ack email failed", {
+        level: "info",
+        tags: { kind: "ack_fail", code: sesizare.code },
+        extra: { err: ackErr instanceof Error ? ackErr.message : String(ackErr) },
+      });
+    }
   }
 
   return NextResponse.json({
