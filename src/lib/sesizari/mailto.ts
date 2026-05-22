@@ -134,6 +134,21 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
       text = text.replace(naked, `Mă numesc ${name}, locuiesc în ${address} `);
     }
 
+    // 5/22/2026 — case NOU raportat pe 00045: „Mă numesc Adrian. Doresc..."
+    // (nume real umplut, terminat cu punct, fără „locuiesc"). La co-sign,
+    // numele rămânea Adrian (original author) → leak GDPR + identitate
+    // greșită. Pattern catch-all: orice „Mă numesc <words>" terminat cu
+    // [.?!] și NU urmat de „locuiesc" — rewrite la identitatea completă.
+    const nameOnlyPeriodRe = new RegExp(
+      String.raw`M[ăa]\s+numesc\s+[A-ZĂÂÎȘȚ][^,.\n]*?\s*[.?!](?=\s+[A-ZĂÂÎȘȚ])`,
+      "gim",
+    );
+    if (nameOnlyPeriodRe.test(text)) {
+      // Rewind pentru replace (regex consumat de .test cu /g)
+      nameOnlyPeriodRe.lastIndex = 0;
+      text = text.replace(nameOnlyPeriodRe, `Mă numesc ${name}, locuiesc în ${address}.`);
+    }
+
     // Fallback: no identity line at all — inject after "Bună ziua,"
     if (!/M[ăa]\s+numesc/i.test(text) && !/Subsemnat/i.test(text)) {
       text = text.replace(

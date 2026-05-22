@@ -98,12 +98,15 @@ export function scrubFormalTextForPublic(text: string, opts: ScrubOptions): stri
   //    AI generează acest pattern când profilul user-ului nu are adresă.
   //    Bug raportat 5/21/2026 pe 00045: name "Adrian" apărea vizibil.
   //    Pattern: „Mă numesc <word(s)>" până la punct, virgulă sau verb.
+  //    5/22/2026 — adăugat ", locuiesc în [adresa]" la output ca user să
+  //    vadă formatul complet pe pagina publică (cu adresa redactată), nu
+  //    doar "Mă numesc [nume]. Doresc...".
   const NAKED_OPENER_END = String.raw`(?=\s*(?:\s+(?:și|si|şi)\s+\w|\s+(?:vă|va|mă|ma|îmi|imi|doresc|solicit|adresez|semnal(?:ez|au)|aduc|vreau)\b|[.?!]|\n|$))`;
   const nakedOpener = new RegExp(
     String.raw`M[ăa]\s+numesc\s+[A-ZĂÂÎȘȚ][^,.\n]*?${NAKED_OPENER_END}`,
     "gim",
   );
-  out = out.replace(nakedOpener, `Mă numesc ${nameRedacted}`);
+  out = out.replace(nakedOpener, `Mă numesc ${nameRedacted}, locuiesc în ${ADDRESS_REDACTED}`);
 
   // 6. Any leftover literal occurrences of the real name mid-text —
   // redactăm și NUMELE COMPLET și fiecare cuvânt individual ≥3 chars.
