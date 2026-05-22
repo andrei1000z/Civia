@@ -9,7 +9,7 @@ import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
 import { GovernmentServiceJsonLd, GovernmentOrganizationJsonLd } from "@/components/JsonLd";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 7;
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export async function generateStaticParams() {
   return ORASE_MARI.map((o) => ({ oras: o.slug }));

@@ -7,7 +7,8 @@ import { sendEmail, emailTemplate } from "@/lib/email/resend";
 
 export const dynamic = "force-dynamic";
 
-export const NEWSLETTER_REDIS_KEY = "civia:newsletter:subscribers";
+// 5/22/2026: scos `export` — Next 16 nu permite exports custom în route handlers.
+const NEWSLETTER_REDIS_KEY = "civia:newsletter:subscribers";
 const NEWSLETTER_REDIS_CAP = 1000;
 
 const schema = z.object({

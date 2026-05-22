@@ -18,7 +18,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const maxDuration = 5;
 
 const schema = z.object({

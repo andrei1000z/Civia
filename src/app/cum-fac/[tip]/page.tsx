@@ -8,7 +8,7 @@ import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
 import { HowToJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd, GovernmentServiceJsonLd } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 7; // weekly
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export async function generateStaticParams() {
   return CUM_FAC_TIPURI.map((t) => ({ tip: t.slug }));

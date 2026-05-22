@@ -5,7 +5,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 7;
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export const metadata: Metadata = {
   title: "Întrebări frecvente — sesizări, petiții, drepturi civice românești | Civia",

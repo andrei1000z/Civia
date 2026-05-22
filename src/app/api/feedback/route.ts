@@ -72,5 +72,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-
-export { FEEDBACK_KEY };
+// 5/22/2026: scos `export { FEEDBACK_KEY }` — Next 16 nu permite exports
+// custom în route handlers (doar GET/POST/dynamic/revalidate etc.). Era
+// neutilizat oriunde, deci safe să-l las ca const local.

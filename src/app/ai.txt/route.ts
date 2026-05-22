@@ -9,7 +9,7 @@
  */
 
 export const dynamic = "force-static";
-export const revalidate = 86400 * 7; // weekly
+export const revalidate = 604800; // weekly (86400 * 7) — must be literal pt Next 16
 
 export async function GET() {
   const content = `# Civia.ro AI Usage Policy

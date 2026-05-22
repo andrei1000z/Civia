@@ -5,7 +5,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 30;
+export const revalidate = 2592000; // 30 days — literal pt Next 16
 
 export const metadata: Metadata = {
   title: "Drepturile cetățeanului român — 12 drepturi civice esențiale 2026 | Civia",

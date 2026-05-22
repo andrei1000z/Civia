@@ -7,7 +7,7 @@ import { ORASE_MARI } from "@/data/orase-mari";
 import { ItemListJsonLd } from "@/components/JsonLd";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 7;
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export const metadata: Metadata = {
   title: `Sesizare per oraș — 30 orașe din România | Civia`,

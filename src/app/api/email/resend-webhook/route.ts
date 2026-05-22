@@ -17,6 +17,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
 

@@ -7,7 +7,7 @@ import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { ItemListJsonLd } from "@/components/JsonLd";
 
-export const revalidate = 86400 * 7;
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export const metadata: Metadata = {
   title: `Cum fac sesizare — ${CUM_FAC_TIPURI.length} ghiduri concrete | Civia`,

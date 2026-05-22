@@ -10,7 +10,7 @@ import {
   DefinedTermSetJsonLd,
 } from "@/components/FaqJsonLd";
 
-export const revalidate = 86400 * 7; // weekly
+export const revalidate = 604800; // 7 days — literal pt Next 16
 
 export const metadata: Metadata = {
   title: "Glosar civic românesc — 50+ termeni explicați (OG 27/2002, sesizări, petiții) | Civia",
