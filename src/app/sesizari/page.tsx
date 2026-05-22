@@ -4,6 +4,31 @@ import { Eye, Search, CheckCircle2, Send, Scale } from "lucide-react";
 import { SesizareForm } from "@/components/sesizari/SesizareForm";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { SITE_URL } from "@/lib/constants";
+
+const FAQ_SESIZARI = [
+  {
+    question: "Cât costă o sesizare prin Civia?",
+    answer: "GRATUIT. Conform OG 27/2002, toate sesizările civice sunt gratuite. Civia.ro nu percepe nicio taxă — folosim doar tehnologie AI și emailul tău.",
+  },
+  {
+    question: "Cât durează până primesc răspuns?",
+    answer: "30 zile calendaristice (OG 27/2002 art. 8). Pentru cazuri complexe, prelungire maxim 15 zile cu notificare. Civia urmărește automat termenul.",
+  },
+  {
+    question: "Trebuie să mă identific cu numele real?",
+    answer: "DA pentru ca primăria să fie OBLIGATĂ să răspundă (OG 27/2002 art. 12). Pe Civia poți ascunde public numele, dar în emailul oficial apare.",
+  },
+  {
+    question: "Cum aleg autoritatea corectă?",
+    answer: "AI Civia detectează automat din locație + tip problemă. Drum național → CNAIR, stradă urbană → primărie, parcare ilegală → Poliția Locală.",
+  },
+  {
+    question: "Ce fac dacă primăria nu răspunde?",
+    answer: "1) Revenire. 2) Avocatul Poporului (gratuit, avp.ro). 3) Contencios administrativ. Civia generează template pentru toate trei.",
+  },
+];
 
 export const metadata: Metadata = {
   title: "Sesizări",
@@ -82,6 +107,13 @@ export default async function SesizariPage() {
     : STATIC_QUICK_LINKS;
   return (
     <div className="container-narrow py-8 md:py-12">
+      <FaqJsonLd items={FAQ_SESIZARI} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Sesizări", url: `${SITE_URL}/sesizari` },
+        ]}
+      />
       <PageHero
         title="Trimite o sesizare formală"
         icon={Send}

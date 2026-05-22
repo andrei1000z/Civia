@@ -156,6 +156,57 @@ export function EventListJsonLd({
 }
 
 /**
+ * Schema.org DefinedTermSet — for glossary pages with civic vocabulary.
+ * Each term has slug-based @id so AI grounding (ChatGPT/Perplexity) can
+ * cite a specific term. Search engines may surface DefinedTerm entries
+ * in „Knowledge Panel" sidebar.
+ */
+export function DefinedTermSetJsonLd({
+  name,
+  description,
+  url,
+  terms,
+}: {
+  name: string;
+  description: string;
+  url: string;
+  terms: Array<{
+    slug: string;
+    termen: string;
+    definitie: string;
+    temeiLegal?: string;
+    sinonime?: string[];
+  }>;
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "DefinedTermSet",
+    "@id": url,
+    name,
+    description,
+    url,
+    inLanguage: "ro-RO",
+    hasDefinedTerm: terms.map((t) => ({
+      "@type": "DefinedTerm",
+      "@id": `${url}#${t.slug}`,
+      name: t.termen,
+      description: t.definitie,
+      inDefinedTermSet: url,
+      ...(t.temeiLegal ? { sameAs: `https://legislatie.just.ro` } : {}),
+      ...(t.sinonime && t.sinonime.length > 0
+        ? { alternateName: t.sinonime }
+        : {}),
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
+    />
+  );
+}
+
+/**
  * Schema.org GovernmentService — describes civic services accessible via the
  * platform. Good for /cum-functioneaza + /[judet]/autoritati.
  */

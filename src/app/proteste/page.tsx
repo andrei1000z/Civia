@@ -13,6 +13,23 @@ import {
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { ALL_COUNTIES } from "@/data/counties";
+import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { SITE_URL } from "@/lib/constants";
+
+const FAQ_PROTESTE = [
+  {
+    question: "Cum anunț un protest pe Civia?",
+    answer: "La /proteste/propune. Completezi: titlu, cauză, loc, dată, oră, organizator, hashtag. După moderare devine public.",
+  },
+  {
+    question: "Cum mă protejez legal la protest?",
+    answer: "Constituția art. 39 garantează dreptul la întrunire pașnică. Notifică Poliția cu min. 3 zile înainte (HG 60/1991). Adu act de identitate, evită confruntări.",
+  },
+  {
+    question: "Ce fac dacă sunt reținut nejust la protest?",
+    answer: "1) Cere temei legal. 2) Cere asistență avocat. 3) După, depune plângere la Avocatul Poporului (avp.ro). 4) Civia poate genera template-ul.",
+  },
+];
 
 // 2026-05-19: 30min → 4h. Proteste se publica rar.
 export const revalidate = 14400;
@@ -147,6 +164,13 @@ export default async function ProtestePage() {
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      <FaqJsonLd items={FAQ_PROTESTE} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Proteste programate", url: `${SITE_URL}/proteste` },
+        ]}
+      />
       <PageHero
         title="Proteste programate"
         icon={Megaphone}

@@ -12,7 +12,17 @@ export function getResendClient(): Resend | null {
   return client;
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL || "Civia <onboarding@resend.dev>";
+// Production-default: sesizari@civia.ro. Sandbox fallback (onboarding@resend.dev)
+// se activează DOAR în dev — în prod, fail-loud dacă env-ul lipsește.
+const FROM = (() => {
+  const raw = process.env.RESEND_FROM_EMAIL?.trim();
+  if (raw) return raw;
+  if (isProd()) {
+    // Default sigur prod (sesizari@civia.ro). Loggat la primul send dacă env lipsește.
+    return "Civia <sesizari@civia.ro>";
+  }
+  return "Civia <onboarding@resend.dev>";
+})();
 
 /**
  * Send email via Resend. Returns { ok, id? } pe succes / failure.

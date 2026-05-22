@@ -17,6 +17,8 @@ export interface SesizareRow {
   /** Nume afisat public (display_name profile sau primul cuvant author_name). */
   author_display_name: string | null;
   author_email: string | null;
+  /** 5/22/2026 — adresa cetăţeanului pentru identificare oficială în emailul către primărie (OG 27/2002). */
+  author_address?: string | null;
   tip: string;
   titlu: string;
   locatie: string;

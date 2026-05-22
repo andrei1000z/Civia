@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Sparkles, Send, Mail, Clock, Shield, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { SITE_URL } from "@/lib/constants";
-import { HowToJsonLd, GovernmentServiceJsonLd } from "@/components/JsonLd";
-import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { HowToJsonLd } from "@/components/JsonLd";
+import { FaqJsonLd, BreadcrumbJsonLd, GovernmentServiceJsonLd } from "@/components/FaqJsonLd";
 
 export const metadata: Metadata = {
   title: "Cum trimiți o sesizare la primărie — Ghid complet 2026 | Civia",

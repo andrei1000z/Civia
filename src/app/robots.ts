@@ -53,6 +53,9 @@ export default function robots(): MetadataRoute.Robots {
       // News + Search Console pick it up automatically; Publisher
       // Center can also be pointed at this URL directly.
       `${SITE_URL}/news-sitemap.xml`,
+      // Image sitemap — accelerează indexarea pozelor (sesizări înainte/după,
+      // știri, proteste). Google Image Search + News rich results.
+      `${SITE_URL}/image-sitemap.xml`,
     ],
     host: SITE_URL,
   };

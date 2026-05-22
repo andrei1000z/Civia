@@ -4,7 +4,27 @@ import Image from "next/image";
 import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon } from "lucide-react";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
+import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
+
+const FAQ_PETITII = [
+  {
+    question: "Care e diferența între petiție și sesizare?",
+    answer: "Sesizarea raportează o problemă concretă (groapă, parcare). Petiția cere o schimbare colectivă (lege, politică). Vezi /sesizare-vs-petitie pentru comparație completă.",
+  },
+  {
+    question: "Câte semnături trebuie?",
+    answer: "Nu există minim legal. 50+ semnături atrag atenția media. 10.000+ pentru petiții parlamentare cu impact real.",
+  },
+  {
+    question: "Pot să iniți o petiție pe Civia?",
+    answer: "Da, la /petitii/initiaza. Civia te ghidează cu titlu, descriere, autoritate-țintă, text formal cu AI.",
+  },
+  {
+    question: "Pot semna anonim?",
+    answer: "Nu. Constituția art. 51 cere identificare reală. Email + nume sunt obligatorii. Civia păstrează datele securizat în UE.",
+  },
+];
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { formatDateShort } from "@/lib/utils";
 
@@ -33,6 +53,13 @@ export default async function PetitiiPage() {
         name="Petiții civice — Civia"
         description="Catalog cu petiții civice active. Click → semnează pe site-ul oficial. Mai multe voci = autoritățile răspund."
         url={`${SITE_URL}/petitii`}
+      />
+      <FaqJsonLd items={FAQ_PETITII} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Petiții civice", url: `${SITE_URL}/petitii` },
+        ]}
       />
 
       <PageHero

@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
 import { ghiduri } from "@/data/ghiduri";
+import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
+import { ORASE_MARI } from "@/data/orase-mari";
 import { evenimente } from "@/data/evenimente";
 import { getAllInterruptions } from "@/data/intreruperi";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -81,6 +83,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Plan AI #3 + #4 (5/22/2026) — hub pages high-SEO priority
     { url: `${base}/cum-functioneaza`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/og-27-2002`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/glosar`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${base}/sesizare-vs-petitie`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${base}/avocatul-poporului-online`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${base}/drepturile-cetateanului`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/intrebari-frecvente`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${base}/statistici-sesizari-romania`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/press`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/cum-fac`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+  ];
+
+  // /cum-fac/[tip] — 15 ghiduri concrete
+  const cumFacRoutes: MetadataRoute.Sitemap = CUM_FAC_TIPURI.map((t) => ({
+    url: `${base}/cum-fac/${t.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  // /sesizare/[oras] — 30 city pages
+  const oraseRoutes: MetadataRoute.Sitemap = [
+    { url: `${base}/sesizare`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 },
+    ...ORASE_MARI.map((o) => ({
+      url: `${base}/sesizare/${o.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+    })),
   ];
 
   // Ghiduri
@@ -187,5 +216,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...sesizariRoutes,
     ...stiriRoutes,
     ...protesteRoutes,
+    ...cumFacRoutes,
+    ...oraseRoutes,
   ];
 }

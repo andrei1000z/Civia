@@ -1,7 +1,27 @@
 import type { Metadata } from "next";
 import { GhidLayout, Chapter, Callout } from "@/components/ghiduri/GhidLayout";
 import { HowToJsonLd } from "@/components/JsonLd";
+import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SITE_URL } from "@/lib/constants";
+
+const FAQ_GHID_SESIZARI = [
+  {
+    question: "Câte zile am la dispoziție să fac sesizarea?",
+    answer: "Imediat după constatare. Pentru contravenții documentate (parcare ilegală, etc.) cel mai bine în 24h cu poză + timestamp. OG 27/2002 nu impune termen de depunere.",
+  },
+  {
+    question: "Trebuie să fiu cetățean român pentru a face sesizare?",
+    answer: "Nu. Cetățenii UE și non-UE cu reședință în România pot depune sesizări. Constituția art. 51 garantează dreptul de petiționare pentru toate persoanele în relație cu autoritatea română.",
+  },
+  {
+    question: "Pot trimite poza fără să apar eu în ea?",
+    answer: "Da. De fapt, e recomandat — focusul trebuie pe problemă, nu pe tine. Civia anonimizează automat fețele dacă apar în fundal.",
+  },
+  {
+    question: "Cât durează până se rezolvă efectiv problema?",
+    answer: "Răspunsul oficial: 30 zile (OG 27/2002). Reparația efectivă: 1-3 luni pentru gropi simple, 6-12 luni pentru lucrări mari. Variază cu bugetul primăriei.",
+  },
+];
 
 export const metadata: Metadata = {
   title: "Ghid sesizări — cum obții rezultate",
@@ -47,6 +67,14 @@ export default function GhidSesizariPage() {
             name: "Urmărește răspunsul în termenul legal (30 zile)",
             text: "Conform OG 27/2002, autoritatea are 30 de zile să răspundă, prelungibil cu 15. Dacă nu răspunde, trimite revenire. Dacă refuză, fă plângere administrativă.",
           },
+        ]}
+      />
+      <FaqJsonLd items={FAQ_GHID_SESIZARI} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Acasă", url: SITE_URL },
+          { name: "Ghiduri", url: `${SITE_URL}/ghiduri` },
+          { name: "Sesizări", url: `${SITE_URL}/ghiduri/ghid-sesizari` },
         ]}
       />
       <GhidLayout
