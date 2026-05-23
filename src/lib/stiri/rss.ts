@@ -367,12 +367,21 @@ async function fetchOgImage(url: string): Promise<string | null> {
 
 /**
  * Fetch + parse media (toate <img> + <video> + <picture>) din pagina
- * articolului. Best-effort, fast timeout. Dedupes + filtrează miniaturi
- * mici (logo, ads, tracking pixels) prin heuristică pe URL.
+ * articolului. Best-effort, fast timeout.
  *
- * Returnează maxim 12 media items (cap defensiv pentru UI).
+ * Bug fix 5/24/2026: filtru aggressive pentru poze nerelevante:
+ *  - Skip imagini din <aside>, <nav>, <footer>, <header>, sidebar containers
+ *  - Skip cross-domain images (Google logos, social icons, related thumbnails)
+ *  - Skip imagini cu class suspectă: logo/icon/avatar/related/share/follow
+ *  - Skip filename-uri WordPress thumbnail (-150x150, -300x200) = previews
+ *  - srcset reading → ia VARIANTA CU REZOLUȚIE MAXIMĂ (nu thumbnail)
+ *
+ * Cap 10 items (defensiv).
  */
-export async function fetchArticleMedia(url: string): Promise<MediaItem[]> {
+export async function fetchArticleMedia(
+  url: string,
+  knownHero?: string | null,
+): Promise<MediaItem[]> {
   try {
     const res = await fetch(url, {
       headers: {
@@ -386,51 +395,84 @@ export async function fetchArticleMedia(url: string): Promise<MediaItem[]> {
     if (!res.ok) return [];
     const html = await res.text();
 
-    // 1. Articolul WordPress / Drupal / custom CMS — căutăm container-ul
-    //    principal pentru a evita logos / ads din header/footer. Fallback la
-    //    întreg HTML dacă nu găsim.
-    const articleMatch = html.match(
-      /<article[^>]*>([\s\S]*?)<\/article>/i,
-    );
-    const scope = articleMatch?.[1] ?? html;
+    // Use HTML întreg ca scope — strippăm doar nav/aside/footer/header.
+    // Article-tag scope era prea narrow (G4Media etc. nu îl folosesc),
+    // iar wrapper class regex era prea ambiguu și prindea div-uri greșite.
+    // Filtrele per-img (junk + cross-domain + thumbnail size) elimină
+    // restul.
+    let scope = html;
 
-    const items: MediaItem[] = [];
-    const seen = new Set<string>();
-
-    // 2. Extract <figure> blocks (au caption nativ via <figcaption>)
-    const figureRegex =
-      /<figure[^>]*>([\s\S]*?)<\/figure>/gi;
-    let fm: RegExpExecArray | null;
-    while ((fm = figureRegex.exec(scope)) !== null) {
-      const block = fm[1] ?? "";
-      const imgM = block.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
-      const captionM = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
-      if (imgM?.[1]) {
-        const abs = absUrl(imgM[1], url);
-        if (abs && looksLikeImageUrl(abs) && !isLikelyJunkImage(abs) && !seen.has(abs)) {
-          seen.add(abs);
-          const altM = imgM[0].match(/alt=["']([^"']*)["']/i);
-          const cap = captionM?.[1] ? stripTags(captionM[1]) : altM?.[1] ?? undefined;
-          items.push({ type: "image", url: abs, caption: cap || undefined });
+    // Hero image: prefer knownHero (calculat de fetchOgImage cu fallback
+    // multi-selector — vezi rss.ts → ai mai sus). Fallback la og:image
+    // sau twitter:image din current fetch. NU folosim logo/junk.
+    let heroImage: string | null = knownHero ?? null;
+    if (heroImage && (isLikelyJunkImage(heroImage) || !looksLikeImageUrl(heroImage))) {
+      heroImage = null;
+    }
+    if (!heroImage) {
+      const candidates: RegExp[] = [
+        /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i,
+        /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image(?::src)?["']/i,
+        /<meta[^>]+property=["']og:image(?::secure_url|:url)?["'][^>]+content=["']([^"']+)["']/i,
+      ];
+      for (const re of candidates) {
+        const m = html.match(re);
+        const found = m?.[1] ? absUrl(m[1], url) : null;
+        if (found && looksLikeImageUrl(found) && !isLikelyJunkImage(found)) {
+          heroImage = found;
+          break;
         }
       }
     }
 
-    // 3. <img> standalone (cele care nu sunt în figure deja procesate)
-    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    let im: RegExpExecArray | null;
-    while ((im = imgRegex.exec(scope)) !== null) {
-      const src = im[1];
-      if (!src) continue;
-      const abs = absUrl(src, url);
-      if (!abs || !looksLikeImageUrl(abs) || isLikelyJunkImage(abs) || seen.has(abs)) {
-        continue;
-      }
-      seen.add(abs);
-      const altM = im[0].match(/alt=["']([^"']*)["']/i);
+    // Strip out nested junk containers PE SCOPE (aside, nav, footer, header,
+    // related-articles, share-buttons, sidebar) — restul scrape-uim curat.
+    scope = stripJunkContainers(scope);
+
+    // Articol origin pentru filtru cross-domain
+    let articleOrigin: string;
+    try {
+      articleOrigin = new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return [];
+    }
+
+    const items: MediaItem[] = [];
+    const seen = new Set<string>();
+
+    // 2. <figure> blocks (au caption nativ <figcaption>)
+    const figureRegex = /<figure[^>]*>([\s\S]*?)<\/figure>/gi;
+    let fm: RegExpExecArray | null;
+    while ((fm = figureRegex.exec(scope)) !== null) {
+      const block = fm[1] ?? "";
+      const imgTagM = block.match(/<img[^>]*>/i);
+      if (!imgTagM) continue;
+      const imgTag = imgTagM[0];
+      const url2 = pickBestImgUrl(imgTag, url);
+      if (!url2 || !isRelevantImage(url2, imgTag, articleOrigin) || seen.has(url2)) continue;
+      seen.add(url2);
+      const captionM = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
+      const altM = imgTag.match(/alt=["']([^"']*)["']/i);
+      const cap = captionM?.[1] ? stripTags(captionM[1]) : altM?.[1];
       items.push({
         type: "image",
-        url: abs,
+        url: url2,
+        caption: cap && cap.length > 3 ? cap : undefined,
+      });
+    }
+
+    // 3. <img> standalone (cele care nu sunt în figure deja procesate)
+    const imgRegex = /<img[^>]*>/gi;
+    let im: RegExpExecArray | null;
+    while ((im = imgRegex.exec(scope)) !== null) {
+      const imgTag = im[0];
+      const url2 = pickBestImgUrl(imgTag, url);
+      if (!url2 || !isRelevantImage(url2, imgTag, articleOrigin) || seen.has(url2)) continue;
+      seen.add(url2);
+      const altM = imgTag.match(/alt=["']([^"']*)["']/i);
+      items.push({
+        type: "image",
+        url: url2,
         caption: altM?.[1] && altM[1].length > 3 ? altM[1] : undefined,
       });
     }
@@ -456,11 +498,171 @@ export async function fetchArticleMedia(url: string): Promise<MediaItem[]> {
       }
     }
 
-    // Cap la 12 items (peste asta = ads probabil)
-    return items.slice(0, 12);
+    // Garantăm că hero declarat e mereu primul item.
+    if (heroImage && looksLikeImageUrl(heroImage) && !isLikelyJunkImage(heroImage)) {
+      const existingIdx = items.findIndex((m) => m.url === heroImage);
+      if (existingIdx > 0) {
+        const [hero] = items.splice(existingIdx, 1);
+        if (hero) items.unshift(hero);
+      } else if (existingIdx === -1) {
+        items.unshift({ type: "image", url: heroImage });
+      }
+    }
+
+    // Dedupe pe filename (chiar dacă URL-urile diferă din cauza CDN-urilor,
+    // imaginea de bază poate fi identică). Pattern: extragem ultimul
+    // path segment care arată ca un filename `.jpg/.png/etc`.
+    const seenFilenames = new Set<string>();
+    const deduped: MediaItem[] = [];
+    for (const m of items) {
+      const fnMatch = m.url.match(/([a-z0-9_-]+\.(?:jpg|jpeg|png|webp|avif|gif))(?:\?|$)/i);
+      const fn = fnMatch?.[1]?.toLowerCase();
+      if (fn) {
+        if (seenFilenames.has(fn)) continue;
+        seenFilenames.add(fn);
+      }
+      deduped.push(m);
+    }
+
+    // Cap la 10 items (peste asta = related-articles probabil)
+    return deduped.slice(0, 10);
   } catch {
     return [];
   }
+}
+
+/**
+ * Strip out semantic non-article containers (<aside>, <nav>, <footer>,
+ * <header>). Restul (clase, id-uri) lăsăm scrape-ul să decidă per-img,
+ * fiindcă regex-ul de class-stripping era prea aggressive și tăia
+ * containerul articolului real pe site-uri custom (G4Media etc.).
+ */
+function stripJunkContainers(html: string): string {
+  let out = html;
+  const blockTags = ["aside", "nav", "footer", "header"];
+  for (const tag of blockTags) {
+    const re = new RegExp(`<${tag}\\b[\\s\\S]*?</${tag}>`, "gi");
+    out = out.replace(re, "");
+  }
+  return out;
+}
+
+/**
+ * Pick the highest-resolution image URL from a single <img> tag.
+ * Prefer srcset cu cea mai mare lățime (w descriptor) sau cel mai mare
+ * density (x descriptor). Fallback la src.
+ */
+function pickBestImgUrl(imgTag: string, baseUrl: string): string | null {
+  // Try srcset first (highest-res variant)
+  const srcsetM = imgTag.match(/srcset=["']([^"']+)["']/i);
+  if (srcsetM?.[1]) {
+    // Parse „url 1x, url2 2x, url3 800w, url4 1200w" — pick best
+    const candidates = srcsetM[1].split(",").map((s) => {
+      const parts = s.trim().split(/\s+/);
+      const url = parts[0];
+      const desc = parts[1] ?? "1x";
+      let weight = 0;
+      if (desc.endsWith("w")) {
+        weight = parseInt(desc, 10) || 0;
+      } else if (desc.endsWith("x")) {
+        // density: 2x ~ 2000w-equivalent for sorting
+        weight = (parseFloat(desc) || 1) * 1000;
+      }
+      return { url, weight };
+    });
+    candidates.sort((a, b) => b.weight - a.weight);
+    if (candidates[0]?.url) {
+      const abs = absUrl(candidates[0].url, baseUrl);
+      if (abs) return abs;
+    }
+  }
+  // Fallback: data-src (lazy-load), then src
+  const dataSrcM = imgTag.match(/data-src=["']([^"']+)["']/i);
+  const srcM = imgTag.match(/\bsrc=["']([^"']+)["']/i);
+  const candidate = dataSrcM?.[1] ?? srcM?.[1];
+  if (!candidate) return null;
+  return absUrl(candidate, baseUrl);
+}
+
+/**
+ * True dacă image-ul pare LEGITIM pentru articol:
+ *   - Looks like an image extension (jpg/png/webp/etc)
+ *   - Not in junk list (logos/icons/tracking pixels)
+ *   - Same domain (or empty hostname) — cross-domain skip (Google logos,
+ *     social icons, related thumbnails de pe alt site)
+ *   - Class/id NU conține „logo/icon/avatar/share/follow"
+ *   - URL NU conține WordPress thumbnail pattern (-150x150)
+ */
+function isRelevantImage(
+  url: string,
+  imgTag: string,
+  articleOrigin: string,
+): boolean {
+  if (!looksLikeImageUrl(url)) return false;
+  if (isLikelyJunkImage(url)) return false;
+
+  // Cross-domain filter: păstrăm doar same domain (or CDN subdomain pe
+  // același registrable domain). Logo-uri Google/Facebook/Twitter etc
+  // sunt third-party și nu interesează articolul.
+  try {
+    const imgHost = new URL(url).hostname.replace(/^www\./, "");
+    if (imgHost && imgHost !== articleOrigin) {
+      // Permite subdomain-uri pe același registrable (cdn.gandul.ro pe gandul.ro)
+      const articleRoot = articleOrigin.split(".").slice(-2).join(".");
+      const imgRoot = imgHost.split(".").slice(-2).join(".");
+      if (imgRoot !== articleRoot) return false;
+    }
+  } catch {
+    return false;
+  }
+
+  // Class / alt heuristic — skip dacă tag-ul are clase suspecte
+  const tagLower = imgTag.toLowerCase();
+  if (
+    /class=["'][^"']*(?:logo|icon|avatar|share|social|follow|subscribe|sponsor|advert|sidebar|widget|emoji)[^"']*["']/i.test(
+      tagLower,
+    )
+  ) {
+    return false;
+  }
+
+  // WordPress thumbnail patterns: -150x150, -300x200, -75x75 (sidebar previews)
+  if (/-\d{2,4}x\d{2,4}\.(?:jpg|jpeg|png|webp|avif|gif)/i.test(url)) {
+    const m = url.match(/-(\d{2,4})x(\d{2,4})\.(?:jpg|jpeg|png|webp|avif|gif)/i);
+    if (m && parseInt(m[1] ?? "0", 10) < 400) return false;
+  }
+
+  // CDN image proxy patterns: /150x84/, /200x200/, /300x180/, etc.
+  // (Thumbor, Imgix, Cloudinary path-style — folosit pentru thumbnails
+  // de „related articles" sidebar). Cap minim 400px ca să eliminăm
+  // chestii ascunse într-un grid de „mai citește".
+  const cdnSizeMatch = url.match(/\/(\d{2,4})x(\d{2,4})\//);
+  if (cdnSizeMatch) {
+    const w = parseInt(cdnSizeMatch[1] ?? "0", 10);
+    if (w < 400) return false;
+  }
+
+  // Alt text suggests it's UI chrome, not content
+  const altM = imgTag.match(/alt=["']([^"']*)["']/i);
+  const altText = altM?.[1]?.toLowerCase() ?? "";
+  if (
+    /^(?:logo|icon|avatar|share|follow|subscribe|google|facebook|twitter|linkedin|email|whatsapp)$/i.test(
+      altText,
+    )
+  ) {
+    return false;
+  }
+  // Substring match — alt text conține „urmărește-ne", „abonează-te",
+  // „google news/discover/play", „follow us on...", etc.
+  if (
+    /\b(?:urmărește|urmareste|abonează|aboneaza|follow|share|distribuie|powered by|google\s*(?:news|discover|play|plus)|subscribe|newsletter|sign[\s-]?up)\b/i.test(
+      altText,
+    )
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function absUrl(src: string, base: string): string | null {
@@ -472,21 +674,33 @@ function absUrl(src: string, base: string): string | null {
 }
 
 function stripTags(s: string): string {
-  return s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;/g, "")
+    .replace(/&#8221;/g, "")
+    .replace(/&#8230;/g, "…")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
  * Heuristică junk detection: logo-uri (1x1 pixels), banner ads, social icons.
- * Pe URL strings (pattern names în filename) — nu fetchăm HEAD pentru fiecare.
  */
 function isLikelyJunkImage(url: string): boolean {
   const lower = url.toLowerCase();
-  // Tracking pixels + analytics
   if (/\.gif(\?|$)/.test(lower) && /\b(?:pixel|track|tag|beacon|analytics)\b/.test(lower)) {
     return true;
   }
-  // Common ad / logo patterns
-  return /(?:\/ads?\/|\/banner\/|\/logo[._-]|\/avatar[._-]|\/sprite[._-]|\.(?:svg|ico)$|placeholder|favicon|spacer|1x1|blank)/.test(lower);
+  return /(?:\/ads?\/|\/banner\/|\/logo[._\-\/]|\/avatars?\/|\/sprite[._\-\/]|\.(?:svg|ico)$|placeholder|favicon|spacer|1x1|blank|gravatar|google[-_]|googlenews|emoji|\/(?:facebook|twitter|instagram|tiktok|youtube|linkedin|whatsapp|telegram|pinterest|reddit|threads|mastodon|bluesky|signal|messenger|viber|skype|wechat|line|kakao)[-_.]|share[-_]?(?:button|icon)?\.|follow[-_]?us|subscribe[-_]?(?:button|icon)|powered[-_]?by)/.test(
+    lower,
+  );
 }
 
 export interface FetchAllResult {

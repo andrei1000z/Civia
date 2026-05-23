@@ -106,23 +106,29 @@ export function StireMediaCarousel({ items, title }: Props) {
         </div>
       </div>
 
-      {/* Main display — 16:9 aspect, large */}
-      <div className="relative bg-black aspect-video overflow-hidden">
+      {/* Main display — natural ratio cu cap pe înălțime (NU aspect-video
+          forțat, pozele portrait apăreau „taiate"/zoom-uite). Folosim
+          unoptimized Next/Image cu width/height auto via img native, cap
+          max-h-[600px] pe desktop, max-h-[60vh] pe mobil. */}
+      <div className="relative bg-black overflow-hidden flex items-center justify-center min-h-[280px] sm:min-h-[400px]">
         {current.type === "image" ? (
           <button
             type="button"
             onClick={() => setLightboxOpen(true)}
-            className="absolute inset-0 w-full h-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ring-inset"
+            className="block w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ring-inset transition-opacity"
             aria-label="Mărește imaginea"
           >
-            <Image
+            {/* Native <img> pentru control complet pe aspect ratio +
+                priority/lazy via loading attr. Next/Image cu fill obligă la
+                container fix → ne taie portrait. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              key={current.url}
               src={current.url}
               alt={current.caption || title || "Imagine din articol"}
-              fill
-              unoptimized
-              priority={active === 0}
-              sizes="(min-width: 1024px) 800px, (min-width: 640px) 90vw, 100vw"
-              className="object-contain"
+              loading={active === 0 ? "eager" : "lazy"}
+              decoding="async"
+              className="block mx-auto max-h-[60vh] sm:max-h-[600px] w-auto max-w-full object-contain transition-opacity duration-200"
             />
           </button>
         ) : (
@@ -132,7 +138,7 @@ export function StireMediaCarousel({ items, title }: Props) {
             poster={current.poster}
             controls
             preload="metadata"
-            className="absolute inset-0 w-full h-full object-contain bg-black"
+            className="block mx-auto max-h-[60vh] sm:max-h-[600px] w-auto max-w-full bg-black"
           >
             <track kind="captions" />
           </video>
@@ -145,17 +151,17 @@ export function StireMediaCarousel({ items, title }: Props) {
               type="button"
               onClick={() => go(-1)}
               aria-label="Imagine precedentă"
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white inline-flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 backdrop-blur-sm hover:bg-black/90 hover:scale-110 text-white inline-flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-lg"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={22} />
             </button>
             <button
               type="button"
               onClick={() => go(1)}
               aria-label="Imagine următoare"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white inline-flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 backdrop-blur-sm hover:bg-black/90 hover:scale-110 text-white inline-flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-lg"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={22} />
             </button>
           </>
         )}
