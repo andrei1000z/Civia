@@ -51,6 +51,9 @@ export interface SesizareRow {
   sent_at?: string | null;
   sent_to_emails?: string[] | null;
   resend_message_id?: string | null;
+  /** 5/21/2026: nr de înregistrare oficial extras de AI din răspunsul autorității
+   *  (vezi `/api/inbox/reply`). Setat când auto_apply trecut. Format liber. */
+  nr_inregistrare?: string | null;
 }
 
 export interface SesizareFeedRow extends SesizareRow {

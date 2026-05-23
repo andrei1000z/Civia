@@ -204,6 +204,29 @@ export default async function SesizareDetailPage({
               </span>
             </div>
             <CosignersBadge code={sesizare.code} />
+
+            {/* 5/23/2026 — Banner de confirmare oficială. Apare DOAR dacă AI
+                a auto-aplicat `inregistrata` + a extras numărul de înregistrare
+                din răspunsul autorității (sau dacă admin a setat manual nr).
+                Mesaj clar: cetățeanul vede public că primăria a confirmat. */}
+            {sesizare.nr_inregistrare && (
+              <div className="mt-1 mb-5 inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-purple-500/10 border border-purple-500/30 text-sm">
+                <Scroll
+                  size={14}
+                  className="text-purple-600 dark:text-purple-400 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  <strong className="text-purple-700 dark:text-purple-300">
+                    Înregistrată oficial:
+                  </strong>{" "}
+                  <span className="font-mono text-[var(--color-text)] font-bold">
+                    {sesizare.nr_inregistrare}
+                  </span>
+                </span>
+              </div>
+            )}
+
             {/* 5/22/2026 — Resend alert pentru ghost-sends / bounces.
                 Vizibil DOAR pentru autor + DOAR dacă există problemă. */}
             {isAuthor && (

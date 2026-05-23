@@ -13,6 +13,7 @@
 
 export const SESIZARE_STATUS_VALUES = [
   "nou",
+  "trimis",
   "inregistrata",
   "redirectionata",
   "in-lucru",
@@ -50,6 +51,15 @@ export const SESIZARE_STATUS_META: Record<SesizareStatus, SesizareStatusMeta> = 
     color: "#DC2626",
     hint: "Sesizare proaspăt depusă, încă neprocesată",
     emoji: "📩",
+  },
+  trimis: {
+    // 5/23/2026 — adăugat la SESIZARE_STATUS_META. Înainte era doar în
+    // DB enum (migration 056) dar UI fallback-uia la raw „trimis" fără
+    // label, culoare sau icon. Acum se afișează corect cu cyan + emoji.
+    label: "Trimis",
+    color: "#0891B2",
+    hint: "Emailul a plecat către autoritate — așteptăm confirmarea (înregistrare)",
+    emoji: "📤",
   },
   inregistrata: {
     label: "Înregistrată",
