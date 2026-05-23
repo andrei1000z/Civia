@@ -170,10 +170,10 @@ export function CookieBanner() {
             <span className="hidden md:inline">Cookies și viața ta privată</span>
           </p>
           <p id="cookie-banner-desc" className="hidden md:block text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
-            Folosim doar cookies <strong>strict necesare</strong> (autentificare, temă,
-            consimțământ). Nu folosim Google Analytics, nu te trackăm pe alte site-uri, nu
-            vindem date. Conform GDPR și Directivei ePrivacy, ai libertatea totală să
-            accepți sau să respingi orice cookie non-esențial.
+            Folosim doar cookies <strong>strict necesare</strong> (autentificare,
+            consimțământ). Nu folosim Google Analytics, nu te trackăm pe alte
+            site-uri, nu vindem date. Conform GDPR și Directivei ePrivacy, ai
+            libertatea totală să accepți sau să respingi orice cookie non-esențial.
           </p>
           {/* Mobile one-liner (~30 chars). Detalii via „Personalizează" */}
           <p className="md:hidden text-[11px] text-[var(--color-text-muted)] mb-2 leading-tight">
@@ -255,7 +255,8 @@ export function CookieBanner() {
                     <Settings2 size={11} aria-hidden="true" /> Preferințe
                   </p>
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed">
-                    Temă (dark/light), județul preferat. Îți personalizează interfața.
+                    Județul preferat, sunete UI, preferințe de notificări — îți
+                    personalizează experiența pe Civia.
                   </p>
                 </div>
               </label>
