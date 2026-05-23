@@ -21,6 +21,7 @@ import {
   EyeOff,
   Download,
   Sparkles,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
@@ -33,6 +34,7 @@ import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { StreakWidget } from "@/components/profile/StreakWidget";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
+import { QuickSignSettings } from "@/components/account/QuickSignSettings";
 
 interface Profile {
   id: string;
@@ -542,6 +544,18 @@ export default function ContPage() {
                   </p>
                 )}
               </div>
+            </section>
+
+            {/* Semnare rapidă petiții — vezi /api/profile/quick-sign + lib/petitii/declic-prefill.
+                User completează datele 1 dată; Civia construiește URL Declic cu params
+                prefilled la fiecare petiție. NU semnăm noi (eIDAS + ToS Declic) — doar
+                reducem fricțiunea la 1 click pe site-ul oficial. */}
+            <section
+              id="quick-sign"
+              className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0"
+            >
+              <SectionTitle icon={Megaphone}>Semnare rapidă petiții</SectionTitle>
+              <QuickSignSettings />
             </section>
 
             {/* Aspect — ThemeSettings (light/dark/system toggle) eliminat

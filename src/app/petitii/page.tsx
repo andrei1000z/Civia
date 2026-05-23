@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon } from "lucide-react";
+import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon, Zap } from "lucide-react";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
@@ -80,8 +80,8 @@ export default async function PetitiiPage() {
         }
       />
 
-      {/* CTA — utilizatorii pot iniția propriile petiții */}
-      <div className="mb-8 bg-gradient-to-br from-purple-500/10 via-[var(--color-surface)] to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
+      {/* CTA #1 — utilizatorii pot iniția propriile petiții */}
+      <div className="mb-4 bg-gradient-to-br from-purple-500/10 via-[var(--color-surface)] to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
         <div
           className="w-10 h-10 rounded-[var(--radius-xs)] bg-purple-500/15 grid place-items-center shrink-0"
           aria-hidden="true"
@@ -102,7 +102,7 @@ export default async function PetitiiPage() {
             className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
           >
             <Plus size={14} aria-hidden="true" />
-            Inițiază cu AI
+            Inițiază o petiție
           </Link>
           <Link
             href="/petitii/propune"
@@ -110,7 +110,36 @@ export default async function PetitiiPage() {
             className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-purple-500/40 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-500/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
           >
             <LinkIcon size={14} aria-hidden="true" />
-            Propune cu link
+            Propune o petiție existentă
+          </Link>
+        </div>
+      </div>
+
+      {/* CTA #2 — quick-sign: user stochează datele 1 dată, semnează cu 1 click */}
+      <div className="mb-8 bg-gradient-to-br from-emerald-500/10 via-[var(--color-surface)] to-cyan-500/5 border border-emerald-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
+        <div
+          className="w-10 h-10 rounded-[var(--radius-xs)] bg-emerald-500/15 grid place-items-center shrink-0"
+          aria-hidden="true"
+        >
+          <Zap size={18} className="text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base mb-0.5">
+            Semnează petițiile mai ușor
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            Introdu o singură dată datele necesare pentru semnarea unei petiții.
+            De acum încolo, doar <strong>1 click</strong> pentru fiecare petiție nouă pe care
+            ți-o trimitem prin notificare.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/cont#quick-sign"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+          >
+            <Zap size={14} aria-hidden="true" />
+            Configurează
           </Link>
         </div>
       </div>

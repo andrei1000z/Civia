@@ -19,6 +19,11 @@ import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SharePetitie } from "./SharePetitie";
 import { AiSummary } from "@/app/stiri/[id]/AiSummary";
 import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
+import {
+  buildDeclicSignUrl,
+  isDeclicPetitionUrl,
+} from "@/lib/petitii/declic-prefill";
+import { getQuickSignDataIfEnabled } from "@/lib/petitii/quick-sign-repository";
 
 // Petition detail content (title, body, AI summary) is essentially
 // frozen after creation. The signature count comes from the external
@@ -103,6 +108,17 @@ export default async function PetitiePage({
       externalHost = null;
     }
   }
+
+  // Construiește URL-ul de semnare — dacă e Declic + user are quick-sign on,
+  // adăugăm params (firstName, lastName, email, county, phoneNumber).
+  // Altfel rămâne URL-ul original.
+  const isDeclic = isDeclicPetitionUrl(petitie.external_url);
+  const quickSignData = isDeclic ? await getQuickSignDataIfEnabled() : null;
+  const signUrl =
+    petitie.external_url && quickSignData
+      ? buildDeclicSignUrl(petitie.external_url, quickSignData)
+      : petitie.external_url;
+  const isPrefilled = Boolean(petitie.external_url && quickSignData);
 
   const shareUrl = `${SITE_URL}/petitii/${petitie.slug}`;
 
@@ -193,7 +209,7 @@ export default async function PetitiePage({
               Pe desktop e în sidebar dreapta. */}
           {petitie.external_url && isActive && (
             <a
-              href={petitie.external_url}
+              href={signUrl ?? petitie.external_url ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="lg:hidden w-full inline-flex items-center justify-center gap-2 h-12 px-5 mb-6 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
@@ -276,12 +292,12 @@ export default async function PetitiePage({
                 semnătura ta.
               </p>
               <a
-                href={petitie.external_url}
+                href={signUrl ?? petitie.external_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-full)] bg-white text-purple-700 font-semibold hover:bg-white/90 active:scale-[0.97] transition-all shadow-[var(--shadow-3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-purple-700"
               >
-                {externalHost ? `Mergi pe ${externalHost}` : "Semnează"}
+                {isPrefilled ? "Semnează (date pre-completate)" : externalHost ? `Mergi pe ${externalHost}` : "Semnează"}
                 <ExternalLink size={15} aria-hidden="true" />
               </a>
             </div>
@@ -367,14 +383,19 @@ export default async function PetitiePage({
                 Semnează aici
               </p>
               <a
-                href={petitie.external_url}
+                href={signUrl ?? petitie.external_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-700 hover:from-purple-700 hover:to-fuchsia-800 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
               >
                 <Megaphone size={16} aria-hidden="true" />
-                Mergi pe {externalHost}
+                {isPrefilled ? `Semnează rapid pe ${externalHost}` : `Mergi pe ${externalHost}`}
               </a>
+              {isPrefilled && (
+                <p className="text-[10px] text-purple-700 dark:text-purple-300 mt-2 text-center leading-relaxed font-medium">
+                  ✓ Datele tale sunt pre-completate — un singur click pe Declic
+                </p>
+              )}
               <p className="text-[10px] text-[var(--color-text-muted)] mt-3 text-center leading-relaxed">
                 Petiția e găzduită pe <strong>{externalHost}</strong>. Civia o
                 agregă pentru vizibilitate — <strong>nu stocăm date despre semnătura ta</strong>.
