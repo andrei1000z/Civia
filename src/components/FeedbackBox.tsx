@@ -1,23 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  MessageSquareMore,
-  Check,
-  Loader2,
-  Bug,
-  Lightbulb,
-  HelpCircle,
-} from "lucide-react";
+import { MessageSquareMore, Check, Loader2 } from "lucide-react";
 
 type Kind = "bug" | "idea" | "question" | "other";
-
-const KIND_META: Record<Kind, { icon: typeof Bug; label: string }> = {
-  bug: { icon: Bug, label: "Problemă" },
-  idea: { icon: Lightbulb, label: "Sugestie" },
-  question: { icon: HelpCircle, label: "Întrebare" },
-  other: { icon: MessageSquareMore, label: "Altceva" },
-};
 
 interface Props {
   /** Headerul afișat deasupra formularului. Default = generic Civia. */
@@ -42,7 +28,10 @@ export function FeedbackBox({
   defaultKind = "idea",
   compact = false,
 }: Props) {
-  const [kind, setKind] = useState<Kind>(defaultKind);
+  // 5/23/2026: scoatem picker-ul de categorie (Problemă/Sugestie/Întrebare/
+  // Altceva) — user-ul nu mai trebuie să clasifice; admin clasifică post-fact.
+  // Păstrăm `kind` ca state cu defaultKind ca backend să primească ceva valid.
+  const kind: Kind = defaultKind;
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -91,42 +80,11 @@ export function FeedbackBox({
         {description}
       </p>
       <form onSubmit={submit} className="space-y-2.5">
-        <div className="flex gap-1.5 flex-wrap">
-          {(Object.keys(KIND_META) as Kind[]).map((k) => {
-            const Icon = KIND_META[k].icon;
-            const active = kind === k;
-            return (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setKind(k)}
-                className={`flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-[var(--radius-xs)] text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                  active
-                    ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-1)]"
-                    : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-                }`}
-                aria-pressed={active}
-                aria-label={`Categorie feedback: ${KIND_META[k].label}`}
-              >
-                <Icon size={13} aria-hidden="true" />
-                {KIND_META[k].label}
-              </button>
-            );
-          })}
-        </div>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={2000}
-          placeholder={
-            kind === "bug"
-              ? "Descrie ce nu merge (URL, ce ai încercat, ce ai primit)..."
-              : kind === "idea"
-                ? "Ce ar merita adăugat sau schimbat?"
-                : kind === "question"
-                  ? "Scrie întrebarea ta..."
-                  : "Scrie mesajul..."
-          }
+          placeholder="Scrie mesajul tău — bug, idee, întrebare, orice fel de feedback..."
           className="w-full min-h-[100px] max-h-60 p-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm leading-relaxed resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           required
         />

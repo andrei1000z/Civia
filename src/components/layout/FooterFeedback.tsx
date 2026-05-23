@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquareMore, Check, Loader2, Bug, Lightbulb, HelpCircle } from "lucide-react";
-
-type Kind = "bug" | "idea" | "question" | "other";
-
-const KIND_META: Record<Kind, { icon: typeof Bug; label: string }> = {
-  bug: { icon: Bug, label: "Problemă" },
-  idea: { icon: Lightbulb, label: "Sugestie" },
-  question: { icon: HelpCircle, label: "Întrebare" },
-  other: { icon: MessageSquareMore, label: "Altceva" },
-};
+import { MessageSquareMore, Check, Loader2 } from "lucide-react";
 
 /**
  * Compact feedback form at the bottom of the footer.
@@ -19,9 +10,12 @@ const KIND_META: Record<Kind, { icon: typeof Bug; label: string }> = {
  * inscrierea la newsletter sa se faca DOAR la creare de cont (cu
  * checkbox explicit), nu peste tot in subsol. Vezi AuthModal pentru
  * checkbox-ul de opt-in.
+ *
+ * 5/23/2026: scoatem picker-ul de categorie (Problemă/Sugestie/Întrebare/
+ * Altceva) — user clasifică natural în textul mesajului.
  */
 export function FooterFeedback() {
-  const [kind, setKind] = useState<Kind>("idea");
+  const kind = "idea" as const; // default backend hint; admin re-clasifică
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -72,42 +66,11 @@ export function FooterFeedback() {
           Platforma se construiește cu tine. Un bug, o idee, o pagină lipsă — orice feedback ajunge direct la mine. Răspund dacă lași un mesaj.
         </p>
         <form onSubmit={submitFeedback} className="space-y-2.5">
-          <div className="flex gap-1.5">
-            {(Object.keys(KIND_META) as Kind[]).map((k) => {
-              const Icon = KIND_META[k].icon;
-              const active = kind === k;
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setKind(k)}
-                  className={`flex-1 inline-flex items-center justify-center gap-1 h-8 px-2 rounded-[6px] text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                    active
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-                  }`}
-                  aria-pressed={active}
-                  aria-label={`Categorie feedback: ${KIND_META[k].label}`}
-                >
-                  <Icon size={12} aria-hidden="true" />
-                  <span className="hidden sm:inline">{KIND_META[k].label}</span>
-                </button>
-              );
-            })}
-          </div>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={2000}
-            placeholder={
-              kind === "bug"
-                ? "Descrie ce nu merge (URL, ce ai încercat, ce ai primit)..."
-                : kind === "idea"
-                ? "Ce ar merita adăugat sau schimbat?"
-                : kind === "question"
-                ? "Scrie întrebarea ta..."
-                : "Scrie mesajul..."
-            }
+            placeholder="Scrie mesajul tău — bug, idee, întrebare, orice fel de feedback..."
             className="w-full min-h-[80px] max-h-60 p-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             required
           />

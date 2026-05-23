@@ -34,7 +34,9 @@ export function FeedbackForm({
   const pathname = usePathname();
   const [text, setText] = useState("");
   const [email, setEmail] = useState("");
-  const [topic, setTopic] = useState<Topic>(defaultTopic);
+  // 5/23/2026: scoatem select-ul de subiect din UI — admin clasifică
+  // post-fact. Păstrăm `topic` ca const pentru backward-compat backend.
+  const topic: Topic = defaultTopic;
   const [honey, setHoney] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -111,23 +113,6 @@ export function FeedbackForm({
           : "bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 space-y-4"
       }
     >
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-          Subiect
-        </label>
-        <select
-          value={topic}
-          onChange={(e) => setTopic(e.target.value as Topic)}
-          className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-        >
-          {(Object.keys(TOPIC_LABELS) as Topic[]).map((t) => (
-            <option key={t} value={t}>
-              {TOPIC_LABELS[t]}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div>
         <label htmlFor="fb-text" className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
           Mesaj <span className="text-red-500">*</span>

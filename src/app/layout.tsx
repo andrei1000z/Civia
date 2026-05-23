@@ -16,7 +16,6 @@ import { NavProgress } from "@/components/NavProgress";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { DeferredClientMount } from "@/components/DeferredClientMount";
 import { ToastProvider } from "@/components/Toast";
-import { BackToTop } from "@/components/BackToTop";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
@@ -256,7 +255,6 @@ export default function RootLayout({
               <DeferredClientMount>
                 <AuthModal />
                 <CookieBanner />
-                <BackToTop />
                 <InstallPrompt />
                 <MobileFab />
                 <NewsletterNudge />
