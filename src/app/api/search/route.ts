@@ -5,90 +5,140 @@ import { ghiduri } from "@/data/ghiduri";
 import { evenimente } from "@/data/evenimente";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SESIZARI_GUIDES } from "@/data/sesizari-guides";
+import { GLOSAR } from "@/data/glosar";
+import { PRIMARII, PREFECTURI, ORASE_IMPORTANTE } from "@/data/autoritati-contact";
 
-// 2026-05-19: 5min → 1h. Search index quasi-static (judete + ghiduri + sesizari
-// existente). Daca apare ceva nou, util pentru cap. 1h e suficient.
-export const revalidate = 3600;
+// 5/23/2026 — Search v2: relevance scoring + petitii + proteste + glosar +
+// autoritati + grouping. Cache scurt (60s) pentru rezultate populare.
+export const revalidate = 60;
 
-interface SearchResult {
-  type: "sesizare" | "ghid" | "eveniment" | "stire" | "page" | "judet" | "bilet" | "linie" | "primar" | "directie" | "companie" | "glosar" | "ghid-sesizare" | "transport" | "ai";
+export type SearchResultType =
+  | "sesizare"
+  | "ghid"
+  | "eveniment"
+  | "stire"
+  | "page"
+  | "judet"
+  | "petitie"
+  | "protest"
+  | "glosar"
+  | "ghid-sesizare"
+  | "autoritate"
+  | "ai";
+
+export interface SearchResult {
+  type: SearchResultType;
   title: string;
   url: string;
   excerpt?: string;
   meta?: string;
+  /** Score 0-100 used to rank results across types. */
+  score: number;
+  /** UI hint: which group this result belongs to. */
+  group: "actiuni" | "navigatie" | "sesizari" | "petitii_proteste" | "stiri_evenimente" | "ghiduri" | "autoritati";
 }
 
-const STATIC_PAGES: SearchResult[] = [
-  // Core platform
-  { type: "page", title: "Sesizări", url: "/sesizari", excerpt: "Depune sesizări către autorități" },
+const STATIC_PAGES: Omit<SearchResult, "score" | "group">[] = [
+  { type: "page", title: "Sesizări", url: "/sesizari", excerpt: "Depune sesizări către autorități cu AI" },
   { type: "page", title: "Petiții", url: "/petitii", excerpt: "Petiții civice curate" },
   { type: "page", title: "Proteste", url: "/proteste", excerpt: "Proteste civice anunțate" },
-  { type: "page", title: "Întreruperi", url: "/intreruperi", excerpt: "Întreruperi planificate utilități (apă, gaz, curent)" },
-  { type: "page", title: "Știri", url: "/stiri", excerpt: "Știri civice din surse verificate" },
+  { type: "page", title: "Întreruperi planificate", url: "/intreruperi", excerpt: "Întreruperi apă, gaz, curent" },
+  { type: "page", title: "Știri civice", url: "/stiri", excerpt: "Știri agregate din surse verificate" },
   { type: "page", title: "Evenimente", url: "/evenimente", excerpt: "Evenimente majore din România" },
-  { type: "page", title: "Ghiduri", url: "/ghiduri", excerpt: "Ghiduri practice pentru cetățeni" },
+  { type: "page", title: "Ghiduri practice", url: "/ghiduri", excerpt: "Ghiduri pas-cu-pas pentru cetățeni" },
   { type: "page", title: "Sesizări publice", url: "/sesizari-publice", excerpt: "Ce semnalează alți cetățeni" },
   { type: "page", title: "Urmărește sesizarea", url: "/urmareste", excerpt: "Verifică statusul sesizării tale" },
   { type: "page", title: "Contul tău", url: "/cont", excerpt: "Profil + sesizările tale" },
-  { type: "page", title: "Primari București", url: "/b/istoric", excerpt: "Toți primarii Capitalei din 1990 până azi" },
-
-  // Dashboards de date publice
-  // 2026-05-19: scoase /siguranta /educatie /sanatate (ghost pages).
-  { type: "page", title: "Clasament primării", url: "/clasament-primarii", excerpt: "Rata reală de răspuns a primăriilor — care răspunde, care nu" },
-
-  // Dev
+  { type: "page", title: "Clasament primării", url: "/clasament-primarii", excerpt: "Rata reală de răspuns a primăriilor" },
+  { type: "page", title: "Autorități publice", url: "/autoritati", excerpt: "Catalog primării, prefecturi, poliție" },
 ];
 
 function sanitizeForPostgrest(q: string): string {
   return q.replace(/[,()*.:\\]/g, "").slice(0, 64);
 }
 
-/**
- * Normalize diacritics ASCII pentru matching robust.
- * "Țepeș" / "tepes" / "Tepes" → "tepes"
- *
- * Folosit pe AMBELE: query (qRaw) si haystack (titlu+locatie+descriere).
- * Astfel, utilizator care tasteaza "Iancului" fara diacritice gaseste si
- * "Strada Iancului" cu diacritice corecte din DB. Search din analytics
- * (5/8/2026) a aratat 4 search-uri zero-result, posibil din cauza ca
- * utilizatorii tastau fara diacritice text care era stocat cu diacritice.
- */
 function normalizeForSearch(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
-    // Sedila variants (codepoint diferit de virgulita)
-    .replace(/ş/g, "s").replace(/ţ/g, "t");
+    .replace(/ş/g, "s")
+    .replace(/ţ/g, "t");
 }
 
-/**
- * Stem a Romanian word by trimming inflection suffixes.
- * "explozie" → "explozi", "rahovei" → "rahov", "incendiul" → "incendi"
- * Returns array of stems to try (original + trimmed variants).
- */
 function roStems(word: string): string[] {
   const stems = [word];
-  // Romanian suffixes sorted longest-first
-  const suffixes = ["ului", "elor", "iei", "rea", "lui", "lor", "iei", "ată", "ate", "ări", "ări", "ul", "ei", "ii", "ea", "le", "or", "al", "ia", "ie", "ă", "a", "e", "i", "u"];
+  const suffixes = ["ului", "elor", "iei", "rea", "lui", "lor", "ată", "ate", "ări", "ul", "ei", "ii", "ea", "le", "or", "al", "ia", "ie", "ă", "a", "e", "i", "u"];
   for (const s of suffixes) {
     if (word.length > s.length + 2 && word.endsWith(s)) {
       stems.push(word.slice(0, -s.length));
       break;
     }
   }
-  // Fallback: also try dropping last 1-2 chars for short words
   if (word.length > 4) stems.push(word.slice(0, -1));
   if (word.length > 5) stems.push(word.slice(0, -2));
   return [...new Set(stems)];
 }
 
-/** A haystack matches if EVERY query word has at least one stem that appears in it */
 function matchesAll(haystack: string, words: string[]): boolean {
   return words.every((w) => {
     const stems = roStems(w);
     return stems.some((s) => haystack.includes(s));
   });
+}
+
+/**
+ * Scor de relevanță bazat pe poziția + tipul match-ului.
+ * - Match exact pe titlu: +100
+ * - Titlu începe cu query: +60
+ * - Titlu conține query: +40
+ * - Match per cuvânt în titlu: +12 each
+ * - Match per cuvânt în excerpt: +4 each
+ * - Penalty pentru match doar prin stem fuzzy: -5
+ */
+function scoreMatch(query: string, words: string[], titleN: string, excerptN: string): number {
+  let s = 0;
+  if (titleN === query) s += 100;
+  if (titleN.startsWith(query)) s += 60;
+  else if (titleN.includes(query)) s += 40;
+  for (const w of words) {
+    if (titleN.includes(w)) s += 12;
+    else if (excerptN.includes(w)) s += 4;
+    else {
+      // Stem fallback
+      const stems = roStems(w);
+      if (stems.some((st) => titleN.includes(st))) s += 6;
+      else if (stems.some((st) => excerptN.includes(st))) s += 2;
+      else s -= 1;
+    }
+  }
+  return s;
+}
+
+const GROUP_FOR_TYPE: Record<SearchResultType, SearchResult["group"]> = {
+  sesizare: "sesizari",
+  "ghid-sesizare": "sesizari",
+  ghid: "ghiduri",
+  glosar: "ghiduri",
+  eveniment: "stiri_evenimente",
+  stire: "stiri_evenimente",
+  petitie: "petitii_proteste",
+  protest: "petitii_proteste",
+  page: "navigatie",
+  judet: "navigatie",
+  autoritate: "navigatie",
+  ai: "actiuni",
+};
+
+function makeResult(
+  partial: Omit<SearchResult, "score" | "group">,
+  score: number,
+): SearchResult {
+  return {
+    ...partial,
+    score,
+    group: GROUP_FOR_TYPE[partial.type],
+  };
 }
 
 export async function GET(req: Request) {
@@ -99,7 +149,6 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  // Query original (pentru CTA fallback) + normalizat (pentru matching).
   const qOriginal = (searchParams.get("q") ?? "").trim();
   const qRaw = normalizeForSearch(qOriginal);
   if (!qRaw || qRaw.length < 2) return NextResponse.json({ data: [] });
@@ -108,140 +157,263 @@ export async function GET(req: Request) {
 
   const results: SearchResult[] = [];
 
-  // Counties / Județe
+  // ─── Counties / Județe ────────────────────────────────────────────
   for (const c of ALL_COUNTIES) {
-    const hay = normalizeForSearch(`${c.name} ${c.id} ${c.slug}`);
-    if (matchesAll(hay, words)) {
-      results.push({
+    const titleN = normalizeForSearch(c.name);
+    const hayN = normalizeForSearch(`${c.name} ${c.id} ${c.slug}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(c.id + " " + c.slug));
+      // Județele primesc bump pentru că sunt entry-point importante
+      results.push(makeResult({
         type: "judet",
         title: c.name,
         url: `/${c.slug}`,
-        excerpt: `Sesizări, calitate aer, știri pentru ${c.name}`,
+        excerpt: `Sesizări, întreruperi, știri pentru ${c.name}`,
         meta: c.id,
-      });
+      }, s + 25));
     }
   }
 
-  // Static pages
+  // ─── Static pages ─────────────────────────────────────────────────
   for (const p of STATIC_PAGES) {
-    const hay = normalizeForSearch(`${p.title} ${p.excerpt ?? ""}`);
-    if (matchesAll(hay, words)) {
-      results.push(p);
+    const titleN = normalizeForSearch(p.title);
+    const hayN = normalizeForSearch(`${p.title} ${p.excerpt ?? ""}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(p.excerpt ?? ""));
+      results.push(makeResult(p, s + 15));
     }
   }
 
-  // Ghiduri
+  // ─── Ghiduri statice ──────────────────────────────────────────────
   for (const g of ghiduri) {
-    const hay = normalizeForSearch(`${g.titlu} ${g.descriere}`);
-    if (matchesAll(hay, words)) {
-      results.push({
+    const titleN = normalizeForSearch(g.titlu);
+    const hayN = normalizeForSearch(`${g.titlu} ${g.descriere}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(g.descriere));
+      results.push(makeResult({
         type: "ghid",
         title: g.titlu,
         url: `/ghiduri/${g.slug}`,
         excerpt: g.descriere.slice(0, 120),
-      });
+      }, s));
     }
   }
 
-  // Evenimente
+  // ─── Glosar termeni ───────────────────────────────────────────────
+  for (const t of GLOSAR) {
+    const titleN = normalizeForSearch(t.termen);
+    const hayN = normalizeForSearch(`${t.termen} ${t.definitie}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(t.definitie));
+      results.push(makeResult({
+        type: "glosar",
+        title: t.termen,
+        url: `/glosar#${t.slug}`,
+        excerpt: t.definitie.slice(0, 140),
+        meta: t.categorie,
+      }, s));
+    }
+  }
+
+  // ─── Evenimente ───────────────────────────────────────────────────
   for (const e of evenimente) {
-    const hay = normalizeForSearch(`${e.titlu} ${e.descriere} ${e.county ?? ""}`);
-    if (matchesAll(hay, words)) {
-      results.push({
+    const titleN = normalizeForSearch(e.titlu);
+    const hayN = normalizeForSearch(`${e.titlu} ${e.descriere} ${e.county ?? ""}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(e.descriere));
+      results.push(makeResult({
         type: "eveniment",
         title: e.titlu,
         url: `/evenimente/${e.slug}`,
         excerpt: e.descriere.slice(0, 120),
         meta: e.data,
-      });
+      }, s));
     }
   }
 
-  // Ghiduri sesizări (tipuri de sesizări)
+  // ─── Ghiduri sesizări ─────────────────────────────────────────────
   for (const sg of SESIZARI_GUIDES) {
-    const hay = normalizeForSearch([sg.label, sg.urgenta, ...sg.tips, ...sg.destinatari].join(" "));
-    if (matchesAll(hay, words)) {
-      results.push({
+    const titleN = normalizeForSearch(sg.label);
+    const hayN = normalizeForSearch([sg.label, sg.urgenta, ...sg.tips, ...sg.destinatari].join(" "));
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(sg.urgenta + " " + sg.destinatari.join(" ")));
+      results.push(makeResult({
         type: "ghid-sesizare",
-        title: `Sesizare: ${sg.label}`,
+        title: `${sg.label}`,
         url: `/sesizari?tip=${sg.tip}`,
-        excerpt: `${sg.urgenta} · Destinatari: ${sg.destinatari.slice(0, 2).join(", ")}`.slice(0, 120),
+        excerpt: `${sg.urgenta} · Către: ${sg.destinatari.slice(0, 2).join(", ")}`.slice(0, 120),
         meta: sg.tip,
-      });
+      }, s + 8));
     }
   }
 
-  // Sesizari (DB) — search each word with OR across columns
-  try {
-    const supabase = await createSupabaseServer();
-    const safeWords = words.map((w) => sanitizeForPostgrest(w)).filter(Boolean);
-    // Build OR filter: each word must appear in at least one column
-    // Supabase doesn't support AND of ORs easily, so we search the first word and filter in JS
-    if (safeWords.length > 0) {
-      const first = safeWords[0];
-      const { data } = await supabase
+  // ─── Autorități: primării reședință + prefecturi (key = county code,
+  //     map to county name) + orașe importante (key = slug, value.name) ─
+  const authorityCatalog: Array<{ title: string; kind: string; email?: string; url: string }> = [];
+  for (const [code, a] of Object.entries(PRIMARII)) {
+    const county = ALL_COUNTIES.find((c) => c.id === code);
+    if (county) {
+      authorityCatalog.push({
+        title: `Primăria ${county.name}`,
+        kind: "Primărie reședință",
+        email: a.email,
+        url: `/autoritati`,
+      });
+    }
+  }
+  for (const [code, a] of Object.entries(PREFECTURI)) {
+    const county = ALL_COUNTIES.find((c) => c.id === code);
+    if (county) {
+      authorityCatalog.push({
+        title: `Prefectura ${county.name}`,
+        kind: "Prefectură",
+        email: a.email,
+        url: `/autoritati`,
+      });
+    }
+  }
+  for (const a of Object.values(ORASE_IMPORTANTE)) {
+    authorityCatalog.push({
+      title: `Primăria ${a.name}`,
+      kind: "Primărie oraș",
+      email: a.email,
+      url: `/autoritati`,
+    });
+  }
+  for (const a of authorityCatalog) {
+    const titleN = normalizeForSearch(a.title);
+    const hayN = normalizeForSearch(`${a.title} ${a.kind}`);
+    if (matchesAll(hayN, words)) {
+      const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(a.kind));
+      results.push(makeResult({
+        type: "autoritate",
+        title: a.title,
+        url: a.url,
+        excerpt: `${a.kind}${a.email ? ` · ${a.email}` : ""}`,
+        meta: a.kind,
+      }, s));
+    }
+  }
+
+  // ─── DB: Sesizari + Stiri + Petitii + Proteste (parallel) ──────────
+  const supabase = await createSupabaseServer();
+  const safeWords = words.map((w) => sanitizeForPostgrest(w)).filter(Boolean);
+  const firstWord = safeWords[0];
+
+  if (firstWord) {
+    const [sesRes, stiriRes, petitiiRes, protesteRes] = await Promise.all([
+      supabase
         .from("sesizari_feed")
         .select("code, titlu, locatie, sector, status, descriere")
-        .or(`titlu.ilike.%${first}%,locatie.ilike.%${first}%,descriere.ilike.%${first}%`)
-        .limit(20);
-      for (const s of (data ?? []) as Array<{ code: string; titlu: string; locatie: string; sector: string; status: string; descriere: string }>) {
-        const hay = normalizeForSearch(`${s.titlu} ${s.locatie} ${s.descriere}`);
-        if (matchesAll(hay, safeWords)) {
-          results.push({
-            type: "sesizare",
-            title: s.titlu,
-            url: `/sesizari/${s.code}`,
-            excerpt: `${s.locatie}`,
-            meta: s.status,
-          });
-        }
-      }
-    }
-  } catch { /* ignore */ }
-
-  // Stiri (DB) — same word-based approach
-  try {
-    const supabase = await createSupabaseServer();
-    const safeWords = words.map((w) => sanitizeForPostgrest(w)).filter(Boolean);
-    if (safeWords.length > 0) {
-      const first = safeWords[0];
-      const { data } = await supabase
+        .or(`titlu.ilike.%${firstWord}%,locatie.ilike.%${firstWord}%,descriere.ilike.%${firstWord}%`)
+        .limit(20),
+      supabase
         .from("stiri_cache")
-        .select("id, title, excerpt, source")
-        .or(`title.ilike.%${first}%,excerpt.ilike.%${first}%`)
+        .select("id, title, excerpt, source, published_at")
+        .or(`title.ilike.%${firstWord}%,excerpt.ilike.%${firstWord}%`)
         .order("published_at", { ascending: false })
-        .limit(10);
-      for (const s of (data ?? []) as Array<{ id: string; title: string; excerpt: string; source: string }>) {
-        const hay = normalizeForSearch(`${s.title} ${s.excerpt ?? ""}`);
-        if (matchesAll(hay, safeWords)) {
-          results.push({
-            type: "stire",
-            title: s.title,
-            url: `/stiri/${s.id}`,
-            excerpt: s.excerpt?.slice(0, 120) ?? "",
-            meta: s.source,
-          });
-        }
+        .limit(15),
+      supabase
+        .from("petitii")
+        .select("slug, title, summary, status")
+        .or(`title.ilike.%${firstWord}%,summary.ilike.%${firstWord}%`)
+        .eq("status", "active")
+        .limit(10),
+      supabase
+        .from("proteste")
+        .select("slug, title, subtitle, city, start_at")
+        .or(`title.ilike.%${firstWord}%,subtitle.ilike.%${firstWord}%,city.ilike.%${firstWord}%`)
+        .eq("moderation_status", "approved")
+        .limit(10),
+    ]);
+
+    // Sesizari
+    for (const r of (sesRes.data ?? []) as Array<{ code: string; titlu: string; locatie: string; descriere: string; status: string }>) {
+      const titleN = normalizeForSearch(r.titlu);
+      const hayN = normalizeForSearch(`${r.titlu} ${r.locatie} ${r.descriere}`);
+      if (matchesAll(hayN, safeWords)) {
+        const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch(r.locatie + " " + r.descriere));
+        results.push(makeResult({
+          type: "sesizare",
+          title: r.titlu,
+          url: `/sesizari/${r.code}`,
+          excerpt: r.locatie,
+          meta: r.status,
+        }, s + 5));
       }
     }
-  } catch { /* ignore */ }
 
-  // Zero-result fallback: daca nu am gasit nimic, oferim CTA spre form-ul
-  // de sesizare cu query-ul prefixat. Audit analytics 5/8/2026 a aratat
-  // zero-result pe „Iancului", „Soseaua Iancului", „Parteneriat" — locatii
-  // sau termeni care NU exista inca in DB-ul de sesizari publice. In loc
-  // sa lasam user-ul cu lista goala, ii sugeram sa creeze el sesizarea.
-  if (results.length === 0) {
-    results.push({
+    // Stiri
+    for (const r of (stiriRes.data ?? []) as Array<{ id: string; title: string; excerpt: string; source: string }>) {
+      const titleN = normalizeForSearch(r.title);
+      const hayN = normalizeForSearch(`${r.title} ${r.excerpt ?? ""}`);
+      if (matchesAll(hayN, safeWords)) {
+        const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch(r.excerpt ?? ""));
+        results.push(makeResult({
+          type: "stire",
+          title: r.title,
+          url: `/stiri/${r.id}`,
+          excerpt: (r.excerpt ?? "").slice(0, 120),
+          meta: r.source,
+        }, s));
+      }
+    }
+
+    // Petitii
+    for (const r of (petitiiRes.data ?? []) as Array<{ slug: string; title: string; summary: string }>) {
+      const titleN = normalizeForSearch(r.title);
+      const hayN = normalizeForSearch(`${r.title} ${r.summary ?? ""}`);
+      if (matchesAll(hayN, safeWords)) {
+        const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch(r.summary ?? ""));
+        results.push(makeResult({
+          type: "petitie",
+          title: r.title,
+          url: `/petitii/${r.slug}`,
+          excerpt: (r.summary ?? "").slice(0, 120),
+        }, s + 10));
+      }
+    }
+
+    // Proteste
+    for (const r of (protesteRes.data ?? []) as Array<{ slug: string; title: string; subtitle: string | null; city: string | null; start_at: string }>) {
+      const titleN = normalizeForSearch(r.title);
+      const hayN = normalizeForSearch(`${r.title} ${r.subtitle ?? ""} ${r.city ?? ""}`);
+      if (matchesAll(hayN, safeWords)) {
+        const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch((r.subtitle ?? "") + " " + (r.city ?? "")));
+        const dateStr = r.start_at ? new Date(r.start_at).toLocaleDateString("ro-RO") : "";
+        results.push(makeResult({
+          type: "protest",
+          title: r.title,
+          url: `/proteste/${r.slug}`,
+          excerpt: [r.city, dateStr].filter(Boolean).join(" · ").slice(0, 120) || (r.subtitle ?? "").slice(0, 120),
+        }, s + 10));
+      }
+    }
+  }
+
+  // ─── Sort by score desc, dedupe by URL, cap at 40 ───────────────────
+  const seen = new Set<string>();
+  const sorted = results
+    .sort((a, b) => b.score - a.score)
+    .filter((r) => {
+      if (seen.has(r.url)) return false;
+      seen.add(r.url);
+      return true;
+    })
+    .slice(0, 40);
+
+  // ─── Zero-result fallback ──────────────────────────────────────────
+  if (sorted.length === 0) {
+    sorted.push(makeResult({
       type: "ai",
-      title: `Trimite o sesizare pentru "${qOriginal.slice(0, 60)}"`,
+      title: `Trimite o sesizare despre „${qOriginal.slice(0, 60)}"`,
       url: `/sesizari?q=${encodeURIComponent(qOriginal)}`,
-      excerpt: "Nu am găsit rezultate. Deschide formul de sesizare cu acest text pre-completat.",
-    });
+      excerpt: "Nu am găsit rezultate. Deschide formular de sesizare cu acest text pre-completat.",
+    }, 100));
   }
 
   return NextResponse.json(
-    { data: results.slice(0, 30) },
-    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } }
+    { data: sorted },
+    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } },
   );
 }
