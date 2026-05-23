@@ -2,18 +2,11 @@ import type { Metadata } from "next";
 import { after } from "next/server";
 import Link from "next/link";
 import Image from "next/image";
-import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon, Zap } from "lucide-react";
-import { QuickSignDeclicButton } from "@/components/sesizari/QuickSignDeclicButton";
+import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon } from "lucide-react";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
-import {
-  buildDeclicSignUrl,
-  isDeclicPetitionUrl,
-  type QuickSignData,
-} from "@/lib/petitii/declic-prefill";
-import { getQuickSignDataIfEnabled } from "@/lib/petitii/quick-sign-repository";
 import { analyticsRedis } from "@/lib/analytics/redis";
 
 const FAQ_PETITII = [
@@ -82,10 +75,7 @@ async function maybeTriggerScrape() {
 }
 
 export default async function PetitiiPage() {
-  const [petitii, quickSignData] = await Promise.all([
-    listPetitii({ status: ["active", "closed"] }),
-    getQuickSignDataIfEnabled(),
-  ]);
+  const petitii = await listPetitii({ status: ["active", "closed"] });
   const active = petitii.filter((p) => p.status === "active");
   const closed = petitii.filter((p) => p.status === "closed");
 
@@ -125,8 +115,8 @@ export default async function PetitiiPage() {
         }
       />
 
-      {/* CTA #1 — utilizatorii pot iniția propriile petiții */}
-      <div className="mb-4 bg-gradient-to-br from-purple-500/10 via-[var(--color-surface)] to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
+      {/* CTA — utilizatorii pot iniția propriile petiții */}
+      <div className="mb-8 bg-gradient-to-br from-purple-500/10 via-[var(--color-surface)] to-indigo-500/5 border border-purple-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
         <div
           className="w-10 h-10 rounded-[var(--radius-xs)] bg-purple-500/15 grid place-items-center shrink-0"
           aria-hidden="true"
@@ -160,35 +150,6 @@ export default async function PetitiiPage() {
         </div>
       </div>
 
-      {/* CTA #2 — quick-sign: user stochează datele 1 dată, semnează cu 1 click */}
-      <div className="mb-8 bg-gradient-to-br from-emerald-500/10 via-[var(--color-surface)] to-cyan-500/5 border border-emerald-500/30 rounded-[var(--radius-md)] p-4 md:p-5 flex items-start gap-3 flex-wrap">
-        <div
-          className="w-10 h-10 rounded-[var(--radius-xs)] bg-emerald-500/15 grid place-items-center shrink-0"
-          aria-hidden="true"
-        >
-          <Zap size={18} className="text-emerald-600 dark:text-emerald-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base mb-0.5">
-            Semnează petițiile mai ușor
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-            Introdu o singură dată datele necesare pentru semnarea unei petiții.
-            De acum încolo, doar <strong>1 click</strong> pentru fiecare petiție nouă pe care
-            ți-o trimitem prin notificare.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/cont#quick-sign"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-          >
-            <Zap size={14} aria-hidden="true" />
-            Configurează
-          </Link>
-        </div>
-      </div>
-
       {petitii.length === 0 ? (
         <EmptyState />
       ) : (
@@ -212,7 +173,7 @@ export default async function PetitiiPage() {
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {active.map((p) => (
-                  <PetitieCard key={p.id} p={p} quickSign={quickSignData} />
+                  <PetitieCard key={p.id} p={p} />
                 ))}
               </div>
             </section>
@@ -234,7 +195,7 @@ export default async function PetitiiPage() {
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 opacity-80">
                 {closed.map((p) => (
-                  <PetitieCard key={p.id} p={p} quickSign={quickSignData} />
+                  <PetitieCard key={p.id} p={p} />
                 ))}
               </div>
             </section>
@@ -272,7 +233,6 @@ function EmptyState() {
 
 function PetitieCard({
   p,
-  quickSign,
 }: {
   p: {
     slug: string;
@@ -287,7 +247,6 @@ function PetitieCard({
     target_signatures: number;
     signature_count: number;
   };
-  quickSign: QuickSignData | null;
 }) {
   const cat = PETITIE_CATEGORII.find((c) => c.value === p.category);
   let externalHost: string | null = null;
@@ -299,26 +258,11 @@ function PetitieCard({
     }
   }
 
-  // Calculează URL prefilled doar dacă petiția e activă + Declic + user are
-  // quick-sign on. Pe carduri vrem un buton vizibil care sare direct la
-  // semnare pe Declic (skip pagina de detaliu, 1 click în plus salvat).
-  const isActive = p.status === "active";
-  const isDeclic = isDeclicPetitionUrl(p.external_url);
-  const canQuickSign = isActive && isDeclic && quickSign && p.external_url;
-  const signUrl = canQuickSign
-    ? buildDeclicSignUrl(p.external_url!, quickSign)
-    : null;
-
   return (
-    // Overlay-link pattern: card e <article>, link-ul principal e overlay
-    // absolut peste card (aria-labelled de titlu). Butonul „Semnează rapid"
-    // are z-index mai mare ca să intercepteze click-ul. Nested <a> evitat.
-    <article className="relative group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all focus-within:ring-2 focus-within:ring-[var(--color-primary)]">
-      <Link
-        href={`/petitii/${p.slug}`}
-        aria-label={`Detalii petiție: ${p.title}`}
-        className="absolute inset-0 z-[1] focus:outline-none"
-      />
+    <Link
+      href={`/petitii/${p.slug}`}
+      className="group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all"
+    >
       {p.image_url ? (
         <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
           <Image
@@ -358,33 +302,17 @@ function PetitieCard({
         <p className="text-sm text-[var(--color-text-muted)] line-clamp-3 mb-4 leading-relaxed">
           {p.summary}
         </p>
-
-        {/* Action zone: quick-sign button (dacă disponibil) + Vezi detalii.
-            Butonul de semnare e z-[2] ca să fie deasupra overlay-ului.
-            QuickSignDeclicButton e Client Component — interceptează click-ul
-            ca să afișeze instrucțiunile bookmarklet la primul click (Declic
-            nu citește URL params, deci avem nevoie de bookmarklet user-side). */}
-        <div className="mt-auto space-y-2">
-          {signUrl && (
-            <QuickSignDeclicButton
-              signUrl={signUrl}
-              petitieTitle={p.title}
-              externalHost={externalHost}
-              ariaLabel={`Semnează rapid petiția „${p.title}" pe ${externalHost ?? "Declic"}`}
-            />
-          )}
-          <div className="flex items-center justify-between text-xs">
-            {externalHost && (
-              <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
-                <ExternalLink size={11} aria-hidden="true" />
-                {externalHost}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] group-hover:gap-2 transition-all">
-              Vezi detalii
-              <ArrowRight size={12} aria-hidden="true" />
+        <div className="mt-auto flex items-center justify-between text-xs">
+          {externalHost && (
+            <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
+              <ExternalLink size={11} aria-hidden="true" />
+              {externalHost}
             </span>
-          </div>
+          )}
+          <span className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] group-hover:gap-2 transition-all">
+            Vezi detalii
+            <ArrowRight size={12} aria-hidden="true" />
+          </span>
         </div>
         {p.ends_at && (
           <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
@@ -393,6 +321,6 @@ function PetitieCard({
           </p>
         )}
       </div>
-    </article>
+    </Link>
   );
 }

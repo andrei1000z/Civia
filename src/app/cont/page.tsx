@@ -21,7 +21,6 @@ import {
   EyeOff,
   Download,
   Sparkles,
-  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
@@ -34,7 +33,6 @@ import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { StreakWidget } from "@/components/profile/StreakWidget";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
-import { QuickSignSettings } from "@/components/account/QuickSignSettings";
 
 interface Profile {
   id: string;
@@ -109,30 +107,6 @@ export default function ContPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [newsletterSavedAt, setNewsletterSavedAt] = useState<number | null>(null);
-
-  // Scroll-to-anchor după ce profilul s-a încărcat și formularul e randat.
-  // Browser-ul face scroll automat doar la primul DOM commit; dacă secțiunea
-  // apare după useEffect (post-loading), trebuie să forțăm noi scroll-ul.
-  // Retry o dată la 80ms ca să prindem cazul unde elementul abia se montează.
-  useEffect(() => {
-    if (loading) return;
-    if (typeof window === "undefined") return;
-    const hash = window.location.hash;
-    if (!hash || hash.length < 2) return;
-    const id = hash.slice(1);
-    const tryScroll = () => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        return true;
-      }
-      return false;
-    };
-    if (!tryScroll()) {
-      const t = setTimeout(tryScroll, 80);
-      return () => clearTimeout(t);
-    }
-  }, [loading]);
 
   /**
    * Auto-save just the newsletter opt-ins. Used by the per-checkbox onChange
@@ -568,18 +542,6 @@ export default function ContPage() {
                   </p>
                 )}
               </div>
-            </section>
-
-            {/* Semnare rapidă petiții — vezi /api/profile/quick-sign + lib/petitii/declic-prefill.
-                User completează datele 1 dată; Civia construiește URL Declic cu params
-                prefilled la fiecare petiție. NU semnăm noi (eIDAS + ToS Declic) — doar
-                reducem fricțiunea la 1 click pe site-ul oficial. */}
-            <section
-              id="quick-sign"
-              className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0"
-            >
-              <SectionTitle icon={Megaphone}>Semnare rapidă petiții</SectionTitle>
-              <QuickSignSettings />
             </section>
 
             {/* Aspect — ThemeSettings (light/dark/system toggle) eliminat
