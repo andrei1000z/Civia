@@ -1,34 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 
+/**
+ * 5/23/2026 — Simplificat de la dropdown la link direct.
+ * Click pe avatar → navighează direct la /cont (unde există deja
+ * deconectare + toate setările). Reduce friction cu 1 click.
+ */
 export function UserMenu() {
-  const { user, loading, signOut, openAuthModal } = useAuth();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, []);
+  const { user, loading, openAuthModal } = useAuth();
 
   if (loading) {
-    return <div className="w-10 h-10 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] animate-pulse" />;
+    return (
+      <div className="w-10 h-10 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] animate-pulse" />
+    );
   }
 
   if (!user) {
@@ -48,44 +35,13 @@ export function UserMenu() {
   const initial = (user.email ?? "C").charAt(0).toUpperCase();
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-semibold text-sm hover:brightness-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-        aria-label={`Meniu utilizator (${user.email})`}
-        aria-expanded={open}
-        aria-haspopup="menu"
-      >
-        {initial}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] overflow-hidden z-50">
-          <div className="px-4 py-3 border-b border-[var(--color-border)]">
-            <p className="text-xs text-[var(--color-text-muted)]">Autentificat ca</p>
-            <p className="text-sm font-medium truncate">{user.email}</p>
-          </div>
-          <Link
-            href="/cont"
-            onClick={() => setOpen(false)}
-            className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] flex items-center gap-2 transition-colors border-b border-[var(--color-border)] focus:outline-none focus-visible:bg-[var(--color-surface-2)]"
-          >
-            <UserIcon size={14} aria-hidden="true" />
-            Contul tău
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              signOut();
-            }}
-            className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-surface-2)] flex items-center gap-2 text-red-600 dark:text-red-400 transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)]"
-          >
-            <LogOut size={14} aria-hidden="true" />
-            Deconectare
-          </button>
-        </div>
-      )}
-    </div>
+    <Link
+      href="/cont"
+      className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-semibold text-sm hover:brightness-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+      aria-label={`Contul tău (${user.email})`}
+      title="Contul tău"
+    >
+      {initial}
+    </Link>
   );
 }

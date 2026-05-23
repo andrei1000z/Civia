@@ -326,17 +326,6 @@ export function Navbar() {
               </div>
             );
           })()}
-          {countySlug && (
-            <div className="pt-4 mt-4 border-t border-[var(--color-border)]">
-              <Link
-                href="/cont"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center gap-2 h-10 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-              >
-                Schimbă județul
-              </Link>
-            </div>
-          )}
         </nav>
       </div>
 

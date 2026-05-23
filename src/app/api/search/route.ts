@@ -50,7 +50,6 @@ const STATIC_PAGES: Omit<SearchResult, "score" | "group">[] = [
   { type: "page", title: "Urmărește sesizarea", url: "/urmareste", excerpt: "Verifică statusul sesizării tale" },
   { type: "page", title: "Contul tău", url: "/cont", excerpt: "Profil + sesizările tale" },
   { type: "page", title: "Clasament primării", url: "/clasament-primarii", excerpt: "Rata reală de răspuns a primăriilor" },
-  { type: "page", title: "Autorități publice", url: "/autoritati", excerpt: "Catalog primării, prefecturi, poliție" },
 ];
 
 function sanitizeForPostgrest(q: string): string {
@@ -247,8 +246,9 @@ export async function GET(req: Request) {
     }
   }
 
-  // ─── Autorități: primării reședință + prefecturi (key = county code,
-  //     map to county name) + orașe importante (key = slug, value.name) ─
+  // ─── Autorități: primării reședință (key = county code) + orașe importante
+  //     mapped to per-județ autorități page. Pagina națională /autoritati a
+  //     fost ștearsă 5/23/2026; users sunt redirectați la /{slug}/autoritati. ─
   const authorityCatalog: Array<{ title: string; kind: string; email?: string; url: string }> = [];
   for (const [code, a] of Object.entries(PRIMARII)) {
     const county = ALL_COUNTIES.find((c) => c.id === code);
@@ -257,7 +257,7 @@ export async function GET(req: Request) {
         title: `Primăria ${county.name}`,
         kind: "Primărie reședință",
         email: a.email,
-        url: `/autoritati`,
+        url: `/${county.slug}/autoritati`,
       });
     }
   }
@@ -268,16 +268,17 @@ export async function GET(req: Request) {
         title: `Prefectura ${county.name}`,
         kind: "Prefectură",
         email: a.email,
-        url: `/autoritati`,
+        url: `/${county.slug}/autoritati`,
       });
     }
   }
   for (const a of Object.values(ORASE_IMPORTANTE)) {
+    const county = ALL_COUNTIES.find((c) => c.id === a.countyCode);
     authorityCatalog.push({
       title: `Primăria ${a.name}`,
       kind: "Primărie oraș",
       email: a.email,
-      url: `/autoritati`,
+      url: county ? `/${county.slug}/autoritati` : "/",
     });
   }
   for (const a of authorityCatalog) {

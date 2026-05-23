@@ -52,7 +52,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/legal/termeni`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     // 2026-05-19: scoase /siguranta /educatie /sanatate.
     { url: `${base}/clasament-primarii`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
-    { url: `${base}/autoritati`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${base}/embed`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, FileText, AlertTriangle, Building2 } from "lucide-react";
+import { Plus, X, FileText, AlertTriangle } from "lucide-react";
 import { useCountyOptional } from "@/lib/county-context";
 import { ALL_COUNTIES } from "@/data/counties";
 
@@ -71,7 +71,6 @@ export function MobileFab() {
   // last (highest in the column), so the primary "Fă sesizare" is at
   // the bottom — closest to the thumb.
   const dialItems = [
-    { href: "/autoritati", icon: <Building2 size={16} />, label: "Autorități", bg: "bg-slate-700 dark:bg-slate-600" },
     { href: intreruperiTarget, icon: <AlertTriangle size={16} />, label: "Întreruperi", bg: "bg-orange-500" },
     { href: sesizariTarget, icon: <FileText size={16} />, label: "Fă sesizare", bg: "bg-[var(--color-primary)]" },
   ];

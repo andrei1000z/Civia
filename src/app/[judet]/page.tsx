@@ -791,13 +791,6 @@ export default async function CountyHomePage({
                 programate ale operatorilor.
               </p>
             </div>
-            <Link
-              href="/cont"
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-1"
-            >
-              <ArrowRight size={11} className="rotate-180" aria-hidden="true" />
-              Schimbă județul
-            </Link>
           </div>
           <div className="grid lg:grid-cols-3 gap-5">
             <RecentSesizariColumn

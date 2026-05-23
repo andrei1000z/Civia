@@ -18,7 +18,6 @@ import {
   Camera,
   Trash2,
   ShieldCheck,
-  EyeOff,
   Download,
   Sparkles,
 } from "lucide-react";
@@ -29,7 +28,6 @@ import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 // ThemeSettings eliminat 5/22/2026 — dark mode forever, fara toggle.
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
-import { CountyPickerInline } from "@/components/account/CountyPickerInline";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { StreakWidget } from "@/components/profile/StreakWidget";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
@@ -501,11 +499,6 @@ export default function ContPage() {
                 />
               </Field>
 
-              {/* County preference — drives the /[judet]/ vs / routing in the
-                  navbar. Persisted in localStorage + cookie via the same
-                  CountyPickerInline used elsewhere. */}
-              <CountyPickerInline />
-
               {/* Newsletter opt-ins — under phone, GDPR-style explicit consent.
                   Auto-save on toggle so users don't have to click "Salvează"
                   for the most common subscribe action. */}
@@ -552,40 +545,6 @@ export default function ContPage() {
               <SoundsToggle />
             </section>
 
-            {/* Confidențialitate — 5/23/2026: înlocuit toggle dead-code cu
-                notă informativă. Anonimizarea e default-on permanent (vezi
-                src/lib/sesizari/repository.ts → anonymizeHiddenAuthors:
-                `const hideName = true`). Toggle-ul vechi salva în Redis
-                dar pipeline-ul de redactare nu-l mai citea de pe 5/5/2026. */}
-            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
-              <SectionTitle icon={ShieldCheck}>Confidențialitate</SectionTitle>
-              <div className="flex items-start gap-3 p-3 rounded-[var(--radius-xs)] bg-emerald-500/10 border border-emerald-500/30">
-                <EyeOff
-                  size={16}
-                  className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-                  aria-hidden="true"
-                />
-                <div className="text-xs leading-relaxed">
-                  <p className="font-semibold text-[var(--color-text)] mb-1">
-                    Numele tău e protejat automat
-                  </p>
-                  <p className="text-[var(--color-text-muted)]">
-                    Pe site, sesizările publice apar cu{" "}
-                    <code className="px-1 py-0.5 rounded bg-[var(--color-surface-2)] font-mono text-[10px]">
-                      [nume]
-                    </code>
-                    {" "}— niciun vizitator nu vede cine a depus. Adresa de domiciliu
-                    e scrub-uită automat din textul formal afișat public. Numele
-                    și adresa rămân DOAR în emailul trimis către autoritate
-                    (cerință legală OG 27/2002 pentru identificare).
-                  </p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2 italic">
-                    Această protecție e activă pentru toți utilizatorii, fără
-                    setări — privacy by default.
-                  </p>
-                </div>
-              </div>
-            </section>
 
             {/* Save button */}
             <div className="border-t border-[var(--color-border)] p-4 sm:p-5 min-w-0">

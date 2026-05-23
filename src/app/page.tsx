@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, Megaphone, Send } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
-import { CountyPicker } from "./CountyPicker";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
 import { QuickCameraCTA } from "@/components/sesizari/QuickCameraCTA";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
@@ -177,21 +176,6 @@ export default async function HomePage() {
       <div className="container-narrow py-4 md:hidden">
         <QuickCameraCTA />
       </div>
-
-      {/* COUNTY PICKER */}
-      <section id="county-picker" className="py-12 md:py-16 bg-[var(--color-surface)]">
-        <div className="container-narrow">
-          <div className="text-center mb-6">
-            <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold">
-              Alege-ți județul
-            </h2>
-            <p className="text-[var(--color-text-muted)] mt-2">
-              Sesizări, întreruperi, proteste, știri locale și date publice — filtrate pe județul tău.
-            </p>
-          </div>
-        </div>
-        <CountyPicker />
-      </section>
 
       {/* TOP VOTED */}
       <section className="py-12 md:py-16">

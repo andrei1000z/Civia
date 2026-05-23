@@ -61,6 +61,10 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/siguranta": "/ghiduri",
   // 5/23/2026: /judete + /judete/[id] sterse — redirect la home.
   "/judete": "/",
+  // 5/23/2026: /autoritati pagina națională ștearsă (versiunea per-județ
+  // /{slug}/autoritati rămâne accesibilă). Redirect la home pentru link-uri
+  // vechi / Google cache.
+  "/autoritati": "/",
 };
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată
