@@ -200,8 +200,34 @@ export async function getSesizareByCode(code: string): Promise<SesizareFeedRow |
   if (error) throw error;
   const row = (data as SesizareFeedRow | null) ?? null;
   if (!row) return null;
-  const [anonymized] = await anonymizeHiddenAuthors([row]);
-  return anonymized ?? row;
+  // 5/23/2026 — strip nr_inregistrare la boundary repository.
+  // Câmpul e privat (unic per sesizare → permite tracking 1:1 al cetățeanului
+  // care a depus dacă e expus public). Apelantul care e SIGUR că user e autor
+  // folosește getNrInregistrareForAuthor() ca să-l aducă explicit.
+  const stripped = { ...row, nr_inregistrare: null };
+  const [anonymized] = await anonymizeHiddenAuthors([stripped]);
+  return anonymized ?? stripped;
+}
+
+/**
+ * Aduce nr_inregistrare DOAR dacă userId match-uie user_id-ul autorului.
+ * Folosit pe /sesizari/[code] după ce isAuthor a fost calculat.
+ * Server-only — nu se apelează din Client Components.
+ */
+export async function getNrInregistrareForAuthor(
+  sesizareId: string,
+  userId: string,
+): Promise<string | null> {
+  const supabase = await createSupabaseServer();
+  const { data } = await supabase
+    .from("sesizari")
+    .select("nr_inregistrare, user_id")
+    .eq("id", sesizareId)
+    .maybeSingle();
+  if (!data) return null;
+  const row = data as { nr_inregistrare: string | null; user_id: string | null };
+  if (row.user_id !== userId) return null;
+  return row.nr_inregistrare;
 }
 
 export async function getSesizareById(id: string): Promise<SesizareFeedRow | null> {

@@ -10,6 +10,7 @@ import {
   getUserVerification,
   getSimilarSesizari,
   isFollowing,
+  getNrInregistrareForAuthor,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
@@ -96,6 +97,13 @@ export default async function SesizareDetailPage({
   const isAuthor = user
     ? sesizare.user_id === user.id || sesizare.author_email === user.email
     : false;
+
+  // 5/23/2026 — nr_inregistrare e privat (unic per sesizare). Fetch separat
+  // doar pentru autor, ca să nu fie inclus în RSC payload pentru viewerii public.
+  const authorNrInregistrare =
+    isAuthor && user
+      ? await getNrInregistrareForAuthor(sesizare.id, user.id)
+      : null;
 
   // Poză "before" pentru before/after: prima imagine a sesizării (dacă există)
   const beforeUrl = sesizare.imagini.length > 0 ? sesizare.imagini[0] : null;
@@ -205,11 +213,13 @@ export default async function SesizareDetailPage({
             </div>
             <CosignersBadge code={sesizare.code} />
 
-            {/* 5/23/2026 — Banner de confirmare oficială. Apare DOAR dacă AI
-                a auto-aplicat `inregistrata` + a extras numărul de înregistrare
-                din răspunsul autorității (sau dacă admin a setat manual nr).
-                Mesaj clar: cetățeanul vede public că primăria a confirmat. */}
-            {sesizare.nr_inregistrare && (
+            {/* 5/23/2026 — Banner de confirmare oficială DOAR pentru autor.
+                Numărul de înregistrare e unic per sesizare → expunere publică
+                ar permite tracking 1:1 al persoanei care a depus. Strict private:
+                - repository.getSesizareByCode strip-uie nr_inregistrare la return
+                - aici facem fetch separat cu getNrInregistrareForAuthor care
+                  verifică user_id la query level. */}
+            {authorNrInregistrare && (
               <div className="mt-1 mb-5 inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-purple-500/10 border border-purple-500/30 text-sm">
                 <Scroll
                   size={14}
@@ -221,7 +231,10 @@ export default async function SesizareDetailPage({
                     Înregistrată oficial:
                   </strong>{" "}
                   <span className="font-mono text-[var(--color-text)] font-bold">
-                    {sesizare.nr_inregistrare}
+                    {authorNrInregistrare}
+                  </span>
+                  <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                    · doar pentru tine
                   </span>
                 </span>
               </div>
