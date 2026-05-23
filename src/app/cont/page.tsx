@@ -110,6 +110,30 @@ export default function ContPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [newsletterSavedAt, setNewsletterSavedAt] = useState<number | null>(null);
 
+  // Scroll-to-anchor după ce profilul s-a încărcat și formularul e randat.
+  // Browser-ul face scroll automat doar la primul DOM commit; dacă secțiunea
+  // apare după useEffect (post-loading), trebuie să forțăm noi scroll-ul.
+  // Retry o dată la 80ms ca să prindem cazul unde elementul abia se montează.
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    const id = hash.slice(1);
+    const tryScroll = () => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return true;
+      }
+      return false;
+    };
+    if (!tryScroll()) {
+      const t = setTimeout(tryScroll, 80);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
+
   /**
    * Auto-save just the newsletter opt-ins. Used by the per-checkbox onChange
    * handlers so the user doesn't have to click "Salvează" for newsletter

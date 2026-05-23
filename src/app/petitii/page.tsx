@@ -6,6 +6,12 @@ import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
+import {
+  buildDeclicSignUrl,
+  isDeclicPetitionUrl,
+  type QuickSignData,
+} from "@/lib/petitii/declic-prefill";
+import { getQuickSignDataIfEnabled } from "@/lib/petitii/quick-sign-repository";
 
 const FAQ_PETITII = [
   {
@@ -43,7 +49,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PetitiiPage() {
-  const petitii = await listPetitii({ status: ["active", "closed"] });
+  const [petitii, quickSignData] = await Promise.all([
+    listPetitii({ status: ["active", "closed"] }),
+    getQuickSignDataIfEnabled(),
+  ]);
   const active = petitii.filter((p) => p.status === "active");
   const closed = petitii.filter((p) => p.status === "closed");
 
@@ -167,7 +176,7 @@ export default async function PetitiiPage() {
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {active.map((p) => (
-                  <PetitieCard key={p.id} p={p} />
+                  <PetitieCard key={p.id} p={p} quickSign={quickSignData} />
                 ))}
               </div>
             </section>
@@ -189,7 +198,7 @@ export default async function PetitiiPage() {
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 opacity-80">
                 {closed.map((p) => (
-                  <PetitieCard key={p.id} p={p} />
+                  <PetitieCard key={p.id} p={p} quickSign={quickSignData} />
                 ))}
               </div>
             </section>
@@ -225,7 +234,25 @@ function EmptyState() {
   );
 }
 
-function PetitieCard({ p }: { p: { slug: string; title: string; summary: string; image_url: string | null; category: string | null; county_code: string | null; status: string; ends_at: string | null; external_url: string | null; target_signatures: number; signature_count: number } }) {
+function PetitieCard({
+  p,
+  quickSign,
+}: {
+  p: {
+    slug: string;
+    title: string;
+    summary: string;
+    image_url: string | null;
+    category: string | null;
+    county_code: string | null;
+    status: string;
+    ends_at: string | null;
+    external_url: string | null;
+    target_signatures: number;
+    signature_count: number;
+  };
+  quickSign: QuickSignData | null;
+}) {
   const cat = PETITIE_CATEGORII.find((c) => c.value === p.category);
   let externalHost: string | null = null;
   if (p.external_url) {
@@ -235,11 +262,27 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
       externalHost = null;
     }
   }
+
+  // Calculează URL prefilled doar dacă petiția e activă + Declic + user are
+  // quick-sign on. Pe carduri vrem un buton vizibil care sare direct la
+  // semnare pe Declic (skip pagina de detaliu, 1 click în plus salvat).
+  const isActive = p.status === "active";
+  const isDeclic = isDeclicPetitionUrl(p.external_url);
+  const canQuickSign = isActive && isDeclic && quickSign && p.external_url;
+  const signUrl = canQuickSign
+    ? buildDeclicSignUrl(p.external_url!, quickSign)
+    : null;
+
   return (
-    <Link
-      href={`/petitii/${p.slug}`}
-      className="group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all"
-    >
+    // Overlay-link pattern: card e <article>, link-ul principal e overlay
+    // absolut peste card (aria-labelled de titlu). Butonul „Semnează rapid"
+    // are z-index mai mare ca să intercepteze click-ul. Nested <a> evitat.
+    <article className="relative group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all focus-within:ring-2 focus-within:ring-[var(--color-primary)]">
+      <Link
+        href={`/petitii/${p.slug}`}
+        aria-label={`Detalii petiție: ${p.title}`}
+        className="absolute inset-0 z-[1] focus:outline-none"
+      />
       {p.image_url ? (
         <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
           <Image
@@ -279,21 +322,35 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
         <p className="text-sm text-[var(--color-text-muted)] line-clamp-3 mb-4 leading-relaxed">
           {p.summary}
         </p>
-        {/* Signature progress — scos pe carduri pentru că Civia nu are
-            count real (semnăturile se colectează pe site-ul extern), iar
-            "0 / 1 · 0%" arăta deceptiv. Progress-ul rămâne doar pe pagina
-            de detaliu, când avem cifre reale. */}
-        <div className="mt-auto flex items-center justify-between text-xs">
-          {externalHost && (
-            <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
-              <ExternalLink size={11} aria-hidden="true" />
-              {externalHost}
-            </span>
+
+        {/* Action zone: quick-sign button (dacă disponibil) + Vezi detalii.
+            Butonul de semnare e z-[2] ca să fie deasupra overlay-ului. */}
+        <div className="mt-auto space-y-2">
+          {signUrl && (
+            <a
+              href={signUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Semnează rapid petiția „${p.title}" pe ${externalHost ?? "Declic"}`}
+              className="relative z-[2] inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500/95 to-cyan-500/95 text-white text-xs font-bold transition-all shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] hover:brightness-110 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+            >
+              <Zap size={12} aria-hidden="true" />
+              Semnează rapid
+              <ExternalLink size={10} aria-hidden="true" />
+            </a>
           )}
-          <span className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] group-hover:gap-2 transition-all">
-            Vezi detalii
-            <ArrowRight size={12} aria-hidden="true" />
-          </span>
+          <div className="flex items-center justify-between text-xs">
+            {externalHost && (
+              <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
+                <ExternalLink size={11} aria-hidden="true" />
+                {externalHost}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] group-hover:gap-2 transition-all">
+              Vezi detalii
+              <ArrowRight size={12} aria-hidden="true" />
+            </span>
+          </div>
         </div>
         {p.ends_at && (
           <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
@@ -302,6 +359,6 @@ function PetitieCard({ p }: { p: { slug: string; title: string; summary: string;
           </p>
         )}
       </div>
-    </Link>
+    </article>
   );
 }
