@@ -1523,15 +1523,9 @@ ${today}`;
           </div>
         )}
 
-        <Field label="Titlu scurt (opțional)">
-          <input
-            type="text"
-            value={data.titlu}
-            onChange={(e) => update("titlu", e.target.value.slice(0, 200))}
-            placeholder="Automat din descriere"
-            className={inputClass}
-          />
-        </Field>
+        {/* 5/23/2026 — Field „Titlu scurt (opțional)" scos. Se derivă oricum
+            automat din tipLabel sau AI (vezi `effectiveTitlu` mai sus). User
+            nu mai trebuie să-l completeze manual — era redundant. */}
 
         <Field label="Unde exact se află problema?" required>
           <div className="flex gap-2">
