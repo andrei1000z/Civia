@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Megaphone, Send, Users } from "lucide-react";
+import { ArrowRight, TrendingUp, Megaphone, Send } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { CountyPicker } from "./CountyPicker";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
@@ -122,10 +122,15 @@ export default async function HomePage() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
-              Sesizări formale către primărie. Petiții civice cu impact.
-              Întreruperi programate, proteste anunțate, știri locale și ghiduri
-              practice pentru toate cele 42 de județe — într-un singur loc.
+            <p className="text-lg md:text-xl text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
+              <strong className="text-white">Faci o poză. Scrii 3 cuvinte. Apeși trimite.</strong>{" "}
+              Restul facem noi — generăm sesizarea formală, o trimitem la primărie
+              cu temei legal OG 27/2002 și te anunțăm de fiecare dată când răspund.
+            </p>
+            <p className="text-sm md:text-base text-white/75 mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
+              Plus: notificare la fiecare petiție nouă, la fiecare protest anunțat,
+              la întreruperile programate din zona ta și știri civice agregate din presă —
+              totul gratuit, fără cont obligatoriu.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -145,17 +150,17 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {/* Social proof — counter live cu cetatenii care au folosit deja
-                platforma. Ridica conversion-ul prin demonstrarea ca nu esti
-                singur ("X cetateni s-au alaturat deja"). Stat ISR-cached. */}
+            {/* Social proof — counter live cu numarul total de sesizari
+                aprobate. Mai puternic decat „X cetateni" pt ca arata
+                rezultate concrete, nu doar prezenta. Stat ISR-cached. */}
             {totalSesizari !== null && totalSesizari > 0 && (
               <p className="mt-6 text-sm text-emerald-100/85 inline-flex items-center gap-2">
-                <Users size={14} aria-hidden="true" />
+                <Megaphone size={14} aria-hidden="true" />
                 <span>
                   <strong className="text-white tabular-nums">
                     {totalSesizari.toLocaleString("ro-RO")}
                   </strong>{" "}
-                  cetățeni{totalSesizari === 1 ? "" : ""} s-au alăturat deja
+                  {totalSesizari === 1 ? "sesizare trimisă" : "sesizări trimise"} prin Civia
                 </span>
               </p>
             )}
