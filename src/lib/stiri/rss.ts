@@ -1,6 +1,13 @@
 import Parser from "rss-parser";
 import { detectCounties } from "./county-keywords";
 
+export interface MediaItem {
+  type: "image" | "video";
+  url: string;
+  caption?: string;
+  poster?: string;
+}
+
 export interface RssArticle {
   url: string;
   title: string;
@@ -12,6 +19,7 @@ export interface RssArticle {
   image_url: string | null;
   published_at: string;
   counties: string[]; // county IDs matched from content
+  media: MediaItem[]; // toate pozele + videourile din articol
 }
 
 interface Feed {
@@ -289,6 +297,7 @@ export async function fetchFeed(feed: Feed): Promise<RssArticle[]> {
         image_url: extractImage(itemAny as { content?: string; enclosure?: { url?: string }; [key: string]: unknown }),
         published_at: item.isoDate || item.pubDate || new Date().toISOString(),
         counties,
+        media: [], // populat în fetchAllFeedsWithDiag via fetchArticleMedia()
       });
     }
     return articles;
@@ -356,6 +365,130 @@ async function fetchOgImage(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Fetch + parse media (toate <img> + <video> + <picture>) din pagina
+ * articolului. Best-effort, fast timeout. Dedupes + filtrează miniaturi
+ * mici (logo, ads, tracking pixels) prin heuristică pe URL.
+ *
+ * Returnează maxim 12 media items (cap defensiv pentru UI).
+ */
+export async function fetchArticleMedia(url: string): Promise<MediaItem[]> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; CiviaBot/1.0; +https://civia.ro/about) AppleWebKit/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+
+    // 1. Articolul WordPress / Drupal / custom CMS — căutăm container-ul
+    //    principal pentru a evita logos / ads din header/footer. Fallback la
+    //    întreg HTML dacă nu găsim.
+    const articleMatch = html.match(
+      /<article[^>]*>([\s\S]*?)<\/article>/i,
+    );
+    const scope = articleMatch?.[1] ?? html;
+
+    const items: MediaItem[] = [];
+    const seen = new Set<string>();
+
+    // 2. Extract <figure> blocks (au caption nativ via <figcaption>)
+    const figureRegex =
+      /<figure[^>]*>([\s\S]*?)<\/figure>/gi;
+    let fm: RegExpExecArray | null;
+    while ((fm = figureRegex.exec(scope)) !== null) {
+      const block = fm[1] ?? "";
+      const imgM = block.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+      const captionM = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
+      if (imgM?.[1]) {
+        const abs = absUrl(imgM[1], url);
+        if (abs && looksLikeImageUrl(abs) && !isLikelyJunkImage(abs) && !seen.has(abs)) {
+          seen.add(abs);
+          const altM = imgM[0].match(/alt=["']([^"']*)["']/i);
+          const cap = captionM?.[1] ? stripTags(captionM[1]) : altM?.[1] ?? undefined;
+          items.push({ type: "image", url: abs, caption: cap || undefined });
+        }
+      }
+    }
+
+    // 3. <img> standalone (cele care nu sunt în figure deja procesate)
+    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let im: RegExpExecArray | null;
+    while ((im = imgRegex.exec(scope)) !== null) {
+      const src = im[1];
+      if (!src) continue;
+      const abs = absUrl(src, url);
+      if (!abs || !looksLikeImageUrl(abs) || isLikelyJunkImage(abs) || seen.has(abs)) {
+        continue;
+      }
+      seen.add(abs);
+      const altM = im[0].match(/alt=["']([^"']*)["']/i);
+      items.push({
+        type: "image",
+        url: abs,
+        caption: altM?.[1] && altM[1].length > 3 ? altM[1] : undefined,
+      });
+    }
+
+    // 4. <video> tags
+    const videoRegex = /<video[^>]*([\s\S]*?)<\/video>/gi;
+    let vm: RegExpExecArray | null;
+    while ((vm = videoRegex.exec(scope)) !== null) {
+      const block = vm[0];
+      const srcM = block.match(/<source[^>]+src=["']([^"']+)["']/i) ||
+        block.match(/<video[^>]+src=["']([^"']+)["']/i);
+      const posterM = block.match(/poster=["']([^"']+)["']/i);
+      if (srcM?.[1]) {
+        const abs = absUrl(srcM[1], url);
+        if (abs && !seen.has(abs)) {
+          seen.add(abs);
+          items.push({
+            type: "video",
+            url: abs,
+            poster: posterM?.[1] ? absUrl(posterM[1], url) ?? undefined : undefined,
+          });
+        }
+      }
+    }
+
+    // Cap la 12 items (peste asta = ads probabil)
+    return items.slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+function absUrl(src: string, base: string): string | null {
+  try {
+    return new URL(src, base).toString();
+  } catch {
+    return null;
+  }
+}
+
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Heuristică junk detection: logo-uri (1x1 pixels), banner ads, social icons.
+ * Pe URL strings (pattern names în filename) — nu fetchăm HEAD pentru fiecare.
+ */
+function isLikelyJunkImage(url: string): boolean {
+  const lower = url.toLowerCase();
+  // Tracking pixels + analytics
+  if (/\.gif(\?|$)/.test(lower) && /\b(?:pixel|track|tag|beacon|analytics)\b/.test(lower)) {
+    return true;
+  }
+  // Common ad / logo patterns
+  return /(?:\/ads?\/|\/banner\/|\/logo[._-]|\/avatar[._-]|\/sprite[._-]|\.(?:svg|ico)$|placeholder|favicon|spacer|1x1|blank)/.test(lower);
+}
+
 export interface FetchAllResult {
   articles: RssArticle[];
   perFeed: Array<{ source: string; count: number; ok: boolean }>;
@@ -386,15 +519,26 @@ export async function fetchAllFeedsWithDiag(): Promise<FetchAllResult> {
     }
   }
 
-  // Scrape OG images for articles that don't have one (batch, max 20 at a time)
+  // Scrape OG images for articles that don't have one (batch, max 30)
   const noImage = articles.filter((a) => !a.image_url);
-  const batch = noImage.slice(0, 30); // limit to avoid timeout
-  if (batch.length > 0) {
-    const images = await Promise.all(batch.map((a) => fetchOgImage(a.url)));
-    batch.forEach((a, i) => {
+  const batchImg = noImage.slice(0, 30);
+  if (batchImg.length > 0) {
+    const images = await Promise.all(batchImg.map((a) => fetchOgImage(a.url)));
+    batchImg.forEach((a, i) => {
       if (images[i]) a.image_url = images[i];
     });
   }
+
+  // Scrape full media (galerie poze + videouri din articol) — max 25 noi
+  // articles per run ca să nu blocăm cron-ul. Restul backfill via script.
+  const mediaBatch = articles.slice(0, 25);
+  const mediaResults = await Promise.allSettled(
+    mediaBatch.map((a) => fetchArticleMedia(a.url)),
+  );
+  mediaBatch.forEach((a, i) => {
+    const r = mediaResults[i];
+    if (r?.status === "fulfilled") a.media = r.value;
+  });
 
   return { articles, perFeed };
 }

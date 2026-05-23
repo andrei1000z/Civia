@@ -155,6 +155,7 @@ export async function POST(req: Request) {
       image_url: a.image_url,
       published_at: a.published_at,
       counties: a.counties ?? [],
+      media: a.media ?? [],
     }));
     const { error, count } = await supabase
       .from("stiri_cache")
