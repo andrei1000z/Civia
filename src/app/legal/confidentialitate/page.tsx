@@ -78,15 +78,14 @@ export default function ConfidentialitatePage() {
         <h3>b. Date pentru cont</h3>
         <ul>
           <li><strong>Adresa de email</strong> (folosită pentru autentificare prin magic-link, fără parolă);</li>
-          <li><strong>Numele afișat</strong> (pe care îl alegi tu — poate fi pseudonim);</li>
-          <li><strong>Județul preferat</strong> (opțional, salvat pentru a personaliza UI-ul).</li>
+          <li><strong>Numele afișat</strong> (pe care îl alegi tu — poate fi pseudonim).</li>
         </ul>
 
         <h3>c. Date tehnice (jurnal server)</h3>
         <ul>
           <li><strong>Adresa IP</strong> (pseudonimizată, păstrată maxim <strong>30 de zile</strong> pentru rate-limiting și prevenirea abuzului);</li>
           <li><strong>User-Agent</strong> (browser + OS, agregat anonimizat);</li>
-          <li><strong>Cookie-uri esențiale</strong> (sesiunea Supabase, preferința temă, consimțământ cookie — vezi secțiunea „Cookies");</li>
+          <li><strong>Cookie-uri esențiale</strong> (sesiunea Supabase, consimțământ cookie — vezi secțiunea „Cookies");</li>
           <li><strong>Date analytics minime, anonime</strong> (vizitator-ID hash din IP+UA, fără cross-site tracking).</li>
         </ul>
 
@@ -268,10 +267,10 @@ export default function ConfidentialitatePage() {
           </thead>
           <tbody>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">sb-*</td><td className="p-3">cookie HTTP</td><td className="p-3">Sesiunea Supabase (autentificare)</td><td className="p-3">7 zile</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">county</td><td className="p-3">cookie HTTP</td><td className="p-3">Județul preferat (folosit de server pentru a personaliza pagina ta)</td><td className="p-3">1 an</td></tr>
-            {/* 5/22/2026 — theme localStorage entry eliminat (Civia foloseste dark mode permanent, fara toggle). */}
+            {/* 5/22/2026 — theme localStorage entry eliminat (Civia foloseste dark mode permanent, fara toggle).
+                5/23/2026 — county cookie + civia_county localStorage eliminate
+                (selectarea județului ștearsă din UI, no longer set). */}
             <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_cookie_consent</td><td className="p-3">localStorage</td><td className="p-3">Stochează alegerea ta privind consimțământul</td><td className="p-3">permanent (până la ștergere)</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_county</td><td className="p-3">localStorage</td><td className="p-3">Județul preferat (oglindit local pentru randări client-side)</td><td className="p-3">permanent (până la ștergere)</td></tr>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_vid</td><td className="p-3">localStorage</td><td className="p-3">Vizitator ID anonim (hash, fără identificare personală)</td><td className="p-3">permanent (până la ștergere)</td></tr>
           </tbody>
         </table>

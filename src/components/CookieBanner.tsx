@@ -255,8 +255,9 @@ export function CookieBanner() {
                     <Settings2 size={11} aria-hidden="true" /> Preferințe
                   </p>
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed">
-                    Județul preferat, sunete UI, preferințe de notificări — îți
-                    personalizează experiența pe Civia.
+                    Sunete UI, preferințe de notificări, mesaje închise (cookie
+                    banner, install prompt) — îți personalizează experiența pe
+                    Civia.
                   </p>
                 </div>
               </label>
