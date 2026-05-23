@@ -11,7 +11,7 @@ import {
   Share2,
   Sparkles,
 } from "lucide-react";
-import { getPetitieBySlug } from "@/lib/petitii/repository";
+import { getPetitieBySlug, listPetitieUpdates } from "@/lib/petitii/repository";
 import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -84,15 +84,18 @@ export default async function PetitiePage({
   // Generate (or read cached) AI synthesis on the server so the first
   // visitor pays the Groq cost and every subsequent one sees the
   // structured summary in the initial HTML — no client fetch, no flash.
-  const aiSummary = await getOrGeneratePetitieAiSummary({
-    id: petitie.id,
-    title: petitie.title,
-    summary: petitie.summary,
-    body: petitie.body,
-    category: petitie.category,
-    ai_summary: petitie.ai_summary ?? null,
-    ai_summary_version: petitie.ai_summary_version ?? 0,
-  });
+  const [aiSummary, petitieUpdates] = await Promise.all([
+    getOrGeneratePetitieAiSummary({
+      id: petitie.id,
+      title: petitie.title,
+      summary: petitie.summary,
+      body: petitie.body,
+      category: petitie.category,
+      ai_summary: petitie.ai_summary ?? null,
+      ai_summary_version: petitie.ai_summary_version ?? 0,
+    }),
+    listPetitieUpdates(petitie.id),
+  ]);
 
   const isActive = petitie.status === "active";
   const cat = PETITIE_CATEGORII.find((c) => c.value === petitie.category);
@@ -254,6 +257,58 @@ export default async function PetitiePage({
                 initialSummary={aiSummary}
                 fallbackText={petitie.summary || petitie.body || ""}
               />
+            </section>
+          )}
+
+          {/* Updates timeline — actualizări scrape-uite zilnic de la inițiator
+              (Declic „Campania în 5 minute"). Apar doar dacă există măcar 1.
+              Push notif se trimite automat pentru fiecare update nou (vezi
+              /api/petitii/scrape-updates). */}
+          {petitieUpdates.length > 0 && (
+            <section id="updates" className="bg-[var(--color-surface)] border border-purple-500/30 rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 md:p-6 scroll-mt-24">
+              <div className="flex items-start gap-3 mb-5">
+                <div
+                  className="w-9 h-9 rounded-[var(--radius-xs)] bg-purple-500/15 grid place-items-center shrink-0"
+                  aria-hidden="true"
+                >
+                  <Sparkles size={16} className="text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="font-[family-name:var(--font-sora)] font-bold text-base md:text-lg leading-tight">
+                    Actualizări de la inițiator
+                  </h2>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {petitieUpdates.length === 1
+                      ? "1 actualizare"
+                      : `${petitieUpdates.length} actualizări`}
+                    {externalHost && ` · scrape zilnic de pe ${externalHost}`}
+                  </p>
+                </div>
+              </div>
+              <ol className="space-y-5 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-purple-500/20">
+                {petitieUpdates.map((u) => (
+                  <li key={u.id} className="pl-6 relative">
+                    <span
+                      className="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full bg-purple-500 ring-4 ring-[var(--color-surface)]"
+                      aria-hidden="true"
+                    />
+                    {u.update_date && (
+                      <time
+                        dateTime={u.update_date}
+                        className="block text-[10px] uppercase tracking-wider font-bold text-purple-600 dark:text-purple-400 mb-1"
+                      >
+                        {formatDate(u.update_date)}
+                      </time>
+                    )}
+                    <h3 className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base mb-2 leading-snug">
+                      {u.title}
+                    </h3>
+                    <p className="text-sm text-[var(--color-text-muted)] leading-relaxed whitespace-pre-line">
+                      {u.body}
+                    </p>
+                  </li>
+                ))}
+              </ol>
             </section>
           )}
 

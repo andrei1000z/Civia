@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import Link from "next/link";
 import Image from "next/image";
 import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon, Zap } from "lucide-react";
@@ -12,6 +13,7 @@ import {
   type QuickSignData,
 } from "@/lib/petitii/declic-prefill";
 import { getQuickSignDataIfEnabled } from "@/lib/petitii/quick-sign-repository";
+import { analyticsRedis } from "@/lib/analytics/redis";
 
 const FAQ_PETITII = [
   {
@@ -48,6 +50,36 @@ export const metadata: Metadata = {
   alternates: { canonical: "/petitii" },
 };
 
+/**
+ * Self-healing pe vizita la /petitii: trimite POST la /api/petitii/scrape-updates
+ * dacă lock-ul Redis nu e prins. TTL 24h → maxim un scrape pe zi indiferent
+ * câți users vizitează. Lock-ul e NX SET ca să nu suprapunem dacă două req-uri
+ * sosesc simultan.
+ */
+const SCRAPE_LOCK_KEY = "civia:petitii:scrape-updates:lock";
+const SCRAPE_LOCK_TTL_S = 24 * 60 * 60; // 24h
+
+async function maybeTriggerScrape() {
+  if (!analyticsRedis) return;
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return;
+  try {
+    const lock = await analyticsRedis.set(SCRAPE_LOCK_KEY, Date.now(), {
+      nx: true,
+      ex: SCRAPE_LOCK_TTL_S,
+    });
+    if (lock !== "OK") return;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civia.ro";
+    await fetch(`${baseUrl}/api/petitii/scrape-updates`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch {
+    // Background failure — next stale traffic retries.
+  }
+}
+
 export default async function PetitiiPage() {
   const [petitii, quickSignData] = await Promise.all([
     listPetitii({ status: ["active", "closed"] }),
@@ -55,6 +87,9 @@ export default async function PetitiiPage() {
   ]);
   const active = petitii.filter((p) => p.status === "active");
   const closed = petitii.filter((p) => p.status === "closed");
+
+  // Fire-and-forget after response sent.
+  after(maybeTriggerScrape);
 
   return (
     <div className="container-narrow py-8 md:py-12">

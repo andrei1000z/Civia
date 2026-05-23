@@ -115,3 +115,25 @@ export async function userHasSigned(
     .eq("user_id", userId);
   return (count ?? 0) > 0;
 }
+
+export interface PetitieUpdateRow {
+  id: string;
+  petitie_id: string;
+  update_date: string | null;
+  title: string;
+  body: string;
+  scraped_at: string;
+}
+
+/** List update-uri pentru o petiție, ordonate desc by date (NULL la final). */
+export async function listPetitieUpdates(
+  petitieId: string,
+): Promise<PetitieUpdateRow[]> {
+  const admin = createSupabaseAdmin();
+  const { data } = await admin
+    .from("petitie_updates")
+    .select("id, petitie_id, update_date, title, body, scraped_at")
+    .eq("petitie_id", petitieId)
+    .order("update_date", { ascending: false, nullsFirst: false });
+  return (data ?? []) as PetitieUpdateRow[];
+}
