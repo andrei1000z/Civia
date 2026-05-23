@@ -552,18 +552,39 @@ export default function ContPage() {
               <SoundsToggle />
             </section>
 
-            {/* Confidențialitate */}
+            {/* Confidențialitate — 5/23/2026: înlocuit toggle dead-code cu
+                notă informativă. Anonimizarea e default-on permanent (vezi
+                src/lib/sesizari/repository.ts → anonymizeHiddenAuthors:
+                `const hideName = true`). Toggle-ul vechi salva în Redis
+                dar pipeline-ul de redactare nu-l mai citea de pe 5/5/2026. */}
             <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
               <SectionTitle icon={ShieldCheck}>Confidențialitate</SectionTitle>
-              <CheckboxRow
-                icon={EyeOff}
-                checked={form.hide_name}
-                onChange={(v) => setForm({ ...form, hide_name: v })}
-                title="Ascunde numele meu pe site"
-                description={
-                  `Sesizările publice apar cu "[nume]". Numele rămâne în email-ul către autoritate (e nevoie pentru identificare legală).`
-                }
-              />
+              <div className="flex items-start gap-3 p-3 rounded-[var(--radius-xs)] bg-emerald-500/10 border border-emerald-500/30">
+                <EyeOff
+                  size={16}
+                  className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
+                <div className="text-xs leading-relaxed">
+                  <p className="font-semibold text-[var(--color-text)] mb-1">
+                    Numele tău e protejat automat
+                  </p>
+                  <p className="text-[var(--color-text-muted)]">
+                    Pe site, sesizările publice apar cu{" "}
+                    <code className="px-1 py-0.5 rounded bg-[var(--color-surface-2)] font-mono text-[10px]">
+                      [nume]
+                    </code>
+                    {" "}— niciun vizitator nu vede cine a depus. Adresa de domiciliu
+                    e scrub-uită automat din textul formal afișat public. Numele
+                    și adresa rămân DOAR în emailul trimis către autoritate
+                    (cerință legală OG 27/2002 pentru identificare).
+                  </p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2 italic">
+                    Această protecție e activă pentru toți utilizatorii, fără
+                    setări — privacy by default.
+                  </p>
+                </div>
+              </div>
             </section>
 
             {/* Save button */}
