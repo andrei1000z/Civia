@@ -94,11 +94,13 @@
   --color-accent-soft: #7f1d1d;
   --color-accent-on-soft: #fecaca;
 
-  /* 5/22/2026 v5 — bg flat fara gradient. Bumped de la #0a1f1f la #0d2e2a
-     (more vibrant emerald-dark) pentru a NU citi ca „negru" pe monitor.
-     User a raportat de 5x ca background-ul pare negru — ridicam saturatia
-     verde ca sa fie distinct vizibil ca tinted dark teal, nu black. */
-  --color-bg: #0d2e2a;
+  /* 5/23/2026 v7 — bg shift de la verde-teal #0d2e2a la slate-navy #1a2332.
+     User a zis „verdele e urât, fă mai deschis". Slate-navy:
+     - Mai luminos (RGB 26,35,50 lighter than 13,46,42)
+     - Neutru cool, nu mai dominant „verde"
+     - iPhone dark mode aesthetic (iOS uses near-blue dark)
+     - Blob-urile emerald + aqua + violet pop ca accent peste navy neutru. */
+  --color-bg: #1a2332;
 
   /* Dark mode — radials STRONG ca sa se vada pe bg-ul intunecat. */
   --bg-radial-emerald: rgba(16, 185, 129, 0.32);
@@ -277,34 +279,36 @@ body::after {
 
 body::before {
   background:
-    radial-gradient(ellipse 40% 30% at 25% 30%, rgba(16, 185, 129, 0.55), transparent 65%),
-    radial-gradient(ellipse 35% 30% at 75% 25%, rgba(34, 211, 238, 0.45), transparent 65%),
-    radial-gradient(ellipse 45% 35% at 50% 75%, rgba(168, 85, 247, 0.35), transparent 65%);
-  animation: liquid-flow-1 32s ease-in-out infinite alternate;
-  filter: blur(60px);
+    radial-gradient(ellipse 45% 35% at 22% 28%, rgba(16, 185, 129, 0.85), transparent 65%),
+    radial-gradient(ellipse 40% 32% at 78% 22%, rgba(34, 211, 238, 0.75), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 50% 78%, rgba(168, 85, 247, 0.65), transparent 65%);
+  animation: liquid-flow-1 18s ease-in-out infinite alternate;
+  filter: blur(90px);
 }
 
 body::after {
   background:
-    radial-gradient(ellipse 35% 30% at 60% 40%, rgba(20, 184, 166, 0.40), transparent 65%),
-    radial-gradient(ellipse 30% 25% at 20% 70%, rgba(101, 163, 13, 0.32), transparent 65%),
-    radial-gradient(ellipse 30% 25% at 85% 80%, rgba(56, 189, 248, 0.38), transparent 65%);
-  animation: liquid-flow-2 45s ease-in-out infinite alternate-reverse;
-  filter: blur(80px);
+    radial-gradient(ellipse 40% 32% at 60% 40%, rgba(20, 184, 166, 0.70), transparent 65%),
+    radial-gradient(ellipse 35% 28% at 18% 72%, rgba(244, 114, 182, 0.55), transparent 65%),
+    radial-gradient(ellipse 35% 30% at 88% 80%, rgba(56, 189, 248, 0.70), transparent 65%);
+  animation: liquid-flow-2 24s ease-in-out infinite alternate-reverse;
+  filter: blur(110px);
 }
 
 @keyframes liquid-flow-1 {
   0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1); }
-  33%  { transform: translate3d(3%, -2%, 0) rotate(15deg) scale(1.05); }
-  66%  { transform: translate3d(-2%, 3%, 0) rotate(-10deg) scale(0.97); }
-  100% { transform: translate3d(2%, 1%, 0) rotate(8deg) scale(1.03); }
+  25%  { transform: translate3d(6%, -4%, 0) rotate(22deg) scale(1.10); }
+  50%  { transform: translate3d(-5%, 5%, 0) rotate(-18deg) scale(0.94); }
+  75%  { transform: translate3d(4%, 3%, 0) rotate(14deg) scale(1.07); }
+  100% { transform: translate3d(-3%, -2%, 0) rotate(-8deg) scale(1.02); }
 }
 
 @keyframes liquid-flow-2 {
   0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1.05); }
-  33%  { transform: translate3d(-3%, 3%, 0) rotate(-12deg) scale(0.98); }
-  66%  { transform: translate3d(2%, -3%, 0) rotate(18deg) scale(1.08); }
-  100% { transform: translate3d(-1%, -1%, 0) rotate(-6deg) scale(1.02); }
+  25%  { transform: translate3d(-6%, 5%, 0) rotate(-20deg) scale(0.95); }
+  50%  { transform: translate3d(5%, -5%, 0) rotate(25deg) scale(1.12); }
+  75%  { transform: translate3d(-4%, 4%, 0) rotate(-12deg) scale(0.98); }
+  100% { transform: translate3d(3%, 2%, 0) rotate(10deg) scale(1.04); }
 }
 
 body {
@@ -1301,6 +1305,131 @@ textarea:hover:not(:focus):not(:disabled) {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+}
+
+/* ─── Liquid Glass button — iOS 26 aesthetic ────────────────
+   Add this class to ANY button/CTA to get the iPhone "Liquid Glass"
+   look: backdrop blur + saturate, inset specular highlight (top white
+   sheen), soft outer glow, and a refraction-y feel on top of whatever
+   color background the button already has.
+
+   Usage:  className="lc-liquid bg-emerald-500/80 text-white"
+   The blur happens THROUGH the button onto whatever's behind, so it
+   pairs perfectly with the animated body gradient blobs. */
+.lc-liquid {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 4px 16px -2px rgba(16, 185, 129, 0.25),
+    0 8px 32px -8px rgba(0, 0, 0, 0.20);
+  transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.lc-liquid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+.lc-liquid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%);
+  transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+.lc-liquid:hover::after {
+  transform: translateX(100%);
+}
+.lc-liquid:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 6px 20px -2px rgba(16, 185, 129, 0.45),
+    0 12px 40px -8px rgba(0, 0, 0, 0.28);
+  filter: brightness(1.08);
+}
+.lc-liquid:active {
+  filter: brightness(0.96);
+  transition-duration: 80ms;
+}
+.lc-liquid > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Liquid variants per color — different glow tint per button intent.
+   Usage: lc-liquid + lc-liquid-{emerald|aqua|violet|rose|amber|slate} */
+.lc-liquid-aqua {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 4px 16px -2px rgba(34, 211, 238, 0.30),
+    0 8px 32px -8px rgba(0, 0, 0, 0.20);
+}
+.lc-liquid-aqua:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 6px 20px -2px rgba(34, 211, 238, 0.50),
+    0 12px 40px -8px rgba(0, 0, 0, 0.28);
+}
+.lc-liquid-violet {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 4px 16px -2px rgba(168, 85, 247, 0.30),
+    0 8px 32px -8px rgba(0, 0, 0, 0.20);
+}
+.lc-liquid-violet:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 6px 20px -2px rgba(168, 85, 247, 0.50),
+    0 12px 40px -8px rgba(0, 0, 0, 0.28);
+}
+.lc-liquid-rose {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 4px 16px -2px rgba(244, 63, 94, 0.30),
+    0 8px 32px -8px rgba(0, 0, 0, 0.20);
+}
+.lc-liquid-slate {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 4px 16px -2px rgba(0, 0, 0, 0.30),
+    0 8px 32px -8px rgba(0, 0, 0, 0.25);
 }
 
 /* Magnetic hover — for primary buttons. Subtle translateY on hover. */

@@ -17,20 +17,22 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
- * 2026-05-19 Liquid Civic — variants enhanced with shine + magnetic hover.
- * Primary now uses gradient emerald→aqua. Outline uses refractive border.
+ * 5/23/2026 v7 — Liquid Glass (iOS 26 aesthetic) pe toate variantele.
+ * `lc-liquid` adaugă backdrop-blur, inset specular highlight, shine pe hover
+ * + color-tinted glow. Backgrounds devin semi-transparente pentru ca animated
+ * gradient blob-urile din body::before/::after să se vadă PRIN buton (refraction).
  */
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-r from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:brightness-110 shadow-md hover:shadow-lg lc-shine lc-magnetic",
+    "lc-liquid lc-magnetic bg-gradient-to-br from-emerald-500/85 to-cyan-500/85 text-white font-semibold",
   secondary:
-    "lc-glass-2 text-[var(--color-text)] lc-glow-hover-aqua lc-magnetic",
+    "lc-liquid lc-liquid-aqua lc-magnetic bg-white/10 text-[var(--color-text)]",
   outline:
-    "border-2 border-[var(--color-primary)] text-[var(--color-primary)] bg-transparent hover:bg-[var(--color-primary-soft)]",
+    "lc-liquid lc-liquid-slate bg-white/5 border border-[var(--color-primary)]/40 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15",
   ghost:
-    "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface-2)]",
+    "lc-liquid lc-liquid-slate bg-white/5 text-[var(--color-text)]",
   danger:
-    "bg-[var(--color-accent)] text-white hover:brightness-110 shadow-md hover:shadow-lg lc-shine",
+    "lc-liquid lc-liquid-rose lc-magnetic bg-gradient-to-br from-rose-500/90 to-red-600/90 text-white font-semibold",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

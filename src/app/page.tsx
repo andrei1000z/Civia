@@ -106,24 +106,23 @@ export default async function HomePage() {
           user-ului. Acum doar gradient curat emerald → dark + 2 radiale
           subtle pentru profunzime. -300ms LCP (no image fetch) + look
           mai curat. */}
-      <section className="relative overflow-hidden -mt-16 bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] text-white">
-        {/* Radial accents pentru profunzime — fara imagine, doar gradient layers. */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_30%,rgba(56,189,248,0.18),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_20%_80%,rgba(16,185,129,0.20),transparent)]" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/40 via-transparent to-transparent" />
+      <section className="relative overflow-hidden -mt-16 text-white">
+        {/* 5/23/2026 v7 — bg solid scos. Animated body::before/::after gradient
+            blob-urile se văd PRIN secțiunea hero (Liquid Glass). Singurul overlay
+            e un subtle dark vignette pentru contrast text (top/bottom). */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[var(--color-bg)]/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.07] pointer-events-none" />
 
         <div className="container-narrow relative z-10 pt-32 pb-16 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words">
+            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
               Ajută la schimbarea{" "}
-              <span className="bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-200 via-cyan-100 to-violet-200 bg-clip-text text-transparent">
                 României.
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-emerald-100/90 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
               Sesizări formale către primărie. Petiții civice cu impact.
               Întreruperi programate, proteste anunțate, știri locale și ghiduri
               practice pentru toate cele 42 de județe — într-un singur loc.
@@ -132,14 +131,14 @@ export default async function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/sesizari"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-white text-[var(--color-primary)] font-semibold hover:bg-white/90 active:scale-[0.97] transition-all shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-700"
+                className="lc-liquid lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-400/95 to-cyan-500/95 text-white font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
               >
                 <Send size={16} aria-hidden="true" />
                 Fă o sesizare acum
               </Link>
               <Link
                 href="/petitii"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-white/10 backdrop-blur-sm border border-white/30 text-white font-semibold hover:bg-white/20 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="lc-liquid lc-liquid-violet lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-white/10 text-white font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <Megaphone size={16} aria-hidden="true" />
                 Semnează petiții
