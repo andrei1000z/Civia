@@ -3,6 +3,7 @@ import { after } from "next/server";
 import Link from "next/link";
 import Image from "next/image";
 import { Megaphone, ArrowRight, ExternalLink, Plus, Link as LinkIcon, Zap } from "lucide-react";
+import { QuickSignDeclicButton } from "@/components/sesizari/QuickSignDeclicButton";
 import { listPetitii } from "@/lib/petitii/repository";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
@@ -359,20 +360,18 @@ function PetitieCard({
         </p>
 
         {/* Action zone: quick-sign button (dacă disponibil) + Vezi detalii.
-            Butonul de semnare e z-[2] ca să fie deasupra overlay-ului. */}
+            Butonul de semnare e z-[2] ca să fie deasupra overlay-ului.
+            QuickSignDeclicButton e Client Component — interceptează click-ul
+            ca să afișeze instrucțiunile bookmarklet la primul click (Declic
+            nu citește URL params, deci avem nevoie de bookmarklet user-side). */}
         <div className="mt-auto space-y-2">
           {signUrl && (
-            <a
-              href={signUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Semnează rapid petiția „${p.title}" pe ${externalHost ?? "Declic"}`}
-              className="relative z-[2] inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500/95 to-cyan-500/95 text-white text-xs font-bold transition-all shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] hover:brightness-110 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
-            >
-              <Zap size={12} aria-hidden="true" />
-              Semnează rapid
-              <ExternalLink size={10} aria-hidden="true" />
-            </a>
+            <QuickSignDeclicButton
+              signUrl={signUrl}
+              petitieTitle={p.title}
+              externalHost={externalHost}
+              ariaLabel={`Semnează rapid petiția „${p.title}" pe ${externalHost ?? "Declic"}`}
+            />
           )}
           <div className="flex items-center justify-between text-xs">
             {externalHost && (

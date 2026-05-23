@@ -89,14 +89,24 @@ export function buildDeclicBookmarklet(data: QuickSignData): string {
     if(did){ filled++; }
     total++;
   });
-  // Toast feedback
+  /* Toast feedback — use /* block comment instead of // so the post-collapse
+     single-line body doesn't accidentally comment out the rest of the IIFE. */
   var t=document.createElement("div");
   t.textContent="Civia: am completat "+filled+" câmpuri";
   t.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:12px 20px;border-radius:8px;font-family:sans-serif;font-weight:600;z-index:999999;box-shadow:0 8px 24px rgba(0,0,0,0.3)";
   document.body.appendChild(t);
   setTimeout(function(){t.remove();}, 3500);
 })();
-  `.trim().replace(/\s+/g, " ");
+  `
+    .trim()
+    // Strip block comments first (they're harmless on multi-line but clutter)
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    // Strip any line comments BEFORE we collapse whitespace — otherwise on the
+    // single-line output a stray `//` would comment-out the entire tail of
+    // the IIFE including the closing `})();` and we'd get SyntaxError.
+    // Bug fix verified 5/23/2026 with scripts/test-bookmarklet.ts.
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/\s+/g, " ");
 
   return `javascript:${encodeURIComponent(body)}`;
 }

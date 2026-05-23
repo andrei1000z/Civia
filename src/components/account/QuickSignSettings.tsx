@@ -335,72 +335,106 @@ function BookmarkletPanel({
   });
 
   return (
-    <div className="p-4 rounded-[var(--radius-md)] bg-gradient-to-br from-emerald-500/10 via-[var(--color-surface)] to-cyan-500/10 border border-emerald-500/30 space-y-3">
+    <div className="p-5 rounded-[var(--radius-md)] bg-gradient-to-br from-emerald-500/10 via-[var(--color-surface)] to-cyan-500/10 border-2 border-emerald-500/40 space-y-4">
       <div className="flex items-start gap-2">
         <Bookmark
-          size={16}
+          size={18}
           className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
           aria-hidden="true"
         />
         <div className="flex-1 min-w-0">
-          <p className="font-[family-name:var(--font-sora)] font-bold text-sm">
-            Activează completarea automată pe Declic
+          <p className="font-[family-name:var(--font-sora)] font-bold text-sm md:text-base">
+            ⚡ Pasul 2 — Pune Civia în bara ta de favorite
           </p>
           <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
-            Trage butonul de mai jos în <strong>bara de favorite</strong> a
-            browser-ului. La fiecare petiție Declic, dă click pe el și formularul
-            se completează singur. <strong>Setezi 1 dată, folosești de zeci de ori.</strong>
+            Declic nu permite completarea direct prin link, așa că folosim un mic
+            buton magic. <strong>Trage butonul verde de mai jos cu mouse-ul</strong>
+            {" "}în bara de favorite a browser-ului tău. Setezi 1 dată, folosești
+            la toate petițiile Declic.
           </p>
         </div>
       </div>
 
-      <a
-        href={href}
-        // Empêchons accidental navigation if user clicks. The bookmarklet is
-        // meant to be DRAGGED to the bookmark bar, not clicked here.
-        onClick={(e) => {
-          e.preventDefault();
-          alert(
-            "Trage butonul cu mouse-ul în bara de favorite a browser-ului (de obicei sub URL). Apoi pe orice pagină Declic, dă click pe el și formularul se va completa automat.",
-          );
-        }}
-        draggable
-        title="Trage acest buton în bara de favorite"
-        className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-bold shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] cursor-grab active:cursor-grabbing select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-      >
-        <MousePointerClick size={14} aria-hidden="true" />
-        Civia: completează automat
-      </a>
+      {/* Visual: arrow indicating drag direction */}
+      <div className="flex items-center justify-center gap-3 py-2">
+        <a
+          href={href}
+          // Clicking does nothing meaningful — the bookmarklet only runs on
+          // declic.ro pages. Show explanation on accidental click.
+          onClick={(e) => {
+            e.preventDefault();
+            alert(
+              "👋 Trage cu mouse-ul butonul ăsta SUS în bara de favorite a browserului (sub bara de adrese).\n\nApoi pe orice petiție Declic, click pe bookmark și formularul se completează automat.\n\nDacă nu vezi bara de favorite, apasă Ctrl+Shift+B în Chrome.",
+            );
+          }}
+          draggable
+          title="Trage cu mouse-ul SUS în bara de favorite"
+          className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-bold shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] hover:brightness-110 cursor-grab active:cursor-grabbing select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+        >
+          <MousePointerClick size={16} aria-hidden="true" />
+          Civia: completează automat
+        </a>
+        <span
+          aria-hidden="true"
+          className="text-2xl motion-safe:animate-bounce text-emerald-600 dark:text-emerald-400"
+          style={{ animationDuration: "1.5s" }}
+        >
+          ⬆️
+        </span>
+      </div>
 
-      <details className="text-xs text-[var(--color-text-muted)]">
-        <summary className="cursor-pointer hover:text-[var(--color-text)] transition-colors font-medium">
-          Cum funcționează?
+      <p className="text-center text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
+        ⬆️ Trage SUS în bara de favorite (sub bara cu adresa URL)
+      </p>
+
+      <details className="text-xs text-[var(--color-text-muted)]" open>
+        <summary className="cursor-pointer hover:text-[var(--color-text)] transition-colors font-semibold py-1">
+          📖 Instrucțiuni pas-cu-pas (click ca să închizi)
         </summary>
-        <ol className="mt-2 ml-4 space-y-1 list-decimal leading-relaxed">
-          <li>
-            Asigură-te că <strong>bara de favorite e vizibilă</strong> (în Chrome:{" "}
-            <code className="px-1 rounded bg-[var(--color-surface-2)]">
-              Ctrl+Shift+B
-            </code>
-            ).
+        <ol className="mt-3 ml-2 space-y-2 list-none leading-relaxed">
+          <li className="flex items-start gap-2">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold inline-flex items-center justify-center">1</span>
+            <span>
+              <strong>Verifică bara de favorite</strong> (banda cu bookmark-uri de
+              sub bara URL). Dacă nu o vezi, apasă{" "}
+              <code className="px-1.5 py-0.5 rounded bg-[var(--color-surface-2)] border border-[var(--color-border)] font-mono">
+                Ctrl+Shift+B
+              </code>
+              {" "}(Chrome/Edge) sau{" "}
+              <code className="px-1.5 py-0.5 rounded bg-[var(--color-surface-2)] border border-[var(--color-border)] font-mono">
+                Ctrl+B
+              </code>
+              {" "}(Firefox).
+            </span>
           </li>
-          <li>
-            <strong>Trage</strong> butonul verde de mai sus cu mouse-ul în bara de
-            favorite — apare ca un bookmark numit „Civia: completează automat".
+          <li className="flex items-start gap-2">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold inline-flex items-center justify-center">2</span>
+            <span>
+              <strong>Click stânga + ține apăsat</strong> pe butonul verde de mai
+              sus. <strong>Trage SUS</strong> în bara de favorite. Va apărea un
+              bookmark nou „Civia: completează automat".
+            </span>
           </li>
-          <li>
-            Pe orice pagină Declic, <strong>click pe bookmark</strong> → formularul
-            se completează automat cu datele tale.
+          <li className="flex items-start gap-2">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold inline-flex items-center justify-center">3</span>
+            <span>
+              Pe orice petiție Declic (campaniamea.declic.ro, noifacem.declic.ro,
+              etc.), <strong>click pe bookmark-ul Civia</strong> → formularul se
+              umple singur cu datele tale.
+            </span>
           </li>
-          <li>
-            Tu apeși „Semnează" pe site-ul Declic (cerință legală — semnătura
-            rămâne actul tău, nu al Civia).
+          <li className="flex items-start gap-2">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold inline-flex items-center justify-center">4</span>
+            <span>
+              Apeși „Semnează" pe site-ul Declic — semnătura electronică rămâne{" "}
+              <strong>actul tău</strong> (cerință legală eIDAS).
+            </span>
           </li>
         </ol>
-        <p className="mt-2 italic">
-          De ce un bookmark? Declic nu permite completarea formularului din afara
-          sistemului lor. Bookmarklet-ul rulează în browser-ul tău, sub controlul
-          tău — 100% legal și sigur (asemenea unui password manager).
+        <p className="mt-3 italic leading-relaxed">
+          De ce un bookmark? Declic nu acceptă completare via URL — datele
+          nu sunt citite. Bookmarklet-ul rulează în browser-ul tău, sub controlul
+          tău (asemenea unui password manager) — <strong>100% legal și sigur</strong>.
         </p>
       </details>
     </div>
