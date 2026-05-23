@@ -179,26 +179,63 @@ export function cleanText(html: string | undefined): string {
     .trim();
 }
 
+/**
+ * Returns true dacă URL-ul arată ca o imagine validă pentru `<img>`:
+ *   - Are extensie de imagine cunoscută (jpg/png/webp/avif/gif), SAU
+ *   - NU are extensie de media non-imagine (mp4/webm/mov/mp3/pdf).
+ * Folosit ca prim filtru ieftin înainte de fetch HEAD (verificat în
+ * fetchOgImage prin content-type sniff). Bug fix 5/23/2026 — Gândul
+ * publica „ssstwitter-com_*.mp4" ca <img src=...> în content RSS,
+ * pe care îl preluam fără validare → fundal gol pe card.
+ */
+function looksLikeImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.toLowerCase();
+    // Reject hard: known non-image extensions
+    if (/\.(mp4|webm|mov|m4v|mp3|wav|ogg|pdf|zip|svgz)(\?|$)/i.test(path)) {
+      return false;
+    }
+    // Accept hard: known image extensions
+    if (/\.(jpg|jpeg|png|webp|avif|gif|svg)(\?|$)/i.test(path)) return true;
+    // No extension (CDN paths like /wp-content/uploads/... fără ext, sau
+    // resize endpoints `/resize/600x400/foo`) — accept tentative; HEAD
+    // check va valida content-type ulterior.
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function extractImage(item: { content?: string; enclosure?: { url?: string }; [key: string]: unknown }): string | null {
+  const candidates: string[] = [];
   // Try enclosure
-  if (item.enclosure?.url) return item.enclosure.url;
+  if (item.enclosure?.url) candidates.push(item.enclosure.url);
   // Try media:content
   const mediaContent = item["media:content"] as { $?: { url?: string } } | undefined;
-  if (mediaContent?.$?.url) return mediaContent.$.url;
+  if (mediaContent?.$?.url) candidates.push(mediaContent.$.url);
   // Try media:thumbnail
   const mediaThumbnail = item["media:thumbnail"] as { $?: { url?: string } } | undefined;
-  if (mediaThumbnail?.$?.url) return mediaThumbnail.$.url;
+  if (mediaThumbnail?.$?.url) candidates.push(mediaThumbnail.$.url);
   // Try itunes:image
   const itunesImage = item["itunes:image"] as { $?: { href?: string } } | undefined;
-  if (itunesImage?.$?.href) return itunesImage.$.href;
-  // Try to extract from content HTML
+  if (itunesImage?.$?.href) candidates.push(itunesImage.$.href);
+  // ALL <img> in content (poate primul e logo/spacer, al doilea e real)
   const content = (item.content || "") as string;
-  const match = content.match(/<img[^>]+src=["']([^"']+)["']/);
-  if (match && match[1]) return match[1];
-  // Try og:image from description HTML
+  const imgRegex = /<img[^>]+src=["']([^"']+)["']/g;
+  let m: RegExpExecArray | null;
+  while ((m = imgRegex.exec(content)) !== null) {
+    if (m[1]) candidates.push(m[1]);
+  }
+  // og:image din description HTML (rare dar valid)
   const desc = (item["content:encoded"] || item.content || "") as string;
   const ogMatch = desc.match(/og:image[^>]+content=["']([^"']+)["']/);
-  if (ogMatch && ogMatch[1]) return ogMatch[1];
+  if (ogMatch && ogMatch[1]) candidates.push(ogMatch[1]);
+
+  // Returnează primul candidat care arată a imagine (skip mp4/etc).
+  for (const c of candidates) {
+    if (looksLikeImageUrl(c)) return c;
+  }
   return null;
 }
 
@@ -262,21 +299,58 @@ export async function fetchFeed(feed: Feed): Promise<RssArticle[]> {
 }
 
 /**
- * Fetch og:image from an article URL. Fast timeout, best-effort.
+ * Fetch o imagine valid din pagina articolului. Best-effort, fast timeout.
+ * Bug fix 5/23/2026 — local houses (7Iași, Observatorul PH, Monitorul BT, etc.)
+ * blocau User-Agent „Civia/1.0" cu 403 / cloudflare challenge. Plus unele
+ * paginile nu au og:image dar au twitter:image / first <img>. Acum:
+ *   1. UA = Mozilla browser real (mai puține blocaje 403)
+ *   2. Multi-selector: og:image → twitter:image → og:image:url → first <img>
+ *   3. URL absolut: rezolvă relativ la origin dacă lipsește schema
+ *   4. Validare looksLikeImageUrl (skip mp4 din meta if any)
  */
 async function fetchOgImage(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Civia/1.0 (civia.ro)" },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; CiviaBot/1.0; +https://civia.ro/about) AppleWebKit/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9",
+      },
       redirect: "follow",
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
     const html = await res.text();
-    // Extract og:image
-    const match = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-    return match?.[1] ?? null;
+
+    // Multi-selector în ordine de preferință.
+    const selectors: RegExp[] = [
+      // og:image / og:image:url / og:image:secure_url
+      /<meta[^>]+property=["']og:image(?::(?:url|secure_url))?["'][^>]+content=["']([^"']+)["']/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::(?:url|secure_url))?["']/i,
+      // twitter:image / twitter:image:src
+      /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image(?::src)?["']/i,
+      // Schema.org image (JSON-LD or itemprop)
+      /<meta[^>]+itemprop=["']image["'][^>]+content=["']([^"']+)["']/i,
+      // Fallback: first <img> with reasonable src
+      /<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp|avif|gif))["']/i,
+    ];
+
+    for (const re of selectors) {
+      const m = html.match(re);
+      const found = m?.[1]?.trim();
+      if (!found) continue;
+      // Rezolvă URL relativ la pagină (//cdn.foo/img.jpg sau /foo/bar.jpg)
+      let abs: string;
+      try {
+        abs = new URL(found, url).toString();
+      } catch {
+        continue;
+      }
+      if (!looksLikeImageUrl(abs)) continue;
+      return abs;
+    }
+    return null;
   } catch {
     return null;
   }
