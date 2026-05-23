@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { Loader2, Copy, Check, Volume2, VolumeX, Clock } from "lucide-react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Loader2, Volume2, VolumeX, Clock } from "lucide-react";
 
 /**
  * Renders inline markdown for **bold** spans inside a paragraph, plus a
@@ -267,58 +267,190 @@ export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSum
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Sticky toolbar above the rendered summary: reading time, copy-to-clipboard
- * and a Listen button (browser-native SpeechSynthesis, ro-RO if available).
- * All actions degrade gracefully when the API isn't there (Safari iOS lockdown,
- * old browsers).
+ * Preprocesare text pentru TTS „jurnalistic": strip markdown, expand
+ * abrevieri (nr., art., etc.), normalize headings (Pe scurt: → Pe scurt.)
+ * — pause naturală la punct vs două puncte. Folosit înainte de a feed
+ * utterance la SpeechSynthesis.
+ */
+function preprocessForSpeech(text: string): string {
+  return (
+    text
+      // Strip markdown
+      .replace(/\*\*([^*]+)\*\*/g, "$1") // bold
+      .replace(/^#+\s+/gm, "") // headings markdown
+      .replace(/^[-*]\s+/gm, "") // bullet markers
+      // Expand abrevieri uzuale (cu pronunție corectă RO)
+      .replace(/\bnr\.\s*/gi, "numărul ")
+      .replace(/\bart\.\s*/gi, "articolul ")
+      .replace(/\bal\.\s*/gi, "aliniatul ")
+      .replace(/\bpct\.\s*/gi, "punctul ")
+      .replace(/\bcca\.\s*/gi, "circa ")
+      .replace(/\betc\.?\b/gi, "et cetera")
+      .replace(/\bdr\.\s*/gi, "doctorul ")
+      .replace(/\bprof\.\s*/gi, "profesor ")
+      .replace(/\bsec\.\s*/gi, "secolul ")
+      .replace(/\bSt\.\s*/gi, "strada ")
+      .replace(/\bStr\.\s*/gi, "strada ")
+      .replace(/\bbl\.\s*/gi, "blocul ")
+      .replace(/\bap\.\s*/gi, "apartamentul ")
+      // Currency
+      .replace(/\bRON\b/g, "lei")
+      .replace(/\bEUR\b/g, "euro")
+      .replace(/€/g, "euro")
+      .replace(/\$/g, "dolari")
+      // Section headers — convert „Pe scurt:" → „Pe scurt." pentru pauză frumoasă
+      .replace(
+        /^(Pe scurt|De ce contează|Context|Cifre cheie|Cifre & date cheie|Ce urmează|Programul|Detalii|Ce cere petiția)\s*:\s*/gim,
+        "$1. ",
+      )
+      // Inline „Title:" pattern (e.g. „Concluzie: textul...") — same treatment
+      .replace(/(\w):\s+(?=[A-ZĂÂÎȘȚ])/g, "$1. ")
+      // Collapse multiple newlines into a single space (TTS doesn't honor \n)
+      .replace(/\n+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+/** Split text în sentences pentru queue separat — fiecare are propria
+ * intonație, evităm monotonia. */
+function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+(?=[A-ZĂÂÎȘȚ0-9„"])/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** Pick the highest-quality Romanian voice available in the browser.
+ *  Priority chain (verified Chrome / Edge / Firefox / Safari combo):
+ *    1. Microsoft Neural „Online (Natural)" — Edge has Anabela / Emil Natural
+ *    2. Microsoft Anabela / Andrei / Emil — Windows TTS
+ *    3. Google română — Chrome desktop
+ *    4. Ioana — Apple (iOS / macOS)
+ *    5. Orice ro-RO voice
+ *    6. null (caller poate fallback la voice default cu lang="ro-RO")
+ */
+function pickBestRoVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const roVoices = voices.filter((v) => /^ro\b/i.test(v.lang));
+  if (roVoices.length === 0) return null;
+
+  const priority = [
+    "Online (Natural)",
+    "Neural",
+    "Anabela",
+    "Andrei",
+    "Emil",
+    "Google",
+    "Ioana",
+  ];
+  for (const key of priority) {
+    const k = key.toLowerCase();
+    const match = roVoices.find((v) => v.name.toLowerCase().includes(k));
+    if (match) return match;
+  }
+  return roVoices[0] ?? null;
+}
+
+/**
+ * Sticky toolbar above the rendered summary: reading time + Listen button.
+ * Listen = SpeechSynthesis cu voice picking + preprocess + sentence-queue
+ * pentru cadență jurnalistic-naturală. Degrades gracefully on Safari iOS.
  */
 function SummaryToolbar({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [chosenVoice, setChosenVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const cancelRef = useRef(false);
 
   const minutes = useMemo(() => estimateReadMinutes(text.replace(/\*\*/g, "")), [text]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    // setState in effect is intentional: we have to read window.speechSynthesis
-    // post-mount to avoid SSR/CSR hydration mismatch. ESLint warning is acked.
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVoiceAvailable(typeof window.speechSynthesis !== "undefined");
+    setVoiceAvailable(true);
+
+    const synth = window.speechSynthesis;
+    // Chrome populates getVoices() async — register voiceschanged listener +
+    // first try (some engines have voices synchronously available).
+    const refreshVoice = () => {
+      const voices = synth.getVoices();
+      if (voices.length === 0) return;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setChosenVoice(pickBestRoVoice(voices));
+    };
+    refreshVoice();
+    synth.addEventListener?.("voiceschanged", refreshVoice);
+
     return () => {
-      // Stop reading if the user navigates away mid-utterance.
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      synth.removeEventListener?.("voiceschanged", refreshVoice);
+      synth.cancel();
     };
   }, []);
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text.replace(/\*\*/g, ""));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Clipboard blocked — silent fail; the user can select-and-copy manually.
-    }
+  const stopSpeak = () => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    cancelRef.current = true;
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
   };
 
-  const toggleSpeak = () => {
+  const startSpeak = () => {
     if (!voiceAvailable) return;
     const synth = window.speechSynthesis;
-    if (speaking) {
-      synth.cancel();
-      setSpeaking(false);
-      return;
-    }
-    const utt = new SpeechSynthesisUtterance(text.replace(/\*\*/g, ""));
-    utt.lang = "ro-RO";
-    utt.rate = 1.05;
-    utt.onend = () => setSpeaking(false);
-    utt.onerror = () => setSpeaking(false);
-    synth.speak(utt);
+    synth.cancel(); // clear any pending
+    cancelRef.current = false;
+
+    const processed = preprocessForSpeech(text);
+    const sentences = splitSentences(processed);
+    if (sentences.length === 0) return;
+
     setSpeaking(true);
+
+    // Queue sentences ONE BY ONE — fiecare are intonație proprie + pauză
+    // naturală la sentence boundary. Engine-ul Chrome/Edge respectă bine
+    // punctuation pentru cadență.
+    let idx = 0;
+    const speakNext = () => {
+      if (cancelRef.current) return;
+      if (idx >= sentences.length) {
+        setSpeaking(false);
+        return;
+      }
+      const sentence = sentences[idx++]!;
+      const utt = new SpeechSynthesisUtterance(sentence);
+      utt.lang = "ro-RO";
+      // Slightly slower + lower pitch = vibe „news anchor" în loc de robot.
+      // Pe Edge Natural voices, 0.95 rate sună foarte aproape de citire reală.
+      utt.rate = 0.95;
+      utt.pitch = 0.95;
+      utt.volume = 1.0;
+      if (chosenVoice) utt.voice = chosenVoice;
+      utt.onend = () => {
+        if (!cancelRef.current) speakNext();
+      };
+      utt.onerror = () => {
+        setSpeaking(false);
+      };
+      synth.speak(utt);
+    };
+    speakNext();
   };
+
+  const toggleSpeak = () => (speaking ? stopSpeak() : startSpeak());
+
+  // Friendly voice label pentru tooltip — „Anabela Natural" (Microsoft) >
+  // raw „Microsoft Anabela Online (Natural) - Romanian (Romania)".
+  const voiceLabel = useMemo(() => {
+    if (!chosenVoice) return null;
+    const n = chosenVoice.name;
+    if (/Natural/i.test(n)) return n.replace(/.*?(\w+)\s+Online.*Natural.*/i, "$1 (Natural)");
+    if (/Anabela/i.test(n)) return "Anabela";
+    if (/Andrei/i.test(n)) return "Andrei";
+    if (/Emil/i.test(n)) return "Emil";
+    if (/Google/i.test(n)) return "Google română";
+    if (/Ioana/i.test(n)) return "Ioana";
+    return n.length > 28 ? n.slice(0, 28) + "…" : n;
+  }, [chosenVoice]);
 
   return (
     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
@@ -333,21 +465,22 @@ function SummaryToolbar({ text }: { text: string }) {
             onClick={toggleSpeak}
             aria-pressed={speaking}
             className="inline-flex items-center gap-1 h-7 px-2 rounded-[var(--radius-xs)] text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-            title={speaking ? "Oprește citirea" : "Ascultă sinteza"}
+            title={
+              speaking
+                ? "Oprește citirea"
+                : voiceLabel
+                  ? `Ascultă (voce: ${voiceLabel})`
+                  : "Ascultă sinteza"
+            }
           >
-            {speaking ? <VolumeX size={12} aria-hidden="true" /> : <Volume2 size={12} aria-hidden="true" />}
+            {speaking ? (
+              <VolumeX size={12} aria-hidden="true" />
+            ) : (
+              <Volume2 size={12} aria-hidden="true" />
+            )}
             {speaking ? "Stop" : "Ascultă"}
           </button>
         )}
-        <button
-          type="button"
-          onClick={copy}
-          className="inline-flex items-center gap-1 h-7 px-2 rounded-[var(--radius-xs)] text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-          title="Copiază sinteza"
-        >
-          {copied ? <Check size={12} className="text-emerald-500" aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
-          {copied ? "Copiat" : "Copiază"}
-        </button>
       </div>
     </div>
   );

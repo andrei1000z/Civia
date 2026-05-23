@@ -324,16 +324,9 @@ export default async function StireDetailPage({
             <Tag size={14} aria-hidden="true" />
             {categoryLabels[stire.category] ?? stire.category}
           </span>
-          <a
-            href={stire.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-[var(--color-primary)] hover:underline ml-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
-            aria-label={`Citește articolul original pe ${stire.source} (deschide în tab nou)`}
-          >
-            <ExternalLink size={14} aria-hidden="true" />
-            {stire.source}
-          </a>
+          {/* 5/23/2026 — scos link redundant la sursă (mic „↗ Gândul" sus).
+              Articolul complet e accesibil prin butonul mare din sidebar
+              SURSĂ care e mult mai vizibil. */}
         </div>
       </div>
 
