@@ -406,10 +406,19 @@ function SummaryToolbar({ text }: { text: string }) {
 
     setSpeaking(true);
 
+    // Detect if we have a Natural/Neural voice (better quality) vs basic.
+    // Natural voices can handle full paragraph in one utterance well.
+    // Basic voices benefit from sentence-by-sentence + manual gaps.
+    const isNeural =
+      !!chosenVoice && /Natural|Neural|Online/i.test(chosenVoice.name);
+
     // Queue sentences ONE BY ONE — fiecare are intonație proprie + pauză
-    // naturală la sentence boundary. Engine-ul Chrome/Edge respectă bine
-    // punctuation pentru cadență.
+    // naturală la sentence boundary. Plus pe non-neural voices adăugăm
+    // un gap mic între propoziții (setTimeout 120ms) ca să dea cadenței
+    // un beat respiratoric — diferența vs run-on monoton e dramatică
+    // pe Chrome desktop cu „Google română".
     let idx = 0;
+    const interSentenceGapMs = isNeural ? 0 : 120;
     const speakNext = () => {
       if (cancelRef.current) return;
       if (idx >= sentences.length) {
@@ -419,14 +428,22 @@ function SummaryToolbar({ text }: { text: string }) {
       const sentence = sentences[idx++]!;
       const utt = new SpeechSynthesisUtterance(sentence);
       utt.lang = "ro-RO";
-      // Slightly slower + lower pitch = vibe „news anchor" în loc de robot.
-      // Pe Edge Natural voices, 0.95 rate sună foarte aproape de citire reală.
-      utt.rate = 0.95;
-      utt.pitch = 0.95;
+      // Rate + pitch tunate per quality tier:
+      //   Neural (Anabela Natural, Emil Natural): 0.95/0.95 — sună aproape
+      //   de citire reală, ușor relaxat = autoritar.
+      //   Basic (Microsoft Andrei, Google română): 0.92/0.9 — și mai lent +
+      //   mai grav ca să compenseze pentru lipsa de variație de intonație.
+      utt.rate = isNeural ? 0.95 : 0.92;
+      utt.pitch = isNeural ? 0.95 : 0.9;
       utt.volume = 1.0;
       if (chosenVoice) utt.voice = chosenVoice;
       utt.onend = () => {
-        if (!cancelRef.current) speakNext();
+        if (cancelRef.current) return;
+        if (interSentenceGapMs > 0) {
+          setTimeout(speakNext, interSentenceGapMs);
+        } else {
+          speakNext();
+        }
       };
       utt.onerror = () => {
         setSpeaking(false);
