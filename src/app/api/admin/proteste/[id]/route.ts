@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { broadcastToAllSubscribers } from "@/lib/push/web-push-client";
 
 export const dynamic = "force-dynamic";
 
@@ -82,15 +83,20 @@ export async function PATCH(
     }
     const admin = createSupabaseAdmin();
 
-    // Capture old slug to revalidate the previous URL if slug changed.
+    // Capture old slug + old moderation_status to:
+    // - revalidate previous URL if slug changed
+    // - decide dacă trebuie să broadcast push (transition → approved)
     let oldSlug: string | null = null;
-    if (parsed.slug) {
+    let oldModerationStatus: string | null = null;
+    if (parsed.slug || parsed.moderation_status) {
       const { data: existing } = await admin
         .from("proteste")
-        .select("slug")
+        .select("slug, moderation_status")
         .eq("id", id)
         .maybeSingle();
       oldSlug = (existing as { slug?: string } | null)?.slug ?? null;
+      oldModerationStatus =
+        (existing as { moderation_status?: string } | null)?.moderation_status ?? null;
     }
 
     const { data, error } = await admin
@@ -110,10 +116,32 @@ export async function PATCH(
     }
 
     revalidatePath("/proteste");
-    revalidatePath(`/proteste/${(data as { slug: string }).slug}`);
-    if (oldSlug && oldSlug !== (data as { slug: string }).slug) {
+    const newSlug = (data as { slug: string }).slug;
+    revalidatePath(`/proteste/${newSlug}`);
+    if (oldSlug && oldSlug !== newSlug) {
       revalidatePath(`/proteste/${oldSlug}`);
     }
+
+    // Broadcast push când protest tocmai devine approved (transitions doar
+    // dintr-un status != "approved"). Fire-and-forget via `after()`.
+    if (
+      parsed.moderation_status === "approved" &&
+      oldModerationStatus !== "approved"
+    ) {
+      const title = (data as { title?: string }).title;
+      if (title) {
+        after(async () => {
+          await broadcastToAllSubscribers({
+            title: "✊ Protest nou anunțat",
+            body: title,
+            url: `/proteste/${newSlug}`,
+            tag: `protest-${newSlug}`,
+            icon: "/icon-192.png",
+          });
+        });
+      }
+    }
+
     return NextResponse.json({ data });
   } catch (e) {
     if (e instanceof z.ZodError) {

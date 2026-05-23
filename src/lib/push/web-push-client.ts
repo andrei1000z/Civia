@@ -143,6 +143,71 @@ export async function sendPushToUsers(
   return { total: unique.length, sent, failed };
 }
 
+/**
+ * Trimite push la TOATE subscription-urile active — pentru broadcast events
+ * gen „petiție nouă", „protest aprobat". Fire-and-forget; 410/404 cleanup
+ * automat. Respectă opt-out simplu prin profiles.dismissed_prompts.no_broadcast.
+ *
+ * Atenție: poate trimite la 1000+ subscribers — chemati doar din event de tip
+ * publish/approve, niciodată din loops sau req paths fierbinți.
+ */
+export async function broadcastToAllSubscribers(
+  payload: PushPayload,
+): Promise<{ sent: number; failed: number }> {
+  if (!configure()) {
+    console.warn("[push] skipping broadcast — VAPID not configured");
+    return { sent: 0, failed: 0 };
+  }
+
+  const admin = createSupabaseAdmin();
+  // Pull ALL subscriptions cu opt-out filter pe profile.
+  const { data: subs, error } = await admin
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth, user_id, profiles!inner(dismissed_prompts)");
+
+  if (error || !subs || subs.length === 0) {
+    return { sent: 0, failed: 0 };
+  }
+
+  // Filter out users who explicitly opted out via dismissed_prompts.no_broadcast
+  const active = subs.filter((s) => {
+    const dp = (s as { profiles?: { dismissed_prompts?: Record<string, unknown> } }).profiles
+      ?.dismissed_prompts;
+    return !dp || dp.no_broadcast !== true;
+  });
+
+  const body = JSON.stringify(payload);
+  let sent = 0;
+  let failed = 0;
+  const staleIds: string[] = [];
+
+  await Promise.allSettled(
+    active.map(async (s) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: s.endpoint,
+            keys: { p256dh: s.p256dh, auth: s.auth },
+          },
+          body,
+          { TTL: 60 * 60 * 24 },
+        );
+        sent += 1;
+      } catch (e: unknown) {
+        failed += 1;
+        const status = (e as { statusCode?: number })?.statusCode;
+        if (status === 410 || status === 404) staleIds.push(s.id);
+      }
+    }),
+  );
+
+  if (staleIds.length > 0) {
+    await admin.from("push_subscriptions").delete().in("id", staleIds);
+  }
+
+  return { sent, failed };
+}
+
 /** True dacă VAPID e configurat — pentru gating UI. */
 export function isPushConfigured(): boolean {
   return (

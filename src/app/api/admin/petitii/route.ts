@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { broadcastToAllSubscribers } from "@/lib/push/web-push-client";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +83,21 @@ export async function POST(req: Request) {
     // Revalidate cached pages — altfel /petitii arată stale 5min după publish.
     revalidatePath("/petitii");
     if (data?.slug) revalidatePath(`/petitii/${data.slug}`);
+
+    // Broadcast push la TOATE subscription-urile — petiție nouă publicată.
+    // Fire-and-forget via `after()` ca să nu blocheze response.
+    if (data?.slug && data?.title) {
+      after(async () => {
+        await broadcastToAllSubscribers({
+          title: "📣 Petiție nouă pe Civia",
+          body: data.title,
+          url: `/petitii/${data.slug}`,
+          tag: `petition-${data.slug}`,
+          icon: "/icon-192.png",
+        });
+      });
+    }
+
     return NextResponse.json({ data });
   } catch (e) {
     if (e instanceof z.ZodError) {
