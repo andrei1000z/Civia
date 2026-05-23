@@ -253,15 +253,58 @@ html, body {
   overflow-x: hidden;
 }
 
-/* 5/22/2026 v5 — STRIP toate gradient-urile.
-   User a raportat de 5 ori „cacatu negru" peste background. Cauza root:
-   orice gradient/radial care fade-ueste la `transparent` lasă bg-ul solid
-   (oricat de tinted ar fi) să fie vizibil în benzile de transparent — pe
-   monitoare mari + OLED se citește ca „banda neagra".
-   Soluție finală: NIMIC peste flat color. Solid emerald-dark uniform pe
-   tot viewport-ul, zero straturi, zero artefacte. */
+/* 5/23/2026 v6 — Liquid Glass animated background.
+   Multiple drifting blurred gradient blobs over solid emerald-dark base.
+   Why no „banda neagra" issue (v5 user complaint):
+   - html background = solid floor, always present
+   - blob layers MOVE continuously (32s + 45s loops, counter-direction)
+   - heavy blur (60-80px) makes blob edges feather, no hard cutoffs
+   - inset:-25% over-sized so rotation/translate doesn't reveal viewport edges
+   - pe prefers-reduced-motion animatiile sunt suspendate (vezi media query) */
 html {
   background: var(--color-bg);
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse 40% 30% at 25% 30%, rgba(16, 185, 129, 0.55), transparent 65%),
+    radial-gradient(ellipse 35% 30% at 75% 25%, rgba(34, 211, 238, 0.45), transparent 65%),
+    radial-gradient(ellipse 45% 35% at 50% 75%, rgba(168, 85, 247, 0.35), transparent 65%);
+  animation: liquid-flow-1 32s ease-in-out infinite alternate;
+  filter: blur(60px);
+}
+
+body::after {
+  background:
+    radial-gradient(ellipse 35% 30% at 60% 40%, rgba(20, 184, 166, 0.40), transparent 65%),
+    radial-gradient(ellipse 30% 25% at 20% 70%, rgba(101, 163, 13, 0.32), transparent 65%),
+    radial-gradient(ellipse 30% 25% at 85% 80%, rgba(56, 189, 248, 0.38), transparent 65%);
+  animation: liquid-flow-2 45s ease-in-out infinite alternate-reverse;
+  filter: blur(80px);
+}
+
+@keyframes liquid-flow-1 {
+  0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1); }
+  33%  { transform: translate3d(3%, -2%, 0) rotate(15deg) scale(1.05); }
+  66%  { transform: translate3d(-2%, 3%, 0) rotate(-10deg) scale(0.97); }
+  100% { transform: translate3d(2%, 1%, 0) rotate(8deg) scale(1.03); }
+}
+
+@keyframes liquid-flow-2 {
+  0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1.05); }
+  33%  { transform: translate3d(-3%, 3%, 0) rotate(-12deg) scale(0.98); }
+  66%  { transform: translate3d(2%, -3%, 0) rotate(18deg) scale(1.08); }
+  100% { transform: translate3d(-1%, -1%, 0) rotate(-6deg) scale(1.02); }
 }
 
 body {
