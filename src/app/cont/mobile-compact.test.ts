@@ -79,14 +79,5 @@ describe("/cont mobile compact layout", () => {
     expect(source).toContain('hidden sm:inline">Deconectare');
   });
 
-  it("Profile completion box: padding redus pe mobil", () => {
-    // p-3 sm:p-4 pe completion box (era p-4 fixed).
-    const completionMatch = source.match(
-      /bg-\[var\(--color-surface\)\] border border-amber-500\/30 [^"]+/,
-    );
-    expect(completionMatch).not.toBeNull();
-    const cls = completionMatch?.[0] ?? "";
-    expect(cls).toContain("p-3");
-    expect(cls).toMatch(/sm:p-4/);
-  });
+  // 5/23/2026 — Profile completion box ștears la cererea user-ului.
 });

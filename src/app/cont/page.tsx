@@ -320,14 +320,6 @@ export default function ContPage() {
   }
 
   const initial = ((profile?.display_name ?? profile?.email ?? "C")[0] ?? "C").toUpperCase();
-  const completionChecks = [
-    { ok: !!form.full_name, label: "Nume complet" },
-    { ok: !!form.address, label: "Adresă" },
-    { ok: !!form.phone, label: "Telefon" },
-    { ok: !!form.avatar_url, label: "Poză de profil" },
-  ];
-  const completedCount = completionChecks.filter((c) => c.ok).length;
-  const completionPct = Math.round((completedCount / completionChecks.length) * 100);
 
   return (
     <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
@@ -419,36 +411,6 @@ export default function ContPage() {
           minmax(0, 1fr) forteaza shrink. */}
       <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6 lg:gap-8">
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-5">
-          {/* Profile completion nudge */}
-          {completionPct < 100 && (
-            <div className="bg-[var(--color-surface)] border border-amber-500/30 rounded-[var(--radius-md)] p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
-                <span className="text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400 break-words min-w-0">
-                  Profil {completionPct}% complet
-                </span>
-                <span className="text-[11px] sm:text-xs text-[var(--color-text-muted)] tabular-nums shrink-0">
-                  {completedCount}/{completionChecks.length}
-                </span>
-              </div>
-              <div className="h-1.5 bg-[var(--color-surface-2)] rounded-full overflow-hidden mb-2">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all"
-                  style={{ width: `${completionPct}%` }}
-                />
-              </div>
-              <ul className="space-y-1 text-[11px]">
-                {completionChecks
-                  .filter((c) => !c.ok)
-                  .map((c) => (
-                    <li key={c.label} className="flex items-center gap-2 text-[var(--color-text-muted)]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                      Lipsește: {c.label}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
           <form
             onSubmit={handleSave}
             className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] min-w-0 overflow-hidden"
