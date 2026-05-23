@@ -42,9 +42,19 @@ export function isDeclicPetitionUrl(url: string | null | undefined): boolean {
 }
 
 /**
- * Construiește URL-ul Declic cu params prefilled. Dacă URL-ul nu e Declic,
- * întoarce neschimbat (fallback). Dacă quickSign e null sau toate câmpurile
- * goale, întoarce neschimbat.
+ * Construiește URL-ul Declic cu TOATE variantele cunoscute de param pentru
+ * sub-domeniile diferite Declic (campaniamea, noifacem, etc.) — fiecare are
+ * propria denumire de câmpuri:
+ *   campaniamea: firstName, lastName, email, county, phoneNumber
+ *   noifacem:    firstname, lastname, emailaddress, region, postalcode
+ *
+ * Plus formatul Action Network legacy: signature[first_name].
+ *
+ * NB: testarea live (5/23/2026) a arătat că NICI un sub-domeniu nu citește
+ * URL params automat — Declic prefill funcționează doar cu token CRM semnat.
+ * Păstrăm params pentru viitor + ca user să-i vadă în URL că suntem
+ * transparent ce date se trimit. Real prefill se face via bookmarklet
+ * (vezi src/lib/petitii/declic-bookmarklet.ts).
  */
 export function buildDeclicSignUrl(
   externalUrl: string,
@@ -54,11 +64,30 @@ export function buildDeclicSignUrl(
 
   try {
     const url = new URL(externalUrl);
+
+    // Variante pentru campaniamea.declic.ro (camelCase)
     if (data.firstName) url.searchParams.set("firstName", data.firstName);
     if (data.lastName) url.searchParams.set("lastName", data.lastName);
     if (data.email) url.searchParams.set("email", data.email);
     if (data.county) url.searchParams.set("county", data.county);
     if (data.phone) url.searchParams.set("phoneNumber", data.phone);
+
+    // Variante pentru noifacem.declic.ro (lowercase)
+    if (data.firstName) url.searchParams.set("firstname", data.firstName);
+    if (data.lastName) url.searchParams.set("lastname", data.lastName);
+    if (data.email) url.searchParams.set("emailaddress", data.email);
+    // County → region: noifacem folosește „București" sentence-case în loc
+    // de „BUCUREȘTI" all-caps. Convertim.
+    if (data.county) {
+      const region = data.county === "BUCUREȘTI" ? "București" : data.county;
+      url.searchParams.set("region", region);
+    }
+
+    // Action Network legacy format (signature[...])
+    if (data.firstName) url.searchParams.set("signature[first_name]", data.firstName);
+    if (data.lastName) url.searchParams.set("signature[last_name]", data.lastName);
+    if (data.email) url.searchParams.set("signature[email]", data.email);
+
     // UTM ca să trackuim conversion-urile via Civia (Declic Analytics permite).
     if (!url.searchParams.has("utm_source")) {
       url.searchParams.set("utm_source", "civia");

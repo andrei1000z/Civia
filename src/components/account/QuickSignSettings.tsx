@@ -7,9 +7,12 @@ import {
   Loader2,
   AlertCircle,
   Info,
+  Bookmark,
+  MousePointerClick,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { DECLIC_COUNTIES } from "@/lib/petitii/declic-prefill";
+import { buildDeclicBookmarklet } from "@/lib/petitii/declic-bookmarklet";
 
 interface QuickSignForm {
   firstName: string;
@@ -265,6 +268,23 @@ export function QuickSignSettings() {
         </div>
       </label>
 
+      {/* Bookmarklet drag-to-bar — apare doar când user are minimum data + enabled.
+          Declic NU citește URL params (verified live 5/23/2026 — formularul rămâne
+          gol cu params în URL). Singura cale legală de auto-fill e un user-script:
+          un mic JS pe care user-ul îl trage 1 dată în bookmark bar, apoi pe orice
+          pagină Declic îl click-ează → fill instant.
+          E 100% controlat de user (asemenea unui password manager), respectă
+          eIDAS — click-ul final de „Semnează" tot a user-ului rămâne. */}
+      {form.enabled && hasMinimum && (
+        <BookmarkletPanel
+          firstName={form.firstName}
+          lastName={form.lastName}
+          email={form.email}
+          county={form.county}
+          phone={form.phone}
+        />
+      )}
+
       <div className="flex items-center justify-between gap-3 pt-1">
         <button
           type="submit"
@@ -286,5 +306,103 @@ export function QuickSignSettings() {
         )}
       </div>
     </form>
+  );
+}
+
+interface BookmarkletProps {
+  firstName: string;
+  lastName: string;
+  email: string;
+  county: string;
+  phone: string;
+}
+
+function BookmarkletPanel({
+  firstName,
+  lastName,
+  email,
+  county,
+  phone,
+}: BookmarkletProps) {
+  // Generăm bookmarklet-ul cu datele inline. Re-generăm la fiecare change
+  // (de-bounced via useMemo dacă devine slow, dar e cheap — JSON.stringify).
+  const href = buildDeclicBookmarklet({
+    firstName,
+    lastName,
+    email,
+    county: county || null,
+    phone: phone || null,
+  });
+
+  return (
+    <div className="p-4 rounded-[var(--radius-md)] bg-gradient-to-br from-emerald-500/10 via-[var(--color-surface)] to-cyan-500/10 border border-emerald-500/30 space-y-3">
+      <div className="flex items-start gap-2">
+        <Bookmark
+          size={16}
+          className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
+          aria-hidden="true"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="font-[family-name:var(--font-sora)] font-bold text-sm">
+            Activează completarea automată pe Declic
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+            Trage butonul de mai jos în <strong>bara de favorite</strong> a
+            browser-ului. La fiecare petiție Declic, dă click pe el și formularul
+            se completează singur. <strong>Setezi 1 dată, folosești de zeci de ori.</strong>
+          </p>
+        </div>
+      </div>
+
+      <a
+        href={href}
+        // Empêchons accidental navigation if user clicks. The bookmarklet is
+        // meant to be DRAGGED to the bookmark bar, not clicked here.
+        onClick={(e) => {
+          e.preventDefault();
+          alert(
+            "Trage butonul cu mouse-ul în bara de favorite a browser-ului (de obicei sub URL). Apoi pe orice pagină Declic, dă click pe el și formularul se va completa automat.",
+          );
+        }}
+        draggable
+        title="Trage acest buton în bara de favorite"
+        className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-bold shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] cursor-grab active:cursor-grabbing select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+      >
+        <MousePointerClick size={14} aria-hidden="true" />
+        Civia: completează automat
+      </a>
+
+      <details className="text-xs text-[var(--color-text-muted)]">
+        <summary className="cursor-pointer hover:text-[var(--color-text)] transition-colors font-medium">
+          Cum funcționează?
+        </summary>
+        <ol className="mt-2 ml-4 space-y-1 list-decimal leading-relaxed">
+          <li>
+            Asigură-te că <strong>bara de favorite e vizibilă</strong> (în Chrome:{" "}
+            <code className="px-1 rounded bg-[var(--color-surface-2)]">
+              Ctrl+Shift+B
+            </code>
+            ).
+          </li>
+          <li>
+            <strong>Trage</strong> butonul verde de mai sus cu mouse-ul în bara de
+            favorite — apare ca un bookmark numit „Civia: completează automat".
+          </li>
+          <li>
+            Pe orice pagină Declic, <strong>click pe bookmark</strong> → formularul
+            se completează automat cu datele tale.
+          </li>
+          <li>
+            Tu apeși „Semnează" pe site-ul Declic (cerință legală — semnătura
+            rămâne actul tău, nu al Civia).
+          </li>
+        </ol>
+        <p className="mt-2 italic">
+          De ce un bookmark? Declic nu permite completarea formularului din afara
+          sistemului lor. Bookmarklet-ul rulează în browser-ul tău, sub controlul
+          tău — 100% legal și sigur (asemenea unui password manager).
+        </p>
+      </details>
+    </div>
   );
 }
