@@ -18,6 +18,10 @@ const updateSchema = z.object({
   avatar_url: z.preprocess(emptyToNull, z.string().url().max(500).nullable().optional()),
   newsletter_email_optin: z.boolean().optional(),
   newsletter_sms_optin: z.boolean().optional(),
+  notify_petitii_email: z.boolean().optional(),
+  notify_petitii_sms: z.boolean().optional(),
+  notify_proteste_email: z.boolean().optional(),
+  notify_proteste_sms: z.boolean().optional(),
   // Privacy flag — persisted in Redis so it works without a DB migration.
   hide_name: z.boolean().optional(),
 });
@@ -106,6 +110,18 @@ export async function PUT(req: Request) {
     }
     if (parsed.newsletter_sms_optin !== undefined) {
       updates.newsletter_sms_optin = parsed.newsletter_sms_optin;
+    }
+    if (parsed.notify_petitii_email !== undefined) {
+      updates.notify_petitii_email = parsed.notify_petitii_email;
+    }
+    if (parsed.notify_petitii_sms !== undefined) {
+      updates.notify_petitii_sms = parsed.notify_petitii_sms;
+    }
+    if (parsed.notify_proteste_email !== undefined) {
+      updates.notify_proteste_email = parsed.notify_proteste_email;
+    }
+    if (parsed.notify_proteste_sms !== undefined) {
+      updates.notify_proteste_sms = parsed.notify_proteste_sms;
     }
 
     // If the user only toggled hide_name, there's nothing to UPDATE on

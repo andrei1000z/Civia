@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { broadcastToAllSubscribers } from "@/lib/push/web-push-client";
+import { broadcastNewCivicContent } from "@/lib/notify/broadcast-civic";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +129,8 @@ export async function PATCH(
       parsed.moderation_status === "approved" &&
       oldModerationStatus !== "approved"
     ) {
-      const title = (data as { title?: string }).title;
+      const rec = data as { title?: string; subtitle?: string | null };
+      const title = rec.title;
       if (title) {
         after(async () => {
           await broadcastToAllSubscribers({
@@ -137,6 +139,12 @@ export async function PATCH(
             url: `/proteste/${newSlug}`,
             tag: `protest-${newSlug}`,
             icon: "/icon-192.png",
+          });
+          await broadcastNewCivicContent({
+            kind: "protest",
+            title,
+            subtitle: rec.subtitle ?? null,
+            path: `/proteste/${newSlug}`,
           });
         });
       }

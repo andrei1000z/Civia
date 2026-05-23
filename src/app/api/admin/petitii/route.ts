@@ -6,6 +6,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { broadcastToAllSubscribers } from "@/lib/push/web-push-client";
+import { broadcastNewCivicContent } from "@/lib/notify/broadcast-civic";
 
 export const dynamic = "force-dynamic";
 
@@ -84,16 +85,25 @@ export async function POST(req: Request) {
     revalidatePath("/petitii");
     if (data?.slug) revalidatePath(`/petitii/${data.slug}`);
 
-    // Broadcast push la TOATE subscription-urile — petiție nouă publicată.
+    // Broadcast push + email + SMS la subscribers opt-in pentru „petiții noi".
     // Fire-and-forget via `after()` ca să nu blocheze response.
     if (data?.slug && data?.title) {
       after(async () => {
+        // Push către toți subscriberii (separate channel — vezi
+        // broadcastToAllSubscribers, browser push opt-in).
         await broadcastToAllSubscribers({
           title: "📣 Petiție nouă pe Civia",
           body: data.title,
           url: `/petitii/${data.slug}`,
           tag: `petition-${data.slug}`,
           icon: "/icon-192.png",
+        });
+        // Email + SMS doar la cei cu opt-in explicit `notify_petitii_*`.
+        await broadcastNewCivicContent({
+          kind: "petitie",
+          title: data.title,
+          subtitle: data.summary ?? null,
+          path: `/petitii/${data.slug}`,
         });
       });
     }

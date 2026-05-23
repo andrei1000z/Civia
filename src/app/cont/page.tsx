@@ -42,6 +42,10 @@ interface Profile {
   avatar_url: string | null;
   newsletter_email_optin?: boolean;
   newsletter_sms_optin?: boolean;
+  notify_petitii_email?: boolean;
+  notify_petitii_sms?: boolean;
+  notify_proteste_email?: boolean;
+  notify_proteste_sms?: boolean;
   hide_name?: boolean;
 }
 
@@ -68,6 +72,10 @@ interface FormState {
   avatar_url: string;
   newsletter_email_optin: boolean;
   newsletter_sms_optin: boolean;
+  notify_petitii_email: boolean;
+  notify_petitii_sms: boolean;
+  notify_proteste_email: boolean;
+  notify_proteste_sms: boolean;
   hide_name: boolean;
 }
 
@@ -79,6 +87,10 @@ const EMPTY_FORM: FormState = {
   avatar_url: "",
   newsletter_email_optin: false,
   newsletter_sms_optin: false,
+  notify_petitii_email: false,
+  notify_petitii_sms: false,
+  notify_proteste_email: false,
+  notify_proteste_sms: false,
   hide_name: false,
 };
 
@@ -115,6 +127,10 @@ export default function ContPage() {
   const autoSaveNewsletter = async (patch: {
     newsletter_email_optin?: boolean;
     newsletter_sms_optin?: boolean;
+    notify_petitii_email?: boolean;
+    notify_petitii_sms?: boolean;
+    notify_proteste_email?: boolean;
+    notify_proteste_sms?: boolean;
   }) => {
     const ctrl = new AbortController();
     try {
@@ -172,6 +188,10 @@ export default function ContPage() {
           avatar_url: p.data.avatar_url ?? "",
           newsletter_email_optin: !!p.data.newsletter_email_optin,
           newsletter_sms_optin: !!p.data.newsletter_sms_optin,
+          notify_petitii_email: !!p.data.notify_petitii_email,
+          notify_petitii_sms: !!p.data.notify_petitii_sms,
+          notify_proteste_email: !!p.data.notify_proteste_email,
+          notify_proteste_sms: !!p.data.notify_proteste_sms,
           hide_name: !!p.data.hide_name,
         });
       }
@@ -438,7 +458,7 @@ export default function ContPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Adresă (domiciliu)">
+              <Field label="Adresă domiciliu (pentru sesizări)">
                 <input
                   type="text"
                   autoComplete="street-address"
@@ -449,7 +469,7 @@ export default function ContPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Telefon (opțional)">
+              <Field label="Telefon (opțional, pentru newsletter + notificări SMS la petiții/proteste)">
                 <input
                   type="tel"
                   autoComplete="tel"
@@ -461,42 +481,18 @@ export default function ContPage() {
                 />
               </Field>
 
-              {/* Newsletter opt-ins — under phone, GDPR-style explicit consent.
-                  Auto-save on toggle so users don't have to click "Salvează"
-                  for the most common subscribe action. */}
-              <div className="space-y-2 pt-1">
-                <CheckboxRow
-                  icon={Mail}
-                  checked={form.newsletter_email_optin}
-                  onChange={(v) => {
-                    setForm({ ...form, newsletter_email_optin: v });
-                    autoSaveNewsletter({ newsletter_email_optin: v });
-                  }}
-                  title="Înscrie-mă la newsletter pe email"
-                  description="Săptămânal, lunea — sesizări rezolvate, petiții civice, deadline-uri locale. Dezabonare cu un click."
-                />
-                <CheckboxRow
-                  icon={MessageSquareText}
-                  checked={form.newsletter_sms_optin}
-                  onChange={(v) => {
-                    setForm({ ...form, newsletter_sms_optin: v });
-                    autoSaveNewsletter({ newsletter_sms_optin: v });
-                  }}
-                  title="Înscrie-mă la newsletter pe SMS"
-                  description="Doar alerte civice urgente (1–2 SMS pe lună maxim). Necesită număr de telefon."
-                  disabled={!form.phone.trim()}
-                  disabledHint="Completează telefonul mai sus"
-                />
-                {newsletterSavedAt && (
-                  <p
-                    role="status"
-                    className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-1 inline-flex items-center gap-1"
-                  >
-                    <CheckCircle2 size={11} aria-hidden="true" />
-                    Preferința de newsletter a fost salvată
-                  </p>
-                )}
-              </div>
+              {/* 5/23/2026 — Abonări granular: 3 surse × 2 canale.
+                  GDPR explicit opt-in per fiecare. SMS gated pe phone non-empty
+                  (UI dezactivat dacă lipsește, cu hint). Auto-save pe toggle. */}
+              <SubscriptionsGrid
+                form={form}
+                onChange={(patch) => {
+                  setForm({ ...form, ...patch });
+                  autoSaveNewsletter(patch);
+                }}
+                phoneAvailable={!!form.phone.trim()}
+                savedAt={newsletterSavedAt}
+              />
             </section>
 
             {/* Aspect — ThemeSettings (light/dark/system toggle) eliminat
@@ -871,6 +867,124 @@ function CheckboxRow({
         </p>
       </div>
     </label>
+  );
+}
+
+/**
+ * 3 surse de abonare × 2 canale (email + SMS) — UI compact.
+ * Layout: grid cu o coloană label-uri + două coloane checkbox-uri.
+ * SMS-urile sunt dezactivate dacă user nu are phone setat.
+ */
+interface SubscriptionsGridProps {
+  form: FormState;
+  phoneAvailable: boolean;
+  onChange: (patch: Partial<FormState>) => void;
+  savedAt: number | null;
+}
+
+function SubscriptionsGrid({
+  form,
+  phoneAvailable,
+  onChange,
+  savedAt,
+}: SubscriptionsGridProps) {
+  const rows: Array<{
+    label: string;
+    sub: string;
+    emailField: keyof FormState;
+    smsField: keyof FormState;
+  }> = [
+    {
+      label: "Newsletter săptămânal",
+      sub: "Lunea — sesizări rezolvate, petiții, deadline-uri",
+      emailField: "newsletter_email_optin",
+      smsField: "newsletter_sms_optin",
+    },
+    {
+      label: "Petiții noi",
+      sub: "Cetățean, când apare o petiție pe Civia",
+      emailField: "notify_petitii_email",
+      smsField: "notify_petitii_sms",
+    },
+    {
+      label: "Proteste noi",
+      sub: "Când e aprobat un protest în calendar",
+      emailField: "notify_proteste_email",
+      smsField: "notify_proteste_sms",
+    },
+  ];
+
+  return (
+    <div className="pt-1">
+      <div className="rounded-[var(--radius-xs)] border border-[var(--color-border)] overflow-hidden">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 sm:gap-x-4 bg-[var(--color-surface-2)] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[var(--color-text-muted)]">
+          <span>Abonare</span>
+          <span className="text-center w-12 sm:w-16">Email</span>
+          <span className="text-center w-12 sm:w-16">SMS</span>
+        </div>
+        {rows.map((r, i) => {
+          const emailOn = form[r.emailField] as boolean;
+          const smsOn = form[r.smsField] as boolean;
+          return (
+            <div
+              key={r.label}
+              className={`grid grid-cols-[1fr_auto_auto] gap-x-2 sm:gap-x-4 px-3 py-3 items-center ${
+                i > 0 ? "border-t border-[var(--color-border)]" : ""
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium leading-snug">{r.label}</p>
+                <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">
+                  {r.sub}
+                </p>
+              </div>
+              <label className="w-12 sm:w-16 flex justify-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={emailOn}
+                  onChange={(e) =>
+                    onChange({ [r.emailField]: e.target.checked } as Partial<FormState>)
+                  }
+                  className="w-5 h-5 accent-[var(--color-primary)] cursor-pointer"
+                  aria-label={`${r.label} pe email`}
+                />
+              </label>
+              <label
+                className={`w-12 sm:w-16 flex justify-center ${
+                  phoneAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
+                }`}
+                title={phoneAvailable ? `${r.label} pe SMS` : "Completează telefonul mai sus pentru SMS"}
+              >
+                <input
+                  type="checkbox"
+                  checked={smsOn && phoneAvailable}
+                  disabled={!phoneAvailable}
+                  onChange={(e) =>
+                    onChange({ [r.smsField]: e.target.checked } as Partial<FormState>)
+                  }
+                  className="w-5 h-5 accent-[var(--color-primary)] cursor-pointer disabled:cursor-not-allowed"
+                  aria-label={`${r.label} pe SMS`}
+                />
+              </label>
+            </div>
+          );
+        })}
+      </div>
+      {!phoneAvailable && (
+        <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5 italic">
+          ℹ Completează telefonul mai sus pentru a activa SMS-urile.
+        </p>
+      )}
+      {savedAt && (
+        <p
+          role="status"
+          className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-2 inline-flex items-center gap-1"
+        >
+          <CheckCircle2 size={11} aria-hidden="true" />
+          Preferințele de abonare au fost salvate
+        </p>
+      )}
+    </div>
   );
 }
 
