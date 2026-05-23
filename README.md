@@ -38,7 +38,7 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 - **Sesizări publice** (`/sesizari-publice`) — feed live cu sesizările publice ale altor cetățeni, vot + co-semnături.
 - **Sesizări rezolvate** (`/sesizari-rezolvate`) — galerie înainte/după cu probleme rezolvate de primării.
 - **Embed widget** (`/embed/[judet]`) — iframe gratuit pentru jurnaliști și bloggeri; sesizările live din județ + counter total, util pentru investigații locale.
-- **42 județe** (`/judete`) — fiecare cu sesizări, întreruperi, știri, ghiduri, autorități, evenimente, educație, sănătate, siguranță.
+- **42 județe** (`/{judet}`) — fiecare cu sesizări, întreruperi, știri, ghiduri, autorități, evenimente.
 
 ### Cont + GDPR
 - **Magic-link auth** — fără parole, opțional Google + Apple OAuth.

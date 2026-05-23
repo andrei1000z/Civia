@@ -42,7 +42,6 @@ jobs:
             http://localhost:3000/sesizari
             http://localhost:3000/petitii
             http://localhost:3000/stiri
-            http://localhost:3000/judete
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: "./.lighthouserc.json"

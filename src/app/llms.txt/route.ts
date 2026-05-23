@@ -33,7 +33,6 @@ Platformă independentă, gratuită, fără cont obligatoriu. Date stocate în U
 - [Întreruperi utilități](https://civia.ro/intreruperi): Întreruperi planificate (apă, gaz, curent, căldură) scrape-uite de la distribuitori — Apa Nova, Distrigaz, e-distribuție, etc.
 - [Știri civice](https://civia.ro/stiri): Articole agregate din 15 surse naționale verificate (Digi24, HotNews, G4Media, Recorder, PressOne, etc.) — cu sinteză AI structurată.
 - [Ghiduri practice](https://civia.ro/ghiduri): 11 ghiduri pas-cu-pas — Legea 544/2001 (acces la informații publice), contestarea unei amenzi, înființare ONG, dezbatere publică, ajutor social, ghid biciclist, ghid cetățean, ghid pregătire cutremur.
-- [Județe](https://civia.ro/judete): Toate cele 42 de județe ale României, fiecare cu pagină live (sesizări, întreruperi, știri locale, autorități).
 - [Autorități](https://civia.ro/autoritati): Catalog cu prefecturi, primării reședință, poliție locală, IPJ — emailuri verificate, telefoane, website-uri.
 
 ## Pentru cetățeni

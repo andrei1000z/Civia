@@ -89,7 +89,6 @@ export const NAV_MORE: Array<{
   { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
   { href: "/clasament-primarii", label: "Clasament primării", icon: "🏛️", nationalOnly: true },
   { href: "/civic-quiz", label: "Civic Quiz", icon: "🎓", nationalOnly: true },
-  { href: "/judete", label: "Toate județele", icon: "🗺️", nationalOnly: true },
   { href: "/autoritati", label: "Autorități publice", icon: "🏛️", nationalOnly: true },
 ];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];

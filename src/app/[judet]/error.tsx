@@ -30,11 +30,11 @@ export default function JudetError({ reset }: { error: Error; reset: () => void 
           Reîncearcă
         </button>
         <Link
-          href="/judete"
+          href="/"
           className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         >
           <ArrowLeft size={16} aria-hidden="true" />
-          Toate județele
+          Pagina principală
         </Link>
       </div>
     </div>

@@ -792,7 +792,7 @@ export default async function CountyHomePage({
               </p>
             </div>
             <Link
-              href="/judete"
+              href="/cont"
               className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-1"
             >
               <ArrowRight size={11} className="rotate-180" aria-hidden="true" />

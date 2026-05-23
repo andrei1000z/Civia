@@ -52,13 +52,15 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/harti": "/",
   "/aer": "/",
   "/buget": "/",
-  "/compara": "/judete",
+  "/compara": "/",
   "/calendar-civic": "/proteste",
   "/impact": "/",
   // 2026-05-19: sterse ghost pages — redirect la /ghiduri (cel mai relevant).
   "/educatie": "/ghiduri",
   "/sanatate": "/ghiduri",
   "/siguranta": "/ghiduri",
+  // 5/23/2026: /judete + /judete/[id] sterse — redirect la home.
+  "/judete": "/",
 };
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată

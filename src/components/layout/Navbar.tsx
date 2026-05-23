@@ -132,13 +132,12 @@ export function Navbar() {
               </span>
             </Link>
             {countyName && (
-              <Link
-                href="/judete"
-                title="Schimbă județul"
-                className="text-xs text-[var(--color-text-muted)] font-medium hover:text-[var(--color-primary)] transition-colors"
+              <span
+                className="text-xs text-[var(--color-text-muted)] font-medium"
+                aria-label={`Județ selectat: ${countyName}`}
               >
                 · {countyName}
-              </Link>
+              </span>
             )}
           </div>
 
@@ -330,7 +329,7 @@ export function Navbar() {
           {countySlug && (
             <div className="pt-4 mt-4 border-t border-[var(--color-border)]">
               <Link
-                href="/judete"
+                href="/cont"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-center gap-2 h-10 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
               >
