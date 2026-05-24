@@ -75,9 +75,14 @@ export async function GET(req: Request) {
     );
   }
 
+  // 2026-05-24 BUG FIX: înainte se updata DOAR `confirmed_at` (timestamp) dar
+  // NU și `confirmed` (boolean) → newsletter weekly digest filtra pe
+  // `.eq("confirmed", true)` și găsea 0 subscribers (DB dump: 9 înscriși,
+  // 0 confirmed). Acum actualizăm AMBELE coloane atomic.
   const { error } = await admin
     .from("newsletter_subscribers")
     .update({
+      confirmed: true,
       confirmed_at: new Date().toISOString(),
       confirm_token: null,
     })

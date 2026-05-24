@@ -44,10 +44,10 @@ export async function generateStaticParams() {
 }
 
 // Live data — sesizări + știri + interruptions counts.
-// 2026-05-20: ridicat de la 4h → 24h (86400s). Cu invalidare on-demand prin
-// revalidatePath() la fiecare sesizare nouă (vezi invalidateSesizariCache),
-// 24h e doar fallback. Reduce încă ~45% Vercel ISR Writes vs 4h.
-export const revalidate = 86400;
+// 2026-05-24 (Wave 4 perf audit): coborât 24h → 6h. Datele county-level
+// schimbă des și ISR on-demand acoperă writes — 6h e fallback safety net,
+// nu cap real. Audit-ul masiv P0 a marcat 24h ca „stale prea mult".
+export const revalidate = 21600;
 
 // Hero photo per oraș mare. Fallback gradient pur pentru județele
 // fără poză custom (codul condiționează existența cheii în map).

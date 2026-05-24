@@ -109,10 +109,24 @@ export async function GET(req: Request) {
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
+        // 2026-05-24 SECURITY FIX: max_tokens explicit ca să nu blow budget pe
+        // cluster mari (rapport agentic audit P0.32).
+        max_tokens: 1500,
       });
 
       const text = completion.choices[0]?.message.content ?? "";
-      const parsed = JSON.parse(text) as { is_systemic?: boolean; summary?: string; root_cause?: string; recommendation?: string };
+      // 2026-05-24 SECURITY FIX: try/catch wrap JSON.parse — input vine de la
+      // Groq (LLM) și poate fi malformed. Înainte arunca uncaught.
+      let parsed: { is_systemic?: boolean; summary?: string; root_cause?: string; recommendation?: string };
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { kind: "pattern_detection_json_parse_fail", county: county ?? "?", tip: tip ?? "?" },
+          extra: { text_preview: text.slice(0, 500) },
+        });
+        continue;
+      }
       if (!parsed.is_systemic) continue;
 
       const codes = rows.map((r) => r.code);

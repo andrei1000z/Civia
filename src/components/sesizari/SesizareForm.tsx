@@ -305,9 +305,28 @@ export function SesizareForm() {
         );
         setDraftSavedAt(Date.now());
       } catch { /* quota exceeded — silent */ }
+
+      // 2026-05-24 — sync și pe server (drafts table) ca să trimitem email
+      // nudge la 24h dacă userul nu finalizează. Funcționează și pentru anonimi
+      // cu email completat. Non-blocking, errors silently swallowed.
+      if (data.email?.trim() || data.descriere.length >= 30) {
+        void fetch("/api/sesizari/drafts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: data.email?.trim() || null,
+            tip: data.tip || null,
+            titlu: data.titlu || null,
+            locatie: data.locatie || null,
+            descriere: data.descriere || null,
+            county: detectedCounty || null,
+            sector: data.sector || null,
+          }),
+        }).catch(() => { /* silent — local draft e backup */ });
+      }
     }, 4000);
     return () => clearTimeout(timer);
-  }, [data, imagini, parkingSlots, parkingPlateText, parkingJurisdiction, parkingObservedAt, submitted]);
+  }, [data, imagini, parkingSlots, parkingPlateText, parkingJurisdiction, parkingObservedAt, submitted, detectedCounty]);
 
   // Funnel entry — fires DOAR cand userul interactioneaza prima data (input
   // in descriere, click pe quick-pick tip, upload poza). Inainte fire-uia

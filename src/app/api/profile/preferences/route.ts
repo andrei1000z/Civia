@@ -5,7 +5,9 @@ import { rateLimitAsync } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
-const themeSchema = z.enum(["light", "dark", "system"]).nullable().optional();
+// 2026-05-24 — Dark mode locked. Acceptăm valori legacy la input pentru
+// backward compat dar transformăm la „dark" indiferent ce trimite client-ul.
+const themeSchema = z.enum(["light", "dark", "system"]).nullable().optional().transform(() => "dark" as const);
 
 const cookieConsentSchema = z.object({
   essential: z.boolean(),

@@ -3,12 +3,24 @@ import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 /**
  * Escape </script> sequences inside JSON-LD to prevent XSS breakout.
  * Also escapes < and > as unicode in strings.
+ *
+ * 2026-05-24 SECURITY FIX (audit P0.33): escapăm și U+2028 LINE SEPARATOR
+ * + U+2029 PARAGRAPH SEPARATOR. Astea sunt valid JSON dar sparg JSON.parse
+ * pe browsere vechi (Firefox <40, Safari <10) și pot fi folosite ca vector
+ * pentru injection prin user content (sourceName, titlu, etc.).
+ * Construim regex programatic ca să evităm caractere invizibile în sursă
+ * (TS lexer le interpretează ca line breaks).
  */
+const LS_RE = new RegExp(String.fromCharCode(0x2028), "g");
+const PS_RE = new RegExp(String.fromCharCode(0x2029), "g");
+
 function safeJsonLd(obj: unknown): string {
   return JSON.stringify(obj)
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026");
+    .replace(/&/g, "\\u0026")
+    .replace(LS_RE, "\\u2028")
+    .replace(PS_RE, "\\u2029");
 }
 
 export function OrganizationJsonLd() {

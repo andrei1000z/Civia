@@ -33,6 +33,24 @@ import type {
 // 2026-05-19: 30min → 6h. Detalii protest static dupa creare.
 export const revalidate = 21600;
 
+// 2026-05-24 PERF: prerendered all proteste publice la build → instant TTFB.
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const { createSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const admin = createSupabaseAdmin();
+    const { data } = await admin
+      .from("proteste")
+      .select("slug")
+      .eq("visibility", "publica")
+      .limit(50);
+    return (data ?? []).map((p) => ({ slug: (p as { slug: string }).slug }));
+  } catch {
+    return [];
+  }
+}
+
 interface Protest {
   id: string;
   slug: string;

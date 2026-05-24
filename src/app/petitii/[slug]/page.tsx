@@ -26,6 +26,26 @@ import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
 // 2026-05-19: 1h → 12h. Content nu se modifica deloc dupa create.
 export const revalidate = 43200;
 
+// 2026-05-24 PERF: prerendered all 12 petitii la build → instant TTFB
+// pe toate paginile detail. dynamicParams=true ca să servim și slug-uri
+// noi adăugate între build-uri (ISR on-demand pe miss).
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const { createSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const admin = createSupabaseAdmin();
+    const { data } = await admin
+      .from("petitii")
+      .select("slug")
+      .eq("status", "active")
+      .limit(50);
+    return (data ?? []).map((p) => ({ slug: (p as { slug: string }).slug }));
+  } catch {
+    return [];
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
