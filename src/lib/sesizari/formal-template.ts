@@ -47,17 +47,18 @@ const TIP_DATA: Record<string, TipData> = {
     affects: "siguranța pietonilor",
     problem: "mai multe autovehicule sunt parcate ilegal, restricționând spațiul destinat pietonilor și punând în pericol siguranța acestora",
     actions: [
-      "Intervenția Poliției Locale pentru sancționarea șoferilor și, dacă e cazul, ridicarea vehiculelor.",
-      "Verificarea periodică a zonei pentru prevenirea parcării ilegale.",
+      "Intervenția Poliției Locale pentru sancționarea șoferilor conform art. 108 alin. (1) lit. b) pct. 1 din OUG 195/2002 (amendă clasa a II-a, 810-1012,5 lei) și ridicarea vehiculelor parcate pe trotuar.",
+      "Verificarea periodică a zonei pentru prevenirea parcării ilegale, conform art. 144 din HG 1391/2006.",
     ],
     evidence: "prezența mașinilor parcate ilegal",
   },
   stalpisori: {
     affects: "siguranța pietonilor",
-    problem: "lipsa elementelor de protecție (stâlpișori anti-parcare) permite parcarea pe trotuar și pune în pericol pietonii",
+    problem: "lipsa elementelor de protecție (stâlpișori anti-parcare) permite parcarea pe trotuar și pune în pericol pietonii, contrar art. 144 din HG 1391/2006 care prevede o lățime minimă de 1 metru liber pentru pietoni",
     actions: [
       "Montarea de stâlpișori anti-parcare pentru a delimita carosabilul de trotuar.",
       "Verificarea zonei și planificarea unui număr suficient de stâlpișori pentru tot tronsonul afectat.",
+      "Până la montare, intervenția Poliției Locale pentru sancționarea șoferilor conform art. 108 alin. (1) lit. b) pct. 1 din OUG 195/2002 (amendă 810-1012,5 lei + ridicare).",
     ],
     evidence: "lipsa stâlpișorilor și parcarea pe trotuar",
   },
@@ -72,12 +73,12 @@ const TIP_DATA: Record<string, TipData> = {
   },
   trotuar: {
     affects: "siguranța pietonilor",
-    problem: "trotuarul este degradat (plăci sparte, borduri lipsă, denivelări) și pune în pericol trecătorii",
+    problem: "trotuarul este degradat sau ocupat de autoturisme parcate ilegal, punând în pericol trecătorii — situație contrară art. 144 din HG 1391/2006 (Regulamentul de aplicare a Codului Rutier)",
     actions: [
-      "Reabilitarea pavajului trotuarului în zona afectată.",
-      "Înlocuirea bordurilor lipsă și nivelarea plăcilor sparte.",
+      "Reabilitarea pavajului trotuarului în zona afectată (plăci sparte, borduri lipsă, denivelări).",
+      "Intervenția Poliției Locale pentru sancționarea șoferilor care parchează ilegal pe trotuar, conform art. 108 alin. (1) lit. b) pct. 1 din OUG 195/2002 (amendă 810-1012,5 lei + ridicare).",
     ],
-    evidence: "starea degradată a trotuarului",
+    evidence: "starea degradată a trotuarului și/sau prezența mașinilor parcate ilegal",
   },
   iluminat: {
     affects: "siguranța în zonă",

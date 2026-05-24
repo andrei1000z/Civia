@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Send, CheckCircle2, Loader2, X } from "lucide-react";
+import { Send, CheckCircle2, Loader2, X, LogIn } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { playSound } from "@/lib/liquid-civic/sound";
 
 interface Props {
   code: string;
   className?: string;
+  /** Dacă true, deschide modalul de auth când userul anonim apasă pe buton
+   *  în loc să ascundă butonul. Default true — flow primar din SuccessScreen
+   *  trebuie să fie vizibil mereu (bug 2026-05-24: 94% drop-off pentru că
+   *  butonul era invizibil pentru anonimi). */
+  showForAnonymous?: boolean;
 }
 
 /**
@@ -26,7 +31,7 @@ interface Props {
  * configurat in backend ca răspunsurile sa vină la sesizari@civia.ro
  * (worker → AI classify → user vede status update).
  */
-export function SendViaCiviaButton({ code, className }: Props) {
+export function SendViaCiviaButton({ code, className, showForAnonymous = true }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error" | "needs-identity">("idle");
@@ -50,7 +55,36 @@ export function SendViaCiviaButton({ code, className }: Props) {
       .catch(() => { /* silent */ });
   }, [state, identityNume, identityAdresa]);
 
-  if (!user) return null; // doar logged-in users
+  // Anonim: ascuns DOAR dacă showForAnonymous=false. Altfel arătăm un CTA
+  // care invită la login (fix bug 2026-05-24: 94% drop-off pentru că butonul
+  // era invizibil pentru anonimi → toate sesizările rămâneau cu sent_via_civia=false).
+  if (!user) {
+    if (!showForAnonymous) return null;
+    return (
+      <div className={className}>
+        <button
+          type="button"
+          onClick={() => {
+            // Salvăm intenția → după login redirecționăm direct înapoi
+            // la pagina sesizării ca să apese din nou butonul.
+            try {
+              sessionStorage.setItem("civia:send_after_login", code);
+            } catch { /* silent */ }
+            // Trigger AuthModal via event (AuthProvider listening) sau redirect.
+            window.dispatchEvent(new CustomEvent("civia:open-auth"));
+          }}
+          className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 rounded-[var(--radius-md)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-base font-bold hover:brightness-110 active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+        >
+          <LogIn size={18} aria-hidden="true" />
+          Trimite oficial cu Civia (1-click)
+        </button>
+        <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+          Confirmă-ți emailul în 10 secunde și Civia trimite sesizarea direct
+          la primărie. <strong>Răspunsul lor vine în inbox-ul tău.</strong>
+        </p>
+      </div>
+    );
+  }
 
   const performSend = async (numePayload?: string, adresaPayload?: string) => {
     setState("sending");

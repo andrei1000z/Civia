@@ -68,27 +68,12 @@ export function SuccessScreen({
     playSound("success");
   }, []);
 
-  useEffect(() => {
-    if (isMobile) return;
-    const url = gmailWebUrl ?? mailtoUrl;
-    try {
-      if (gmailWebUrl) {
-        const win = window.open(url, "_blank", "noopener,noreferrer");
-        if (win && !win.closed) setAutoOpened(true);
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setAutoOpened(true);
-      }
-    } catch {
-      /* popup blocked */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // BUG 2026-05-24: anteriorul auto-open mailto făcea ca user-ul să creadă că
+  // mailto E FLOW-UL PRIMAR. 45/48 sesizări rămâneau cu sent_via_civia=false
+  // pentru că mailto se deschidea fără să apese cineva pe Civia 1-click.
+  // Acum: NU mai auto-deschidem nimic — user-ul vede butonul mare verde
+  // „Trimite oficial cu Civia" ca prima opțiune. Mailto e fallback opțional.
+  // (autoOpened state păstrat pentru afișarea „Re-deschide emailul" la mailto.)
 
   const [codeCopied, setCodeCopied] = useState(false);
   const copyCode = () => {
@@ -120,10 +105,19 @@ export function SuccessScreen({
         Sesizare înregistrată!
       </h3>
       <p className="text-[var(--color-text-muted)] mb-5 text-sm">
-        Următorul pas: deschide emailul în aplicația ta și apasă <strong>Trimite</strong>.
+        🚀 <strong>Următorul pas: trimite-o oficial primăriei.</strong>
+        <br />
+        Apasă butonul verde — Civia o trimite din partea ta.
       </p>
 
-      <SendViaCiviaButton code={code} className="mb-4" />
+      <SendViaCiviaButton code={code} className="mb-6" />
+
+      <details className="mb-3 text-left">
+        <summary className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] px-3 py-2 rounded-[var(--radius-xs)] hover:bg-[var(--color-surface-2)] transition-colors list-none [&::-webkit-details-marker]:hidden">
+          <span aria-hidden="true">⚙️</span>
+          Vrei să trimiți tu personal din emailul tău? (avansat)
+        </summary>
+        <div className="mt-3 px-1">
 
       {platform === "android" && (
         <a
@@ -180,8 +174,10 @@ export function SuccessScreen({
           ? `Se deschide aplicația Gmail cu textul completat. Tu apeși Trimite. Dacă nu ai Gmail instalat, te trimite la aplicația ta default de email.`
           : platform === "ios"
             ? `Apasă Gmail dacă ai aplicația instalată. Altfel apasă Mail (iOS) și se deschide aplicația ta de email default.`
-            : `Emailul ar trebui să se deschidă automat. Dacă nu, apasă butonul de sus.`}
+            : `Sau apasă butonul de sus ca să deschizi emailul în aplicația ta.`}
       </p>
+        </div>
+      </details>
 
       <p className="text-[var(--color-text-muted)] mb-1 text-xs">Cod unic — salvează-l pentru urmărire:</p>
 

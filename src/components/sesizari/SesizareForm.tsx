@@ -490,6 +490,17 @@ export function SesizareForm() {
   // poata corecta daca am gresit. Reset cand user schimba manual.
   const [sectorDetectedByText, setSectorDetectedByText] = useState(false);
 
+  // P1.7 — sesizări vecine recente (același tip, <80m, ultimele 7 zile).
+  // Afișăm un banner cu sugestie de co-semnare în loc de submit duplicat.
+  type NearbyDuplicate = {
+    code: string;
+    titlu: string;
+    distance_m?: number;
+    created_at?: string;
+    cosign_count?: number;
+  };
+  const [nearbyDuplicates, setNearbyDuplicates] = useState<NearbyDuplicate[]>([]);
+
   // 2026-05-19: AI vision auto-routing — la prima poza uploadata, daca
   // userul nu a ales inca tipul, trimitem poza la /api/ai/vision-route
   // pentru sugestie de tip + autoritate. Foloseste Llama 4 Scout 17B.
@@ -618,6 +629,44 @@ export function SesizareForm() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.lat, data.lng]);
+
+  // P1.7 — duplicate detection ÎN form. Când avem lat/lng + tip, întrebăm
+  // /api/sesizari/duplicates dacă există sesizări vecine în ultimele 7 zile.
+  // Dacă da, afișăm banner cu sugestie de co-semnare. Reduce noise + boost
+  // cosign rate (inspirat SeeClickFix duplicate clustering).
+  const duplicateCheckRef = useRef(false);
+  useEffect(() => {
+    if (submitted) return;
+    if (!data.tip || data.lat == null || data.lng == null) return;
+    if (duplicateCheckRef.current) return;
+    duplicateCheckRef.current = true;
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 4000);
+    fetch("/api/sesizari/duplicates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tip: data.tip,
+        lat: data.lat,
+        lng: data.lng,
+        sector: data.sector || null,
+        radius: 80,
+      }),
+      signal: ctrl.signal,
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (Array.isArray(j?.candidates) && j.candidates.length > 0) {
+          setNearbyDuplicates(j.candidates);
+        }
+      })
+      .catch(() => { /* silent */ })
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      clearTimeout(timeout);
+      ctrl.abort();
+    };
+  }, [data.tip, data.lat, data.lng, data.sector, submitted]);
 
   const handleAIImprove = async (opts?: { withPhotos?: boolean; silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -918,6 +967,15 @@ export function SesizareForm() {
   // 5/22/2026 — tip NU mai blocheaza submit. Daca lipseste, fallback la
   // "altele" + AI clasifica pe backend (custom_category). Funnel fix:
   // 83% abandon era la tip select.
+  //
+  // P1.12 (2026-05-24) — sector OBLIGATORIU pentru București. 33/48 sesizări
+  // aveau sector=null → filtrele admin + heatmap pe sector deveneau inutile.
+  // Pentru București (county=B), sectorul e necesar pentru routing email
+  // (primărie sector vs PMB centrală).
+  const countyIsBucuresti = (detectedCounty ?? "").toUpperCase() === "B";
+  const sectorRequired = countyIsBucuresti;
+  const sectorValid = !sectorRequired || (data.sector != null && data.sector.length > 0);
+
   const canSubmit =
     data.nume.length >= 2 &&
     data.adresa.trim().length >= 3 &&
@@ -926,6 +984,7 @@ export function SesizareForm() {
     data.descriere.length >= 10 &&
     parkingValid &&
     emailLooksValid &&
+    sectorValid &&
     !submitting;
 
   const handleSubmit = async () => {
@@ -942,6 +1001,7 @@ export function SesizareForm() {
       // Tip eliminat din list — fallback la "altele" deja făcut sus.
       if (data.descriere.length < 10) missing.push("Descrierea problemei (min 10 caractere)");
       if (data.locatie.length < 3) missing.push("Locația problemei");
+      if (sectorRequired && !sectorValid) missing.push("Sectorul (S1-S6) — obligatoriu pentru București");
       if (!emailLooksValid) missing.push("Email de contact (format corect, ex: nume@exemplu.ro)");
       if (data.tip === "parcare") {
         if (!parkingSlots.plate) missing.push("Poza numărului de înmatriculare");
@@ -1795,6 +1855,40 @@ ${today}`;
           <div ref={errorRef} role="alert" className="p-3 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
             <AlertCircle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {/* P1.7 — duplicate detection banner. Inspirat SeeClickFix clustering. */}
+        {nearbyDuplicates.length > 0 && !submitted && (
+          <div role="alert" className="p-4 rounded-[var(--radius-md)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 space-y-2">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 inline-flex items-center gap-1.5">
+              <span aria-hidden="true">📍</span>
+              Am găsit {nearbyDuplicates.length} {nearbyDuplicates.length === 1 ? "sesizare recentă" : "sesizări recente"} la mai puțin de 80m
+            </p>
+            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              Vrei să le <strong>co-semnezi</strong> în loc? Co-semnarea aduce mai multă presiune pe primărie decât duplicate separate.
+            </p>
+            <ul className="space-y-1.5 mt-2">
+              {nearbyDuplicates.slice(0, 3).map((d) => (
+                <li key={d.code} className="flex items-center gap-2 text-xs">
+                  <a
+                    href={`/sesizari/${d.code}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono font-semibold text-amber-900 dark:text-amber-200 underline hover:no-underline"
+                  >
+                    {d.code}
+                  </a>
+                  <span className="text-amber-800 dark:text-amber-300 truncate">{d.titlu}</span>
+                  {typeof d.distance_m === "number" && (
+                    <span className="text-amber-700 dark:text-amber-400 shrink-0">{Math.round(d.distance_m)}m</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-2">
+              Dacă problema ta e diferită (altă stradă, altă cauză), continuă cu Trimite — sesizarea ta va fi separată.
+            </p>
           </div>
         )}
 

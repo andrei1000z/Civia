@@ -1,0 +1,59 @@
+name: Sesizari Reminders + Auto-Status
+
+# Cron zilnic pentru OG 27/2002 — rulăm la 9 AM ora României (UTC+3 vara,
+# UTC+2 iarna). Folosim 07:00 UTC ca să cadă mereu în intervalul 9-10 AM
+# local. Endpoint-ul:
+#  - /api/sesizari/reminders → email cetățean la 7/14/30/60 zile
+#  - /api/sesizari/auto-status → marcăm „ignorat" pe sesizările >60 zile
+#    fără reply primit
+#
+# Vercel Hobby plan permite 1 cron/zi, dar GitHub Actions e free, deci
+# rulăm de aici. Dacă ratează, rulare manuală via workflow_dispatch.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # zilnic la 07:00 UTC = 09:00 RO vara, 10:00 iarna
+  workflow_dispatch:
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger reminders cron
+        run: |
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
+            "https://www.civia.ro/api/sesizari/reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $response"
+          echo "Body (first 800 chars):"
+          head -c 800 /tmp/body.txt || true
+          echo
+          if [ "$response" != "200" ]; then
+            echo "::error::Reminders cron returned HTTP $response"
+            exit 1
+          fi
+
+  auto-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: reminders
+    steps:
+      - name: Trigger auto-status (mark ignorat after 60 days)
+        run: |
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
+            "https://www.civia.ro/api/sesizari/auto-status" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $response"
+          echo "Body (first 800 chars):"
+          head -c 800 /tmp/body.txt || true
+          echo
+          # Allow 404 — endpoint might not be deployed yet
+          if [ "$response" != "200" ] && [ "$response" != "404" ]; then
+            echo "::error::Auto-status cron returned HTTP $response"
+            exit 1
+          fi

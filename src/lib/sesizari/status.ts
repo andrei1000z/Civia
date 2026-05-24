@@ -22,6 +22,7 @@ export const SESIZARE_STATUS_VALUES = [
   "amanata",
   "rezolvat",
   "respins",
+  "ignorat",
 ] as const;
 
 export type SesizareStatus = (typeof SESIZARE_STATUS_VALUES)[number];
@@ -108,6 +109,12 @@ export const SESIZARE_STATUS_META: Record<SesizareStatus, SesizareStatusMeta> = 
     color: "#6B7280",
     hint: "Autoritatea refuză rezolvarea (motivat)",
     emoji: "⛔",
+  },
+  ignorat: {
+    label: "Ignorat",
+    color: "#991B1B",
+    hint: "60+ zile fără răspuns — OG 27/2002 termen expirat. Poți escalada la Avocatul Poporului.",
+    emoji: "🔇",
   },
 };
 

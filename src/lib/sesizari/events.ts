@@ -8,6 +8,8 @@ import {
   Shuffle,
   Shield,
   UserPlus,
+  VolumeX,
+  Scale,
   Wrench,
   XCircle,
   type LucideIcon,
@@ -34,6 +36,7 @@ export interface SesizareEventVisual {
  */
 export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   depusa: { label: "Sesizare depusă pe platformă", icon: FileText, color: "#2563EB" },
+  trimis: { label: "Sesizare trimisă către autorități", icon: Send, color: "#059669" },
   // Bug fix 5/22/2026 — send-via-civia emite event_type „trimis_via_civia"
   // dar nu era in catalog, deci aparea „Eveniment" generic in timeline.
   trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#059669" },
@@ -48,6 +51,8 @@ export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   rezolvat: { label: "Problemă rezolvată", icon: CheckCircle2, color: "#059669" },
   respins: { label: "Sesizare respinsă", icon: XCircle, color: "#DC2626" },
   amanata: { label: "Amânată", icon: PauseCircle, color: "#C2410C" },
+  ignorat: { label: "Ignorat de autoritate (60+ zile fără răspuns)", icon: VolumeX, color: "#991B1B" },
+  escaladat_avp: { label: "Plângere trimisă la Avocatul Poporului", icon: Scale, color: "#7C2D12" },
 };
 
 const FALLBACK: SesizareEventVisual = {

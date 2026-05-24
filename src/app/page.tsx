@@ -149,6 +149,34 @@ export default async function HomePage() {
               </Link>
             </div>
 
+            {/* P2.16 — quick-tip chips. Diversificare onboarding: 73% din
+                 sesizările existente erau `stalpisori` pentru că singura
+                 exemplificare era trotuar. Cu 8 chip-uri cetățenii văd că
+                 platforma acoperă mult mai mult.  Click → form pre-fill cu
+                 acel tip via query param ?tip=X. */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto">
+              <span className="text-xs text-white/60 mr-1 w-full sm:w-auto text-center sm:text-left">Sau alege rapid:</span>
+              {[
+                { tip: "groapa", label: "Groapă", icon: "🕳️" },
+                { tip: "iluminat", label: "Iluminat", icon: "💡" },
+                { tip: "gunoi", label: "Gunoi", icon: "🗑️" },
+                { tip: "stalpisori", label: "Parcare/stâlpișori", icon: "🅿️" },
+                { tip: "copac", label: "Copac", icon: "🌳" },
+                { tip: "semafor", label: "Semafor", icon: "🚦" },
+                { tip: "transport", label: "Transport", icon: "🚌" },
+                { tip: "zgomot", label: "Zgomot", icon: "📢" },
+              ].map((chip) => (
+                <Link
+                  key={chip.tip}
+                  href={`/sesizari?tip=${chip.tip}`}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <span aria-hidden="true">{chip.icon}</span>
+                  {chip.label}
+                </Link>
+              ))}
+            </div>
+
             {/* Social proof — counter live cu numarul total de sesizari
                 aprobate. Mai puternic decat „X cetateni" pt ca arata
                 rezultate concrete, nu doar prezenta. Stat ISR-cached. */}

@@ -56,6 +56,8 @@ describe("sesizari/status", () => {
   test("workflow ordering: nou comes first, terminal states last", () => {
     expect(SESIZARE_STATUS_VALUES[0]).toBe("nou");
     const last = SESIZARE_STATUS_VALUES[SESIZARE_STATUS_VALUES.length - 1];
-    expect(["rezolvat", "respins"]).toContain(last);
+    // Terminal states: rezolvat (success), respins (refuz), ignorat (auto-mark
+    // după 60 zile fără răspuns — adăugat 2026-05-24).
+    expect(["rezolvat", "respins", "ignorat"]).toContain(last);
   });
 });

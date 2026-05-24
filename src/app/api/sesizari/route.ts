@@ -182,8 +182,11 @@ export async function POST(req: Request) {
       // land in the right city.
       const { getCountyById } = await import("@/data/counties");
       const countyName = parsed.county ? (getCountyById(parsed.county)?.name ?? null) : null;
-      const hit = await forwardGeocode(polished.locatie, countyName);
-      if (hit) {
+      const hit = await forwardGeocode(polished.locatie, countyName, parsed.county ?? null);
+      // Ignorăm match-uri city-only (streetLevel=false) — astea aterizează
+      // pe Piața Constituției / centroidul orașului și NU sunt utile ca pin
+      // (bug 2026-05-24: 3 sesizări aveau acelaşi pin Piața Constituției).
+      if (hit && hit.streetLevel) {
         const distKm = haversineKm(parsed.lat, parsed.lng, hit.lat, hit.lng);
         if (distKm > 1.5) {
           finalLat = hit.lat;
@@ -218,6 +221,8 @@ export async function POST(req: Request) {
     // Daca user logat: ia display_name din profile (Google sign-in il
     // umple cu prenume). Altfel, primul cuvant din author_name (privacy).
     let authorDisplayName: string | null = null;
+    let resolvedUserId: string | null = user?.id ?? null;
+
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -225,6 +230,24 @@ export async function POST(req: Request) {
         .eq("id", user.id)
         .maybeSingle();
       authorDisplayName = profile?.display_name?.trim() || null;
+    } else if (parsed.author_email) {
+      // P1.11 — Unificare identitate: dacă utilizatorul e anonim DAR a
+      // furnizat un email care matchează un profil existent (case-insensitive),
+      // legăm sesizarea de acel profil. Asta repară duplicat-ele „Calapod
+      // Bogdan" (anonim) vs „Calapod Marius Bogdan" (logat) — același om.
+      try {
+        const { createSupabaseAdmin } = await import("@/lib/supabase/admin");
+        const adminMatch = createSupabaseAdmin();
+        const { data: existingProfile } = await adminMatch
+          .from("profiles")
+          .select("id, display_name")
+          .ilike("email", parsed.author_email)
+          .maybeSingle();
+        if (existingProfile?.id) {
+          resolvedUserId = existingProfile.id;
+          authorDisplayName = existingProfile.display_name?.trim() || null;
+        }
+      } catch { /* silent — nu blocăm submisia */ }
     }
     if (!authorDisplayName) {
       const firstWord = parsed.author_name.trim().split(/\s+/)[0]?.trim();
@@ -234,7 +257,7 @@ export async function POST(req: Request) {
     try {
       const row = await createSesizare({
         code,
-        user_id: user?.id ?? null,
+        user_id: resolvedUserId,
         ...parsed,
         formal_text: safeFormalText,
         author_name: sanitizeText(parsed.author_name, 120),

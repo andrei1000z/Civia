@@ -101,11 +101,18 @@ export interface ForwardGeocodingResult {
   lng: number;
   displayName: string;
   boundingBox?: [number, number, number, number]; // [south, north, west, east]
+  /** True dacă match-ul a venit dintr-o query cu stradă explicită
+   *  (Strada/Calea/Bulevardul/etc.). False dacă a venit din city-only
+   *  fallback (ex: „Sector 5, București") — caz în care lat/lng e
+   *  centroidul orașului/zonei și NU trebuie folosit ca pin precis pentru
+   *  sesizare. Fix bug 2026-05-24: 3 sesizări (#41, #33, #32) aveau pin la
+   *  Piața Constituției pentru că locația era doar „Sector 5". */
+  streetLevel: boolean;
 }
 
 // Single-query Nominatim call. Returns null on miss / non-Romania match.
 // 3s timeout — Nominatim e capricios, mai bine null decât blocare la submit.
-async function nominatimOne(query: string): Promise<ForwardGeocodingResult | null> {
+async function nominatimOne(query: string, streetLevel = true): Promise<ForwardGeocodingResult | null> {
   if (!query || query.length < 3) return null;
   const q = query.replace(/\s+/g, " ").trim().slice(0, 180);
   try {
@@ -138,10 +145,52 @@ async function nominatimOne(query: string): Promise<ForwardGeocodingResult | nul
       boundingBox: bb && bb.length === 4 && bb.every((n) => Number.isFinite(n))
         ? [bb[0]!, bb[1]!, bb[2]!, bb[3]!]
         : undefined,
+      streetLevel,
     };
   } catch {
     return null;
   }
+}
+
+/** Romania county centroids (approximation) pentru sanity-check distance.
+ *  Folosit ca să respingem rezultate Nominatim > 100km de centrul jud.
+ *  declarat (ex: user scrie „Strada Scorțeni Sector 5" și Nominatim
+ *  returnează Scorțeni Sibiu — # 00044). */
+const COUNTY_CENTROIDS: Record<string, [number, number]> = {
+  AB: [46.075, 23.580], AR: [46.180, 21.310], AG: [44.860, 24.870], BC: [46.567, 26.910],
+  BH: [47.067, 21.940], BN: [47.130, 24.500], BT: [47.740, 26.660], BV: [45.660, 25.610],
+  BR: [45.270, 27.980], BZ: [45.150, 26.820], CS: [45.110, 22.080], CL: [44.200, 27.330],
+  CJ: [46.770, 23.590], CT: [44.180, 28.620], CV: [45.870, 25.790], DB: [44.930, 25.460],
+  DJ: [44.330, 23.800], GL: [45.430, 28.040], GR: [43.900, 25.970], GJ: [45.040, 23.270],
+  HR: [46.360, 25.800], HD: [45.870, 22.890], IL: [44.560, 27.380], IS: [47.160, 27.580],
+  IF: [44.500, 26.100], MM: [47.660, 23.580], MH: [44.630, 22.660], MS: [46.540, 24.560],
+  NT: [46.930, 26.370], OT: [44.430, 24.370], PH: [44.940, 26.020], SM: [47.790, 22.890],
+  SJ: [47.190, 23.060], SB: [45.800, 24.150], SV: [47.650, 26.260], TR: [43.910, 25.330],
+  TM: [45.760, 21.230], TL: [45.180, 28.800], VS: [46.220, 27.730], VL: [45.100, 24.370],
+  VN: [45.700, 27.190], B: [44.4378, 26.0973],
+};
+
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/** Verifică dacă rezultatul Nominatim e plauzibil pentru județul declarat.
+ *  Returnează true dacă (a) nu avem hint sau (b) rezultatul e <100km de
+ *  centrul județului. Folosit ca să respingem matches geografice complet
+ *  greșite (ex: „Strada Scorțeni, București" → Scorțeni Sibiu). */
+function isPlausibleForCounty(
+  result: ForwardGeocodingResult,
+  countyCode: string | null,
+): boolean {
+  if (!countyCode) return true;
+  const centroid = COUNTY_CENTROIDS[countyCode.toUpperCase()];
+  if (!centroid) return true;
+  const distKm = haversine(result.lat, result.lng, centroid[0], centroid[1]);
+  return distKm <= 100;
 }
 
 /**
@@ -157,20 +206,25 @@ async function nominatimOne(query: string): Promise<ForwardGeocodingResult | nul
 export async function forwardGeocode(
   text: string,
   countyHint?: string | null,
+  countyCode?: string | null,
 ): Promise<ForwardGeocodingResult | null> {
   if (!text || text.length < 3) return null;
 
   // Attempt 1: the original text (cleaned). Works for short, clean
   // queries the user typed into the "locatie" field.
   const cleaned = text.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
-  const direct = await nominatimOne(cleaned);
-  if (direct) return direct;
+  const direct = await nominatimOne(cleaned, true);
+  if (direct && isPlausibleForCounty(direct, countyCode ?? null)) return direct;
 
   // Attempt 2+: extracted queries (street + number + city, then looser).
+  // Ultima query e city-only („București, România") — marcăm streetLevel=false
+  // ca să poată caller-ul să respingă pin-ul Piața Constituției default.
   const queries = extractGeocodeQueries(text, countyHint);
-  for (const q of queries) {
-    const hit = await nominatimOne(q);
-    if (hit) return hit;
+  const lastIdx = queries.length - 1;
+  for (let i = 0; i < queries.length; i++) {
+    const isCityOnly = i === lastIdx && !/\d|Strada|Calea|Bd|Bulevardul|Șos|Sos|Piața|Aleea|Drumul|Splaiul/i.test(queries[i]!);
+    const hit = await nominatimOne(queries[i]!, !isCityOnly);
+    if (hit && isPlausibleForCounty(hit, countyCode ?? null)) return hit;
   }
   return null;
 }
