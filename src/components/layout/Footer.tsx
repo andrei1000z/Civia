@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SITE_NAME } from "@/lib/constants";
 import { CookiePreferencesButton } from "./FooterClientLinks";
 import { FooterFeedback } from "./FooterFeedback";
 
@@ -11,46 +10,11 @@ export function Footer() {
   return (
     <footer className="bg-[var(--color-surface-soft)] border-t border-[var(--color-border)] mt-auto">
       <div className="container-narrow py-12">
-        {/* 3 columns: Brand · Despre Civia · Urmărește Civia.
-            Tot pe același rând, simetric, mobile-stack 1-col. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Column 1 — Brand */}
-          <div>
-            <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
-              <span
-                aria-hidden="true"
-                className="relative w-10 h-10 rounded-[var(--radius-button)] bg-gradient-to-br from-[var(--color-primary)] to-emerald-900 grid place-items-center shadow-[0_4px_14px_-2px_rgba(5,150,105,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] group-hover:scale-105 transition-transform"
-              >
-                <svg viewBox="0 0 32 32" className="w-7 h-7 -mt-px" aria-hidden="true">
-                  <text
-                    x="16"
-                    y="22"
-                    textAnchor="middle"
-                    fontFamily="var(--font-sora), system-ui, sans-serif"
-                    fontWeight="700"
-                    fontSize="22"
-                    fill="white"
-                  >
-                    C
-                  </text>
-                </svg>
-              </span>
-              <span className="font-[family-name:var(--font-sora)] font-bold text-lg">
-                {SITE_NAME}
-              </span>
-            </Link>
-            <p className="text-sm text-[var(--color-text-muted)] mb-3 max-w-xs leading-relaxed">
-              Platformă civică independentă, gratuită.
-              <br />
-              Făcută cu <span className="text-rose-500" aria-label="dragoste">❤️</span> pentru o Românie ca afară.
-            </p>
-            <p className="text-xs text-[var(--color-text-muted)] inline-flex items-center gap-1.5">
-              <span aria-hidden="true">🇪🇺</span>
-              <span>Date stocate în UE · GDPR-compliant</span>
-            </p>
-          </div>
-
-          {/* Column 2 — Despre Civia */}
+        {/* 2026-05-24: scoasă column 1 (Brand + GDPR badge) la cererea user-ului.
+            Footer minimalist — doar Despre Civia + Urmărește. 2 coloane,
+            simetric, mobile-stack 1-col. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          {/* Column 1 — Despre Civia */}
           <div>
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Despre Civia
@@ -62,7 +26,6 @@ export function Footer() {
               <li><Link href="/actualizari" className={linkCls}>Actualizări</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
-              <li><Link href="/legal/accesibilitate" className={linkCls}>Declarație accesibilitate</Link></li>
               <li><Link href="/legal/cookie-policy" className={linkCls}>Politica de cookies</Link></li>
               <li><CookiePreferencesButton /></li>
             </ul>

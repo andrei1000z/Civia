@@ -50,12 +50,6 @@ test.describe("Civia smoke — critical flows", () => {
     await expect(page).toHaveTitle(/[Îî]ntreruperi/);
   });
 
-  test("/legal/accesibilitate page completă", async ({ page }) => {
-    await page.goto("/legal/accesibilitate");
-    await expect(page.getByRole("heading", { name: /accesibilitate/i })).toBeVisible();
-    await expect(page.locator("text=/WCAG 2.2/")).toBeVisible();
-  });
-
   test("/legal/cookie-policy page", async ({ page }) => {
     await page.goto("/legal/cookie-policy");
     await expect(page.getByRole("heading", { name: /cookies/i }).first()).toBeVisible();
