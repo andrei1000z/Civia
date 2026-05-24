@@ -4,9 +4,8 @@ import {
   AlertTriangle,
   Calendar,
   MapPin,
-  ExternalLink,
   Rss,
-  Download,
+  ExternalLink,
 } from "lucide-react";
 import {
   TYPE_ICONS,
@@ -18,6 +17,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { AlertsSubscribeForm } from "@/components/intreruperi/AlertsSubscribeForm";
 
 export const metadata: Metadata = {
   title: "Întreruperi programate — apă, caldură, gaz, curent, lucrări stradă",
@@ -137,10 +137,26 @@ export default async function IntreruperiPage() {
                 {" · ultima actualizare "}<strong>{lastUpdateLabel}</strong>
               </>
             )}
-            {source === "seed-only" && " · folosim catalogul de seed până când scraper-ul rulează prima dată"}
           </>
         }
       />
+
+      {/* 2026-05-25: buton scroll spre formular raport. User a cerut acces
+          rapid la „Știi o întrerupere?" fără să caute manual la fundul paginii. */}
+      <div className="flex flex-wrap gap-2 justify-center -mt-2 mb-6">
+        <a
+          href="#submit-form"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary-soft)] transition-colors"
+        >
+          📣 <span>Raportează o întrerupere</span>
+        </a>
+        <a
+          href="#alerts-form"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-medium hover:shadow-[0_6px_20px_-4px_rgba(5,150,105,0.5)] transition-all"
+        >
+          🔔 <span>Anunță-mă pe adresa mea</span>
+        </a>
+      </div>
 
       {/* Stats quick — five real categories instead of four. The
           stat block was rendering apa/caldura/gaz/electricitate but
@@ -266,44 +282,31 @@ export default async function IntreruperiPage() {
         </div>
       </section>
 
-      {/* Subscribe bar — ICS + RSS + API */}
-      <section className="mt-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
-        <h2 className="font-semibold mb-3 flex items-center gap-2">
-          <Calendar size={16} aria-hidden="true" /> Rămâi la curent automat
-        </h2>
-        <p className="text-sm text-[var(--color-text-muted)] mb-4 leading-relaxed">
-          Nu mai verifica manual. Subscribe la calendar sau RSS — actualizate
-          la 30 minute.
-        </p>
-        <div className="grid sm:grid-cols-3 gap-3">
-          <a
-            href="/api/intreruperi/ics"
-            download="civia-intreruperi.ics"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors justify-center"
-          >
-            <Download size={14} aria-hidden="true" /> Calendar (ICS)
-          </a>
-          <a
-            href="/intreruperi/rss"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors justify-center"
-          >
-            <Rss size={14} aria-hidden="true" /> Flux RSS
-          </a>
-          <a
-            href="/api/intreruperi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-bg)] transition-colors justify-center"
-          >
-            <ExternalLink size={14} aria-hidden="true" /> JSON API
-          </a>
+      {/* 2026-05-25 — Alerte personalizate pe adresă (NOU).
+          Înlocuiește block-ul tehnic Subscribe ICS/RSS/JSON cu un feature
+          user-facing: pune email + adresă → primește notificare automat când
+          există întrerupere care îți afectează strada. */}
+      <section
+        id="alerts-form"
+        className="mt-10 bg-gradient-to-br from-emerald-50 via-cyan-50 to-emerald-50 dark:from-emerald-950/30 dark:via-cyan-950/30 dark:to-emerald-950/30 border border-[var(--color-primary)]/20 rounded-[var(--radius-lg)] p-6 sm:p-8 scroll-mt-24"
+      >
+        <div className="max-w-xl mx-auto text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--color-primary)] text-white mb-3 shadow-[0_6px_20px_-4px_rgba(5,150,105,0.45)]">
+            <span aria-hidden="true" className="text-2xl">🔔</span>
+          </div>
+          <h2 className="font-[family-name:var(--font-sora)] text-xl sm:text-2xl font-bold mb-2">
+            Anunță-mă când mi se oprește apa
+          </h2>
+          <p className="text-sm text-[var(--color-text-muted)] mb-5 leading-relaxed">
+            Pune email + adresă o singură dată. Primești email automat când e
+            întrerupere planificată pe strada ta (apă, curent, gaz, lucrări).
+            Anti-spam: 1 email/întrerupere, fără reclame.
+          </p>
+          <AlertsSubscribeForm />
+          <p className="text-xs text-[var(--color-text-muted)] mt-4">
+            Te poți dezabona oricând cu un click din emailul primit.
+          </p>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mt-3 leading-relaxed">
-          <strong>Subscribe în Google Calendar:</strong> Add calendar → From URL
-          → <code className="text-[11px]">https://civia.ro/api/intreruperi/ics</code>
-        </p>
       </section>
 
       <section className="mt-6 bg-[var(--color-primary-soft)] rounded-[var(--radius-md)] p-6">
@@ -392,7 +395,7 @@ export default async function IntreruperiPage() {
 
         <p className="text-xs text-[var(--color-text-muted)] mt-5 leading-relaxed pt-4 border-t border-[var(--color-border)]">
           Lipsește operatorul tău local? Spune-ne via formularul „Știi o întrerupere?"
-          de mai sus, sau direct la <Link href="/#footer-feedback" className="text-[var(--color-primary)] hover:underline">feedback footer</Link> — îl adăugăm la
+          de mai sus, sau direct la <a href="#footer-feedback" className="text-[var(--color-primary)] hover:underline">feedback footer</a> — îl adăugăm la
           următorul update.
         </p>
       </section>

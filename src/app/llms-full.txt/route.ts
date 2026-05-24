@@ -220,7 +220,7 @@ A: AI-ul Civia detectează automat din locație + tip problemă. Manual: /autori
 - Petiții active: https://civia.ro/petitii
 - Proteste programate: https://civia.ro/proteste
 - Întreruperi utilități (apă/gaz/curent): https://civia.ro/intreruperi
-- Clasament primării (response rate): https://civia.ro/clasament-primarii
+- Clasament primării (response rate): https://civia.ro/clasament
 - Autorități + contacte: https://civia.ro/autoritati
 - Confidențialitate (GDPR): https://civia.ro/legal/confidentialitate
 

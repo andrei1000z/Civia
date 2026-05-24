@@ -101,7 +101,7 @@ export default function ScoalaPage() {
               Răspuns mediu primării: 30 zile legal (OG 27/2002)
             </li>
             <li>
-              <Link href="/clasament-primarii" className="text-[var(--color-primary)] hover:underline">/clasament-primarii</Link>
+              <Link href="/clasament" className="text-[var(--color-primary)] hover:underline">/clasament</Link>
               {" "}— ranking primării după rata răspuns
             </li>
             <li>

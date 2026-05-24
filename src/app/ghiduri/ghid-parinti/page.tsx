@@ -11,7 +11,7 @@ import { SITE_URL } from "@/lib/constants";
 const FAQ_PARINTI = [
   {
     question: `Cum raportez o trecere de pietoni periculoasa langa scoala copilului?`,
-    answer: `Fa o poza cu marcajul sters / lipsa indicatorului / lipsa semaforului. Adauga ora cand treci cu copilul (ex: 7:45 dimineata cand masinile abunda). Sesizarea ajunge la primaria locala + Politia Locala. Statistic: 67% din sesizarile cu „trecere pietoni langa scoala" sunt rezolvate sub 30 zile.`,
+    answer: `Fa o poza cu marcajul sters / lipsa indicatorului / lipsa semaforului. Adauga ora cand treci cu copilul (ex: 7:45 dimineata cand masinile abunda) si scoala/gradinita in descriere. Sesizarea ajunge automat la primaria locala + Politia Locala. Contextul scolar urgenteaza evaluarea (siguranta minorilor).`,
   },
   {
     question: `Pot raporta o groapa pe drumul de la gradinita?`,
@@ -27,7 +27,7 @@ const FAQ_PARINTI = [
   },
   {
     question: `Parcare ilegala in fata scolii — ce fac?`,
-    answer: `Cazul cel mai frecvent reclamat de parinti. Fa-le poza (cu placuta vizibila) la ore de varf (7:30-8:30 dimineata sau 14:00-16:00 dupa-amiaza). Foloseste categoria „Parcare ilegala" + descriere „blocheaza vizibilitatea trecerii de pietoni de la scoala X, risc pentru copii". Politia Locala primeste emailul automat si are competenta directa pe contraventii. Raspuns mediu: 5-15 zile.`,
+    answer: `Cazul cel mai frecvent reclamat de parinti. Fa-i poza (cu placuta vizibila) la ore de varf (7:30-8:30 dimineata sau 14:00-16:00 dupa-amiaza). Foloseste categoria „Parcare ilegala" + descriere „blocheaza vizibilitatea trecerii de pietoni de la scoala X, risc pentru copii". Politia Locala primeste emailul automat si are competenta directa pe contraventii (art. 142 OUG 195/2002). Termen legal raspuns: 30 zile.`,
   },
   {
     question: `Iluminatul lipseste in parcul unde merg cu copilul seara — la cine reclam?`,
@@ -95,8 +95,8 @@ export default function GhidParintiPage() {
             scolar.
           </p>
 
-          <Callout type="info" title="Cifra reala">
-            67% din sesizarile Civia cu tag „trecere pietoni langa scoala" sunt rezolvate sub 30 zile.
+          <Callout type="info" title="De ce contextul scolar urgenteaza">
+            Primariile (si Politia Locala) au obligatie suplimentara pe siguranta minorilor — Legea 1/2011 art. 16 obligă autoritatile sa asigure rutele de acces sigure la unitatile de invatamant. Mentioneaza scoala in descriere pentru prioritizare.
           </Callout>
 
           <h3>Groapa pe drumul zilnic</h3>
@@ -108,7 +108,8 @@ export default function GhidParintiPage() {
           <h3>Parcare ilegala in fata scolii</h3>
           <p>
             Cazul cel mai des reclamat de parinti. Fa poza cu placuta vizibila (legal pe spatiu public). Categorie:
-            „Parcare ilegala". Sesizarea ajunge automat la Politia Locala. Raspuns mediu: 5-15 zile.
+            „Parcare ilegala". Sesizarea ajunge automat la Politia Locala (competenta legala pe contraventii rutiere
+            urbane, art. 142 OUG 195/2002). Termenul legal de raspuns: 30 zile (OG 27/2002).
           </p>
 
           <Callout type="warning" title="Atentie privacy">

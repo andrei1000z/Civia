@@ -87,8 +87,9 @@ export const NAV_MORE: Array<{
 }> = [
   { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
   { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
-  { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
-  { href: "/clasament-primarii", label: "Clasament primării", icon: "🏛️", nationalOnly: true },
+  // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
+  // eliminat (duplicat al /clasament — single source of truth).
+  { href: "/clasament", label: "Clasament primării", icon: "🏆", nationalOnly: true },
   { href: "/civic-quiz", label: "Civic Quiz", icon: "🎓", nationalOnly: true },
 ];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];

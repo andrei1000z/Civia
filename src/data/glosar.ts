@@ -457,7 +457,7 @@ export const GLOSAR: GlosarTerm[] = [
     definitie:
       `Indicator Civia care măsoară rata de răspuns a fiecărei primării — % din sesizări marcate „rezolvat" din total depuse.`,
     detaliu:
-      "Vezi /clasament-primarii pentru ranking actualizat.",
+      "Vezi /clasament pentru ranking actualizat.",
   },
 ];
 

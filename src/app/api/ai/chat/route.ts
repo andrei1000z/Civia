@@ -143,7 +143,7 @@ PLATFORMA CIVIA OFERA:
 - /proteste — proteste programate
 - /ghiduri — ghiduri practice (cum contesti amenda, cum scrii sesizare, etc.)
 - /intreruperi — apa, gaz, curent, lucrari programate
-- /clasament-primarii — rata raspuns primarii
+- /clasament — rata raspuns primarii
 - /[judet] — pagina dedicata fiecarui judet (ex: /b pentru Bucuresti)
 
 STIL RASPUNS:

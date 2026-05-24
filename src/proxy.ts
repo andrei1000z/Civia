@@ -71,6 +71,8 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/civic-awards": "/clasament",
   // 5/24/2026 — Declarație accesibilitate ștearsă la cererea user-ului.
   "/legal/accesibilitate": "/",
+  // 5/25/2026 — Clasament primării (separate) → consolidat în /clasament.
+  "/clasament-primarii": "/clasament",
 };
 
 // NOTĂ: /intreruperi NU e în REDIRECT_EXACT — e pagină națională agregată

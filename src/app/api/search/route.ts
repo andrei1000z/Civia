@@ -49,7 +49,7 @@ const STATIC_PAGES: Omit<SearchResult, "score" | "group">[] = [
   { type: "page", title: "Sesizări publice", url: "/sesizari-publice", excerpt: "Ce semnalează alți cetățeni" },
   { type: "page", title: "Urmărește sesizarea", url: "/urmareste", excerpt: "Verifică statusul sesizării tale" },
   { type: "page", title: "Contul tău", url: "/cont", excerpt: "Profil + sesizările tale" },
-  { type: "page", title: "Clasament primării", url: "/clasament-primarii", excerpt: "Rata reală de răspuns a primăriilor" },
+  { type: "page", title: "Clasament primării", url: "/clasament", excerpt: "Rata reală de răspuns a primăriilor" },
 ];
 
 function sanitizeForPostgrest(q: string): string {

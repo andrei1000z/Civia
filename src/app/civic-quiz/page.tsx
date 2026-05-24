@@ -21,12 +21,11 @@ export default function CivicQuizPage() {
         gradient={HERO_GRADIENT.data}
         description={
           <>
-            Testează-ți cunoștințele civice — 10 întrebări random din 15.
-            Despre <strong>OG 27/2002</strong>, <strong>Legea 544</strong>,{" "}
-            <strong>GDPR</strong>, Constituția României. ~5 minute.
+            10 întrebări random despre <strong>OG 27/2002</strong>,{" "}
+            <strong>Legea 544</strong>, <strong>GDPR</strong> și Constituție. ~5 minute.
           </>
         }
-        tagline={"Raspunzi corect la 8+/10 → primesti badge Cetatean Informat 🏆"}
+        tagline="Testează-ți cunoștințele civice"
       />
       <CivicQuizClient />
     </div>

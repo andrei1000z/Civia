@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { CheckCircle2, XCircle, ArrowRight, RefreshCw, Trophy, Share2 } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowRight, RefreshCw, Trophy, Share2, Sparkles } from "lucide-react";
 import { CIVIC_QUIZ, QUIZ_QUESTIONS_PER_ROUND, PASSING_SCORE, type QuizQuestion } from "@/data/civic-quiz";
 import { playSound } from "@/lib/liquid-civic/sound";
 
@@ -15,6 +15,17 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// 2026-05-25 BUGFIX CRITIC: shuffle ȘI răspunsurile per întrebare.
+// Anterior: shuffle aplica DOAR pe lista questions, dar `q.answers` rămânea
+// în ordinea din data file — unde corect era MEREU la index 1 (varianta 2).
+// User a observat că „varianta 2 e mereu corectă" → cheat trivial. Fix:
+// re-shuffle answers per question la init + restart.
+function shuffleQuestions(): QuizQuestion[] {
+  return shuffle(CIVIC_QUIZ)
+    .slice(0, QUIZ_QUESTIONS_PER_ROUND)
+    .map((q) => ({ ...q, answers: shuffle(q.answers) }));
+}
+
 export function CivicQuizClient() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [current, setCurrent] = useState(0);
@@ -23,9 +34,9 @@ export function CivicQuizClient() {
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
 
-  // Init: pick 10 random questions
+  // Init: pick 10 random questions cu răspunsuri shuffled
   useEffect(() => {
-    setQuestions(shuffle(CIVIC_QUIZ).slice(0, QUIZ_QUESTIONS_PER_ROUND));
+    setQuestions(shuffleQuestions());
   }, []);
 
   const q = useMemo(() => questions[current], [questions, current]);
@@ -66,7 +77,7 @@ export function CivicQuizClient() {
   };
 
   const handleRestart = () => {
-    setQuestions(shuffle(CIVIC_QUIZ).slice(0, QUIZ_QUESTIONS_PER_ROUND));
+    setQuestions(shuffleQuestions());
     setCurrent(0);
     setSelected(null);
     setRevealed(false);
@@ -170,45 +181,46 @@ export function CivicQuizClient() {
           {q.question}
         </h2>
 
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2.5 mb-4">
           {q.answers.map((a, i) => {
             const isSelected = selected === i;
             const isCorrect = a.correct === true;
             const showCorrect = revealed && isCorrect;
             const showWrong = revealed && isSelected && !isCorrect;
+            const letter = String.fromCharCode(65 + i); // A, B, C, D
             return (
               <button
                 key={i}
                 type="button"
                 onClick={() => handleSelect(i)}
                 disabled={revealed}
-                className={`w-full text-left flex items-start gap-3 p-3 rounded-[var(--radius-md)] border transition-all ${
+                className={`w-full text-left flex items-start gap-3 p-3.5 sm:p-4 rounded-[var(--radius-md)] border-2 transition-all ${
                   showCorrect
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 scale-[1.01]"
                     : showWrong
                       ? "border-red-500 bg-red-50 dark:bg-red-950/30"
                       : isSelected
                         ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)]"
                 } disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]`}
               >
+                {/* Letter circle A/B/C/D */}
                 <span
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                  className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 font-bold text-sm font-[family-name:var(--font-sora)] ${
                     showCorrect
-                      ? "border-emerald-500 bg-emerald-500"
+                      ? "border-emerald-500 bg-emerald-500 text-white"
                       : showWrong
-                        ? "border-red-500 bg-red-500"
+                        ? "border-red-500 bg-red-500 text-white"
                         : isSelected
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
-                          : "border-[var(--color-border)]"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                          : "border-[var(--color-border)] text-[var(--color-text-muted)]"
                   }`}
                   aria-hidden="true"
                 >
-                  {showCorrect && <CheckCircle2 size={12} className="text-white" />}
-                  {showWrong && <XCircle size={12} className="text-white" />}
+                  {showCorrect ? <CheckCircle2 size={16} /> : showWrong ? <XCircle size={16} /> : letter}
                 </span>
-                <span className={`text-sm leading-snug ${
-                  showCorrect ? "text-emerald-700 dark:text-emerald-300 font-medium"
+                <span className={`text-sm sm:text-base leading-snug pt-1.5 ${
+                  showCorrect ? "text-emerald-700 dark:text-emerald-300 font-semibold"
                     : showWrong ? "text-red-700 dark:text-red-300"
                     : "text-[var(--color-text)]"
                 }`}>
