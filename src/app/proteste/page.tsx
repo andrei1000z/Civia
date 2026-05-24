@@ -297,10 +297,30 @@ function EmptyState() {
   );
 }
 
+// 2026-05-25 — Countdown vizibil pe protest activ (Mâine, Azi, D-3, etc.).
+// Returnează null pe past events (muted card preia hint vizual).
+function getCountdown(startAt: string, muted: boolean): { label: string; tone: "live" | "soon" | "future" } | null {
+  if (muted) return null;
+  const start = new Date(startAt).getTime();
+  if (isNaN(start)) return null;
+  const now = Date.now();
+  const diffMs = start - now;
+  if (diffMs < -6 * 3600 * 1000) return null; // mai mult de 6h trecut → ascunde
+  const diffHours = diffMs / 3600 / 1000;
+  if (diffHours <= 0 && diffHours > -6) return { label: "În desfășurare", tone: "live" };
+  if (diffHours < 24) return { label: `În ${Math.round(diffHours)} ore`, tone: "soon" };
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return { label: "Mâine", tone: "soon" };
+  if (diffDays <= 7) return { label: `În ${diffDays} zile`, tone: "soon" };
+  if (diffDays <= 30) return { label: `În ${diffDays} zile`, tone: "future" };
+  return null;
+}
+
 function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
   const status = STATUS_META[deriveStatus(p)];
   const county = countyLabel(p.county_slug);
   const hasAftermath = p.aftermath_moderation_status === "approved";
+  const countdown = getCountdown(p.start_at, muted);
   return (
     <li>
       <Link
@@ -360,11 +380,27 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
         )}
 
         <div className="p-5">
-          {p.cause && (
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-primary)] mb-1.5">
-              {p.cause}
-            </p>
-          )}
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            {p.cause && (
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-primary)]">
+                {p.cause}
+              </p>
+            )}
+            {countdown && (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold uppercase tracking-wider ${
+                  countdown.tone === "live"
+                    ? "bg-rose-500 text-white motion-safe:animate-pulse"
+                    : countdown.tone === "soon"
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40"
+                      : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
+                }`}
+              >
+                {countdown.tone === "live" && <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />}
+                {countdown.label}
+              </span>
+            )}
+          </div>
           <h3 className="font-[family-name:var(--font-sora)] font-extrabold text-base md:text-lg leading-snug mb-1.5 group-hover:text-[var(--color-primary)] transition-colors">
             {p.title}
           </h3>

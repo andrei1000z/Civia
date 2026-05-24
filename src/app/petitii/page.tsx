@@ -302,6 +302,31 @@ function PetitieCard({
         <p className="text-sm text-[var(--color-text-muted)] line-clamp-3 mb-4 leading-relaxed">
           {p.summary}
         </p>
+
+        {/* 2026-05-25: Progress bar vizibil pe card (% atins din goal).
+            Plus urgency badge dacă <14 zile rămase. Click-prompt user să
+            vadă rapid câte semnături lipsesc. */}
+        {p.target_signatures > 0 && (
+          <div className="mb-3">
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-xs font-semibold text-[var(--color-text)] tabular-nums">
+                {p.signature_count.toLocaleString("ro-RO")} / {p.target_signatures.toLocaleString("ro-RO")}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-petition)]">
+                {Math.min(100, Math.round((p.signature_count / Math.max(1, p.target_signatures)) * 100))}%
+              </span>
+            </div>
+            <div className="h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[var(--color-petition)] to-purple-500 rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, Math.round((p.signature_count / Math.max(1, p.target_signatures)) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="mt-auto flex items-center justify-between text-xs">
           {externalHost && (
             <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
@@ -314,12 +339,17 @@ function PetitieCard({
             <ArrowRight size={12} aria-hidden="true" />
           </span>
         </div>
-        {p.ends_at && (
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
-            {p.status === "closed" ? "Încheiată " : "Până "}
-            {formatDateShort(p.ends_at)}
-          </p>
-        )}
+        {p.ends_at && (() => {
+          const daysLeft = Math.ceil((new Date(p.ends_at).getTime() - Date.now()) / (24 * 3600 * 1000));
+          const urgent = p.status !== "closed" && daysLeft > 0 && daysLeft <= 14;
+          return (
+            <p className={`text-[10px] mt-2 pt-2 border-t border-[var(--color-border)] inline-flex items-center gap-1 ${urgent ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-[var(--color-text-muted)]"}`}>
+              {urgent && <span aria-hidden="true">🔥</span>}
+              {p.status === "closed" ? "Încheiată " : urgent ? `Mai sunt ${daysLeft} ${daysLeft === 1 ? "zi" : "zile"} · până ` : "Până "}
+              {formatDateShort(p.ends_at)}
+            </p>
+          );
+        })()}
       </div>
     </Link>
   );
