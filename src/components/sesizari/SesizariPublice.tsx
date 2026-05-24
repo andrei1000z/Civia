@@ -422,6 +422,14 @@ export function SesizariPublice() {
         })()
       ) : (
         <>
+        {/* 2026-05-25 — Result count contextual când filtre active.
+            Confirmă vizibil user-ului că filtrele au efect ("vezi X din Y"). */}
+        {(filterTip !== "toate" || filterStatus !== "toate" || filterCounty !== "toate") && (
+          <p className="text-xs text-[var(--color-text-muted)] mb-3 px-1">
+            <strong className="text-[var(--color-text)] tabular-nums">{filtered.length}</strong>
+            {filtered.length === 1 ? " sesizare găsită" : " sesizări găsite"} cu filtrele tale
+          </p>
+        )}
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
           {filtered.map((s) => {
             const { label: tipLabel, icon: tipIcon } = resolveTipLabel(s.tip, s.custom_category);

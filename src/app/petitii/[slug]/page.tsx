@@ -475,6 +475,30 @@ export default async function PetitiePage({
 
         </aside>
       </div>
+
+      {/* 2026-05-25 — Sticky bottom sign bar mobile.
+          Mereu vizibil la scroll, garantează că CTA-ul rămâne mereu la îndemână.
+          Hide pe desktop (sidebar are deja sign button). Hide când petiția
+          e închisă. Respectă safe-area-inset-bottom pentru iOS notch. */}
+      {petitie.external_url && isActive && (
+        <div
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom,0px)] bg-[var(--color-bg)]/95 backdrop-blur border-t border-[var(--color-border)]"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 3.5rem)" }}
+        >
+          <div className="container-narrow py-3 px-3">
+            <a
+              href={petitie.external_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 px-5 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:brightness-110 active:scale-[0.97] text-white text-sm font-bold transition-all shadow-[0_8px_24px_-4px_rgba(147,51,234,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+            >
+              <Megaphone size={18} aria-hidden="true" />
+              {externalHost ? `Semnează pe ${externalHost}` : "Semnează acum"}
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

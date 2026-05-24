@@ -24,6 +24,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
 import { AftermathGallery } from "@/components/proteste/AftermathGallery";
 import { AftermathVideos } from "@/components/proteste/AftermathVideos";
+import { ShareProtestButton } from "@/components/proteste/ShareProtestButton";
 import type {
   AftermathImage,
   AftermathVideo,
@@ -335,6 +336,13 @@ export default async function ProtestDetailPage({
               Featured
             </span>
           )}
+          {/* 2026-05-25 — Share button native pe hero (mobile + desktop) */}
+          <ShareProtestButton
+            url={`${SITE_URL}/proteste/${p.slug}`}
+            title={p.title}
+            text={p.cause ?? p.subtitle ?? undefined}
+            size="sm"
+          />
         </div>
       </PageHero>
 
@@ -521,6 +529,37 @@ export default async function ProtestDetailPage({
           ← Toate protestele anunțate
         </Link>
       </div>
+
+      {/* 2026-05-25 — Sticky bottom action bar mobile.
+          2 acțiuni: distribuie + (link eveniment oficial dacă există).
+          Hide pe desktop + dacă protest e cancelled/finalizat. */}
+      {p.status !== "incheiat" && (
+        <div
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur border-t border-[var(--color-border)]"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 3.5rem)" }}
+        >
+          <div className="container-narrow py-3 px-3 flex gap-2">
+            <ShareProtestButton
+              url={`${SITE_URL}/proteste/${p.slug}`}
+              title={p.title}
+              text={p.cause ?? p.subtitle ?? undefined}
+              variant="pill"
+              size="md"
+            />
+            {p.external_url && (
+              <a
+                href={p.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[var(--radius-full)] bg-gradient-to-br from-amber-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 active:scale-[0.97] transition-all shadow-[0_8px_24px_-4px_rgba(245,158,11,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              >
+                <ExternalLink size={14} aria-hidden="true" />
+                <span>Eveniment oficial</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
