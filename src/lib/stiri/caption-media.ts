@@ -113,11 +113,20 @@ export async function captionMediaBatch(
     if (!m) continue;
     if (m.type !== "image") continue;
     // Re-caption dacă caption-ul existent e gol sau prea scurt sau e altul
-    // tipic gen „logo" / numele site-ului
+    // tipic gen „logo" / numele site-ului SAU dacă e copy-paste al titlului
+    // SAU pattern generic „Imagine cu ...", „Foto:" etc.
     const existing = m.caption?.trim() ?? "";
+    const titleTrim = articleTitle.trim();
+    const looksLikeTitle =
+      existing.length > 0 &&
+      (existing === titleTrim ||
+        existing.toLowerCase() === titleTrim.toLowerCase());
+    const looksGeneric = /^(?:image|imagine|foto|persoană|persoane|o persoană|un obiect|o clădire|logo|icon|share|follow)(?:\b|$)/i.test(existing) ||
+      /^(?:foto|imagine|sursă|sursa|credit|image)[:.\s]/i.test(existing);
     if (
       existing.length >= 15 &&
-      !/^(?:image|imagine|foto|logo|icon|share|follow)$/i.test(existing)
+      !looksLikeTitle &&
+      !looksGeneric
     ) {
       continue;
     }

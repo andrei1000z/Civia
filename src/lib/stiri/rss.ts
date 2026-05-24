@@ -603,8 +603,9 @@ function isRelevantImage(
   imgTag: string,
   articleOrigin: string,
 ): boolean {
-  // Reject template placeholders: %title%, %media%, {{var}}, {var}
-  if (/%[a-z_]+%|\{\{[^}]+\}\}|\{[a-z_]+\}/i.test(url)) return false;
+  // Reject template placeholders: %title%, %media%, {{var}}, {var}, ${var},
+  // și forma URL-encoded $%7Bvar%7D (encoded ${var}) — văzut pe observatorulph.
+  if (/%[a-z_]+%|\{\{[^}]+\}\}|\{[a-z_]+\}|\$\{[^}]+\}|\$%7B[^%]*%7D/i.test(url)) return false;
   // Reject data: URIs (base64 SVG placeholders, lazy-load shimmers)
   if (/^data:/i.test(url)) return false;
   // Reject blob:, about:, javascript:
