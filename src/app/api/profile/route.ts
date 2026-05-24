@@ -138,17 +138,28 @@ export async function PUT(req: Request) {
       });
     }
 
-    // Ensure profile row exists (might not if trigger didn't fire)
-    const displayNameForUpsert =
-      typeof updates.display_name === "string" && updates.display_name
-        ? updates.display_name
-        : user.email?.split("@")[0] || "Cetățean";
-    await supabase
+    // 2026-05-24 BUGFIX: bug user „dupa ce am pus poza, numele Andrei a
+    // devenit musateduardandrei10 (email prefix)". Cauza: upsert-ul de aici
+    // suprascria display_name la FIECARE PUT — la avatar upload, body-ul nu
+    // are display_name, deci fallback-ul `user.email.split("@")[0]` se
+    // aplica și UPSERT overwrite-a valoarea existentă din DB.
+    //
+    // Fix: existence check + insert DOAR dacă lipsește (insert if not exists).
+    // Nu mai facem upsert cu fallback display_name pe row-uri existente.
+    const { data: existing } = await supabase
       .from("profiles")
-      .upsert(
-        { id: user.id, display_name: displayNameForUpsert },
-        { onConflict: "id" }
-      );
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!existing) {
+      const initialDisplay =
+        typeof updates.display_name === "string" && updates.display_name
+          ? updates.display_name
+          : user.email?.split("@")[0] || "Cetățean";
+      await supabase
+        .from("profiles")
+        .insert({ id: user.id, display_name: initialDisplay });
+    }
 
     const { data, error } = await supabase
       .from("profiles")

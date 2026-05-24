@@ -13,15 +13,15 @@ export function Footer() {
         {/* 2026-05-24: scoasă column 1 (Brand + GDPR badge) la cererea user-ului.
             Footer minimalist — doar Despre Civia + Urmărește. 2 coloane,
             simetric, mobile-stack 1-col. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+        {/* 2026-05-24: items centrate orizontal (cerere user). 2 coloane
+            inline, simetric, centrate sub h4 + items aliniate centrat în
+            coloana proprie. Mobile stack 1-col centrat. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center text-center">
           {/* Column 1 — Despre Civia */}
-          <div>
+          <div className="flex flex-col items-center">
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Despre Civia
             </h4>
-            {/* 2026-05-24 — minimalism. Scoase 10 pagini la cererea user-ului
-                („SCOATE TOATE ASTEA SITE-U TRB SA FIE MINIMALIST"). Păstrăm
-                doar esențialul legal + actualizări. */}
             <ul className="space-y-2 text-sm">
               <li><Link href="/actualizari" className={linkCls}>Actualizări</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
@@ -31,12 +31,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 3 — Urmărește Civia (social media, una sub alta) */}
-          <div>
+          {/* Column 2 — Urmărește Civia */}
+          <div className="flex flex-col items-center">
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Urmărește Civia
             </h4>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2 items-center">
               <li>
                 <a
                   href="https://bsky.app/profile/civiaro.bsky.social"

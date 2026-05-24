@@ -28,8 +28,8 @@ import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 // ThemeSettings eliminat 5/22/2026 — dark mode forever, fara toggle.
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
-import { BadgesSection } from "@/components/profile/BadgesSection";
-import { StreakWidget } from "@/components/profile/StreakWidget";
+// 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
+import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 
 interface Profile {
@@ -112,8 +112,15 @@ export default function ContPage() {
   // si leak. AbortController + mounted ref garanteaza cleanup.
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
+  // 2026-05-24: previne flicker „Se încarcă..." la tab switch revenire.
+  // `onAuthStateChange` re-emite user (token refresh) când tab-ul reactiveaza
+  // → `user` reference changes (chiar dacă id identic) → useEffect refire →
+  // loadData → setLoading(true) flicker. Track ID-ul pentru care am încărcat
+  // deja datele; skip refetch dacă același user.
+  const loadedForUserIdRef = useRef<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [newsletterSavedAt, setNewsletterSavedAt] = useState<number | null>(null);
@@ -209,19 +216,15 @@ export default function ContPage() {
       openAuthModal();
       return;
     }
+    // Skip refetch dacă am încărcat deja pentru acest user (tab focus refresh).
+    if (loadedForUserIdRef.current === user.id) return;
+    loadedForUserIdRef.current = user.id;
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
   const uploadAvatar = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast("Doar fișiere imagine (jpg, png, webp)", "error");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast("Imagine prea mare. Maxim 5MB.", "error");
-      return;
-    }
+    // Validation mutat la onChange — aici primim deja file decupat 256x256.
     setAvatarUploading(true);
     try {
       const fd = new FormData();
@@ -382,7 +385,20 @@ export default function ContPage() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) uploadAvatar(file);
+                  // 2026-05-24: in loc de upload direct, deschidem crop modal.
+                  // User decupeaza zona pe care o vrea ca avatar (256x256).
+                  if (file) {
+                    if (!file.type.startsWith("image/")) {
+                      toast("Doar fișiere imagine (jpg, png, webp)", "error");
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast("Imagine prea mare. Maxim 5MB.", "error");
+                      return;
+                    }
+                    setPendingAvatarFile(file);
+                  }
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
                 className="hidden"
               />
@@ -529,13 +545,10 @@ export default function ContPage() {
             </div>
           </form>
 
-          {/* Civic Streak — retention loop. Prominent deasupra badges. */}
-          {user && <StreakWidget userId={user.id} />}
-
-          {/* Insigne civice — calculate dinamic din count-uri (sesizari,
-              voturi, comentarii, verificari, sesizari rezolvate). Public
-              read via /api/profile/[id]/badges. */}
-          {user && <BadgesSection userId={user.id} />}
+          {/* 2026-05-24 — Streak + Badges scoase la cererea user-ului
+              („sterge tototototot insignele tale + urmatoarele insigne").
+              Components păstrate în repo (StreakWidget, BadgesSection) pentru
+              eventual re-enable; aici nu mai sunt montate. */}
 
           {/* Notificări push pe device — vizibil doar daca browser-ul
               suporta + user logat. Configurabil din PWA (Chrome/Firefox
@@ -649,20 +662,10 @@ export default function ContPage() {
         </div>
       </div>
 
-      {/* ─── GDPR footer ─────────────────────────────────────────── */}
+      {/* ─── GDPR actions ─────────────────────────────────────────
+          2026-05-24: titlu + descriere GDPR scoase la cererea user-ului.
+          Păstrăm doar cele 2 butoane utile (export + delete cont). */}
       <div className="mt-14 pt-8 border-t border-[var(--color-border)]">
-        <h3 className="text-sm font-semibold mb-2 text-[var(--color-text)] break-words inline-flex items-center gap-2">
-          <ShieldCheck size={14} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
-          Drepturile tale (GDPR)
-        </h3>
-        <p className="text-xs text-[var(--color-text-muted)] mb-4 max-w-2xl leading-relaxed">
-          Conform Regulamentului UE 2016/679, ai dreptul de acces, rectificare, ștergere,
-          portabilitate, restricționare și opoziție. Detalii complete în{" "}
-          <Link href="/legal/confidentialitate" className="text-[var(--color-primary)] underline">
-            politica de confidențialitate
-          </Link>
-          .
-        </p>
         <div className="flex flex-wrap gap-2">
           <a
             href="/api/profile/export"
@@ -787,6 +790,16 @@ export default function ContPage() {
           </div>
         </div>
       )}
+
+      {/* 2026-05-24 — Crop modal pentru avatar pre-upload */}
+      <AvatarCropModal
+        file={pendingAvatarFile}
+        onCancel={() => setPendingAvatarFile(null)}
+        onCrop={(croppedFile) => {
+          setPendingAvatarFile(null);
+          uploadAvatar(croppedFile);
+        }}
+      />
     </div>
   );
 }
