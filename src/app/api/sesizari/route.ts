@@ -29,6 +29,9 @@ const VALID_TIPURI = SESIZARE_TIPURI.map((t) => t.value) as readonly Tip[] as [T
 const createSchema = z.object({
   author_name: z.string().min(2, "Numele trebuie să aibă minim 2 caractere").max(120),
   author_email: z.union([z.string().email(), z.literal(""), z.null()]).optional().transform((v) => (v === "" ? null : v)),
+  // Adresa cetățeanului — stocată ca să o putem afișa în textul formal
+  // („Mă numesc X, locuiesc în Y") și să nu o pierdem la re-generare.
+  author_address: z.union([z.string().max(300), z.literal(""), z.null()]).optional().transform((v) => (v === "" ? null : v ?? null)),
   tip: z.enum(VALID_TIPURI),
   titlu: z.string().min(3, "Titlul trebuie să aibă minim 3 caractere").max(200),
   locatie: z.string().min(3, "Locația trebuie să aibă minim 3 caractere").max(300),

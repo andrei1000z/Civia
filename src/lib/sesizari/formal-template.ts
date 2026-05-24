@@ -274,13 +274,21 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
   const dataRo = formatDateRo(date);
   const nume = args.nume?.trim() || "";
   const adresa = args.adresa?.trim() || "";
-  const hasIdentity = nume.length > 0 && adresa.length > 0;
   const locatie = args.locatie?.trim() || "în zona semnalată";
 
-  // Paragraf 1 — intro + identitate (dacă există)
-  const introWithIdentity = `Mă numesc ${nume}, locuiesc în ${adresa} și doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
-  const introNoIdentity = `Doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
-  const intro = hasIdentity ? introWithIdentity : introNoIdentity;
+  // Paragraf 1 — intro + identitate. 3 variante:
+  //  a) Avem ȘI nume ȘI adresa → „Mă numesc X, locuiesc în Y și doresc..."
+  //  b) Avem doar nume → „Mă numesc X și doresc..."
+  //  c) N-avem nici nume, nici adresa → „Doresc să vă aduc la cunoștință..."
+  const introBody = `doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
+  let intro: string;
+  if (nume.length > 0 && adresa.length > 0) {
+    intro = `Mă numesc ${nume}, locuiesc în ${adresa} și ${introBody}`;
+  } else if (nume.length > 0) {
+    intro = `Mă numesc ${nume} și ${introBody}`;
+  } else {
+    intro = `D${introBody.slice(1)}`; // capitalize: „doresc..." → „Doresc..."
+  }
 
   // Paragraf 2 — măsuri solicitate
   const actionsBlock = tipData.actions

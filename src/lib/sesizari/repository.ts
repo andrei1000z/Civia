@@ -298,6 +298,9 @@ export interface CreateSesizareInput {
   user_id?: string | null;
   author_name: string;
   author_email?: string | null;
+  /** Adresa cetățeanului — folosită în textul formal („Mă numesc X,
+   *  locuiesc în Y"). Stocată ca să nu o pierdem la re-generare. */
+  author_address?: string | null;
   tip: string;
   titlu: string;
   locatie: string;
@@ -324,6 +327,7 @@ export async function createSesizare(input: CreateSesizareInput): Promise<Sesiza
       user_id: input.user_id ?? null,
       author_name: input.author_name,
       author_email: input.author_email ?? null,
+      author_address: input.author_address ?? null,
       tip: input.tip,
       titlu: input.titlu,
       locatie: input.locatie,

@@ -29,7 +29,7 @@ async function main() {
 
   let query = sa
     .from("sesizari")
-    .select("id, code, tip, locatie, author_name, imagini, created_at, formal_text")
+    .select("id, code, tip, locatie, author_name, author_address, imagini, created_at, formal_text, user_id")
     .order("created_at", { ascending: true });
   if (onlyCode) query = query.eq("code", onlyCode);
 
@@ -44,10 +44,27 @@ async function main() {
     tip: string;
     locatie: string;
     author_name: string | null;
+    author_address: string | null;
     imagini: string[] | null;
     created_at: string;
     formal_text: string | null;
+    user_id: string | null;
   }>;
+
+  // Cache profile addresses by user_id ca să nu facem N queries.
+  const profileAddrCache = new Map<string, string | null>();
+  async function getProfileAddress(userId: string | null): Promise<string | null> {
+    if (!userId) return null;
+    if (profileAddrCache.has(userId)) return profileAddrCache.get(userId) ?? null;
+    const { data } = await sa
+      .from("profiles")
+      .select("address")
+      .eq("id", userId)
+      .maybeSingle();
+    const addr = ((data as { address?: string | null } | null)?.address ?? null);
+    profileAddrCache.set(userId, addr);
+    return addr;
+  }
 
   let updated = 0;
   let unchanged = 0;
@@ -79,12 +96,30 @@ async function main() {
   }
 
   for (const row of rows) {
-    const extractedAdresa = extractAdresa(row.formal_text);
+    // Resolve adresa cu prioritate:
+    //   1. author_address direct (coloana nouă, viitorul standard)
+    //   2. Extragere regex din vechiul formal_text
+    //   3. profiles.address (dacă sesizarea e legată de un user logat)
+    //   4. null → omitem „locuiesc în..." din intro
+    let adresa: string | null = row.author_address?.trim() || null;
+    if (!adresa) adresa = extractAdresa(row.formal_text);
+    if (!adresa) adresa = await getProfileAddress(row.user_id);
+
+    // Persistăm adresa rezolvată în coloana author_address ca să fie
+    // disponibilă la următoarea re-generare (eg. dacă se schimbă
+    // template-ul).
+    if (adresa && !row.author_address) {
+      await sa
+        .from("sesizari")
+        .update({ author_address: adresa })
+        .eq("id", row.id);
+    }
+
     const newText = generateFormalText({
       tip: row.tip ?? "altele",
       locatie: row.locatie ?? "",
       nume: row.author_name,
-      adresa: extractedAdresa,
+      adresa,
       hasPhotos: Array.isArray(row.imagini) && row.imagini.length > 0,
       date: new Date(row.created_at),
     });
