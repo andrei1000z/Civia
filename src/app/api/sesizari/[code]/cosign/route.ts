@@ -136,6 +136,13 @@ export async function POST(
     .select("id", { count: "exact", head: true })
     .eq("sesizare_id", sesizare.id);
 
+  // 2026-05-24 (P3.26 fix) — bump civic streak la co-sign pentru user logat.
+  // Cosign-urile anonime nu primesc streak (n-au user_id de updatat).
+  if (user?.id) {
+    const { bumpCivicStreak } = await import("@/lib/civic-streak");
+    void bumpCivicStreak(user.id);
+  }
+
   return NextResponse.json({ ok: true, identified: cosignerInserted, count: count ?? 0 });
 }
 

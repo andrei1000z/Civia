@@ -81,6 +81,11 @@ export async function POST(
       body: sanitizeText(parsed.body, 2000),
       parentCommentId: parsed.parent_comment_id ?? null,
     });
+
+    // 2026-05-24 (P3.26) — bump civic streak la comment.
+    const { bumpCivicStreak } = await import("@/lib/civic-streak");
+    void bumpCivicStreak(user.id);
+
     return NextResponse.json({ data: row });
   } catch (e) {
     if (e instanceof z.ZodError) {

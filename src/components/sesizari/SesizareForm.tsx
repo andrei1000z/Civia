@@ -1006,6 +1006,22 @@ export function SesizareForm() {
     sectorValid &&
     !submitting;
 
+  // 2026-05-24 (P1.401) Cmd/Ctrl+Enter shortcut pentru submit rapid de
+  // pe orice input. Common pattern în SaaS-uri civic-tech (FixMyStreet,
+  // GitHub). Funcționează pe textarea (descriere) și inputs.
+  useEffect(() => {
+    if (submitted) return;
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSubmit) {
+        e.preventDefault();
+        void handleSubmit();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSubmit, submitted]);
+
   const handleSubmit = async () => {
     // 5/22/2026 — tip NU mai e obligatoriu. Daca user submite fara tip,
     // AI clasifica backend pe baza descrierii (custom_category). Analytics

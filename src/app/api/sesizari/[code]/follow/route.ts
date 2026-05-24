@@ -33,6 +33,11 @@ export async function POST(
       );
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // 2026-05-24 (P3.26) — bump civic streak la follow.
+    const { bumpCivicStreak } = await import("@/lib/civic-streak");
+    void bumpCivicStreak(user.id);
+
     return NextResponse.json({ ok: true, following: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Eroare";

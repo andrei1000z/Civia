@@ -36,12 +36,23 @@ export function ApiKeysManager() {
       return;
     }
     fetch("/api/developer/keys", { cache: "no-store" })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((j) => {
         setKeys(j.data ?? []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        // 2026-05-24 (P1.308 audit) — silent fail înainte, acum user vede
+        // mesaj de eroare în loc de listă goală fără explicație.
+        setError("N-am putut încărca cheile API. Reîncearcă peste un minut.");
+        setLoading(false);
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[ApiKeysManager] fetch failed:", e);
+        }
+      });
   }, [user]);
 
   async function createKey() {

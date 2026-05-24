@@ -43,6 +43,11 @@ export async function POST(
       await removeVote({ sesizareId: sesizare.id, userId: user.id });
     } else {
       await upsertVote({ sesizareId: sesizare.id, userId: user.id, value });
+      // 2026-05-24 (P3.26 fix) — bump civic streak doar pe vote+ (nu pe remove).
+      // DB dump: 0 active streaks → feature complet dormant. Acum trigger pe
+      // toate acțiunile civice (vote/sign/comment/submit).
+      const { bumpCivicStreak } = await import("@/lib/civic-streak");
+      void bumpCivicStreak(user.id);
     }
     invalidateSesizariCache();
     return NextResponse.json({ ok: true });

@@ -81,6 +81,10 @@ export async function POST(
       throw insErr;
     }
 
+    // 2026-05-24 (P3.26) — bump civic streak la semnare petiție.
+    const { bumpCivicStreak } = await import("@/lib/civic-streak");
+    void bumpCivicStreak(user.id);
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof z.ZodError) {

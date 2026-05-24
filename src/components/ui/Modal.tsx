@@ -145,8 +145,10 @@ export function Modal({ open, onClose, title, children, size = "md", className }
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-            <h2 className="text-xl font-semibold text-[var(--color-text)]">{title}</h2>
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--color-border)]">
+            {/* 2026-05-24 (P1.366) line-clamp-2 pentru long titles ca să nu
+                rupă layout-ul cu close button. */}
+            <h2 className="text-xl font-semibold text-[var(--color-text)] line-clamp-2 min-w-0">{title}</h2>
             <button
               type="button"
               onClick={onClose}
