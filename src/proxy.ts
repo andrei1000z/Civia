@@ -46,13 +46,25 @@ const REDIRECT_EXACT = new Set([
 // vechi). Redirect 308 catre destinatii utile in loc de 404.
 // Update 2026-05-13 dupa audit analytics: /aer, /b/aer, /harti, /b/harti,
 // /cj/harti, /buget, /compara, /calendar-civic, /impact.
-// 2026-05-16: /dezvoltatori a fost reintrodusa (public API v2) — scoasa
-// din LEGACY_REDIRECTS.
+// 2026-05-24 — minimalism. Pagini scoase la cererea user-ului: /dezvoltatori,
+// /despre, /status, /civic-pulse, /roadmap, /okrs, /security, /whistleblower,
+// /legal/cod-de-conduita, /legal/dpa-autoritati. Redirect 308 la home pentru
+// link-uri vechi / Google cache.
 const LEGACY_REDIRECTS: Record<string, string> = {
   "/harti": "/",
   "/aer": "/",
   "/buget": "/",
   "/compara": "/",
+  "/dezvoltatori": "/",
+  "/despre": "/",
+  "/status": "/",
+  "/civic-pulse": "/",
+  "/roadmap": "/",
+  "/okrs": "/",
+  "/security": "/",
+  "/whistleblower": "/",
+  "/legal/cod-de-conduita": "/",
+  "/legal/dpa-autoritati": "/",
   "/calendar-civic": "/proteste",
   "/impact": "/",
   // 2026-05-19: sterse ghost pages — redirect la /ghiduri (cel mai relevant).

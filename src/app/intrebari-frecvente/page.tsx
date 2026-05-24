@@ -158,11 +158,11 @@ const SECTIUNI: FAQSection[] = [
       },
       {
         q: "Cum donez pentru Civia?",
-        a: "Vezi /despre pentru opțiuni. Donațiile mențin serverele + AI tokens + dezvoltarea.",
+        a: "Civia e platformă civică independentă, susținută prin donații + voluntari. Pentru a ne ajuta: distribuie sesizările tale, raportează probleme, contribuie cu cod pe GitHub.",
       },
       {
         q: "Pot integra Civia într-un site/app?",
-        a: "Da, avem API public + widget embeddable. Vezi /dezvoltatori pentru documentație tehnică.",
+        a: "Da, avem API public pentru date civice. Pentru documentație tehnică sau cerere acces, scrie la contact@civia.ro.",
       },
       {
         q: "Civia primește bani de la primării sau partide?",

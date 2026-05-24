@@ -55,22 +55,15 @@ export function Footer() {
             <h4 className="font-semibold mb-3 text-[var(--color-text)] text-sm">
               Despre Civia
             </h4>
+            {/* 2026-05-24 — minimalism. Scoase 10 pagini la cererea user-ului
+                („SCOATE TOATE ASTEA SITE-U TRB SA FIE MINIMALIST"). Păstrăm
+                doar esențialul legal + actualizări. */}
             <ul className="space-y-2 text-sm">
               <li><Link href="/actualizari" className={linkCls}>Actualizări</Link></li>
-              <li><Link href="/dezvoltatori" className={linkCls}>API dezvoltatori</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><Link href="/legal/accesibilitate" className={linkCls}>Declarație accesibilitate</Link></li>
               <li><Link href="/legal/cookie-policy" className={linkCls}>Politica de cookies</Link></li>
-              <li><Link href="/legal/cod-de-conduita" className={linkCls}>Cod de conduită</Link></li>
-              <li><Link href="/legal/dpa-autoritati" className={linkCls}>DPA pentru autorități</Link></li>
-              <li><Link href="/despre" className={linkCls}>Despre Civia</Link></li>
-              <li><Link href="/status" className={linkCls}>Status</Link></li>
-              <li><Link href="/civic-pulse" className={linkCls}>Civic Pulse (live)</Link></li>
-              <li><Link href="/roadmap" className={linkCls}>Roadmap public</Link></li>
-              <li><Link href="/okrs" className={linkCls}>OKRs Q3 2026</Link></li>
-              <li><Link href="/security" className={linkCls}>Securitate &amp; disclosure</Link></li>
-              <li><Link href="/whistleblower" className={linkCls}>Whistleblower</Link></li>
               <li><CookiePreferencesButton /></li>
             </ul>
           </div>

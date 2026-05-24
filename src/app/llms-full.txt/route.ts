@@ -222,7 +222,6 @@ A: AI-ul Civia detectează automat din locație + tip problemă. Manual: /autori
 - Întreruperi utilități (apă/gaz/curent): https://civia.ro/intreruperi
 - Clasament primării (response rate): https://civia.ro/clasament-primarii
 - Autorități + contacte: https://civia.ro/autoritati
-- API dezvoltatori + jurnaliști: https://civia.ro/dezvoltatori
 - Confidențialitate (GDPR): https://civia.ro/legal/confidentialitate
 
 ## Linkuri externe oficiale

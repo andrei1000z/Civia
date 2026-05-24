@@ -210,13 +210,6 @@ export default function PressPage() {
             <Mail size={14} aria-hidden="true" />
             press@civia.ro
           </a>
-          <Link
-            href="/dezvoltatori"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] font-bold hover:border-[var(--color-primary)] transition-colors"
-          >
-            <Download size={14} aria-hidden="true" />
-            API publică
-          </Link>
         </div>
       </section>
 

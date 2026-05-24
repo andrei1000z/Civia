@@ -324,13 +324,6 @@ export default async function StatisticiPage() {
             <Download size={14} aria-hidden="true" />
             JSON live (/api/v1/stats)
           </Link>
-          <Link
-            href="/dezvoltatori"
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-semibold hover:border-[var(--color-primary)] transition-colors"
-          >
-            Documentație API
-            <ExternalLink size={14} aria-hidden="true" />
-          </Link>
         </div>
       </section>
 
