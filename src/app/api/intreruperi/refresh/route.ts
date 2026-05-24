@@ -7,6 +7,7 @@ import { loadInterruptions } from "@/lib/intreruperi/store";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { dispatchAlertsForIntreruperi } from "@/lib/intreruperi/alerts-matcher";
 
 export const dynamic = "force-dynamic";
 // 300s budget — scrape ~10s + serialized Overpass warm of ~50 outages
@@ -145,6 +146,35 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
+    // 2026-05-25 — Dispatch alerts pentru abonați.
+    // Match intreruperi NOI (sau active) cu adresele monitorizate ale
+    // subscriber-ilor. Anti-spam via notified_interruption_ids[]. Best-effort:
+    // erori NU blochează response-ul (Sentry capture intern).
+    let alertsStats: { sent: number; matched: number; skipped: number } | null = null;
+    try {
+      // Filtrare: doar intreruperi cu start_at viitor sau status "programat".
+      // Skip-uim cele expirate / istorice (ar trimite spam pe re-scrape).
+      const now = Date.now();
+      const activeForAlerts = result.items
+        .filter((it) => new Date(it.endAt).getTime() > now)
+        .filter((it) => it.status !== "anulat" && it.status !== "finalizat")
+        .map((it) => ({
+          id: it.id,
+          type: it.type,
+          county: it.county,
+          sector: it.sector ?? null,
+          addresses: it.addresses,
+          reason: it.reason,
+          start_at: it.startAt,
+          end_at: it.endAt,
+          source_entry_url: it.sourceEntryUrl ?? null,
+          provider: it.provider,
+        }));
+      alertsStats = await dispatchAlertsForIntreruperi(activeForAlerts);
+    } catch (e) {
+      Sentry.captureException(e, { tags: { kind: "intreruperi_alerts_dispatch" } });
+    }
+
     // Pre-warm the OSM building polygon cache for every active outage
     // with coordinates. Serialized 600ms-apart inside warmBuildings so
     // we stay under Overpass's per-IP rate limit. Runs in-band on
@@ -183,6 +213,7 @@ export async function POST(req: Request) {
         bySource: result.bySource,
         errors: result.errors,
         buildingsWarmed: warmStats,
+        alertsDispatched: alertsStats,
       },
     });
   } catch (e) {
