@@ -92,7 +92,7 @@ export function MobileFab() {
         ref={wrapRef}
         data-floating
         className="lg:hidden fixed right-4 z-40"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" /* 2026-05-24: bottom-nav (h-14=3.5rem) e sub FAB, dar FAB-ul are deja 5rem offset care îl pune deasupra. */ }}
       >
         {/* Action items — stack vertically, stagger when opening so the
             chain feels responsive instead of all 4 popping at once. */}

@@ -13,6 +13,7 @@ import {
 } from "@/lib/email/resend";
 import { buildSalutation } from "@/lib/email/format";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { logAdminAction } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,18 @@ export async function POST(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   invalidateSesizariCache();
+
+  // 2026-05-24 Faza 5: audit log moderation action.
+  await logAdminAction({
+    req,
+    actorId: user.id,
+    action: `sesizare.${parsed.data.action}`,
+    targetType: "sesizare",
+    targetId: sesizare.id,
+    before: { moderation_status: sesizare.moderation_status },
+    after: { moderation_status: parsed.data.action === "approve" ? "approved" : "rejected" },
+    metadata: { code: sesizare.code },
+  });
 
   // Best-effort: email the author with the moderation outcome. Silent if
   // Resend isn't configured or the sesizare has no contact email.

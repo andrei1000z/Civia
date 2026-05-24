@@ -15,15 +15,22 @@ interface PhotoUploaderProps {
 }
 
 async function compressImage(file: File): Promise<File> {
-  if (file.size <= COMPRESS_THRESHOLD) return file;
+  // 2026-05-24 Faza 5 (security): always re-encode prin canvas pentru EXIF strip.
+  // Înainte: skip-uiam fișiere <1.5MB → EXIF inclusiv GPS coordinates rămânea în
+  // imaginea uploaded → leak adresa user-ului. Acum: forțăm canvas pass pe TOT
+  // pentru a garanta zero metadate (canvas.toBlob nu preserva EXIF).
+  // Pentru fișiere mici, folosim quality 0.92 (vs 0.82 pentru big) ca quality loss
+  // să fie minim.
   if (!file.type.startsWith("image/")) return file;
+  const isLarge = file.size > COMPRESS_THRESHOLD;
+  const quality = isLarge ? 0.82 : 0.92;
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
         let w = img.width, h = img.height;
-        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+        if (isLarge && (w > MAX_DIMENSION || h > MAX_DIMENSION)) {
           const ratio = Math.min(MAX_DIMENSION / w, MAX_DIMENSION / h);
           w = Math.round(w * ratio);
           h = Math.round(h * ratio);
@@ -36,7 +43,7 @@ async function compressImage(file: File): Promise<File> {
         canvas.toBlob((blob) => {
           if (!blob) return resolve(file);
           resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
-        }, "image/jpeg", 0.82);
+        }, "image/jpeg", quality);
       };
       img.onerror = () => resolve(file);
       img.src = e.target?.result as string;
@@ -82,6 +89,22 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
   const [dragging, setDragging] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 2026-05-24 Faza 4: Auto-trigger camera când URL conține ?camera=1.
+  // QuickCameraCTA de pe homepage trimite cu acest param → user ajunge direct
+  // în camera nativă fără tap extra. Mobile-only (camera permission prompt).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("camera") !== "1") return;
+    // Wait one tick pentru ca inputRef.current să fie atașat
+    const t = setTimeout(() => inputRef.current?.click(), 100);
+    // Curăță param după click ca să nu re-trigger la navigation back.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("camera");
+    window.history.replaceState({}, "", url.toString());
+    return () => clearTimeout(t);
+  }, []);
 
   // Lightbox: Escape closes, ←/→ navigate, body scroll locked while open.
   useEffect(() => {
@@ -237,6 +260,11 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
             type="file"
             accept="image/*"
             multiple
+            // 2026-05-24 Faza 4: capture="environment" hint mobile browsers
+            // să deschidă direct camera (back-facing). Pe Chrome/Safari mobile
+            // utilizatorul tot poate alege „Galerie" — capture e doar default.
+            // Pe desktop ignorat. Zero impact pe utilizatori existenți.
+            capture="environment"
             className="hidden"
             onChange={handleFiles}
             aria-hidden="true"

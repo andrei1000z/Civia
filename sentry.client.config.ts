@@ -24,4 +24,18 @@ Sentry.init({
   enabled: process.env.NODE_ENV === "production",
   sendDefaultPii: false,
   beforeSend: scrubSentryEvent,
+  // 2026-05-24 Faza 8: Browser tracing enabled pentru web vitals.
+  // INP / LCP / CLS automat tracked + send la Sentry ca measurements.
+  // Setup alerts în Sentry UI: Performance → Web Vitals → P75 > thresholds.
+  // Suggested alert rules:
+  //   - LCP P75 > 2500ms — warn (mobile slow), > 4000ms — critical
+  //   - CLS P75 > 0.1 — warn, > 0.25 — critical
+  //   - INP P75 > 200ms — warn, > 500ms — critical
+  integrations: [
+    Sentry.browserTracingIntegration({
+      // Trace all navigations + page loads → automat measurements pe Web Vitals
+      enableInp: true,
+      enableLongAnimationFrame: true,
+    }),
+  ],
 });

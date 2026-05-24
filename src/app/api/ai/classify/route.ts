@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { SYSTEM_PROMPT_CLASSIFIER } from "@/lib/groq/prompts";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { SESIZARE_TIPURI } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -11,12 +12,10 @@ const schema = z.object({
   text: z.string().min(3).max(2000),
 });
 
-const VALID_TIPURI = [
-  "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
-  "stalpisori", "canalizare", "semafor", "pietonal",
-  "graffiti", "mobilier", "zgomot", "animale", "transport",
-  "afisaj", "altele",
-] as const;
+// 2026-05-24 Faza 7: VALID_TIPURI consolidat — single source of truth e
+// `SESIZARE_TIPURI` în lib/constants.ts. Înainte era duplicat aici cu o
+// listă potențial divergentă (lipsea "trecere_pietoni", "rampa_acces" etc.).
+const VALID_TIPURI = SESIZARE_TIPURI.map((t) => t.value) as readonly string[];
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
     if (!content) throw new Error("Empty AI response");
 
     const parsed = JSON.parse(content) as { tip?: string };
-    const tip = (VALID_TIPURI as readonly string[]).includes(parsed.tip ?? "") ? parsed.tip! : "altele";
+    const tip = VALID_TIPURI.includes(parsed.tip ?? "") ? parsed.tip! : "altele";
 
     return NextResponse.json({ data: { tip } });
   } catch (e) {

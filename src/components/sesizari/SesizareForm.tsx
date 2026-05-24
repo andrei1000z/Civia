@@ -1927,16 +1927,21 @@ ${today}`;
           </div>
         )}
 
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={handleSubmit}
-          aria-busy={submitting}
-          className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-        >
-          {submitting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
-          {submitting ? "Se generează textul și se salvează..." : "Trimite sesizarea la autorități"}
-        </button>
+        {/* 2026-05-24 Faza 4: Sticky bottom CTA pe mobile — butonul rămâne
+            mereu vizibil pe scrolling. Personas cer „să văd butonul tot
+            timpul". Desktop: comportament normal flow (sm:static). */}
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4rem)] sm:static sm:bottom-auto z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-3 sm:py-0 bg-[var(--color-bg)]/95 sm:bg-transparent backdrop-blur sm:backdrop-blur-none border-t border-[var(--color-border)] sm:border-0">
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            aria-busy={submitting}
+            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
+            {submitting ? "Se generează textul și se salvează..." : "Trimite sesizarea la autorități"}
+          </button>
+        </div>
 
         {!data.formal_text && !aiLoading && !submitting && (
           <p className="text-[11px] text-center text-[var(--color-text-muted)] mt-2 inline-flex items-center justify-center gap-1.5 w-full">

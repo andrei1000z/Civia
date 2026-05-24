@@ -19,21 +19,22 @@ import { DeferredClientMount } from "@/components/DeferredClientMount";
 import { ToastProvider } from "@/components/Toast";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
 // AuroraBackground removed 5/22/2026 v5 — vezi globals.css `html` block.
-import { FirstLoadSplash } from "@/components/liquid-civic/FirstLoadSplash";
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
-// Code-split cold-path visuals — desktop-only hover effect + easter egg.
-// Saves ~3-4 KB gzip off the root bundle; mounts after hydration.
-// Note: Next 16 nu mai permite ssr:false in Server Components. Componentele
-// sunt deja "use client" deci skipam ssr:false — dynamic() still produce
-// chunk-uri separate, doar ca run pe server ca shells (zero efect — useEffect
-// nu ruleaza pe server anyway).
+// Code-split cold-path visuals — desktop-only hover effect + easter egg + splash.
+// Saves ~5-7 KB gzip off the root bundle; mounts after hydration.
+// 2026-05-24 Faza 2: FirstLoadSplash mutat din eager în dynamic (era ~3 KB
+// în root bundle deși apare doar la prima vizită din lifetime).
 const CursorGlow = dynamic(
   () => import("@/components/liquid-civic/CursorGlow").then((m) => m.CursorGlow),
 );
 const KonamiEasterEgg = dynamic(
   () => import("@/components/liquid-civic/KonamiEasterEgg").then((m) => m.KonamiEasterEgg),
+);
+const FirstLoadSplash = dynamic(
+  () => import("@/components/liquid-civic/FirstLoadSplash").then((m) => m.FirstLoadSplash),
 );
 import { GlobalLiveAnnouncer } from "@/components/ui/LiveAnnouncer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
@@ -216,7 +217,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="min-h-full flex flex-col pt-16"
+        className="min-h-full flex flex-col pt-16 pb-16 lg:pb-0"
         // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
         // injectează clase/atribute la body în timpul hydratation. Plus
         // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)
@@ -261,6 +262,7 @@ export default function RootLayout({
                 <CookieBanner />
                 <InstallPrompt />
                 <MobileFab />
+                <BottomNav />
                 <NewsletterNudge />
                 {/* F1 Civia Assistant — AI civic chat (desktop floating button) */}
                 <CiviaAssistant />

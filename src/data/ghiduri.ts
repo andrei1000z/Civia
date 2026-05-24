@@ -1,6 +1,23 @@
 import type { Ghid } from "@/types";
 
 export const ghiduri: Ghid[] = [
+  // 2026-05-24 Faza 9 (persona Cristina, Pipera) — ghid civic dedicat
+  // părinților. Top of list pentru visibility — segment user dominant +
+  // lipseau ghiduri specifice family. Acoperă drumul spre școală, parcuri,
+  // drepturi educație, implică copilul.
+  {
+    id: "gh-parinti",
+    slug: "ghid-parinti",
+    titlu: "Ghid pentru părinți — siguranța copilului în oraș",
+    descriere:
+      "Treceri pietoni la școală, parcare ilegală, iluminat parc, drepturi față de școală. Cu exemple concrete, prietenos.",
+    capitole: 5,
+    dificultate: "usor",
+    timpCitire: 22,
+    icon: "👨‍👧",
+    gradient: "from-pink-500 to-rose-600",
+    image: "ghid-parinti",
+  },
   {
     id: "gh-1",
     slug: "ghid-biciclist",

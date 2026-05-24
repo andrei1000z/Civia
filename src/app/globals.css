@@ -14,6 +14,24 @@
   --color-accent-soft: #fee2e2;
   --color-accent-on-soft: #991b1b;
 
+  /* 2026-05-24 Faza 3 — semantic tokens noi pentru content type colors.
+     Înlocuiesc hardcoded purple-600/blue-500/orange-500 din pagini. */
+  --color-petition: #7C3AED;
+  --color-petition-soft: #ede9fe;
+  --color-petition-on-soft: #5b21b6;
+  --color-news: #2563EB;
+  --color-news-soft: #dbeafe;
+  --color-news-on-soft: #1e40af;
+  --color-warning: #F59E0B;
+  --color-warning-soft: #fef3c7;
+  --color-warning-on-soft: #92400e;
+  --color-error: #DC2626;
+  --color-error-soft: #fee2e2;
+  --color-error-on-soft: #991b1b;
+  --color-success: #059669;
+  --color-success-soft: #d1fae5;
+  --color-success-on-soft: #065f46;
+
   --color-bg: #FAFAFA;
   --color-surface: #FFFFFF;
   --color-surface-2: #F4F4F5;
@@ -93,6 +111,23 @@
   --color-accent: #ef4444;
   --color-accent-soft: #7f1d1d;
   --color-accent-on-soft: #fecaca;
+
+  /* 2026-05-24 Faza 3 — semantic tokens dark variants */
+  --color-petition: #a78bfa;
+  --color-petition-soft: #4c1d95;
+  --color-petition-on-soft: #ddd6fe;
+  --color-news: #60a5fa;
+  --color-news-soft: #1e3a8a;
+  --color-news-on-soft: #bfdbfe;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #78350f;
+  --color-warning-on-soft: #fde68a;
+  --color-error: #ef4444;
+  --color-error-soft: #7f1d1d;
+  --color-error-on-soft: #fecaca;
+  --color-success: #10b981;
+  --color-success-soft: #064e3b;
+  --color-success-on-soft: #a7f3d0;
 
   /* 5/23/2026 v7 — bg shift de la verde-teal #0d2e2a la slate-navy #1a2332.
      User a zis „verdele e urât, fă mai deschis". Slate-navy:
@@ -353,8 +388,19 @@ img, video, iframe {
     min-height: 44px;
     font-size: max(16px, 1em); /* prevents iOS zoom on focus */
   }
-  h1 { font-size: 1.875rem !important; line-height: 1.15 !important; } /* 30px */
-  h2 { font-size: 1.5rem !important; }
+  /* 2026-05-24 Faza 3: text-[10px] / text-[11px] sunt ilizibile pe mobile
+     (478 instanțe în 120 fișiere — refactor individual prea costisitor).
+     Forțăm minim 12px (text-xs) pe mobile pentru WCAG readability.
+     Selectorii sunt arbitrary-class produs de Tailwind. */
+  [class*="text-[10px]"], [class*="text-[11px]"] {
+    font-size: 0.75rem !important; /* 12px */
+    line-height: 1rem !important;
+  }
+  /* 2026-05-24 Faza 3: 30px → 24px H1 mobile. Pe iPhone SE (375px width)
+     30px rupe layout-ul pentru titluri lungi de hero („Schimbă România cu
+     o sesizare în 90 de secunde"). 24px = 1.5rem = stays inside hero. */
+  h1 { font-size: 1.5rem !important; line-height: 1.2 !important; } /* 24px */
+  h2 { font-size: 1.25rem !important; }
   p, li { hyphens: auto; -webkit-hyphens: auto; }
   .container-narrow { padding-left: 0.75rem; padding-right: 0.75rem; }
 }

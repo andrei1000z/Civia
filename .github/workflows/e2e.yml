@@ -1,0 +1,96 @@
+name: E2E + Visual
+
+# 2026-05-24 Faza 8: Playwright smoke + visual regression pe PR.
+# Rulează pe deploy preview Vercel (PLAYWRIGHT_BASE_URL setat la URL-ul
+# preview-ului). Fail-fast pe smoke (critical user flows breaking).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --prefer-offline
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Build app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'dummy' }}
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+      - name: Start server (background)
+        run: |
+          npx next start -p 3000 &
+          npx wait-on http://localhost:3000 -t 60000
+
+      - name: Run smoke tests
+        run: npx playwright test --reporter=github
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [e2e]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install --no-audit --prefer-offline
+      - name: Install Playwright Chromium (headless)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key' }}
+
+      - name: Start server
+        run: |
+          npx next start -p 3000 &
+          npx wait-on http://localhost:3000 -t 60000
+
+      - name: Run visual regression
+        run: node scripts/visual-test.mjs
+        continue-on-error: true # visual flaky pe CI runners — soft warning
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-screenshots
+          path: |
+            screenshots/
+            visual-diffs/
+          retention-days: 7

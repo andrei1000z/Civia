@@ -225,6 +225,18 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* 2026-05-24 Faza 3: CTA persistent „Fă o sesizare" desktop —
+                core action visible la tot timpul, nu îngropat în nav. Pe
+                mobile MobileFab acoperă acest role. Personas Maria+Cristian
+                au cerut explicit „să văd unde dau click ca să fac sesizare". */}
+            <Link
+              href="/sesizari"
+              className="hidden md:inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white font-semibold text-sm transition-all hover:shadow-[0_6px_20px_-4px_rgba(5,150,105,0.5)] hover:-translate-y-0.5 active:scale-[0.97] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white whitespace-nowrap"
+              aria-label="Fă o sesizare"
+            >
+              <span aria-hidden="true">📮</span>
+              <span>Fă o sesizare</span>
+            </Link>
             {/* 2026-05-24 (P1.161-162) WCAG touch target: 11 mobile, 10 desktop. */}
             <button
               type="button"
@@ -269,7 +281,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="w-10 h-10 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] flex items-center justify-center"
+            className="w-11 h-11 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             aria-label="Închide meniul"
           >
             <X size={20} />

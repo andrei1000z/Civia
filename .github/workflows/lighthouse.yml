@@ -35,6 +35,8 @@ jobs:
           npx wait-on http://localhost:3000 -t 60000
 
       - name: Run Lighthouse CI
+        # 2026-05-24 Faza 8: continue-on-error scos → fail-fast pe a11y/SEO
+        # sub 90. Perf rămâne warn (legitime variance pe runners GHA).
         uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
@@ -45,4 +47,3 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: "./.lighthouserc.json"
-        continue-on-error: true

@@ -42,6 +42,15 @@ const nextConfig: NextConfig = {
         ? { exclude: ["warn", "error"] }
         : false,
   },
+  // 2026-05-24 Faza 6: React Compiler (React 19 auto-memoization).
+  // Compiler-ul memoizează automat componente + hooks (useMemo/useCallback
+  // becomes implicit). Reduce INP semnificativ pe forms cu re-renders dense.
+  // Next 16 supports nativ via experimental flag.
+  // Type cast: reactCompiler nu e încă în ExperimentalConfig types Next 16
+  // dar runtime-ul îl recunoaște (e enabled în PPR-track + Vercel docs).
+  experimental: {
+    reactCompiler: true,
+  } as NextConfig["experimental"],
   images: {
     // Permissive wildcard — we aggregate news from 30+ Romanian press
     // outlets, each with their own CDN subdomain. Maintaining an
@@ -78,11 +87,11 @@ const nextConfig: NextConfig = {
       // Tesseract.js pulls its WASM + training data from its own CDN; workers
       // need blob: to bootstrap. Dev-only unsafe-eval is for the React dev
       // server; prod stays tight.
-      `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""} https://plausible.io https://cdn.jsdelivr.net https://unpkg.com https://analytics-seven-steel.vercel.app`,
+      `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""} https://plausible.io https://cdn.jsdelivr.net https://analytics-seven-steel.vercel.app`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.open-meteo.com https://plausible.io https://api.openaq.org https://nominatim.openstreetmap.org https://www.seismicportal.eu https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdn.jsdelivr.net https://unpkg.com https://analytics-seven-steel.vercel.app https://rhjfutxgmnkonichxpro.supabase.co wss://rhjfutxgmnkonichxpro.supabase.co",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.open-meteo.com https://plausible.io https://api.openaq.org https://nominatim.openstreetmap.org https://www.seismicportal.eu https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdn.jsdelivr.net https://analytics-seven-steel.vercel.app https://rhjfutxgmnkonichxpro.supabase.co wss://rhjfutxgmnkonichxpro.supabase.co",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
       "media-src 'self' https: data: blob:",

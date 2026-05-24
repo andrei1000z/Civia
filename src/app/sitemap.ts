@@ -13,7 +13,10 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 // + 200+ sesizari + 50 outages + 100+ stiri). Regenerarea era cel mai mare
 // outage de bandwidth (sitemap.xml era >2MB). Google crawl-uieste o data/zi
 // oricum, 12h e mai mult decat suficient.
-export const revalidate = 43200;
+// 2026-05-24 Faza 2: 12h → 6h. Stiri-cache se primenește rapid; vrem ca
+// Google să vadă URL-urile noi mai des. 6h e tot mult mai puțin overhead
+// decât 1h initial dar face sitemap-ul actualizat de 4× pe zi în loc de 2×.
+export const revalidate = 21600;
 
 // Toate sub-page-urile per județ. Trebuie să rămână sincronizat cu
 // `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,
@@ -55,11 +58,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/intreruperi`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/proteste`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${base}/embed`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    // Pagini noi din sprint-ul recent (2026-05): clasament, alegeri, stickers.
-    // /dezvoltatori scoasă 2026-05-24 (minimalism). Toate national-only.
+    // 2026-05-24 minimalism (Faza 1): /alegeri, /stickers, /civic-awards
+    // șterse. /dezvoltatori scoasă mai devreme. Doar /clasament rămâne.
     { url: `${base}/clasament`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${base}/alegeri`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${base}/stickers`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
   ];
 
   // Per-county pages: 42 counties × 8 pages = 336 URLs

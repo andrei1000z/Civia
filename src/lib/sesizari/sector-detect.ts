@@ -1,5 +1,11 @@
-// Detect Bucharest sector from free-text location by keyword matching
-// Fallback when Nominatim or AI classifier don't return a sector
+// Detect Bucharest sector OR Ilfov locality from free-text location.
+// Fallback when Nominatim or AI classifier don't return a structured answer.
+//
+// 2026-05-24 Faza 9 (persona Cristina, Pipera) — Ilfov suburbs added.
+// Înainte: locații Pipera/Voluntari/Otopeni → sector=null → routing email
+// pica la PMB sector 1 (wrong, PMB nu gestionează Voluntari). Acum:
+// returnam "IF_voluntari", "IF_otopeni" etc. → routing.ts mapează la
+// primăria locală Voluntari/Otopeni (autoritati-contact.ts).
 
 const SECTOR_KEYWORDS: Record<string, string[]> = {
   S1: [
@@ -45,6 +51,41 @@ const SECTOR_KEYWORDS: Record<string, string[]> = {
     "valea cascadelor", "valea argeșului", "valea argesului", "gorjului", "lujerului", "apusului",
     "iuliu maniu", "orșova", "orsova", "timișoara", "timisoara", "bd. timișoara", "veteranilor",
     "păcii", "pacii", "răzoare", "razoare",
+  ],
+  // 2026-05-24 Faza 9 — Ilfov suburbs frequented by Bucharest residents.
+  // Prefix "IF_" → cod localitate. Listed in detection priority order:
+  // localitățile mai mari + zone „Bucharest-feeling" frequently confused.
+  IF_voluntari: [
+    "voluntari", "pipera", "pipera nord", "pipera sud", "pipera tower", "pipera plaza",
+    "iancu nicolae", "erou iancu nicolae", "drumul nisipoasa", "casa de cultură voluntari",
+  ],
+  IF_otopeni: [
+    "otopeni", "henri coandă", "henri coanda", "aeroportul otopeni", "aeroport otopeni",
+    "ferma otopeni", "23 august otopeni",
+  ],
+  IF_popesti: [
+    "popești-leordeni", "popesti-leordeni", "popești leordeni", "popesti leordeni", "leordeni",
+  ],
+  IF_chiajna: [
+    "chiajna", "roșu", "rosu", "dudu", "militari residence",
+  ],
+  IF_buftea: [
+    "buftea", "lacul buftea",
+  ],
+  IF_mogosoaia: [
+    "mogoșoaia", "mogosoaia", "palatul mogoșoaia", "palatul mogosoaia",
+  ],
+  IF_pantelimon: [
+    "pantelimon ilfov", "orașul pantelimon", "orasul pantelimon",
+  ],
+  IF_bragadiru: [
+    "bragadiru", "cartierul latin bragadiru",
+  ],
+  IF_corbeanca: [
+    "corbeanca", "corbeanca nord", "corbeanca sat",
+  ],
+  IF_balotesti: [
+    "balotești", "balotesti", "therme balotești", "therme balotesti",
   ],
 };
 

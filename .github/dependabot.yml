@@ -1,0 +1,70 @@
+# 2026-05-24 Faza 6 — Dependabot configurat pentru auto-update PR-uri.
+# - Production dependencies: weekly (Monday) cu max 5 PR-uri open simultan.
+# - GitHub Actions: monthly (CI workflows nu se schimbă des).
+# - Security updates: zilnic, fără grupare (urgent fix path).
+#
+# Group rules: minor + patch grouped pentru deps majore (react, next, etc.)
+# să reducă noise. Major bumps tot separate ca să fie reviewable individual.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Bucharest
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - automated
+    groups:
+      # Group patch + minor pentru same scope (Sentry, Radix, Supabase, etc.)
+      sentry:
+        patterns:
+          - "@sentry/*"
+        update-types:
+          - "minor"
+          - "patch"
+      supabase:
+        patterns:
+          - "@supabase/*"
+        update-types:
+          - "minor"
+          - "patch"
+      upstash:
+        patterns:
+          - "@upstash/*"
+        update-types:
+          - "minor"
+          - "patch"
+      types:
+        patterns:
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      next-react:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "eslint-config-next"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore tools care necesită testare extensivă pe major bumps —
+    # primesc PR doar pe security advisories.
+    ignore:
+      - dependency-name: tesseract.js
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - ci
+      - automated

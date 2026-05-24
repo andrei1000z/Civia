@@ -58,16 +58,16 @@ export const PETITIE_CATEGORII = [
 // county-scoped counterpart (or where the national view is the only
 // useful one — e.g. /petitii is a national civic petition catalog).
 // Round 2026-05-04: NAV simplificat dramatic la cererea user-ului.
-// Eliminat updateuri/statistici/compara/cum-functioneaza/bilete/
-// accesibilitate/impact (toate pagini dezintegrate). Proteste +
-// Întreruperi promovate din dropdown la top-level. Search scos din
-// navbar (rămâne ⌘K disponibil prin shortcut).
+// 2026-05-24 Faza 3 MINIMALISM: 5 → 4 itemi top-level pentru decision
+// fatigue minim. Personas Maria + Cristian au scor 2.5-2.6/5 din cauză
+// "prea multe link-uri". Ghiduri mutat în NAV_MORE (rareori click-uit
+// per analytics). Top-level rămâne: Sesizări (core action) • Petiții
+// (signing) • Știri (browsing) • Proteste (urgency).
 export const NAV_LINKS = [
   { href: "/sesizari", label: "Sesizări", national: true },
   { href: "/petitii", label: "Petiții", national: true },
+  { href: "/stiri", label: "Știri", national: true },
   { href: "/proteste", label: "Proteste", national: true },
-  { href: "/stiri", label: "Știri" },
-  { href: "/ghiduri", label: "Ghiduri", national: true },
 ] as const;
 
 // „Explorează" dropdown: items care nu se incarca in top-level, dar
@@ -85,6 +85,7 @@ export const NAV_MORE: Array<{
    */
   countySuffix?: boolean;
 }> = [
+  { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
   { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
   { href: "/clasament", label: "Clasament Fix Score", icon: "🏆", nationalOnly: true },
   { href: "/clasament-primarii", label: "Clasament primării", icon: "🏛️", nationalOnly: true },

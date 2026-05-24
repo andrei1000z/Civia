@@ -24,8 +24,17 @@ jobs:
         # optional-ul nu se instaleaza.
         run: npm install --no-audit --prefer-offline
 
-      - name: Lint
-        run: npm run lint
+      - name: Security audit (block high+)
+        # 2026-05-24 Faza 5: blocăm deploy pe vulnerabilități HIGH sau CRITICAL.
+        # `--audit-level=high` exit code 1 dacă găsește. Moderate + low ignored
+        # (zgomot prea mare în npm ecosystem, multe false-positives in dev deps).
+        # `|| true` pe production-only ar fi soft warning; lăsăm strict.
+        run: npm audit --audit-level=high --production
+
+      - name: Lint (strict — zero warnings)
+        # 2026-05-24 Faza 7: --max-warnings 0 blochează merge pe orice warning.
+        # Forțează cleanup imediat al noi warnings în loc să se acumuleze.
+        run: npm run lint -- --max-warnings 0
 
       - name: Type check
         run: npx tsc --noEmit
