@@ -273,6 +273,12 @@ export async function POST(req: Request) {
       // sesizare immediately instead of waiting up to 5 min for the TTL.
       invalidateSesizariCache();
 
+      // P3.26 — bump civic streak (non-blocking)
+      if (resolvedUserId) {
+        const { bumpCivicStreak } = await import("@/lib/civic-streak");
+        void bumpCivicStreak(resolvedUserId);
+      }
+
       // 2026-05-18: scos „adopt-a-street" feature complet. Notificarile
       // catre followeri pe sesizare/judet raman prin sesizare_follows
       // (urmariri explicite pe sesizare specifica).

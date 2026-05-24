@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
+import { NearbyMeButton } from "@/components/sesizari/NearbyMeButton";
 import dynamic from "next/dynamic";
 import { ShareButton } from "./ShareButton";
 import { OverdueBadge } from "./OverdueBadge";
@@ -199,8 +200,8 @@ export function SesizariPublice() {
 
   return (
     <div>
-      {/* View toggle */}
-      <div className="flex items-center gap-2 mb-4">
+      {/* View toggle + nearby button */}
+      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
         <div className="inline-flex rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] p-1">
           <button
             onClick={() => setView("list")}
@@ -223,6 +224,8 @@ export function SesizariPublice() {
             <MapIconLucide size={14} /> Hartă
           </button>
         </div>
+        {/* P3.27 — Geo-fence „Aproape de mine" */}
+        <NearbyMeButton />
       </div>
 
       {/* Filters — hidden on map view; the map already provides spatial

@@ -57,3 +57,66 @@ jobs:
             echo "::error::Auto-status cron returned HTTP $response"
             exit 1
           fi
+
+  draft-nudge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: reminders
+    steps:
+      - name: Trigger draft nudge (24h after draft start)
+        run: |
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
+            "https://www.civia.ro/api/sesizari/drafts/nudge" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $response"
+          head -c 800 /tmp/body.txt || true
+          echo
+          if [ "$response" != "200" ] && [ "$response" != "404" ]; then
+            echo "::error::Draft nudge returned HTTP $response"
+            exit 1
+          fi
+
+  weekly-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: reminders
+    # Doar vineri ora 9 — restul zilelor jobul rulează dar endpoint-ul
+    # respinge (verificare day-of-week în handler).
+    steps:
+      - name: Trigger weekly digest (Friday only)
+        run: |
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
+            "https://www.civia.ro/api/newsletter/weekly-rezolvate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $response"
+          head -c 800 /tmp/body.txt || true
+          echo
+          # 200 = trimis, 202 = skip (not Friday), 404 = not yet deployed
+          if [ "$response" != "200" ] && [ "$response" != "202" ] && [ "$response" != "404" ]; then
+            echo "::error::Weekly digest returned HTTP $response"
+            exit 1
+          fi
+
+  pattern-detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: reminders
+    steps:
+      - name: Trigger AI pattern detection (systemic issues)
+        run: |
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 180 \
+            "https://www.civia.ro/api/sesizari/pattern-detection" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $response"
+          head -c 1200 /tmp/body.txt || true
+          echo
+          if [ "$response" != "200" ] && [ "$response" != "404" ]; then
+            echo "::error::Pattern detection returned HTTP $response"
+            exit 1
+          fi
