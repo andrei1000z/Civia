@@ -62,10 +62,15 @@ export function Footer() {
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><Link href="/legal/accesibilitate" className={linkCls}>Declarație accesibilitate</Link></li>
               <li><Link href="/legal/cookie-policy" className={linkCls}>Politica de cookies</Link></li>
+              <li><Link href="/legal/cod-de-conduita" className={linkCls}>Cod de conduită</Link></li>
               <li><Link href="/legal/dpa-autoritati" className={linkCls}>DPA pentru autorități</Link></li>
               <li><Link href="/despre" className={linkCls}>Despre Civia</Link></li>
               <li><Link href="/status" className={linkCls}>Status</Link></li>
+              <li><Link href="/civic-pulse" className={linkCls}>Civic Pulse (live)</Link></li>
               <li><Link href="/roadmap" className={linkCls}>Roadmap public</Link></li>
+              <li><Link href="/okrs" className={linkCls}>OKRs Q3 2026</Link></li>
+              <li><Link href="/security" className={linkCls}>Securitate &amp; disclosure</Link></li>
+              <li><Link href="/whistleblower" className={linkCls}>Whistleblower</Link></li>
               <li><CookiePreferencesButton /></li>
             </ul>
           </div>
