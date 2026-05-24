@@ -94,13 +94,57 @@ const EMPTY_FORM: FormState = {
   hide_name: false,
 };
 
+// 2026-05-24 — cache local pentru render instant (zero „Se încarcă...").
+// Profilul + sesizările sunt salvate la fiecare load reușit + hydratate la
+// mount. Background refetch update-ează silent. Pe primul vizit fără cache
+// arătăm skeleton (page structure), nu spinner text.
+const CACHE_KEY = "civia:cont-cache-v1";
+type ContCache = {
+  userId: string;
+  profile: Profile;
+  sesizari: SesizareRow[];
+  t: number;
+};
+
+function readCache(): ContCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ContCache;
+    // Stale cache after 7d → ignore.
+    if (Date.now() - parsed.t > 7 * 24 * 3600 * 1000) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId: string, profile: Profile, sesizari: SesizareRow[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ userId, profile, sesizari, t: Date.now() }),
+    );
+  } catch {
+    /* quota / private mode — silent */
+  }
+}
+
 export default function ContPage() {
   const { user, loading: authLoading, signOut, openAuthModal } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [sesizari, setSesizari] = useState<SesizareRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Hidratăm DIRECT din localStorage la prima render — zero flicker dacă
+  // există cache. Validăm că user-ul cached e același cu cel curent în
+  // useEffect (la prima render, `user` poate fi încă null până AuthProvider
+  // hydrateaza — totuși cache hit dă instant page structure).
+  const initialCache = typeof window !== "undefined" ? readCache() : null;
+  const [profile, setProfile] = useState<Profile | null>(initialCache?.profile ?? null);
+  const [sesizari, setSesizari] = useState<SesizareRow[]>(initialCache?.sesizari ?? []);
+  // `loading` = true DOAR pentru primul fetch fără cache. Refetch silent (background).
+  const [loading, setLoading] = useState(!initialCache);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -122,7 +166,25 @@ export default function ContPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  // Form state hidratat din cache — zero flicker pe revisit
+  const [form, setForm] = useState<FormState>(() => {
+    const p = initialCache?.profile;
+    if (!p) return EMPTY_FORM;
+    return {
+      display_name: p.display_name ?? "",
+      full_name: p.full_name ?? "",
+      address: p.address ?? "",
+      phone: p.phone ?? "",
+      avatar_url: p.avatar_url ?? "",
+      newsletter_email_optin: !!p.newsletter_email_optin,
+      newsletter_sms_optin: !!p.newsletter_sms_optin,
+      notify_petitii_email: !!p.notify_petitii_email,
+      notify_petitii_sms: !!p.notify_petitii_sms,
+      notify_proteste_email: !!p.notify_proteste_email,
+      notify_proteste_sms: !!p.notify_proteste_sms,
+      hide_name: !!p.hide_name,
+    };
+  });
   const [newsletterSavedAt, setNewsletterSavedAt] = useState<number | null>(null);
 
   /**
@@ -163,8 +225,11 @@ export default function ContPage() {
     }
   };
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (opts?: { silent?: boolean }) => {
+    // Silent refetch: nu mai toggle `loading=true` (avem deja cached data
+    // afișată). Dacă fetch eșuează, cache-ul rămâne vizibil.
+    const silent = opts?.silent === true;
+    if (!silent) setLoading(true);
     setLoadError(null);
     try {
       const [pRes, sRes] = await Promise.all([
@@ -172,6 +237,8 @@ export default function ContPage() {
         fetch("/api/profile/sesizari"),
       ]);
       if (pRes.status === 401 || sRes.status === 401) {
+        // Cache invalidat la 401 — sesiune expirată
+        if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
         setLoadError("Sesiunea a expirat. Te rog autentifică-te din nou.");
         setTimeout(() => {
           router.push("/");
@@ -182,7 +249,7 @@ export default function ContPage() {
       const p = await pRes.json().catch(() => ({}));
       const s = await sRes.json().catch(() => ({}));
       if (!pRes.ok) {
-        setLoadError(p.error ?? "Nu s-a putut încărca profilul.");
+        if (!silent) setLoadError(p.error ?? "Nu s-a putut încărca profilul.");
         return;
       }
       if (p.data) {
@@ -201,25 +268,39 @@ export default function ContPage() {
           notify_proteste_sms: !!p.data.notify_proteste_sms,
           hide_name: !!p.data.hide_name,
         });
+        const newSesizari = s.data ?? [];
+        if (s.data) setSesizari(s.data);
+        // Persistăm în cache pentru render instant la următoarea vizită.
+        if (user?.id) writeCache(user.id, p.data, newSesizari);
       }
-      if (s.data) setSesizari(s.data);
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Eroare la încărcarea contului");
+      if (!silent) setLoadError(e instanceof Error ? e.message : "Eroare la încărcarea contului");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
+      // Cache cleared când user e gone (logout din alt tab).
+      if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
       openAuthModal();
       return;
     }
     // Skip refetch dacă am încărcat deja pentru acest user (tab focus refresh).
     if (loadedForUserIdRef.current === user.id) return;
     loadedForUserIdRef.current = user.id;
-    loadData();
+    // Dacă cache-ul e pentru ALT user (login swap), invalidăm.
+    if (initialCache && initialCache.userId !== user.id) {
+      if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+      setProfile(null);
+      setSesizari([]);
+      setForm(EMPTY_FORM);
+    }
+    // Silent refetch dacă avem cache valid (instant render deja făcut).
+    const haveValidCache = initialCache && initialCache.userId === user.id;
+    loadData({ silent: !!haveValidCache });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
@@ -246,7 +327,11 @@ export default function ContPage() {
       if (!saveRes.ok) throw new Error(saveJson.error || "Eroare salvare avatar");
 
       setForm((f) => ({ ...f, avatar_url: url }));
-      setProfile((p) => (p ? { ...p, avatar_url: url } : p));
+      setProfile((p) => {
+        const next = p ? { ...p, avatar_url: url } : p;
+        if (next && user?.id) writeCache(user.id, next, sesizari);
+        return next;
+      });
       toast("Poză de profil actualizată", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Eroare upload", "error");
@@ -268,7 +353,11 @@ export default function ContPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Eroare ștergere avatar");
       setForm((f) => ({ ...f, avatar_url: "" }));
-      setProfile((p) => (p ? { ...p, avatar_url: null } : p));
+      setProfile((p) => {
+        const next = p ? { ...p, avatar_url: null } : p;
+        if (next && user?.id) writeCache(user.id, next, sesizari);
+        return next;
+      });
       toast("Poza de profil ștearsă", "info");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Eroare", "error");
@@ -296,7 +385,11 @@ export default function ContPage() {
       if (!res.ok) {
         setSaveError(json.error ?? "Eroare salvare");
       } else {
-        if (json.data) setProfile({ ...json.data, email: profile?.email ?? "" });
+        if (json.data) {
+          const next = { ...json.data, email: profile?.email ?? "" };
+          setProfile(next);
+          if (user?.id) writeCache(user.id, next, sesizari);
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       }
@@ -307,18 +400,40 @@ export default function ContPage() {
     }
   };
 
-  // Wait for both auth AND profile fetch to resolve before rendering.
-  // Without the `loading || !profile` check, we briefly render the page
-  // with `profile=null`, which falls through to „Salut, Cetățean!" and
-  // then snaps to the real name when the fetch resolves — exactly the
-  // flicker users complained about.
-  if (authLoading || !user || loading || !profile) {
+  // 2026-05-24 — zero „Se încarcă..." UX. Cu cache localStorage hydrate,
+  // 99% din vizite vor avea `profile` valid din prima render. Pentru primul
+  // vizit fără cache, arătăm skeleton (page structure) — nu spinner text.
+  // Auth pending sau anonymous user → fallback minimal (același skeleton).
+  if (authLoading || !user) {
     return (
-      <div className="container-narrow py-20 text-center">
-        <Loader2 size={28} className="animate-spin mx-auto text-[var(--color-text-muted)]" />
-        <p className="text-sm text-[var(--color-text-muted)] mt-3">
-          {!user ? "Autentifică-te pentru a accesa contul..." : "Se încarcă..."}
-        </p>
+      <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
+        <header className="mb-6 h-32 sm:h-40 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+        <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6">
+          <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+        </div>
+        {!user && !authLoading && (
+          <p className="sr-only">Autentifică-te pentru a accesa contul.</p>
+        )}
+      </div>
+    );
+  }
+  // Logged-in dar lipsește cache + primul fetch e in progress → skeleton scurt.
+  if (loading || !profile) {
+    return (
+      <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
+        <header className="mb-6 h-32 sm:h-40 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+        <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6">
+          <div className="space-y-4">
+            <div className="h-48 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+            <div className="h-32 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+          </div>
+          <div className="space-y-3">
+            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -333,7 +448,7 @@ export default function ContPage() {
         <p className="text-[var(--color-text-muted)] mb-6">{loadError}</p>
         <button
           type="button"
-          onClick={loadData}
+          onClick={() => loadData()}
           className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
         >
           Încearcă din nou
@@ -426,6 +541,9 @@ export default function ContPage() {
           <button
             type="button"
             onClick={async () => {
+              // Invalidăm cache-ul înainte de signOut ca să nu păstrăm datele
+              // user-ului anterior dacă altcineva intră în cont pe același device.
+              if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
               await signOut();
               toast("Te-ai deconectat. La revedere!", "info");
               router.push("/");
