@@ -221,12 +221,16 @@ export async function POST(
     }
   }
 
-  // Timeline event — vizibil pe pagina sesizării
+  // Timeline event — INSERT cu description ANONIMĂ (PRIVACY FIX 2026-05-24).
+  // Înainte includea numele cetățeanului care a co-semnat („X Y a trimis...")
+  // → leak public pe /sesizari/[code]. Acum description e generică; oricum
+  // pe timeline public eventul `cosign_send` e filtrat complet, dar păstrăm
+  // descriere safe pentru audit + owner view + admin view.
   try {
     await admin.from("sesizare_timeline").insert({
       sesizare_id: sesizare.id,
       event_type: "cosign_send",
-      description: `${nume} a trimis și el această sesizare către autorități prin Civia.`,
+      description: "Un cetățean a co-semnat și a trimis acest email către autorități prin Civia.",
     });
   } catch {
     // best-effort

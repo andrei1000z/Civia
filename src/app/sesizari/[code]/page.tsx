@@ -73,11 +73,26 @@ export default async function SesizareDetailPage({
   const sesizare = await getSesizareByCode(code);
   if (!sesizare) notFound();
 
-  const [timeline, comments, similar] = await Promise.all([
+  const [allTimelineEvents, comments, similar] = await Promise.all([
     getTimeline(sesizare.id),
     getComments(sesizare.id),
     getSimilarSesizari(sesizare.id, 300),
   ]);
+
+  // 2026-05-24 PRIVACY FIX (user request „să NU mai apară numele full public"):
+  // pe timeline public arătăm DOAR evenimente despre STAREA SESIZĂRII
+  // (depusa/trimis/inregistrata/in-lucru/actiune-autoritate/rezolvat/
+  // ignorat/respins/amanata/delivery_problem).
+  //
+  // Excludem evenimentele care expun acțiuni individuale de cetățean:
+  //   - cosemnat — „Un alt cetățean a co-semnat" (descriere e ok dar
+  //     CosignersBadge arată deja count public)
+  //   - cosign_send — „X Y a trimis și el această sesizare" (LEAK NUME)
+  //   - trimis_via_civia — variantă legacy a cosign_send
+  //
+  // Aceste evenimente rămân în DB pentru audit/admin, dar NU pe public.
+  const PRIVATE_EVENT_TYPES = new Set(["cosemnat", "cosign_send", "trimis_via_civia"]);
+  const timeline = allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type));
 
   // Check if current user has voted / verified
   const supabase = await createSupabaseServer();
@@ -508,18 +523,10 @@ export default async function SesizareDetailPage({
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
                 Status &amp; activitate
               </p>
-              {(() => {
-                const cosemneNr = timeline.filter((e) => e.event_type === "cosemnat").length;
-                return cosemneNr > 0 ? (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 tabular-nums"
-                    aria-label={`${cosemneNr} ${cosemneNr === 1 ? "cetățean a trimis și el" : "cetățeni au trimis și ei"}`}
-                  >
-                    <UserPlus size={10} aria-hidden="true" />
-                    +{cosemneNr} {cosemneNr === 1 ? "cetățean" : "cetățeni"}
-                  </span>
-                ) : null;
-              })()}
+              {/* 2026-05-24 PRIVACY FIX — scoasă „N cetățeni" din timeline
+                  header (CosignersBadge component arătă deja count public
+                  fără să expună nume). Timeline = doar evenimente despre
+                  starea sesizării (depusa/inregistrata/in-lucru/etc.). */}
             </div>
             {timeline.length === 0 ? (
               <div className="bg-[var(--color-surface-2)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 text-center">
