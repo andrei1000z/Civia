@@ -91,7 +91,18 @@ export default async function SesizareDetailPage({
   //   - trimis_via_civia — variantă legacy a cosign_send
   //
   // Aceste evenimente rămân în DB pentru audit/admin, dar NU pe public.
-  const PRIVATE_EVENT_TYPES = new Set(["cosemnat", "cosign_send", "trimis_via_civia"]);
+  // PRIVACY: cosemnat/cosign_send/trimis_via_civia leak nume cetățeni.
+  // NOISE: delivery_problem (legacy ghost-send false positives), raspuns_oficial
+  // (duplicat al „inregistrata" status update event), eveniment generic. Toate
+  // afișate ca „Eveniment" placeholder fără ikonografie — distrag user-ul.
+  const PRIVATE_EVENT_TYPES = new Set([
+    "cosemnat",
+    "cosign_send",
+    "trimis_via_civia",
+    "delivery_problem",
+    "raspuns_oficial",
+    "eveniment",
+  ]);
   const timeline = allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type));
 
   // Check if current user has voted / verified
