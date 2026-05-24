@@ -46,6 +46,7 @@ async function getViewerContext(): Promise<{
 type Anonymizable = {
   user_id: string | null;
   author_name: string;
+  author_display_name?: string | null;
   author_email?: string | null;
   formal_text?: string | null;
 };
@@ -119,6 +120,10 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
     return {
       ...r,
       author_name: ANONYMOUS_LABEL,
+      // Display name (prenume / primul cuvânt) e tot info identificabilă —
+      // user a cerut explicit „SA NU DEZVALUI INFO" pe public (5/24/2026).
+      // Anterior se afișa „Calapod" pe card. Acum: „Cetățean" pe public.
+      author_display_name: "Cetățean",
       author_email: null, // never expose to non-owner non-admin viewers
       formal_text: scrubbedFormalText,
     };
@@ -289,7 +294,7 @@ async function anonymizeHiddenComments(
     const isOwner = !!r.user_id && r.user_id === viewerId;
     if (isOwner) return r;
     if (!r.user_id || !hidden.has(r.user_id)) return r;
-    return { ...r, author_name: ANONYMOUS_LABEL };
+    return { ...r, author_name: ANONYMOUS_LABEL, author_display_name: "Cetățean" };
   });
 }
 

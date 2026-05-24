@@ -301,6 +301,48 @@ describe("Sanity: textul generat NU conține formule INTERZISE din vechiul AI", 
   });
 });
 
+describe("Privacy: defense-in-depth pentru display name", () => {
+  // Display name (prenume / primul cuvânt) era exposed public pe carduri
+  // chiar și cu hideName=true. User a cerut „SA NU DEZVALUI INFO" pe
+  // 2026-05-24 — verificăm aici constanta + rezultatul final pe public.
+  // Acoperirea pe repository.ts e structurală (vitest nu poate testa
+  // direct repository fără Supabase mock setup) — test-ul ăsta e contract
+  // pe ce ar trebui să vadă userii ne-owneri.
+
+  it(`numele complet nu apare nicăieri în textul public scrubat`, () => {
+    const text = generateFormalText({
+      tip: "parcare",
+      locatie: "Strada X",
+      nume: "Calapod Bogdan",
+      adresa: "Adresa Mea 5",
+      hasPhotos: true,
+    });
+    const scrubbed = scrubFormalTextForPublic(text, {
+      authorName: "Calapod Bogdan",
+      hideName: true,
+    });
+    // Atât numele complet cât și prenumele individual NU mai apar
+    expect(scrubbed).not.toContain("Calapod Bogdan");
+    expect(scrubbed).not.toContain("Calapod");
+    expect(scrubbed).not.toContain("Bogdan");
+  });
+
+  it(`numele single-word e redactat (chiar și fără surname)`, () => {
+    const text = generateFormalText({
+      tip: "groapa",
+      locatie: "Strada X",
+      nume: "Andrei",
+      adresa: null,
+      hasPhotos: false,
+    });
+    const scrubbed = scrubFormalTextForPublic(text, {
+      authorName: "Andrei",
+      hideName: true,
+    });
+    expect(scrubbed).not.toContain("Andrei");
+  });
+});
+
 describe("Sanity: structura paragrafelor", () => {
   it(`paragrafele sunt separate prin linie goală`, () => {
     const text = generateFormalText({
