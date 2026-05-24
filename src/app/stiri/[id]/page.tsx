@@ -10,7 +10,6 @@ import { SOURCE_COLORS, SITE_URL, readableTextColor, sourceTextColor } from "@/l
 import { formatDateTime } from "@/lib/utils";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { AiSummary } from "./AiSummary";
-import { StireMediaCarousel } from "@/components/stiri/StireMediaCarousel";
 import { NewsArticleJsonLd } from "@/components/JsonLd";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { ReadingProgress } from "@/components/stiri/ReadingProgress";
@@ -50,15 +49,6 @@ interface StireRow {
   /** Version stamp matched against AI_SUMMARY_VERSION; older values
    *  trigger transparent regeneration. */
   ai_summary_version: number | null;
-  /** Galerie media (poze + videouri) scrapată din articolul original.
-   *  Populată la fetch RSS sau via scripts/backfill-stire-media.ts.
-   *  Default [] dacă scraperul nu a apucat să ruleze încă. */
-  media?: Array<{
-    type: "image" | "video";
-    url: string;
-    caption?: string;
-    poster?: string;
-  }> | null;
 }
 
 const getSupabase = createSupabaseAnon;
@@ -363,14 +353,6 @@ export default async function StireDetailPage({
               synthesizeUrl={`/api/stiri/${stire.id}/synthesize`}
             />
           </div>
-
-          {/* 5/23/2026 — Galerie media din articol (poze + videouri) cu carusel.
-              Scrapată la fetch RSS (lib/stiri/rss.ts → fetchArticleMedia) sau
-              backfill via scripts/backfill-stire-media.ts. Apare doar dacă
-              avem ≥ 1 media item. */}
-          {stire.media && stire.media.length > 0 && (
-            <StireMediaCarousel items={stire.media} title={stire.title} />
-          )}
 
         </div>
 
