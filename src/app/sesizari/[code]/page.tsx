@@ -256,14 +256,22 @@ export default async function SesizareDetailPage({
             )}
 
             {/* 5/22/2026 — Resend alert pentru ghost-sends / bounces.
-                Vizibil DOAR pentru autor + DOAR dacă există problemă. */}
+                Vizibil DOAR pentru autor + DOAR dacă există problemă.
+                2026-05-24: suprimă alerta când există reply oficial (orice
+                răspuns dovedește că emailul a ajuns — ghost-send fals pozitiv
+                pentru sesizări trimise prin flow vechi care nu populau
+                resend_message_id). Status-uri non-trimis (inregistrata,
+                in-lucru, rezolvat) implicit dovedesc delivery. */}
             {isAuthor && (
               <ResendButton
                 code={sesizare.code}
                 deliveryStatus={(sesizare as unknown as { delivery_status?: string | null }).delivery_status ?? null}
                 isGhostSend={
                   sesizare.sent_via_civia === true &&
-                  !(sesizare as unknown as { resend_message_id?: string | null }).resend_message_id
+                  !(sesizare as unknown as { resend_message_id?: string | null }).resend_message_id &&
+                  // Suprimă dacă autoritatea a răspuns/înregistrat deja (status
+                  // advanced > "trimis" dovedește că emailul a ajuns).
+                  !["inregistrata", "in-lucru", "rezolvat", "actiune-autoritate", "interventie", "redirectionata"].includes(sesizare.status)
                 }
               />
             )}

@@ -146,10 +146,13 @@ export async function POST(req: Request) {
   // Success path — log at the end (after processing) with status 200.
 
   // ─── 3. Extract code ────────────────────────────────────────────
+  // 2026-05-24: include headers — In-Reply-To / References permite recover-ul
+  // codului când subject e generic („Informare", „Confirmare primire").
   const extraction = extractSesizareCode({
     to,
     subject,
     body: body_text || stripHtml(body_html),
+    headers,
   });
 
   // ─── 4. Identify sender ─────────────────────────────────────────

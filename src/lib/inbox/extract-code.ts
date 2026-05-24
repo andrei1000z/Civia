@@ -66,11 +66,17 @@ export interface ExtractCodeInput {
   to?: string | null;
   subject?: string | null;
   body?: string | null;
+  /**
+   * 2026-05-24 — RFC 5322 mail headers. Pasaa-le ca să încercăm
+   * `In-Reply-To` și `References` (Message-ID-urile originale conțin codul).
+   * Format key:value din webhook payload.
+   */
+  headers?: Record<string, string> | null;
 }
 
 export interface ExtractCodeResult {
   code: string | null;
-  source: "plus-address" | "subject" | "body" | "none";
+  source: "plus-address" | "in-reply-to" | "subject" | "body" | "none";
 }
 
 /**
@@ -87,6 +93,23 @@ export function extractSesizareCode(input: ExtractCodeInput): ExtractCodeResult 
   if (input.to) {
     const m = input.to.match(PLUS_ADDR_PATTERN);
     if (m?.[1]) return { code: m[1].toUpperCase(), source: "plus-address" };
+  }
+
+  // 1b. 2026-05-24 — In-Reply-To / References headers (RFC 5322).
+  // Outbound emails au Message-ID `<sesizare-00044-uuid@civia.ro>` —
+  // autoritățile preserveaza asta în răspuns. Match robust pe pattern.
+  // Recunoaște subiecte scurte ca „Informare" / „Confirmare primire"
+  // unde nu există cod în subject/body.
+  if (input.headers) {
+    const irt = input.headers["in-reply-to"] ?? input.headers["In-Reply-To"] ?? "";
+    const refs = input.headers["references"] ?? input.headers["References"] ?? "";
+    const combined = `${irt} ${refs}`;
+    const m =
+      combined.match(/sesizare[-_]([A-Z0-9]{4,8})[-_@]/i) ||
+      combined.match(/<([A-Z0-9]{4,8})[-_]/i);
+    if (m?.[1] && isPlausibleCode(m[1])) {
+      return { code: m[1].toUpperCase(), source: "in-reply-to" };
+    }
   }
 
   // 2. Subject patterns
