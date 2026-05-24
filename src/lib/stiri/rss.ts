@@ -453,11 +453,11 @@ export async function fetchArticleMedia(
       seen.add(url2);
       const captionM = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
       const altM = imgTag.match(/alt=["']([^"']*)["']/i);
-      const cap = captionM?.[1] ? stripTags(captionM[1]) : altM?.[1];
+      const cap = captionM?.[1] ? stripTags(captionM[1]) : altM?.[1]?.trim() ?? "";
       items.push({
         type: "image",
         url: url2,
-        caption: cap && cap.length > 3 ? cap : undefined,
+        caption: cap && !isGenericCaption(cap) ? cap : undefined,
       });
     }
 
@@ -470,10 +470,11 @@ export async function fetchArticleMedia(
       if (!url2 || !isRelevantImage(url2, imgTag, articleOrigin) || seen.has(url2)) continue;
       seen.add(url2);
       const altM = imgTag.match(/alt=["']([^"']*)["']/i);
+      const altRaw = altM?.[1]?.trim() ?? "";
       items.push({
         type: "image",
         url: url2,
-        caption: altM?.[1] && altM[1].length > 3 ? altM[1] : undefined,
+        caption: isGenericCaption(altRaw) ? undefined : altRaw || undefined,
       });
     }
 
@@ -509,17 +510,21 @@ export async function fetchArticleMedia(
       }
     }
 
-    // Dedupe pe filename (chiar dacă URL-urile diferă din cauza CDN-urilor,
-    // imaginea de bază poate fi identică). Pattern: extragem ultimul
-    // path segment care arată ca un filename `.jpg/.png/etc`.
-    const seenFilenames = new Set<string>();
+    // Dedupe smart: extragem filename + STRIPĂM resize suffix (-1024x661,
+    // -300x200) ca să recunoaștem ca aceeași poză variantele CDN.
+    //   „mette-frederiksen-1024x661.jpg"
+    //   „mette-frederiksen.jpg" (URL-encoded inside CDN proxy)
+    //   → ambele normalizează la „mette-frederiksen.jpg"
+    const seenNormalized = new Set<string>();
     const deduped: MediaItem[] = [];
     for (const m of items) {
       const fnMatch = m.url.match(/([a-z0-9_-]+\.(?:jpg|jpeg|png|webp|avif|gif))(?:\?|$)/i);
-      const fn = fnMatch?.[1]?.toLowerCase();
+      let fn = fnMatch?.[1]?.toLowerCase();
       if (fn) {
-        if (seenFilenames.has(fn)) continue;
-        seenFilenames.add(fn);
+        // Strip resize suffix `-1024x661` înainte de `.ext`
+        fn = fn.replace(/-(?:\d{2,4}x\d{2,4}|scaled|cropped|thumb|tiny|small|medium|large)\.(jpg|jpeg|png|webp|avif|gif)$/i, ".$1");
+        if (seenNormalized.has(fn)) continue;
+        seenNormalized.add(fn);
       }
       deduped.push(m);
     }
@@ -598,19 +603,58 @@ function isRelevantImage(
   imgTag: string,
   articleOrigin: string,
 ): boolean {
+  // Reject template placeholders: %title%, %media%, {{var}}, {var}
+  if (/%[a-z_]+%|\{\{[^}]+\}\}|\{[a-z_]+\}/i.test(url)) return false;
+  // Reject data: URIs (base64 SVG placeholders, lazy-load shimmers)
+  if (/^data:/i.test(url)) return false;
+  // Reject blob:, about:, javascript:
+  if (/^(?:blob|about|javascript):/i.test(url)) return false;
+
+  // Reject "external_image" proxy pattern (Adevărul / Reperio widgets care
+  // încarcă thumbnails de la articole DIFERITE — stirileprotv, fanatik,
+  // ringier, etc. în sidebar „Mai citește" sau widget recommend).
+  if (/\/external[-_]?image\b/i.test(url)) return false;
+
+  // Reject proxy URLs cu query params care indică resize la dimensiuni mici
+  // (w=400, h=270 etc. — sidebar widget thumbnails, NU article body).
+  const wParamMatch = url.match(/[?&]w[%]?=(?:%3D)?(\d{2,4})\b/i);
+  if (wParamMatch) {
+    const w = parseInt(wParamMatch[1] ?? "0", 10);
+    if (w > 0 && w < 600) return false;
+  }
+  // Și ?p=w%3D400... (URL-encoded form encountered on Reperio CDN)
+  const pParamMatch = url.match(/[?&]p=[^&]*w%3D(\d{2,4})/i);
+  if (pParamMatch) {
+    const w = parseInt(pParamMatch[1] ?? "0", 10);
+    if (w > 0 && w < 600) return false;
+  }
+
   if (!looksLikeImageUrl(url)) return false;
   if (isLikelyJunkImage(url)) return false;
 
-  // Cross-domain filter: păstrăm doar same domain (or CDN subdomain pe
-  // același registrable domain). Logo-uri Google/Facebook/Twitter etc
-  // sunt third-party și nu interesează articolul.
+  // Cross-domain filter: păstrăm same registrable domain SAU CDN-uri
+  // legitime (cdn|media|static|images|img prefix subdomain). Mediile
+  // serioase folosesc CDN-uri externe pentru poze (Adevărul →
+  // cdn.adh.reperio.news, Digi24 → s.iw.ro). Whitelist-ul aici evită
+  // să tăiem aceste poze legitime.
   try {
     const imgHost = new URL(url).hostname.replace(/^www\./, "");
     if (imgHost && imgHost !== articleOrigin) {
-      // Permite subdomain-uri pe același registrable (cdn.gandul.ro pe gandul.ro)
+      // Same registrable domain (cdn.gandul.ro pe gandul.ro)
       const articleRoot = articleOrigin.split(".").slice(-2).join(".");
       const imgRoot = imgHost.split(".").slice(-2).join(".");
-      if (imgRoot !== articleRoot) return false;
+      if (imgRoot === articleRoot) {
+        // OK — subdomain pe același registrable
+      } else if (
+        // CDN legitim cunoscut sau pattern cdn/media/static/images/img.
+        /(?:^|\.)(?:cdn|media|static|images?|img|imgix|cloudfront|cloudinary|akamai|fastly|hwcdn|edgecastcdn|reperio|iw\.ro|stirileprotv|wp\.com|wordpress\.com|gstatic|googleusercontent)\b/i.test(
+          imgHost,
+        )
+      ) {
+        // OK — CDN legitim
+      } else {
+        return false;
+      }
     }
   } catch {
     return false;
@@ -671,6 +715,31 @@ function absUrl(src: string, base: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Caption „generic" = inutil (placeholder, one-word, format tipic widget).
+ * Aceste captions sunt rezultatul alt-text-ului automat de la widget-uri
+ * recomandate (gen „image", „image png", „foto gif gif", „photo").
+ */
+function isGenericCaption(s: string): boolean {
+  if (!s) return true;
+  const trimmed = s.trim();
+  if (trimmed.length < 4) return true;
+  const lower = trimmed.toLowerCase();
+  // One-two words generic: „image", „foto", „photo", „picture"
+  if (/^(?:image|imagine|foto|photo|picture|fotografie|imag|foto\s+\w+|image\s+\w+|photo\s+\w+|imagine\s+\w+)(?:\s+(?:png|jpg|jpeg|gif|webp|avif))*$/i.test(lower)) {
+    return true;
+  }
+  // „Foto gif gif", „image png png" — repeated extension keywords
+  if (/^(?:foto|image|photo|imagine)(?:\s+(?:png|jpg|jpeg|gif|webp|avif|tiff)){1,4}$/i.test(lower)) {
+    return true;
+  }
+  // Single common word
+  if (/^(?:default|generic|placeholder|no[-_\s]?image|sursa|credit|copyright)$/i.test(lower)) {
+    return true;
+  }
+  return false;
 }
 
 function stripTags(s: string): string {

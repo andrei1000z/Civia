@@ -79,6 +79,10 @@ export function StireMediaCarousel({ items, title }: Props) {
   }, [go, lightboxOpen]);
 
   if (items.length === 0) return null;
+  // Skip carusel dacă e un singur item — hero-ul e deja afișat în partea
+  // de sus a paginii (header image), o galerie cu o singură imagine nu
+  // adaugă valoare, doar duplică conținutul.
+  if (items.length === 1) return null;
 
   const current = items[active];
   if (!current) return null;
@@ -167,14 +171,24 @@ export function StireMediaCarousel({ items, title }: Props) {
         )}
       </div>
 
-      {/* Caption */}
-      {current.caption && current.caption.trim().length > 0 && (
-        <div className="px-5 pt-3 pb-2">
-          <p className="text-sm text-[var(--color-text-muted)] leading-relaxed italic">
-            {current.caption}
-          </p>
-        </div>
-      )}
+      {/* Caption — afișat doar dacă e suficient de informativ (>= 25 chars,
+          nu match cu patternuri generice gen „Foto:", „Imagine", titlul
+          articolului repetat). */}
+      {(() => {
+        const cap = current.caption?.trim();
+        if (!cap || cap.length < 25) return null;
+        // Skip dacă e doar titlul articolului repetat
+        if (title && cap === title.trim()) return null;
+        // Skip șabloane generice gen „Foto: ...", „Sursa: ...", „Imagine din..."
+        if (/^(?:foto|imagine|sursă|sursa|credit|image)[:.\s]/i.test(cap)) return null;
+        return (
+          <div className="px-5 pt-3 pb-2">
+            <p className="text-sm text-[var(--color-text-muted)] leading-relaxed italic">
+              {cap}
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Thumbnails strip + dots */}
       {items.length > 1 && (

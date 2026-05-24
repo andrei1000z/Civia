@@ -15,27 +15,33 @@
 import { getGroqClient, GROQ_MODEL_VISION } from "@/lib/groq/client";
 import type { MediaItem } from "./rss";
 
-const SYSTEM_PROMPT = `Ești un editor de presă român care scrie subtitluri scurte și informative pentru poze din articole de știri.
+const SYSTEM_PROMPT = `Ești un editor de presă român care scrie subtitluri INFORMATIVE și SPECIFICE pentru poze din articole de știri.
+
+OBIECTIV: cititorul citește subtitlul și înțelege CINE e în poză, UNDE a fost făcută, CE se întâmpla, când e relevant pentru articol.
 
 REGULI:
-1. Scrie UN SINGUR rând în română, max 120 caractere.
-2. Descrie EXACT ce vezi în poză + persoane/locuri identificate din context.
-3. Nu folosi formule de șablon ("Imagine cu...", "Foto cu...").
-4. Nu repeta titlul articolului — completează-l cu detalii vizuale.
-5. Folosește diacritice corecte (ă, â, î, ș, ț).
-6. Fără semne de punctuație finală decât dacă e o frază completă.
-7. Dacă poza arată un obiect / scenă generică (clădire, hârtie, drum), descrie obiectul + contextul.
+1. Folosește contextul articolului pentru a identifica persoane/locuri/evenimente.
+2. Descrie ACȚIUNEA, nu setting-ul. „X discută cu Y la Cluj" e mai bun decât „X într-o încăpere".
+3. Lungime: 40-140 caractere. Mai scurt = mai puțin informativ; mai lung = banner copy.
+4. Diacritice corecte (ă, â, î, ș, ț).
+5. Fără șabloane („Imagine cu...", „Foto:", „Sursa:").
+6. Nu repeta titlul articolului identic — adaugă context vizual nou.
+7. DACĂ poza e prea generică (un obiect oarecare, o clădire neidentificabilă, un fundal abstract) și nu poți spune nimic util cu context, returnează exact: „SKIP".
+8. NU inventa date care nu se văd ori nu sunt în context.
 
-EXEMPLE BUNE:
-- „Mette Frederiksen vorbește la o conferință de presă în Parlament"
-- „Cristian Mungiu pe covorul roșu la Festivalul de la Cannes"
-- „Sediul Guvernului României la Palatul Victoria, vedere frontală"
-- „Document oficial cu antetul Casei Regale a Danemarcei"
+EXEMPLE BUNE (acțiune + identificare):
+- „Mette Frederiksen susține un discurs în Folketing, parlamentul Danemarcei, după consultările cu regele"
+- „Cristian Mungiu pe covorul roșu la Cannes 2026, alături de echipa filmului Fjord"
+- „Bolojan și Frederiksen la o întâlnire bilaterală la sediul Guvernului din București"
+- „Protestatari spanioli cu pancarte anti-Sánchez în piața Sol din Madrid"
 
-NU bune:
-- „Imagine din articol" (prea generic)
+EXEMPLE PROASTE:
+- „Mette Frederiksen vorbind într-o încăpere cu lambriuri" (descrie doar setting-ul, niciun context)
+- „O persoană la microfon" (prea generic)
 - „Politica" (un cuvânt)
-- „Frederiksen [titlu repetat din articol]"`;
+- Titlul articolului repetat identic
+
+DACĂ NU POȚI fi specific, scrie „SKIP".`;
 
 interface CaptionArgs {
   imageUrl: string;
@@ -46,14 +52,13 @@ interface CaptionArgs {
 export async function captionImage(args: CaptionArgs): Promise<string | null> {
   try {
     const groq = getGroqClient();
-    const userText = `Articol: „${args.articleTitle}"\n${
-      args.articleExcerpt ? `Context: ${args.articleExcerpt.slice(0, 300)}\n` : ""
-    }Scrie un subtitlu scurt (max 120 caractere, în română) care descrie EXACT ce e în această poză.`;
+    const userText = `ARTICOL: „${args.articleTitle}"
+
+${args.articleExcerpt ? `CONTEXT FULL:\n${args.articleExcerpt.slice(0, 600)}\n\n` : ""}Scrie subtitlul pentru această poză din articol. Combinează ce vezi cu contextul. Dacă poza nu e specifică suficient ca să spui ceva util, scrie „SKIP".`;
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL_VISION,
       messages: [
-        // Vision API: system MUST come first; image+text în user.
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
@@ -63,19 +68,26 @@ export async function captionImage(args: CaptionArgs): Promise<string | null> {
           ],
         },
       ],
-      temperature: 0.3,
-      max_tokens: 80,
+      temperature: 0.2,
+      max_tokens: 120,
     });
 
     const raw = completion.choices[0]?.message?.content?.trim();
     if (!raw) return null;
-    // Clean: scoate ghilimele din jur, line breaks, trailing dot
+    // Cleanup
     const cleaned = raw
       .replace(/^["„""']+|["„""']+$/g, "")
       .replace(/\n+/g, " ")
       .replace(/\.$/, "")
       .trim();
-    if (cleaned.length < 5 || cleaned.length > 200) return null;
+    // Skip semnal de la AI — nu putea fi specific
+    if (/^skip$/i.test(cleaned)) return null;
+    // Skip prea scurt sau prea lung
+    if (cleaned.length < 25 || cleaned.length > 200) return null;
+    // Skip generic patterns
+    if (/^(?:imagine|foto|persoană|persoane|o persoană|un obiect|o clădire)\b/i.test(cleaned)) {
+      return null;
+    }
     return cleaned;
   } catch {
     return null;
