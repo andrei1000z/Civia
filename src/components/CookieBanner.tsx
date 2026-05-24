@@ -182,29 +182,33 @@ export function CookieBanner() {
 
           {!showCustom && (
             <>
-              <div className="flex flex-wrap gap-1.5 md:gap-2">
+              {/* 2026-05-24 (P1.153) WCAG 2.2 + EU Austria 2025: touch
+                  target min 44px mobile; Accept/Respinge parity vizuală
+                  (Austria high court — colored Accept + gray Reject =
+                  GDPR parity violation). Acum ambele au aceeași prominență
+                  vizuală. */}
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={acceptAll}
-                  className="h-8 md:h-9 px-3 md:px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-[11px] md:text-xs font-medium hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
+                  className="h-11 md:h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] transition-colors"
                 >
-                  Accept
+                  Accept tot
                 </button>
                 <button
                   type="button"
                   onClick={rejectAll}
-                  className="h-8 md:h-9 px-3 md:px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[11px] md:text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
+                  className="h-11 md:h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] text-xs font-medium hover:bg-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
                 >
-                  Respinge
+                  Respinge tot
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCustom(true)}
-                  className="h-8 md:h-9 px-2 md:px-3 rounded-[var(--radius-xs)] text-[11px] md:text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-1 transition-colors"
+                  className="h-11 md:h-9 px-3 rounded-[var(--radius-xs)] text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-1 transition-colors"
                 >
-                  <Settings2 size={12} aria-hidden="true" />
-                  <span className="md:hidden">Setări</span>
-                  <span className="hidden md:inline">Personalizează</span>
+                  <Settings2 size={14} aria-hidden="true" />
+                  <span>Personalizează</span>
                 </button>
               </div>
               <p className="hidden md:block text-[10px] text-[var(--color-text-muted)] mt-2">

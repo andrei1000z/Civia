@@ -36,7 +36,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-sm",
+  // 2026-05-24 (P1.152) WCAG 2.2 touch target — sm mobil minimum 40px (h-10)
+  // care scade la 36px (h-9) doar de la sm: (≥640px desktop).
+  sm: "h-10 sm:h-9 px-3 text-sm",
   md: "h-11 px-5 text-sm",
   lg: "h-13 px-7 text-base",
 };

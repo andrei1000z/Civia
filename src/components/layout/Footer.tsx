@@ -44,7 +44,7 @@ export function Footer() {
               <br />
               Făcută cu <span className="text-rose-500" aria-label="dragoste">❤️</span> pentru o Românie ca afară.
             </p>
-            <p className="text-[11px] text-[var(--color-text-muted)] inline-flex items-center gap-1.5">
+            <p className="text-xs text-[var(--color-text-muted)] inline-flex items-center gap-1.5">
               <span aria-hidden="true">🇪🇺</span>
               <span>Date stocate în UE · GDPR-compliant</span>
             </p>
@@ -60,6 +60,7 @@ export function Footer() {
               <li><Link href="/dezvoltatori" className={linkCls}>API dezvoltatori</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
+              <li><Link href="/legal/accesibilitate" className={linkCls}>Declarație accesibilitate</Link></li>
               <li><CookiePreferencesButton /></li>
             </ul>
           </div>
@@ -76,7 +77,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Bluesky — @civiaro.bsky.social"
-                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
+                  className="inline-flex items-center gap-2 h-11 sm:h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
                 >
                   <Image
                     src="/bluesky.png"
@@ -98,7 +99,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   title="eYou — @civia"
-                  className="inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
+                  className="inline-flex items-center gap-2 h-11 sm:h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
                 >
                   <Image
                     src="/eyou.webp"

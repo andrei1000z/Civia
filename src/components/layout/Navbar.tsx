@@ -145,7 +145,7 @@ export function Navbar() {
               with all guides inline; we removed that — clicking the
               link goes straight to /ghiduri where the full catalog
               lives, less nav noise. */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav aria-label="Navigare principală" className="hidden lg:flex items-center gap-1">
             {prefixedLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
               return (
@@ -225,10 +225,11 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* 2026-05-24 (P1.161-162) WCAG touch target: 11 mobile, 10 desktop. */}
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="w-10 h-10 inline-flex items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="w-11 h-11 sm:w-10 sm:h-10 inline-flex items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               aria-label="Caută (Ctrl+K)"
               title="Caută (Ctrl+K)"
             >
@@ -239,9 +240,10 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden w-10 h-10 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text)]"
+              className="lg:hidden w-11 h-11 sm:w-10 sm:h-10 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               aria-label="Deschide meniul"
               aria-expanded={mobileOpen}
+              aria-haspopup="dialog"
             >
               <Menu size={20} />
             </button>
@@ -273,7 +275,7 @@ export function Navbar() {
             <X size={20} />
           </button>
         </div>
-        <nav className="container-narrow py-6 flex flex-col gap-1">
+        <nav aria-label="Meniu mobil" className="container-narrow py-6 flex flex-col gap-1">
           {prefixedLinks.map((link, i) => (
             <Link
               key={link.href}

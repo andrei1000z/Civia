@@ -103,8 +103,9 @@ export function MarkdownEditor({
     wrap("[", `](${url})`, "text link");
   }
 
+  // 2026-05-24 (P1.154) WCAG touch target: h-10 mobile (40px) / h-8 desktop.
   const btn =
-    "h-8 px-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 transition-colors flex items-center gap-1 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
+    "h-10 sm:h-8 px-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 transition-colors flex items-center gap-1 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
 
   return (
     <div className="space-y-2">

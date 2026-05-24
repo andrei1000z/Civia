@@ -10,6 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { CookieBanner } from "@/components/CookieBanner";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { AlertBanner } from "@/components/AlertBanner";
 import { Analytics } from "@/components/Analytics";
 import { NavProgress } from "@/components/NavProgress";
@@ -250,6 +251,9 @@ export default function RootLayout({
               <Navbar />
               <main id="main-content" className="flex-1 flex flex-col">{children}</main>
               <Footer />
+              {/* 2026-05-24 (P1.321) — banner ofline non-deferred, trebuie
+                  vizibil instant când conexiunea pică, nu după idle. */}
+              <OfflineIndicator />
               {/* Heavy interactive widgets — mount only after first paint + idle.
                   Shaves ~300ms off LCP on slow devices. */}
               <DeferredClientMount>

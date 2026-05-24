@@ -50,7 +50,7 @@ function CategoryBadge({ categorie }: { categorie: ActualizareCategorie }) {
   const meta = CATEGORIE_META[categorie];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] sm:text-[10px] font-bold uppercase tracking-wider shrink-0"
       style={{ background: meta.bg, color: meta.color }}
       aria-label={`Categorie: ${meta.label}`}
     >
@@ -167,7 +167,7 @@ export default async function ActualizariPage() {
                       v{actualizare.versiune}
                     </span>
                     {actualizare.major && (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-500">
+                      <span className="inline-flex items-center gap-1 text-[11px] sm:text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-500">
                         <Sparkles size={10} aria-hidden="true" />
                         Release major
                       </span>
