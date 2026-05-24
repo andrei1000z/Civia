@@ -2,9 +2,15 @@ name: Fetch Știri RSS
 
 on:
   schedule:
-    # La fiecare oră, la minutul 10
-    - cron: '10 * * * *'
-  workflow_dispatch: # permite rulare manuală din GitHub UI
+    # 3 încercări pe oră (la :00, :20, :40) — GitHub Actions cron jitterează
+    # 5-30 min uneori, plus rulări individuale pot eșua (HTTP 500 din RSS
+    # parsing, timeout, etc.). Cu 3 schedule-uri/oră garantăm efectiv ≤1h
+    # gap între fetch-uri reușite. Upsert e idempotent, RSS feed-urile sunt
+    # OK cu polling de la 20min (norma).
+    - cron: '0 * * * *'
+    - cron: '20 * * * *'
+    - cron: '40 * * * *'
+  workflow_dispatch: # rulare manuală din GitHub UI
 
 jobs:
   fetch:
@@ -14,11 +20,20 @@ jobs:
     steps:
       - name: Trigger stiri fetch
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
+          # --retry pentru tranzitorii (Vercel cold-start, RSS timeout, 5xx).
+          # 3 retry-uri × 10s = max ~30s tail latency, suficient pentru
+          # recuperare la failure-uri scurte. Dacă tot pică, fail-fast ca
+          # CI să vadă, dar următoarea fereastră (20min) probabil reușește.
+          response=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
             -X POST "https://www.civia.ro/api/stiri/fetch" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
           echo "HTTP status: $response"
+          echo "Body (first 500 chars):"
+          head -c 500 /tmp/body.txt || true
+          echo
           if [ "$response" != "200" ]; then
-            echo "::error::Fetch returned HTTP $response — fail-fast ca CI sa vada problema"
+            echo "::error::Fetch returned HTTP $response după 3 retries — următoarea rulare e în max 20 min"
             exit 1
           fi
