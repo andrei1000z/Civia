@@ -122,7 +122,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="text-lg md:text-xl text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
-              <strong className="text-white">Faci o poză. Scrii 3 cuvinte. Apeși trimite.</strong>{" "}
+              <strong className="text-white">Faci o poză. Scrii câteva fraze. Apeși trimite.</strong>{" "}
               Restul facem noi — generăm sesizarea formală, o trimitem la primărie
               cu temei legal OG 27/2002 și te anunțăm de fiecare dată când răspund.
             </p>

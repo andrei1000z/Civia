@@ -11,10 +11,15 @@ export type AuthorityKind =
   | "apa_nova"
   | "necunoscut";
 
+export type Severity = "low" | "medium" | "high" | "critical";
+
 export interface VisionRoutingResult {
   tip: string; // unul din SESIZARE_TIPURI.value
   authority: AuthorityKind;
   confidence: number; // 0-100
+  // 2026-05-24 (P2.566) — severity auto-attribuit de AI Vision.
+  // "critical"/"high" → featured priority pe /sesizari-publice.
+  severity?: Severity;
   description: string; // o fraza despre ce se vede
   evidence: string[]; // bullet-uri scurte
   fallback?: boolean;
@@ -24,10 +29,17 @@ const SYSTEM_PROMPT = `Esti un router civic. Vezi o poza dintr-o sesizare cetate
 {
   "tip": "groapa|trotuar|iluminat|copac|gunoi|parcare|stalpisori|canalizare|semafor|trecere_pietoni|graffiti|mobilier|zgomot|animale|transport|afisaj|altele",
   "authority": "primarie_sector|primarie_municipiu|primarie_judet|cnair|salubritate|politia_locala|termoenergetica|apa_nova|necunoscut",
+  "severity": "low|medium|high|critical",
   "confidence": number 0-100,
   "description": "o fraza scurta in romana despre ce se vede",
   "evidence": ["bullet 1", "bullet 2"]
 }
+
+Severity rules (P2.566 — 2026-05-24):
+- "critical": pericol IMINENT viața/siguranță (groapă mare în șosea, copac căzut pe carosabil, scurgere gaz, semafor stins la intersecție mare, cablu electric pe jos, inundație activă)
+- "high": pericol cert dar nu iminent (stâlpișori distruși cu mașini pe trotuar, gropi mari, trecere pietoni fără marcaj la școală/spital, animale comunitare agresive)
+- "medium": problemă semnificativă, nu pericol imediat (parcare ilegală tipică, gunoi împrăștiat, iluminat parțial defect, graffiti banal)
+- "low": nuisance estetic sau minor (afișaj ilegal, mobilier deteriorat, gunoi minor)
 
 Reguli (rewrite 5/22/2026 — bug #7 + #9):
 
@@ -161,10 +173,17 @@ export async function routeFromImage(imageUrl: string): Promise<VisionRoutingRes
     const rawTip = typeof parsed.tip === "string" ? parsed.tip : "altele";
     const tip = TIP_ALIASES[rawTip] ?? rawTip;
 
+    const validSeverities: Severity[] = ["low", "medium", "high", "critical"];
+    const parsedSeverity =
+      typeof parsed.severity === "string" && validSeverities.includes(parsed.severity as Severity)
+        ? (parsed.severity as Severity)
+        : "medium"; // safe fallback
+
     const result: VisionRoutingResult = {
       tip,
       authority: typeof parsed.authority === "string" ? parsed.authority : "necunoscut",
       confidence: typeof parsed.confidence === "number" ? Math.max(0, Math.min(100, parsed.confidence)) : 50,
+      severity: parsedSeverity,
       description: typeof parsed.description === "string" ? parsed.description.slice(0, 200) : "",
       evidence: Array.isArray(parsed.evidence)
         ? parsed.evidence

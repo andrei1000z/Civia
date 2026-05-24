@@ -297,6 +297,88 @@ export function GovernmentServiceJsonLd({
 }
 
 /**
+ * Petition schema — pentru /petitii/[slug]. Google nu are tip oficial
+ * „Petition", deci folosim CreativeWork extended cu metadata civică
+ * + schema.org/Action pentru semnare. (P2.604 — 2026-05-24)
+ */
+export function PetitionJsonLd({
+  title,
+  description,
+  url,
+  signatureCount,
+  targetSignatures,
+  createdAt,
+  category,
+  externalUrl,
+}: {
+  title: string;
+  description: string;
+  url: string;
+  signatureCount?: number;
+  targetSignatures?: number;
+  createdAt: string;
+  category?: string;
+  externalUrl?: string;
+}) {
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "@id": url,
+    name: title,
+    description: description.slice(0, 280),
+    url,
+    dateCreated: createdAt,
+    inLanguage: "ro-RO",
+    isAccessibleForFree: true,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    // Categorie civică (educatie, sanatate, mediu, etc.)
+    ...(category ? { genre: category } : {}),
+    // Sursa externă (Declic, Avaaz, etc.) când e cazul
+    ...(externalUrl ? { isBasedOn: externalUrl } : {}),
+    // Action — schema.org pattern pentru „signable" content
+    potentialAction: {
+      "@type": "EndorseAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: url,
+        actionPlatform: ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"],
+      },
+      ...(signatureCount !== undefined ? { agent: { "@type": "AggregateRating", ratingCount: signatureCount } } : {}),
+    },
+    // Speakable pentru AI/voice
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", ".petitie-summary"],
+    },
+  };
+
+  // InteractionStatistic pentru signature count (Google indexes acest pattern)
+  if (signatureCount !== undefined) {
+    schema.interactionStatistic = {
+      "@type": "InteractionCounter",
+      interactionType: { "@type": "EndorseAction" },
+      userInteractionCount: signatureCount,
+    };
+  }
+
+  // Goal/target ca metric vizibil
+  if (targetSignatures !== undefined) {
+    schema.contentReferenceTime = createdAt; // workaround — nu există „goal" în schema.org
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
+    />
+  );
+}
+
+/**
  * ItemList for collection pages — sesizări publice, știri feed, întreruperi
  * active. Google can use this to render "List of N items" snippets.
  */

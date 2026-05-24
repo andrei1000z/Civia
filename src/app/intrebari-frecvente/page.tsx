@@ -196,6 +196,59 @@ const SECTIUNI: FAQSection[] = [
       },
     ],
   },
+  // 2026-05-24 (P2.466) — adăugate secțiuni Proteste + Întreruperi care lipseau.
+  {
+    titlu: "Proteste",
+    emoji: "📢",
+    items: [
+      {
+        q: "Cum propun un protest pe Civia?",
+        a: "Pe /proteste/propune completezi: titlu, locație (oraș + adresă), data + ora, motiv, demands (1-5 puncte). După moderare admin (24-48h), apare public la /proteste.",
+      },
+      {
+        q: "Civia organizează proteste?",
+        a: "Nu. Civia doar AGREGĂ proteste anunțate public + permite cetățenilor să propună. Organizarea reală e responsabilitatea voastră. Civia oferă vizibilitate + harta + calendar.",
+      },
+      {
+        q: "Există obligație legală de a anunța primăria?",
+        a: "Da, conform Legii 60/1991 (modificată). Adunările publice trebuie anunțate la primărie cu minim 3 zile în avans. Civia NU înlocuiește această notificare oficială.",
+      },
+      {
+        q: `Ce e secțiunea „Cum a fost" pe protest?`,
+        a: "După eveniment, organizatorii pot adăuga retroactiv: număr participanți estimat, poze/video, presa care a relatat, lista cu autorități prezente. Devine arhivă istorică.",
+      },
+      {
+        q: "Pot adăuga eveniment online sau e doar fizic?",
+        a: "Doar evenimente fizice cu loc + oră fixe. Pentru petiții online → folosește /petitii.",
+      },
+    ],
+  },
+  {
+    titlu: "Întreruperi utilități",
+    emoji: "⚡",
+    items: [
+      {
+        q: "De unde aduceți datele despre întreruperi?",
+        a: "Scraping automat de pe site-urile oficiale: Apa Nova, Electrica, Distrigaz, ANRE etc. + cetățeni care raportează manual. Verificare AI înainte de publicare.",
+      },
+      {
+        q: "Pot raporta o întrerupere?",
+        a: "Da, pe /intreruperi/submit. Specifici: tip (apă/gaz/curent/încălzire), zonă (stradă + sector), durată estimată, dovadă (poză foto/screenshot anunț).",
+      },
+      {
+        q: "Primesc notificări când e întrerupere în zona mea?",
+        a: "Da, dacă activezi notificările în /cont → Notificări. Push browser + email opțional. Alegi raza (500m, 1km, sector întreg).",
+      },
+      {
+        q: "Ce arată calendarul de întreruperi?",
+        a: "Lucrări programate (ex: înlocuire conducte, mentenanță rețea). Distincte de defecte spontane. Civia agregă datele oficiale ANRE + furnizori și le pune pe hartă + calendar.",
+      },
+      {
+        q: "Datele sunt în timp real?",
+        a: "Aproape. Re-fetch la fiecare oră de la furnizori. Pentru întreruperi spontane: dependent de cât rapid raportează furnizorul (de obicei 5-30 min).",
+      },
+    ],
+  },
 ];
 
 // Flatten ALL FAQs for schema

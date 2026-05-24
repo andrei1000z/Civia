@@ -5,11 +5,11 @@ import Link from "next/link";
 import { AlertTriangle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
 
 /**
- * Auto-retry cu exponential backoff. Raport analytics 5/8/2026 a aratat
- * 8 rage clicks pe „Reincearca" pe aceasta pagina — utilizatorii dadeau
- * retry repetat cand DB-ul era jos. Acum retry-ul se face automat in
- * fundal (3 incercari, 2s/4s/8s spacing) inainte sa mai vada user-ul
- * eroarea, plus si „Reincearca" manual ramane pentru cazuri persistente.
+ * Auto-retry cu exponential backoff. Raport analytics 5/8/2026 a arătat
+ * 8 rage clicks pe „Reîncarcă" pe această pagină — utilizatorii dădeau
+ * retry repetat când DB-ul era jos. Acum retry-ul se face automat în
+ * fundal (3 încercări, 2s/4s/8s spacing) înainte să mai vadă user-ul
+ * eroarea, plus și „Reîncarcă" manual rămâne pentru cazuri persistente.
  */
 // Auto-retry DISABLED 5/21/2026 — Firefox renderer crash raportat user
 // la orice retry rapid. Dacă pagina aruncă, ARATĂM eroarea imediat și

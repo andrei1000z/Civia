@@ -61,7 +61,7 @@ export default async function PrimariePage() {
     ? `${profile.authority_sector} (București)`
     : county?.name ?? "Necunoscut";
 
-  // Pull sesizari relevante pentru aceasta primarie (RLS deja filtreaza).
+  // Pull sesizări relevante pentru această primărie (RLS deja filtrează).
   const admin = createSupabaseAdmin();
   let q = admin
     .from("sesizari")
