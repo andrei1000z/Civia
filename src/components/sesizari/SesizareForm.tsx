@@ -737,6 +737,13 @@ export function SesizareForm() {
           ? d.descriere
           : d.descriere,
       }));
+      // 2026-05-25 #7 — explicit funnel step după AI improve success
+      // (separat de „ai-improve" care fires la click; asta fires la
+      // text efectiv generat ⇒ measures success rate).
+      trackFunnelStep("sesizare-create", "formal-text-generated", {
+        textLength: formalText.length,
+        hasTitle: aiTitle ? 1 : 0,
+      });
     } catch (e) {
       if (!silent) setError(e instanceof Error ? e.message : "Serviciul de generare a textului e temporar indisponibil");
     } finally {
@@ -1023,6 +1030,15 @@ export function SesizareForm() {
   }, [canSubmit, submitted]);
 
   const handleSubmit = async () => {
+    // 2026-05-25 #7 — funnel step „submit-clicked" capturat ÎNAINTE de
+    // validare. Diferit de „submitted" (după success POST) — măsoară
+    // câți users se opresc la validation errors vs câți chiar trimit.
+    trackFunnelStep("sesizare-create", "submit-clicked", {
+      hasPhotos: imagini.length > 0 ? 1 : 0,
+      hasFormalText: data.formal_text ? 1 : 0,
+      hasEmail: data.email ? 1 : 0,
+      tipPresent: data.tip ? 1 : 0,
+    });
     // 5/22/2026 — tip NU mai e obligatoriu. Daca user submite fara tip,
     // AI clasifica backend pe baza descrierii (custom_category). Analytics
     // arata 83% abandon la tip select — barrier removed.
@@ -1030,6 +1046,8 @@ export function SesizareForm() {
       setData((d) => ({ ...d, tip: "altele" }));
     }
     if (!canSubmit) {
+      // 2026-05-25 #7 — track validation drop-off step
+      trackFunnelStep("sesizare-create", "validation-failed");
       const missing: string[] = [];
       if (data.nume.length < 2) missing.push("Numele tău");
       if (data.adresa.trim().length < 3) missing.push("Adresa ta de domiciliu");

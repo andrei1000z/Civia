@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Megaphone, LogIn } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
-import { trackPetitieSign, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
+import {
+  trackPetitieSign,
+  trackAuthModalOpen,
+  trackFunnelStep,
+} from "@/components/analytics/CiviaTracker";
 
 interface Props {
   petitieId: string;
@@ -23,6 +27,39 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
   const [signed, setSigned] = useState(alreadySigned);
   const [comment, setComment] = useState("");
   const [showComment, setShowComment] = useState(false);
+  const buttonRef = useRef<HTMLDivElement | null>(null);
+  const viewFiredRef = useRef(false);
+  const visibleFiredRef = useRef(false);
+
+  // 2026-05-25 #9 — funnel petitie-sign complet 6 pași.
+  // Step „view" la mount (component renderează ⇒ user vede butonul).
+  useEffect(() => {
+    if (viewFiredRef.current || alreadySigned || !isActive) return;
+    viewFiredRef.current = true;
+    trackFunnelStep("petitie-sign", "view", { slug: petitieSlug });
+  }, [petitieSlug, alreadySigned, isActive]);
+
+  // Step „button-visible" via IntersectionObserver — userul a scrollat
+  // suficient să vadă butonul. Critical pentru funnel: cât % din userii
+  // care intră pe pagina petiției ajung măcar să vadă CTA.
+  useEffect(() => {
+    if (visibleFiredRef.current || alreadySigned || !isActive) return;
+    if (!buttonRef.current) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && !visibleFiredRef.current) {
+            visibleFiredRef.current = true;
+            trackFunnelStep("petitie-sign", "button-visible", { slug: petitieSlug });
+            io.disconnect();
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    io.observe(buttonRef.current);
+    return () => io.disconnect();
+  }, [petitieSlug, alreadySigned, isActive]);
 
   if (!isActive) {
     return (
@@ -47,21 +84,31 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
 
   if (!isLoggedIn) {
     return (
-      <button
-        type="button"
-        onClick={() => {
-          trackAuthModalOpen("petitie-sign");
-          openAuthModal();
-        }}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-      >
-        <LogIn size={16} aria-hidden="true" />
-        Conectează-te ca să semnezi
-      </button>
+      <div ref={buttonRef}>
+        <button
+          type="button"
+          onClick={() => {
+            // 2026-05-25 #8 — auth-required step DISTINCT, killer #1
+            // în funnel (research: drop-off după AI draft).
+            trackFunnelStep("petitie-sign", "auth-required", { slug: petitieSlug });
+            trackAuthModalOpen("petitie-sign");
+            openAuthModal();
+          }}
+          className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+        >
+          <LogIn size={16} aria-hidden="true" />
+          Conectează-te ca să semnezi
+        </button>
+      </div>
     );
   }
 
   const sign = async () => {
+    // 2026-05-25 #9 — sign-clicked înainte de fetch (timing pentru latency).
+    trackFunnelStep("petitie-sign", "sign-clicked", {
+      slug: petitieSlug,
+      hasComment: comment.trim() ? 1 : 0,
+    });
     setSigning(true);
     try {
       const res = await fetch(`/api/petitii/${petitieId}/sign`, {
@@ -70,9 +117,13 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
         body: JSON.stringify({ comment: comment.trim() || null }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Eroare la semnare");
+      if (!res.ok) {
+        trackFunnelStep("petitie-sign", "error", { slug: petitieSlug });
+        throw new Error(json.error || "Eroare la semnare");
+      }
       setSigned(true);
       trackPetitieSign(petitieSlug);
+      trackFunnelStep("petitie-sign", "success", { slug: petitieSlug });
       toast("Mulțumim! Semnătura ta a fost înregistrată.", "success");
       router.refresh();
     } catch (e) {
@@ -83,7 +134,7 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={buttonRef} className="space-y-3">
       {showComment && (
         <textarea
           value={comment}
