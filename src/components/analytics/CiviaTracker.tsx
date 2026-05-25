@@ -3,20 +3,35 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-const VID_KEY = "civia_vid";
+const VID_KEY = "civia_vid"; // session-only marker; NU folosit pentru tracking
 const EXCLUDE_KEY = "civia_exclude_tracking";
 const LANG_FALLBACK = "unknown";
 
+/**
+ * 2026-05-25 #1 — Migrare de la localStorage UUID persistent la
+ * sessionStorage marker. Server-ul folosește acum daily-rotating salted
+ * hash (sha256(salt + host + ip + ua)) ca visitor ID real. Acest token
+ * client-side e DOAR un „request a venit din CiviaTracker" marker —
+ * server-ul îl ignoră pentru tracking, dar îl verifică pentru defense
+ * (zod sanitizeId).
+ *
+ * sessionStorage = se șterge automat la închidere tab → nu persistă
+ * cross-session → outside scope ePrivacy Art. 5(3).
+ *
+ * Sursă: https://plausible.io/blog/legal-assessment-gdpr-eprivacy
+ */
 function getVisitorId(): string {
   try {
-    let vid = localStorage.getItem(VID_KEY);
+    let vid = sessionStorage.getItem(VID_KEY);
     if (!vid) {
-      vid = `v-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
-      localStorage.setItem(VID_KEY, vid);
+      // 16-char hex, identic ca format cu derivedVisitorId server-side.
+      // Server-ul ignoră valoarea; e doar markeur de validitate request.
+      vid = `s${Math.random().toString(16).slice(2, 10)}${Date.now().toString(16).slice(-7)}`.slice(0, 16);
+      sessionStorage.setItem(VID_KEY, vid);
     }
     return vid;
   } catch {
-    return "v-anon";
+    return "s-anon-fallback";
   }
 }
 

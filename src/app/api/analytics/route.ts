@@ -5,6 +5,7 @@ import { sanitizeStr, sanitizeKey, sanitizeId } from "@/lib/analytics/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { referrerSource } from "@/lib/analytics/referrer-source";
+import { deriveVisitorId } from "@/lib/analytics/visitor-id";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -116,6 +117,10 @@ async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>)
     return NextResponse.json({ ok: true, filtered: "bot" });
   }
 
+  // 2026-05-25 #5 — IP folosit DOAR pentru rate-limit key (Redis,
+  // ephemeral 60s window). Nu se loghează, nu se persistă în payload,
+  // nu se asociază cu visitor ID. deriveVisitorId() hash-uiește IP
+  // intern și aruncă raw. Defense structural anti-leak.
   const ip = getClientIp(req);
   // Rate limit pe batch — un user activ poate trimite max 60 batches/min.
   // Cu 30 evenimente per batch înseamnă max 1800 events/min/IP, suficient
@@ -130,6 +135,11 @@ async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>)
   // Cap defensiv pe server: 50 evenimente max (clientul trimite max 30)
   const limited = events.slice(0, 50);
 
+  // 2026-05-25 #1 — derive visitor ID o singură dată per batch (același
+  // request → same IP+UA+host → same hash). Salvăm Redis round-trips
+  // vs apelat în fiecare handleTrack.
+  const batchVisitorId = await deriveVisitorId(req);
+
   let ok = 0;
   let failed = 0;
   for (const ev of limited) {
@@ -139,8 +149,9 @@ async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>)
     }
     try {
       // Reuse handleTrack — pasăm flag _batched ca să sară peste rate-limit
-      // (deja verificat o dată la nivel batch).
-      await handleTrack(req, ev as Record<string, unknown>, true);
+      // (deja verificat o dată la nivel batch). Pasăm și visitorId derivat
+      // ca să nu recalculăm.
+      await handleTrack(req, ev as Record<string, unknown>, true, batchVisitorId);
       ok++;
     } catch {
       failed++;
@@ -149,7 +160,12 @@ async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>)
   return NextResponse.json({ ok: true, processed: ok, failed });
 }
 
-async function handleTrack(req: NextRequest, body: Record<string, unknown>, _batched = false) {
+async function handleTrack(
+  req: NextRequest,
+  body: Record<string, unknown>,
+  _batched = false,
+  derivedVisitorId?: string,
+) {
   if (!analyticsRedis) return NextResponse.json({ ok: true, noop: true });
 
   // 2026-05-25 #2 — Bot filter (skipped când suntem _batched, deja verificat
@@ -165,8 +181,17 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
     if (!rl.success) return NextResponse.json({ ok: false, rateLimited: true }, { status: 429 });
   }
 
-  const visitorId = sanitizeId(body.visitorId);
+  // 2026-05-25 #1 — Daily-rotating salted visitor ID (modelul Plausible).
+  // Suprascriem visitorId-ul de la client cu hash server-side ca să avem
+  // banner-free analytics conform CNIL Sheet 16 + EDPB Guidelines 2/2023.
+  // Clientul îl trimite în continuare pentru compat (folosit la batching
+  // session), dar server-ul nu îl crede. Salt rotează la 24h în Redis;
+  // după rotație, hash-ul devine ireversibil.
+  const visitorId = derivedVisitorId ?? (await deriveVisitorId(req));
   if (!visitorId) return NextResponse.json({ ok: true });
+  // body.visitorId e ignorat — păstrat doar ca semnal că request-ul vine
+  // din CiviaTracker (validation rămâne pe sanitizeId pentru defense).
+  if (!sanitizeId(body.visitorId)) return NextResponse.json({ ok: true });
 
   // Resolve user id server-side from Supabase session — never trust client.
   const sessionUser = await getSessionUser();
