@@ -120,7 +120,29 @@ const BATCH_MAX_SIZE = 30;
 let batchBuffer: TrackPayload[] = [];
 let batchTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function flushBatch(): Promise<void> {
+// 2026-05-25 #24 — Gzip compression pentru batch-uri >2KB.
+// Compression Streams API e nativ în browsers din 2023 (Chrome 80+,
+// Firefox 113+, Safari 16.4+). Sub 2KB nu merită (overhead > savings).
+// Peste 2KB compresie 60-80% (JSON event arrays = repetitive shape).
+// sendBeacon NU suportă Content-Encoding manual; folosim fetch keepalive
+// pentru batch-uri compresate. Trade-off: pagehide unload-time skip
+// compression (always sendBeacon, raw JSON) ca să nu pierdem events.
+const GZIP_THRESHOLD_BYTES = 2 * 1024;
+
+async function gzipBlob(body: string): Promise<Blob | null> {
+  try {
+    // Type guard pentru browsers vechi.
+    if (typeof CompressionStream === "undefined") return null;
+    const stream = new Blob([body], { type: "application/json" })
+      .stream()
+      .pipeThrough(new CompressionStream("gzip"));
+    return await new Response(stream).blob();
+  } catch {
+    return null;
+  }
+}
+
+async function flushBatch(opts: { onUnload?: boolean } = {}): Promise<void> {
   if (batchBuffer.length === 0) return;
   const events = batchBuffer;
   batchBuffer = [];
@@ -130,6 +152,28 @@ async function flushBatch(): Promise<void> {
   }
   try {
     const body = JSON.stringify({ action: "track-batch", events });
+    // Pe unload: sendBeacon mereu, raw JSON (max prioritate să ajungă).
+    if (opts.onUnload && navigator.sendBeacon) {
+      navigator.sendBeacon("/api/analytics", new Blob([body], { type: "application/json" }));
+      return;
+    }
+    // Body mare: încearcă gzip. Câștig 60-80%.
+    if (body.length > GZIP_THRESHOLD_BYTES) {
+      const gzipped = await gzipBlob(body);
+      if (gzipped) {
+        await fetch("/api/analytics", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+          },
+          body: gzipped,
+          keepalive: true,
+        });
+        return;
+      }
+    }
+    // Default: sendBeacon dacă există, altfel fetch keepalive.
     if (navigator.sendBeacon) {
       navigator.sendBeacon("/api/analytics", new Blob([body], { type: "application/json" }));
       return;
@@ -160,17 +204,47 @@ async function send(payload: TrackPayload): Promise<void> {
 
 // Flush la pagehide / visibilitychange ca să nu pierdem evenimente
 // când userul închide tab-ul. Înregistrat o singură dată per pagină.
+// 2026-05-25 #24 — paseăm onUnload:true ca să fie sendBeacon raw (no gzip,
+// max prioritate să ajungă în background-state browser).
 if (typeof window !== "undefined") {
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flushBatch();
+    if (document.visibilityState === "hidden") flushBatch({ onUnload: true });
   });
-  window.addEventListener("pagehide", flushBatch);
+  window.addEventListener("pagehide", () => flushBatch({ onUnload: true }));
 }
 
 export function trackCustomEvent(eventType: string, extra: Record<string, string | number> = {}): void {
   if (typeof window === "undefined") return;
   if (isExcluded()) return;
   send({ action: "track", visitorId: getVisitorId(), eventType, ...extra });
+}
+
+/**
+ * 2026-05-25 #29 — Deterministic visitor-hash sampler. Pentru când
+ * traffic depășește 100k pv/zi, sample 20% pentru web-vitals NOISY
+ * (LCP good, CLS good, FCP). Bad experiences (poor INP/LCP) și
+ * erorile rămân 100% — acolo e signal acțional.
+ *
+ * Activat doar dacă NEXT_PUBLIC_ANALYTICS_SAMPLE=on în env. Default:
+ * 100% capture (sub pragul de cost).
+ *
+ * Hash stable per visitor → același user mereu IN sau OUT (nu skew
+ * per-user). djb2 hash, simple, edge-compatible.
+ */
+function isInVitalsSample(rating: "good" | "needs-improvement" | "poor"): boolean {
+  // Bad experiences ÎNTOTDEAUNA capturate — sursa de acțiune.
+  if (rating !== "good") return true;
+  // Sampling enabled doar via env flag (default off pentru visibility max).
+  if (typeof process === "undefined" || process.env.NEXT_PUBLIC_ANALYTICS_SAMPLE !== "on") {
+    return true;
+  }
+  const vid = getVisitorId();
+  let h = 5381;
+  for (let i = 0; i < vid.length; i++) {
+    h = (h * 31 + vid.charCodeAt(i)) | 0;
+  }
+  // 20% sample stable: hash mod 5 === 0
+  return Math.abs(h) % 5 === 0;
 }
 
 // Web Vitals buckets — per web.dev thresholds. Rating affects aggregation.
@@ -491,6 +565,10 @@ export function CiviaTracker(): null {
       // poisoning the p95.
       if (!Number.isFinite(value) || value < 0 || value > 300_000) return;
       const rating = webVitalRating(name, value);
+      // 2026-05-25 #29 — deterministic sampling pentru vitals „good"
+      // doar dacă NEXT_PUBLIC_ANALYTICS_SAMPLE=on. Bad experiences (poor/
+      // needs-improvement INP/LCP/CLS) ÎNTOTDEAUNA 100%.
+      if (!isInVitalsSample(rating)) return;
       send({
         action: "track",
         visitorId: getVisitorId(),
@@ -620,6 +698,38 @@ export function CiviaTracker(): null {
       }
     });
 
+    // ── #17 LoAF (Long Animation Frames, Chrome 123+) ────────────────
+    // Tracking pentru atribuirea INP slab: care SCRIPT a blocat frame-ul.
+    // Salvăm cel mai prost LoAF (blockingDuration > 50ms) pentru a fi
+    // trimis împreună cu INP la flush. Admin vede direct: „INP slab pe
+    // /petitii cauzat de petitii-helpers.ts:248 onSelect()".
+    interface LoAFScriptInfo {
+      sourceURL?: string;
+      sourceFunctionName?: string;
+      duration: number;
+      forcedStyleAndLayoutDuration?: number;
+    }
+    interface LoAFEntry extends PerformanceEntry {
+      blockingDuration: number;
+      scripts?: LoAFScriptInfo[];
+    }
+    let worstLoaf: { blocking: number; script: string; fn: string } | null = null;
+    observe("long-animation-frame", (entries) => {
+      for (const e of entries as LoAFEntry[]) {
+        if (e.blockingDuration < 50) continue;
+        if (worstLoaf && worstLoaf.blocking >= e.blockingDuration) continue;
+        // Pick longest script in the frame
+        const longest = (e.scripts ?? [])
+          .slice()
+          .sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0))[0];
+        worstLoaf = {
+          blocking: e.blockingDuration,
+          script: (longest?.sourceURL ?? "").slice(-60),
+          fn: (longest?.sourceFunctionName ?? "").slice(0, 40),
+        };
+      }
+    });
+
     function computeINP(): number {
       const sorted = [...interactionMap.values()].sort((a, b) => b - a);
       if (sorted.length === 0) return 0;
@@ -656,7 +766,17 @@ export function CiviaTracker(): null {
       const inpValue = computeINP();
       if (inpValue > 0 && !reported.has("INP")) {
         reported.add("INP");
-        report("INP", inpValue, { interactionCount: interactionMap.size });
+        const inpExtra: Record<string, string | number> = {
+          interactionCount: interactionMap.size,
+        };
+        // #17 Atașăm worst LoAF la INP poor — diagnostic acțional.
+        // Send doar dacă INP > 200ms (slabe interacțiuni); altfel noise.
+        if (worstLoaf && inpValue > 200) {
+          inpExtra.loafBlocking = worstLoaf.blocking;
+          inpExtra.loafScript = worstLoaf.script || "(unknown)";
+          inpExtra.loafFn = worstLoaf.fn || "(anonymous)";
+        }
+        report("INP", inpValue, inpExtra);
       }
     };
 
@@ -677,6 +797,7 @@ export function CiviaTracker(): null {
       clsSessionValue = 0;
       clsSessionEntries = [];
       interactionMap.clear();
+      worstLoaf = null; // #17 reset LoAF state pe bfcache
       reported.clear();
     };
     document.addEventListener("visibilitychange", onVis);

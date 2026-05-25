@@ -19,8 +19,12 @@ Sentry.init({
     }
     return 0.01;
   },
+  // 2026-05-25 #30 — replays reduced: 0% baseline (cost), 0.1 pe erori
+  // (per research Datadog + Sentry pricing guide). 0.5 era over-spec:
+  // 1 din 2 erori capturate cu video înseamnă cost dublu pe error events
+  // în Sentry. 0.1 = 1 din 10, suficient pentru reproducere fără bloat.
   replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 0.5,
+  replaysOnErrorSampleRate: 0.1,
   debug: false,
   enabled: process.env.NODE_ENV === "production",
   sendDefaultPii: false,

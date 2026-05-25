@@ -1139,6 +1139,25 @@ async function handleExclude(body: Record<string, unknown>) {
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * 2026-05-25 #24 — Decompresie gzip pentru batch-uri mari.
+ * Compression Streams API e disponibil în Node 18+ (runtime nodejs)
+ * și nativ în Edge runtime. Fallback la pcall: dacă header lipsește,
+ * citim normal JSON.
+ */
+async function parseRequestBody(req: NextRequest): Promise<Record<string, unknown>> {
+  const enc = req.headers.get("content-encoding")?.toLowerCase();
+  if (enc !== "gzip") {
+    // Default path — Next.js parsează JSON normal.
+    return (await req.json()) as Record<string, unknown>;
+  }
+  // Gzipped body: pipe prin DecompressionStream Web API (works în Node 18+ + Edge).
+  if (!req.body) throw new Error("Empty body");
+  const decompressed = req.body.pipeThrough(new DecompressionStream("gzip"));
+  const text = await new Response(decompressed).text();
+  return JSON.parse(text) as Record<string, unknown>;
+}
+
 export async function POST(req: NextRequest) {
   // Origin check (CSRF) — allow same-origin and whitelisted.
   const origin = req.headers.get("origin");
@@ -1148,7 +1167,7 @@ export async function POST(req: NextRequest) {
 
   let body: Record<string, unknown> = {};
   try {
-    body = (await req.json()) as Record<string, unknown>;
+    body = await parseRequestBody(req);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
