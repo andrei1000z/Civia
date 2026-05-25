@@ -17,11 +17,13 @@ export const dynamic = "force-static";
 
 export default function CookiePolicyPage() {
   return (
-    <>
+    <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <PageHero
         title="Politica de cookies"
         icon={Cookie}
         gradient={HERO_GRADIENT.authority}
+        backHref="/"
+        backLabel="Înapoi acasă"
         description={
           <>
             Folosim cookies <strong>strict necesare</strong> pentru autentificare și{" "}
@@ -31,7 +33,7 @@ export default function CookiePolicyPage() {
         tagline="Transparență ePrivacy + GDPR"
       />
 
-      <div className="container-narrow space-y-6 pb-16 max-w-3xl">
+      <div className="space-y-4 mt-6">
         <Section title="1. Ce sunt cookies?">
           <p>
             Cookies sunt fișiere mici de text salvate pe dispozitivul tău când vizitezi
@@ -132,7 +134,7 @@ export default function CookiePolicyPage() {
           Versiune: 2.0 · Ultima actualizare: 24 mai 2026
         </p>
       </div>
-    </>
+    </div>
   );
 }
 

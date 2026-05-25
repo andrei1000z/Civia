@@ -1,38 +1,43 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { Scale } from "lucide-react";
+import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 
 export const metadata: Metadata = {
-  title: "Termeni și condiții",
+  title: "Termenii de utilizare",
   description:
     "Termeni și condiții de utilizare a platformei Civia.ro: identitatea operatorului, obligațiile utilizatorilor, moderarea conținutului, drepturile de proprietate intelectuală, limitarea răspunderii, soluționarea disputelor și legea aplicabilă — conform legislației Uniunii Europene.",
   alternates: { canonical: "/legal/termeni" },
 };
 
+// 2026-05-25 OPTIMIZATION: text legal nu se schimbă. Force-static = zero ISR writes.
+export const dynamic = "force-static";
+
 export default function TermeniPage() {
   return (
-    <div className="container-narrow py-12 md:py-16 max-w-3xl">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-6"
-      >
-        <ChevronLeft size={16} /> Înapoi
-      </Link>
-      <article className="prose-civic">
-        <h1 className="font-[family-name:var(--font-sora)] text-4xl font-extrabold mb-2">
-          Termeni și condiții
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mb-8">
-          Ultima actualizare: mai 2026
-        </p>
+    <div className="container-narrow py-8 md:py-12 max-w-4xl">
+      <PageHero
+        title="Termenii de utilizare"
+        icon={Scale}
+        gradient={HERO_GRADIENT.authority}
+        backHref="/"
+        backLabel="Înapoi acasă"
+        description={
+          <>
+            Condițiile în care folosești <strong>Civia.ro</strong>. Platformă civică,
+            gratuită, independentă politic. Folosirea serviciului implică acceptarea
+            integrală a acestor termeni.
+          </>
+        }
+        tagline="Ultima actualizare: mai 2026"
+      />
 
-        <p className="text-sm text-[var(--color-text-muted)] italic mb-8">
-          Acest document descrie condițiile în care poți folosi platforma{" "}
-          <strong>civia.ro</strong>. Folosirea serviciului implică acceptarea integrală a acestor
-          termeni. Documentul este redactat conform legislației Uniunii Europene
-          (Regulamentul UE 2016/679 — GDPR, Directiva 2000/31/CE — comerț electronic,
-          Regulamentul UE 2022/2065 — DSA) și legislației române (Legea 365/2002 privind
-          comerțul electronic, Legea 506/2004 privind ePrivacy).
+      <article className="prose-civic mt-6">
+        <p className="text-sm text-[var(--color-text-muted)] italic px-1">
+          Document redactat conform legislației Uniunii Europene (Regulamentul UE
+          2016/679 — GDPR, Directiva 2000/31/CE — comerț electronic, Regulamentul UE
+          2022/2065 — DSA) și legislației române (Legea 365/2002 privind comerțul
+          electronic, Legea 506/2004 privind ePrivacy).
         </p>
 
         <h2>1. Despre serviciu și identitatea operatorului</h2>

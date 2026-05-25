@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { FeedbackForm } from "@/components/FeedbackForm";
 
 export const metadata: Metadata = {
@@ -12,21 +13,24 @@ export const metadata: Metadata = {
 
 export default function ConfidentialitatePage() {
   return (
-    <div className="container-narrow py-12 md:py-16 max-w-3xl">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-6"
-      >
-        <ChevronLeft size={16} /> Înapoi
-      </Link>
-      <article className="prose-civic">
-        <h1 className="font-[family-name:var(--font-sora)] text-4xl font-extrabold mb-2">
-          Politica de confidențialitate
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mb-2">
-          Ultima actualizare: mai 2026
-        </p>
-        <p className="text-sm text-[var(--color-text-muted)] mb-8 italic">
+    <div className="container-narrow py-8 md:py-12 max-w-4xl">
+      <PageHero
+        title="Confidențialitate și GDPR"
+        icon={ShieldCheck}
+        gradient={HERO_GRADIENT.authority}
+        backHref="/"
+        backLabel="Înapoi acasă"
+        description={
+          <>
+            Cum colectăm și protejăm datele tale. <strong>Zero tracking publicitar.</strong>{" "}
+            Tot ce facem e conform GDPR + ePrivacy + ANSPDCP.
+          </>
+        }
+        tagline="Ultima actualizare: mai 2026"
+      />
+
+      <article className="prose-civic mt-6">
+        <p className="text-sm text-[var(--color-text-muted)] italic px-1">
           Document redactat conform Regulamentului UE 2016/679 (GDPR), Directivei
           2002/58/CE (ePrivacy), Legii 190/2018 (RO — măsuri de aplicare a GDPR) și Legii
           506/2004 (RO — ePrivacy).
