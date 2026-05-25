@@ -109,7 +109,9 @@ export function StiriList() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
-  const [visible, setVisible] = useState(12);
+  // 2026-05-25 — 12 → 24 articole vizibile initial (mai mult conținut
+  // above-the-fold; pool-ul a fost dublat la fetch route).
+  const [visible, setVisible] = useState(24);
 
   const load = useCallback(async (signal?: AbortSignal, opts: { silent?: boolean } = {}) => {
     if (!opts.silent) setLoading(true);
@@ -450,7 +452,7 @@ export function StiriList() {
             <div className="flex justify-center mt-10">
               <button
                 type="button"
-                onClick={() => setVisible((v) => v + 12)}
+                onClick={() => setVisible((v) => v + 24)}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
               >
                 Încarcă mai multe

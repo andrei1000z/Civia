@@ -12,11 +12,18 @@ import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min — pre-gen 20× AI summaries
 
-/** Câte articole păstrăm per refresh — top civic-relevance score. */
-const TOP_CIVIC_PER_RUN = 20;
+/** Câte articole păstrăm per refresh — top civic-relevance score.
+ *  2026-05-25: 20 → 40. User-ul vrea mai multe știri pe pagină;
+ *  cele cu scor sub top-20 sunt încă civic-relevante, dar mai
+ *  „long-tail" (e.g. știri locale puternice, niche civic). */
+const TOP_CIVIC_PER_RUN = 40;
 /** Concurrency pre-gen AI summaries — evităm să blow rate-limit-urile
- *  Gemini/Groq trimițând toate 20 în paralel.  3 e un sweet spot. */
-const PREGEN_CONCURRENCY = 3;
+ *  Gemini/Groq trimițând toate paralel. 4 = sweet spot la 40 articole. */
+const PREGEN_CONCURRENCY = 4;
+/** Pre-genăm AI summary doar pentru top 20 (cele mai relevante civic) —
+ *  restul vor genera AI la prima deschidere. Optimizează Groq cost
+ *  (jumătate din articole nu sunt deschise niciodată). */
+const PREGEN_MAX = 20;
 
 /**
  * Authorize the RSS refresh trigger.
@@ -197,7 +204,10 @@ export async function POST(req: Request) {
         row.ai_summary.length > 20 &&
         (row.ai_summary_version ?? 0) >= AI_SUMMARY_VERSION
       );
-    });
+    })
+      // 2026-05-25 — pre-genăm doar primele PREGEN_MAX (top score).
+      // Restul (long-tail civic) generează AI la prima deschidere.
+      .slice(0, PREGEN_MAX);
 
     let preGenerated = 0;
     let preGenFailed = 0;
