@@ -25,6 +25,7 @@ import { SITE_URL } from "@/lib/constants";
 import { AftermathGallery } from "@/components/proteste/AftermathGallery";
 import { AftermathVideos } from "@/components/proteste/AftermathVideos";
 import { ShareProtestButton } from "@/components/proteste/ShareProtestButton";
+import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import type {
   AftermathImage,
   AftermathVideo,
@@ -444,6 +445,22 @@ export default async function ProtestDetailPage({
 
         {/* SIDEBAR */}
         <aside className="space-y-4">
+          {/* 2026-05-25 — Map widget NOU. Reutilizează EvenimentMap component
+              (single pin marker pe coordonate). Hide dacă lat/lng lipsesc.
+              Click pe „Deschide pe hartă" rămâne în DetailRow pentru
+              Google Maps / OSM full view. */}
+          {p.lat != null && p.lng != null && (
+            <div className="rounded-[var(--radius-md)] overflow-hidden border border-[var(--color-border)] shadow-[var(--shadow-1)]">
+              <EvenimentMap
+                coords={[p.lat, p.lng]}
+                label={p.location_name}
+                color={status.dot.includes("rose") ? "#f43f5e" : "#f59e0b"}
+                zoom={15}
+                height="220px"
+              />
+            </div>
+          )}
+
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 lg:sticky lg:top-20 space-y-3">
             <DetailRow icon={Calendar} label="Început">
               {formatDateTime(p.start_at)}

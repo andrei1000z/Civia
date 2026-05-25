@@ -200,9 +200,11 @@ export default async function StireDetailPage({
       ? stire.ai_summary
       : null;
 
-  // 5/22/2026 — getRelatedArticles call eliminat (sectiunea Știri similare
-  // a fost scoasa la cererea user-ului). Functia ramane definita pentru
-  // potentiala re-activare ulterioara, dar nu mai face Supabase query.
+  // 2026-05-25 — Related articles widget REACTIVAT la cererea user-ului
+  // (după ce fusese scos 5/22). Filtrare prin category + restricție national
+  // sources dacă articolul curent e din NATIONAL_SOURCES (anti-confuzie).
+  // 4 articole maximum, side-rail sub feedback card.
+  const related = await getRelatedArticles(stire);
   const sourceColor = SOURCE_COLORS[stire.source] ?? "#64748b";
   // Mid-tone variant for plain-text rendering on neutral surfaces — the
   // raw brand color is sometimes pure black (G4Media) which disappears
@@ -436,9 +438,67 @@ export default async function StireDetailPage({
         </aside>
       </div>
 
-      {/* „Știri similare" section eliminat 5/22/2026 la cererea user-ului.
-          getRelatedArticles() + queries-le aferente NU mai sunt apelate
-          mai sus (vezi linia ~202). */}
+      {/* 2026-05-25 — Articole similare RE-ENABLED */}
+      {related.length > 0 && (
+        <section
+          aria-label="Articole similare"
+          className="mt-12 pt-8 border-t border-[var(--color-border)]"
+        >
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-5 inline-flex items-center gap-2">
+            <Sparkles size={18} className="text-[var(--color-primary)]" aria-hidden="true" />
+            Articole similare
+          </h2>
+          <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {related.map((r) => {
+              const rColor = SOURCE_COLORS[r.source] ?? "#64748b";
+              return (
+                <li key={r.id}>
+                  <Link
+                    href={`/stiri/${r.id}`}
+                    className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-2)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                  >
+                    <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
+                      {r.image_url ? (
+                        <Image
+                          src={r.image_url}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-0 flex items-center justify-center text-white/40"
+                          style={{ background: `linear-gradient(135deg, ${rColor}aa, ${rColor}55)` }}
+                        >
+                          <Sparkles size={32} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <Badge
+                        bgColor={rColor}
+                        color={readableTextColor(rColor)}
+                        className="text-[9px] mb-1.5"
+                      >
+                        {r.source}
+                      </Badge>
+                      <h3 className="font-semibold text-sm leading-snug line-clamp-3 group-hover:text-[var(--color-primary)] transition-colors">
+                        {r.title}
+                      </h3>
+                      <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5">
+                        {formatDateTime(r.published_at)}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
