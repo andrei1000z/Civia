@@ -5,6 +5,7 @@ import { UserPlus, X, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
 import { getRecipientsLabel } from "@/lib/sesizari/mailto";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
+import { trackSesizareCosign } from "@/components/analytics/CiviaTracker";
 
 interface Props {
   tip: string;
@@ -134,6 +135,7 @@ export function SignSesizareButton({
         return;
       }
       setState("sent");
+      trackSesizareCosign();
       // Notifica CosignersBadge să refresh
       window.dispatchEvent(new CustomEvent("civia:cosign-added"));
     } catch (err) {

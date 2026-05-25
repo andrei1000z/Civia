@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Loader2, Megaphone, LogIn } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { trackPetitieSign, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
 
 interface Props {
   petitieId: string;
@@ -14,7 +15,7 @@ interface Props {
   alreadySigned: boolean;
 }
 
-export function SignPetitieButton({ petitieId, isActive, isLoggedIn, alreadySigned }: Props) {
+export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn, alreadySigned }: Props) {
   const { openAuthModal } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -48,7 +49,10 @@ export function SignPetitieButton({ petitieId, isActive, isLoggedIn, alreadySign
     return (
       <button
         type="button"
-        onClick={() => openAuthModal()}
+        onClick={() => {
+          trackAuthModalOpen("petitie-sign");
+          openAuthModal();
+        }}
         className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
       >
         <LogIn size={16} aria-hidden="true" />
@@ -68,6 +72,7 @@ export function SignPetitieButton({ petitieId, isActive, isLoggedIn, alreadySign
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Eroare la semnare");
       setSigned(true);
+      trackPetitieSign(petitieSlug);
       toast("Mulțumim! Semnătura ta a fost înregistrată.", "success");
       router.refresh();
     } catch (e) {

@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { cn } from "@/lib/utils";
+import { trackCommentPost, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
 import type { SesizareCommentRow } from "@/lib/supabase/types";
 
 interface CommentsSectionProps {
@@ -64,6 +65,7 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
+      trackAuthModalOpen("comment");
       openAuthModal();
       return;
     }
@@ -74,6 +76,7 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
       const row = await post(body.trim(), null);
       setComments((prev) => [...prev, row]);
       setBody("");
+      trackCommentPost("sesizare");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Eroare";
       setError(msg);

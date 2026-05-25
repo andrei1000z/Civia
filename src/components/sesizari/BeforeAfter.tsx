@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, ImageOff } from "lucide-react";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { formatDateTime } from "@/lib/utils";
+import { trackCustomEvent } from "@/components/analytics/CiviaTracker";
 
 interface Props {
   /** Prima poză din sesizare — folosită ca „înainte". */
@@ -20,6 +21,15 @@ interface Props {
 export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props) {
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
   const lightboxUrls = afterUrl ? [beforeUrl, afterUrl] : [beforeUrl];
+
+  const openLightbox = (index: number) => {
+    setLightbox({ urls: lightboxUrls, index });
+    // 2026-05-25 — semnalul engagement pe galeria de dovezi vizuale.
+    trackCustomEvent("before-after-view", {
+      hasAfter: afterUrl ? "yes" : "no",
+      index,
+    });
+  };
 
   return (
     <>
@@ -56,7 +66,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
             </p>
             <button
               type="button"
-              onClick={() => setLightbox({ urls: lightboxUrls, index: 0 })}
+              onClick={() => openLightbox(0)}
               aria-label={`Vezi poza „înainte" la mărime mare`}
               className="aspect-video w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-rose-300/40 dark:ring-rose-900/40"
             >
@@ -85,7 +95,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
             {afterUrl ? (
               <button
                 type="button"
-                onClick={() => setLightbox({ urls: lightboxUrls, index: 1 })}
+                onClick={() => openLightbox(1)}
                 aria-label={`Vezi poza „după" la mărime mare`}
                 className="aspect-video w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-emerald-300/40 dark:ring-emerald-900/40"
               >

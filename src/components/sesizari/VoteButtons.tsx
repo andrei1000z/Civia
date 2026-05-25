@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { trackSesizareVote, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
 
 interface VoteButtonsProps {
   code: string;
@@ -32,6 +33,7 @@ export function VoteButtons({
 
   const handleVote = async (value: 1 | -1) => {
     if (!user) {
+      trackAuthModalOpen("vote");
       openAuthModal();
       return;
     }
@@ -41,6 +43,8 @@ export function VoteButtons({
     // Calculate optimistic update
     const newValue = userVote === value ? 0 : value;
     const prevVote = userVote;
+    // 2026-05-25 — track vote action (don't track unvote/toggle-off).
+    if (newValue !== 0) trackSesizareVote(newValue === 1 ? "up" : "down");
 
     // Optimistic
     if (prevVote === 1) setUpvotes((v) => v - 1);

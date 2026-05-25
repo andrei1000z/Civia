@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { trackPushPermission } from "@/components/analytics/CiviaTracker";
 
 /**
  * Buton mic pentru activarea/dezactivarea notificărilor push pe acest
@@ -50,6 +51,7 @@ export function PushPermissionButton() {
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
+      trackPushPermission(perm as "granted" | "denied" | "default");
       if (perm !== "granted") {
         toast("Notificările sunt blocate. Activează-le din setări browser.", "error");
         return;

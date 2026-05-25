@@ -684,6 +684,119 @@ export function CiviaTracker(): null {
     return () => window.removeEventListener("beforeprint", onPrint);
   }, []);
 
+  // ─── 2026-05-25: 5 listener-i automati pentru cele 20 evenimente noi ──
+
+  // 1) Time-to-first-action — masoara ms de la pageview la primul click
+  //    meaningful (anchor / button / data-track). Reset pe schimbare ruta.
+  useEffect(() => {
+    if (isExcluded()) return;
+    let fired = false;
+    const enter = Date.now();
+    const onFirstClick = (e: MouseEvent) => {
+      if (fired) return;
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest("a, button, [role=button]")) return;
+      fired = true;
+      const ms = Date.now() - enter;
+      if (ms < 50 || ms > 600_000) return; // outliers
+      trackTimeToFirstAction(ms, pathnameRef.current);
+    };
+    document.addEventListener("click", onFirstClick, { capture: true });
+    return () => document.removeEventListener("click", onFirstClick, { capture: true });
+  }, [pathname]);
+
+  // 2) Scroll velocity — semnal de engagement (scan rapid vs citit atent).
+  //    Calculam doar la final de scroll-session (idle 300ms).
+  useEffect(() => {
+    if (isExcluded()) return;
+    let lastY = window.scrollY;
+    let lastT = Date.now();
+    let totalPx = 0;
+    let totalMs = 0;
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    const flush = () => {
+      if (totalMs < 200 || totalPx < 100) {
+        totalPx = 0;
+        totalMs = 0;
+        return;
+      }
+      const pxPerSec = (totalPx / totalMs) * 1000;
+      trackScrollVelocity(pxPerSec, pathnameRef.current);
+      totalPx = 0;
+      totalMs = 0;
+    };
+    const onScroll = () => {
+      const now = Date.now();
+      const dy = Math.abs(window.scrollY - lastY);
+      totalPx += dy;
+      totalMs += now - lastT;
+      lastY = window.scrollY;
+      lastT = now;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(flush, 300);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (idleTimer) clearTimeout(idleTimer);
+    };
+  }, []);
+
+  // 3) Viewport resize — bucket change (responsive issues, rotation).
+  //    Debounce 500ms ca să nu spammăm pe drag-resize desktop.
+  useEffect(() => {
+    if (isExcluded()) return;
+    let lastBucket = viewportBucket();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const nowBucket = viewportBucket();
+        if (nowBucket !== lastBucket) {
+          trackViewportResize(lastBucket, nowBucket);
+          lastBucket = nowBucket;
+        }
+      }, 500);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  // 4) Back button — popstate (browser back/forward = navigation friction
+  //    signal cand userul nu găseste ce caută).
+  useEffect(() => {
+    if (isExcluded()) return;
+    const onPopstate = () => trackBackButton(pathnameRef.current);
+    window.addEventListener("popstate", onPopstate);
+    return () => window.removeEventListener("popstate", onPopstate);
+  }, []);
+
+  // 5) Focus return — tab redevenit visible; durata blur = atenție user
+  //    (5s+ = userul s-a întors după ce a deschis altă tab, deci interes
+  //    real, nu doar passive scroll).
+  useEffect(() => {
+    if (isExcluded()) return;
+    let blurStart: number | null = null;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        blurStart = Date.now();
+      } else if (blurStart !== null) {
+        const blurDuration = Date.now() - blurStart;
+        blurStart = null;
+        if (blurDuration > 1000 && blurDuration < 7_200_000) {
+          // skip < 1s (window dragging / quick alt-tab nu conteaza)
+          // skip > 2h (computer sleep, sesizari noi)
+          trackFocusReturn(blurDuration);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   return null;
 }
 
@@ -727,5 +840,142 @@ export function trackVisionAcceptance(accepted: boolean, tip?: string): void {
   trackCustomEvent("vision-acceptance", {
     accepted: accepted ? "yes" : "no",
     tip: tip || "(unknown)",
+  });
+}
+
+// ─── 20 evenimente noi (2026-05-25) ───────────────────────────────────
+// Cerinta: „ADAUGA 20 CA SA STRANG DATE SA TI LE DAU SA IMBUNATTIM SITE U".
+// Toate consumate via trackCustomEvent → /api/analytics → Redis HINCRBY,
+// vizibile in admin/analytics fara modificari server-side (count generic).
+
+/** Sesizare photo upload — start → complete / fail → abandon funnel. */
+export function trackSesizarePhotoUpload(
+  stage: "start" | "complete" | "fail",
+  extra: Record<string, string | number> = {},
+): void {
+  trackCustomEvent(`sesizare-photo-${stage}`, extra);
+}
+
+/** Draft de sesizare/petitie/protest restaurat din localStorage. */
+export function trackDraftRestore(form: "sesizare" | "petitie" | "protest"): void {
+  trackCustomEvent("draft-restore", { form });
+}
+
+/** Vote pe o sesizare publica. */
+export function trackSesizareVote(direction: "up" | "down"): void {
+  trackCustomEvent(`sesizare-vote-${direction}`);
+}
+
+/** Co-semnare sesizare (cetatean trimite + el aceeasi sesizare). */
+export function trackSesizareCosign(): void {
+  trackCustomEvent("sesizare-cosign");
+}
+
+/** Semnare petitie. */
+export function trackPetitieSign(slug: string): void {
+  trackCustomEvent("petitie-sign", { slug: slug.slice(0, 80) });
+}
+
+/** Share petitie/sesizare/protest pe o platforma. */
+export function trackShare(
+  kind: "sesizare" | "petitie" | "protest" | "stire",
+  channel: "copy" | "facebook" | "twitter" | "whatsapp" | "telegram" | "native",
+): void {
+  trackCustomEvent("share", { kind, channel });
+}
+
+/** Comentariu postat. */
+export function trackCommentPost(kind: "sesizare" | "petitie"): void {
+  trackCustomEvent("comment-post", { kind });
+}
+
+/** Schimbare judet (CountyPickerInline / dropdown). */
+export function trackCountySwitch(from: string, to: string): void {
+  trackCustomEvent("county-switch", {
+    from: from.slice(0, 8),
+    to: to.slice(0, 8),
+  });
+}
+
+/** Deschidere modal auth (semnal de friction la login). */
+export function trackAuthModalOpen(trigger: string): void {
+  trackCustomEvent("auth-modal-open", { trigger: trigger.slice(0, 40) });
+}
+
+/** Push notification permission — granted/denied/dismissed. */
+export function trackPushPermission(outcome: "granted" | "denied" | "default"): void {
+  trackCustomEvent("push-permission", { outcome });
+}
+
+/** Before/After galerie vizualizata (rezolvare verificata vizual). */
+export function trackBeforeAfterView(code: string): void {
+  trackCustomEvent("before-after-view", { code: code.slice(0, 16) });
+}
+
+/** Map interaction — zoom/drag (engagement pe vizualizari spatiale). */
+export function trackMapInteraction(map: string, action: "zoom" | "drag" | "marker-click"): void {
+  trackCustomEvent("map-interaction", { map: map.slice(0, 32), action });
+}
+
+/** Filter aplicat pe un feed (sesizari/petitii/stiri). */
+export function trackFilterApplied(feed: string, filter: string, value: string): void {
+  trackCustomEvent("filter-applied", {
+    feed: feed.slice(0, 20),
+    filter: filter.slice(0, 20),
+    value: value.slice(0, 40),
+  });
+}
+
+/** AI assist click — userul a apasat „Generează" / „Polish" / „Improve". */
+export function trackAiAssistClick(feature: string): void {
+  trackCustomEvent("ai-assist-click", { feature: feature.slice(0, 40) });
+}
+
+/** AI suggestion accept — userul a păstrat textul/sugestia AI. */
+export function trackAiAssistAccept(feature: string): void {
+  trackCustomEvent("ai-assist-accept", { feature: feature.slice(0, 40) });
+}
+
+/** Time-to-first-action — ms de la pageview la primul click meaningful.
+ *  Fired automat in tracker (vezi listener pe primul click). */
+export function trackTimeToFirstAction(ms: number, route: string): void {
+  trackCustomEvent("time-to-first-action", {
+    ms: Math.round(ms),
+    bucket: ms < 1000 ? "0-1s" : ms < 3000 ? "1-3s" : ms < 10000 ? "3-10s" : "10s+",
+    route: route.slice(0, 80),
+  });
+}
+
+/** Scroll velocity bucket — slow/medium/fast/very-fast (engagement signal). */
+export function trackScrollVelocity(pxPerSec: number, route: string): void {
+  trackCustomEvent("scroll-velocity", {
+    bucket:
+      pxPerSec < 300 ? "slow" : pxPerSec < 800 ? "medium" : pxPerSec < 2000 ? "fast" : "very-fast",
+    route: route.slice(0, 80),
+  });
+}
+
+/** Viewport resize — semnal pentru responsive issues / device rotation. */
+export function trackViewportResize(fromBucket: string, toBucket: string): void {
+  trackCustomEvent("viewport-resize", { from: fromBucket, to: toBucket });
+}
+
+/** Back button hit — popstate browser-level (navigation friction signal). */
+export function trackBackButton(fromRoute: string): void {
+  trackCustomEvent("back-button", { from: fromRoute.slice(0, 80) });
+}
+
+/** Focus regained (tab redevenit visible) — măsoară durata tab-blur. */
+export function trackFocusReturn(blurDurationMs: number): void {
+  trackCustomEvent("focus-return", {
+    ms: Math.round(blurDurationMs),
+    bucket:
+      blurDurationMs < 5000
+        ? "0-5s"
+        : blurDurationMs < 60000
+          ? "5-60s"
+          : blurDurationMs < 300000
+            ? "1-5min"
+            : "5min+",
   });
 }

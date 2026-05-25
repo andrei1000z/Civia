@@ -473,6 +473,10 @@ export function AnalyticsDashboard() {
           conversion rate sesizare, etc.) până se extinde colectarea server. */}
       <DerivedKpiPanel data={data} />
 
+      {/* Civic engagement events — 2026-05-25, 20 evenimente noi adăugate
+          în CiviaTracker. Toate citite din eventsTotal (Redis HINCRBY). */}
+      <CivicEventsPanel data={data} />
+
       {/* Hourly chart */}
       <HourlyChart data={data.hourly} />
 
@@ -1224,12 +1228,140 @@ function DerivedKpiPanel({ data }: { data: Summary }) {
         ))}
       </div>
       <p className="text-[10px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
-        Sugestii viitoare colectare (necesită extindere CiviaTracker): time-to-first-action,
-        scroll-velocity, rage-click clusters, form-field abandonment per câmp, AI assistant
-        engagement, sesizare-photo-upload completion, petitie share-rate, county-switch
-        events, before/after view-rate, deep-link return-rate, push-permission-granted-rate,
-        offline-queue-drain-rate.
+        Pentru evenimente individuale (votare, semnare, share, etc.) vezi
+        „Civic engagement events" mai jos — 20 metrici noi colectate
+        automat din CiviaTracker.
       </p>
+    </div>
+  );
+}
+
+/**
+ * Civic engagement events — grupate pe categorie. Toate citite din
+ * `data.eventsTotal` (Redis HINCRBY per eventType, agregare automată).
+ * Adăugate 2026-05-25 ca răspuns la „ADAUGA 20 CA SA STRANG DATE".
+ */
+function CivicEventsPanel({ data }: { data: Summary }) {
+  const events = data.eventsTotal ?? {};
+  const get = (key: string): number => toNum(events[key] ?? 0);
+
+  const groups: Array<{
+    title: string;
+    color: string;
+    items: Array<{ label: string; key: string; value: number }>;
+  }> = [
+    {
+      title: "Sesizări — acțiuni",
+      color: "#0891B2",
+      items: [
+        { label: "Vot sus", key: "sesizare-vote-up", value: get("sesizare-vote-up") },
+        { label: "Vot jos", key: "sesizare-vote-down", value: get("sesizare-vote-down") },
+        { label: "Co-semnări", key: "sesizare-cosign", value: get("sesizare-cosign") },
+        { label: "Marcate rezolvate", key: "sesizare-mark-resolved", value: get("sesizare-mark-resolved") },
+        { label: "Poza upload start", key: "sesizare-photo-start", value: get("sesizare-photo-start") },
+        { label: "Poza upload OK", key: "sesizare-photo-complete", value: get("sesizare-photo-complete") },
+        { label: "Poza upload fail", key: "sesizare-photo-fail", value: get("sesizare-photo-fail") },
+      ],
+    },
+    {
+      title: "Petiții & Conținut civic",
+      color: "#7C3AED",
+      items: [
+        { label: "Semnări petiție", key: "petitie-sign", value: get("petitie-sign") },
+        { label: "Comentarii postate", key: "comment-post", value: get("comment-post") },
+        { label: "Share-uri", key: "share", value: get("share") },
+        { label: "Before/After view", key: "before-after-view", value: get("before-after-view") },
+      ],
+    },
+    {
+      title: "AI Assist & engagement",
+      color: "#F59E0B",
+      items: [
+        { label: "AI click", key: "ai-assist-click", value: get("ai-assist-click") },
+        { label: "AI accept", key: "ai-assist-accept", value: get("ai-assist-accept") },
+        { label: "Vision acceptance", key: "vision-acceptance", value: get("vision-acceptance") },
+        { label: "Map interaction", key: "map-interaction", value: get("map-interaction") },
+        { label: "Filter aplicat", key: "filter-applied", value: get("filter-applied") },
+      ],
+    },
+    {
+      title: "Navigație & friction",
+      color: "#DC2626",
+      items: [
+        { label: "Time-to-first-action", key: "time-to-first-action", value: get("time-to-first-action") },
+        { label: "Scroll velocity", key: "scroll-velocity", value: get("scroll-velocity") },
+        { label: "Viewport resize", key: "viewport-resize", value: get("viewport-resize") },
+        { label: "Back button", key: "back-button", value: get("back-button") },
+        { label: "Focus return", key: "focus-return", value: get("focus-return") },
+        { label: "Auth modal open", key: "auth-modal-open", value: get("auth-modal-open") },
+        { label: "County switch", key: "county-switch", value: get("county-switch") },
+        { label: "Draft restore", key: "draft-restore", value: get("draft-restore") },
+        { label: "Push permission", key: "push-permission", value: get("push-permission") },
+      ],
+    },
+  ];
+
+  const totalAll = groups.reduce(
+    (acc, g) => acc + g.items.reduce((s, i) => s + i.value, 0),
+    0,
+  );
+
+  return (
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h3 className="font-semibold text-sm inline-flex items-center gap-2">
+          <Activity size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
+          Civic engagement events
+        </h3>
+        <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
+          {fmt(totalAll)} evenimente civice · CiviaTracker
+        </span>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        {groups.map((group) => {
+          const groupTotal = group.items.reduce((s, i) => s + i.value, 0);
+          return (
+            <div
+              key={group.title}
+              className="bg-[var(--color-surface-2)] rounded-[var(--radius-xs)] p-3 border-l-2"
+              style={{ borderLeftColor: group.color }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text)]">
+                  {group.title}
+                </h4>
+                <span
+                  className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-[var(--radius-full)]"
+                  style={{ backgroundColor: `${group.color}1a`, color: group.color }}
+                >
+                  {fmt(groupTotal)}
+                </span>
+              </div>
+              <ul className="space-y-1 text-[11px]">
+                {group.items.map((item) => (
+                  <li
+                    key={item.key}
+                    className="flex items-center justify-between gap-2 py-0.5"
+                  >
+                    <span className="text-[var(--color-text-muted)] truncate">
+                      {item.label}
+                    </span>
+                    <span
+                      className={`tabular-nums font-semibold shrink-0 ${
+                        item.value > 0
+                          ? "text-[var(--color-text)]"
+                          : "text-[var(--color-text-muted)]/40"
+                      }`}
+                    >
+                      {fmt(item.value)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { trackCustomEvent, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
 import { PhotoUploader } from "./PhotoUploader";
 
 interface Props {
@@ -53,6 +54,7 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
 
   const handleClick = () => {
     if (!user) {
+      trackAuthModalOpen("mark-resolved");
       openAuthModal();
       return;
     }
@@ -70,6 +72,9 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Eroare");
+      trackCustomEvent("sesizare-mark-resolved", {
+        hasPhoto: photo[0] ? "yes" : "no",
+      });
       toast("Sesizare marcată ca rezolvată! 🎉", "success");
       router.refresh();
       setOpen(false);
