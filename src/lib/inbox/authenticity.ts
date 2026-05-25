@@ -337,7 +337,7 @@ export async function scoreAiAuthenticity(args: {
  * Combined authenticity scoring — technical signals + AI semantic.
  *
  * Returns 0-100 score + breakdown. Used by inbox/reply route to decide
- * auto-apply and by RepliesSection UI to show authenticity badge.
+ * auto-apply and by admin tooling to show authenticity badge.
  */
 export async function scoreAuthenticity(args: {
   from: string;

@@ -32,7 +32,6 @@ import { ResendButton } from "@/components/sesizari/ResendButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
 import { PhotoGallery } from "@/components/sesizari/PhotoGallery";
-import { RepliesSection } from "@/components/sesizari/RepliesSection";
 import { OverdueBadge } from "@/components/sesizari/OverdueBadge";
 import { ReminderButton } from "@/components/sesizari/ReminderButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
@@ -453,9 +452,9 @@ export default async function SesizareDetailPage({
             </section>
           )}
 
-          {/* AI-tracked replies from authorities (feature 5/21/2026) —
-              afișează doar dacă există măcar un răspuns primit. */}
-          <RepliesSection code={sesizare.code} isOwner={sesizare.user_id === user?.id} />
+          {/* 2026-05-25 — RepliesSection scoasă la cererea user-ului. Răspunsurile
+              de la autorități se reflectă în „Status & activitate" timeline +
+              notificarea bell. Listare separată dubla informația și aglomera UI. */}
 
 
           {/* Photos */}
@@ -535,17 +534,18 @@ export default async function SesizareDetailPage({
 
           {/* Timeline — shares the same EVENT_META catalog as /urmareste so
               labels, icons and colors stay consistent across surfaces.
-              Moved ABOVE „Alții au sesizat" la cererea user 5/22/2026
-              („vreau prima data Status si dupa Alții au sesizat"). */}
+              2026-05-25 — UI refresh: bigger dots, color-tinted rail, current
+              step highlighted cu „Acum" pill, time-ago inline cu Clock. */}
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5">
             <div className="flex items-center justify-between mb-5">
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
                 Status &amp; activitate
               </p>
-              {/* 2026-05-24 PRIVACY FIX — scoasă „N cetățeni" din timeline
-                  header (CosignersBadge component arătă deja count public
-                  fără să expună nume). Timeline = doar evenimente despre
-                  starea sesizării (depusa/inregistrata/in-lucru/etc.). */}
+              {timeline.length > 0 && (
+                <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
+                  {timeline.length} {timeline.length === 1 ? "etapă" : "etape"}
+                </span>
+              )}
             </div>
             {timeline.length === 0 ? (
               <div className="bg-[var(--color-surface-2)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 text-center">
@@ -554,35 +554,52 @@ export default async function SesizareDetailPage({
                 </p>
               </div>
             ) : (
-              <ol className="relative space-y-5 ml-1">
-                {/* Vertical rail behind the dots */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-3 top-3 bottom-3 w-px bg-[var(--color-border)]"
-                />
+              <ol className="relative space-y-5">
                 {timeline.map((step, i) => {
                   const isLast = i === timeline.length - 1;
                   const meta = getSesizareEventMeta(step.event_type);
                   const Icon = meta.icon;
                   const showDescription = !isRedundantEventDescription(step.event_type, step.description);
                   return (
-                    <li key={step.id} className="relative pl-10">
+                    <li key={step.id} className="relative pl-11">
+                      {/* Connector line to next step */}
+                      {!isLast && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-[14px] top-8 bottom-[-20px] w-0.5 rounded-full"
+                          style={{ backgroundColor: `${meta.color}30` }}
+                        />
+                      )}
+                      {/* Icon chip */}
                       <span
-                        className={`absolute left-0 top-0 w-7 h-7 rounded-full grid place-items-center ring-4 ring-[var(--color-surface)] ${isLast ? "animate-pulse" : ""}`}
-                        style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
+                        className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm ${isLast ? "animate-pulse" : ""}`}
+                        style={{
+                          backgroundColor: isLast ? meta.color : `${meta.color}1a`,
+                          color: isLast ? "#fff" : meta.color,
+                        }}
                         aria-hidden="true"
                       >
-                        <Icon size={13} />
+                        <Icon size={14} strokeWidth={isLast ? 2.5 : 2} />
                       </span>
-                      <p className={`text-sm leading-tight ${isLast ? "font-bold" : "font-semibold"}`}>
-                        {meta.label}
-                      </p>
+                      <div className="flex items-start gap-2 flex-wrap">
+                        <p className={`text-sm leading-tight ${isLast ? "font-bold text-[var(--color-text)]" : "font-semibold text-[var(--color-text)]"}`}>
+                          {meta.label}
+                        </p>
+                        {isLast && (
+                          <span
+                            className="inline-flex items-center text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]"
+                            style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
+                          >
+                            Acum
+                          </span>
+                        )}
+                      </div>
                       {showDescription && step.description && (
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                        <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
                           {step.description}
                         </p>
                       )}
-                      <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 inline-flex items-center gap-1 tabular-nums">
+                      <p className="text-[11px] text-[var(--color-text-muted)] mt-2 inline-flex items-center gap-1 tabular-nums">
                         <Clock size={10} aria-hidden="true" />
                         <time dateTime={step.created_at}>{formatDateTime(step.created_at)}</time>
                       </p>

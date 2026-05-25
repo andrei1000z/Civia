@@ -219,38 +219,55 @@ export function UrmarireSesizare() {
               </div>
             ) : (
               <ol
-                className="relative space-y-5 ml-1"
+                className="relative space-y-5"
                 aria-label={`Istoric ${result.timeline.length} ${result.timeline.length === 1 ? "eveniment" : "evenimente"}`}
               >
-                {/* Vertical rail behind the dots */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-3 top-3 bottom-3 w-px bg-[var(--color-border)]"
-                />
                 {result.timeline.map((step, i) => {
                   const meta = getSesizareEventMeta(step.event_type);
                   const Icon = meta.icon;
                   const isLast = i === result.timeline.length - 1;
                   const showDescription = !isRedundantEventDescription(step.event_type, step.description);
                   return (
-                    <li key={step.id} className="relative pl-10">
+                    <li key={step.id} className="relative pl-11">
+                      {!isLast && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-[14px] top-8 bottom-[-20px] w-0.5 rounded-full"
+                          style={{ backgroundColor: `${meta.color}30` }}
+                        />
+                      )}
                       <span
                         className={cn(
-                          "absolute left-0 top-0 w-7 h-7 rounded-full grid place-items-center ring-4 ring-[var(--color-surface)]",
+                          "absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm",
                           isLast && "animate-pulse",
                         )}
-                        style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
+                        style={{
+                          backgroundColor: isLast ? meta.color : `${meta.color}1a`,
+                          color: isLast ? "#fff" : meta.color,
+                        }}
                         aria-hidden="true"
                       >
-                        <Icon size={13} />
+                        <Icon size={14} strokeWidth={isLast ? 2.5 : 2} />
                       </span>
-                      <p className="font-semibold text-sm leading-tight">{meta.label}</p>
+                      <div className="flex items-start gap-2 flex-wrap">
+                        <p className={cn("text-sm leading-tight text-[var(--color-text)]", isLast ? "font-bold" : "font-semibold")}>
+                          {meta.label}
+                        </p>
+                        {isLast && (
+                          <span
+                            className="inline-flex items-center text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]"
+                            style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
+                          >
+                            Acum
+                          </span>
+                        )}
+                      </div>
                       {showDescription && step.description && (
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                        <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
                           {step.description}
                         </p>
                       )}
-                      <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 inline-flex items-center gap-1">
+                      <p className="text-[11px] text-[var(--color-text-muted)] mt-2 inline-flex items-center gap-1 tabular-nums">
                         <Calendar size={10} aria-hidden="true" />
                         <time dateTime={step.created_at}>
                           {formatDateTime(step.created_at)}
