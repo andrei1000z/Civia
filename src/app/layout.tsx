@@ -162,17 +162,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* 2026-05-25 OPTIMIZATION: resource hints TIGHT — păstrăm doar
+            cele 3 critice (Supabase, Groq, Plausible). Scoase dns-prefetch
+            pentru open-meteo/openaq/nominatim/tiles — folosite pe paginile
+            specifice (weather, map) și browserul face DNS lookup oricum la
+            fetch. -3 TCP connections init per page load. */}
         <link rel="preconnect" href="https://api.groq.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://api.open-meteo.com" />
-        <link rel="dns-prefetch" href="https://api.openaq.org" />
-        <link rel="dns-prefetch" href="https://plausible.io" />
-        {/* Nominatim + OSM tiles are hit by every map page. Warming
-            the DNS + TCP pool up-front shaves ~200ms off the first
-            tile load on cold visits. */}
-        <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org" />
-        <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
-        {/* Overpass preconnect scos (5/12/2026) — folosea doar /harti, sters complet. */}
-        {/* Supabase — every page that reads data hits this origin. */}
+        <link rel="preconnect" href="https://plausible.io" />
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
         <link rel="alternate" type="application/rss+xml" title="Sesizări Civia" href="/feed.xml" />
         <link rel="alternate" type="application/rss+xml" title="Întreruperi Civia" href="/intreruperi/rss" />

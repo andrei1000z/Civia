@@ -165,6 +165,21 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // 2026-05-25 OPTIMIZATION: sitemap.xml are revalidate=21600 (6h) la
+        // app-level. Setăm și HTTP cache-control alineat pentru CDN cache hit
+        // rate maxim. Robots.txt e static.
+        source: "/sitemap.xml",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=21600, s-maxage=21600, stale-while-revalidate=43200" },
+        ],
+      },
+      {
+        source: "/robots.txt",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, s-maxage=86400" },
+        ],
+      },
+      {
         // Admin + API: no index/follow (defense-in-depth peste meta robots).
         // Inca un strat impotriva crawlerilor care ignora <meta>.
         source: "/admin/:path*",

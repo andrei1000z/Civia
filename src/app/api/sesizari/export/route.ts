@@ -31,9 +31,15 @@ export async function GET(req: Request) {
 
   try {
     const supabase = await createSupabaseServer();
+    // 2026-05-25 OPTIMIZATION: explicit columns în loc de `.select("*")`.
+    // Înainte: 2000 rows × 8 KB (formal_text 2-3KB + imagini + raw_headers
+    // toate fetchate inutil) ≈ 16 MB/export. După: ~1 KB/row → 2 MB/export.
+    // Salvare ~130 MB/zi Fast Origin Transfer.
     let query = supabase
       .from("sesizari_feed")
-      .select("*")
+      .select(
+        "code,created_at,status,tip,sector,county,titlu,locatie,descriere,author_name,voturi_net,nr_comentarii"
+      )
       .limit(limit)
       .order("created_at", { ascending: false });
     if (status) query = query.eq("status", status);

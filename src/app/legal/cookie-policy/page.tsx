@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/legal/cookie-policy` },
 };
 
-export const revalidate = 86400;
+// 2026-05-25 OPTIMIZATION: text legal nu se schimbă. force-static = zero ISR writes.
+export const dynamic = "force-static";
 
 export default function CookiePolicyPage() {
   return (

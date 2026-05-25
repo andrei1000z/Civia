@@ -19,13 +19,17 @@
         "categories:best-practices": ["warn", { "minScore": 0.9 }],
         "categories:seo": ["error", { "minScore": 0.9 }],
         "csp-xss": "off",
-        "uses-text-compression": ["warn"],
+        "uses-text-compression": ["error"],
         "render-blocking-resources": ["warn", { "maxLength": 3 }],
         "unused-javascript": ["warn", { "maxLength": 5 }],
         "color-contrast": ["error"],
         "image-alt": ["error"],
         "html-has-lang": ["error"],
-        "meta-description": ["warn"]
+        "meta-description": ["warn"],
+        "total-byte-weight": ["warn", { "maxNumericValue": 400000 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 200 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }]
       }
     },
     "upload": {

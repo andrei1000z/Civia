@@ -85,15 +85,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const results: Array<{
-    id: string;
-    ok: boolean;
-    len: number;
-    contentLen: number;
-    scrapedNow: boolean;
-    error?: string;
-  }> = [];
-  for (const r of (rows ?? []) as Array<{
+  type RowShape = {
     id: string;
     url: string;
     title: string;
@@ -102,31 +94,32 @@ export async function POST(req: Request) {
     source: string;
     ai_summary: string | null;
     ai_summary_version: number | null;
-  }>) {
+  };
+  type ResultShape = {
+    id: string;
+    ok: boolean;
+    len: number;
+    contentLen: number;
+    scrapedNow: boolean;
+    error?: string;
+  };
+
+  // 2026-05-25 OPTIMIZATION: concurrency 5 (în loc de serial cu 1s delay).
+  // Înainte: 10 articole × ~1s overhead = ~10s wasted CPU/run.
+  // După: chunks de 5 paralel → ~4s total. Gemini Flash + Lite split
+  // pe modele diferite înseamnă că rate-limit nu trip.
+  async function processOne(r: RowShape): Promise<ResultShape> {
     let content = r.content;
     let scrapedNow = false;
     try {
-      // Backfill: when the row's content is empty/thin (RSS only
-      // gave us the excerpt), scrape the original URL for the full
-      // article body. The AI synthesis chain needs ≥ 500 chars of
-      // input to produce a real 5-section brief; below that, all
-      // it can do is rephrase the excerpt.
       if (!content || content.length < 500) {
         const scraped = await extractArticleBody(r.url);
         if (scraped && scraped.length >= 500) {
           content = scraped;
           scrapedNow = true;
-          // Persist so subsequent visits don't re-scrape.
-          await admin
-            .from("stiri_cache")
-            .update({ content })
-            .eq("id", r.id);
+          await admin.from("stiri_cache").update({ content }).eq("id", r.id);
         }
       }
-
-      // Pass a fresh row shape (no ai_summary, no version) so the
-      // cache check in getOrGenerateAiSummary always misses and we
-      // hit the synthesis path.
       const summary = await getOrGenerateAiSummary({
         id: r.id,
         url: r.url,
@@ -137,28 +130,32 @@ export async function POST(req: Request) {
         ai_summary: force ? null : r.ai_summary,
         ai_summary_version: force ? 0 : r.ai_summary_version,
       });
-      results.push({
+      return {
         id: r.id,
         ok: !!summary,
         len: summary?.length ?? 0,
         contentLen: content?.length ?? 0,
         scrapedNow,
-      });
+      };
     } catch (e) {
-      results.push({
+      return {
         id: r.id,
         ok: false,
         len: 0,
         contentLen: content?.length ?? 0,
         scrapedNow,
         error: e instanceof Error ? e.message.slice(0, 200) : "unknown",
-      });
+      };
     }
-    // 1s gap — Gemini's 15 RPM cap rarely trips with our chain
-    // (Flash → Lite split between 2 separate per-model counters),
-    // and the 60s Vercel timeout is the binding constraint. Tight
-    // pacing maximises throughput per call.
-    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  const CONCURRENCY = 5;
+  const results: ResultShape[] = [];
+  const rowsTyped = (rows ?? []) as RowShape[];
+  for (let i = 0; i < rowsTyped.length; i += CONCURRENCY) {
+    const chunk = rowsTyped.slice(i, i + CONCURRENCY);
+    const chunkResults = await Promise.all(chunk.map(processOne));
+    results.push(...chunkResults);
   }
 
   const ok = results.filter((r) => r.ok).length;

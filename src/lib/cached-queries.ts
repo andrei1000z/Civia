@@ -23,21 +23,25 @@ export const getSesizariStatsCached = unstable_cache(
     const admin = createSupabaseAdmin();
     const todayIso = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
 
+    // 2026-05-25 OPTIMIZATION: `.select("*")` cu head:true scana metadata pe
+    // TOATE coloanele (formal_text 5KB, body_html 20KB etc.) — chiar dacă
+    // returnează 0 rows. Schimbat la `.select("id")` minimal scan.
+    // Estimat -10 GB/zi Fast Origin Transfer.
     const [total, today, inLucru, rezolvate] = await Promise.all([
-      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved"),
+      admin.from("sesizari").select("id", { count: "exact", head: true }).eq("moderation_status", "approved"),
       admin
         .from("sesizari")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("moderation_status", "approved")
         .gte("created_at", todayIso),
       admin
         .from("sesizari")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("moderation_status", "approved")
         .eq("status", "in-lucru"),
       admin
         .from("sesizari")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("moderation_status", "approved")
         .eq("status", "rezolvat"),
     ]);
@@ -114,10 +118,10 @@ export const getImpactDataCached = unstable_cache(
 
     const [totalRes, rezolvateRes, inLucruRes, todayRes, byTypeRes, byCountyRes, resolvedDates, topRes, latestRes] =
       await Promise.all([
-        withCounty(admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved")),
-        withCounty(admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "rezolvat")),
-        withCounty(admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "in-lucru")),
-        withCounty(admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", todayIso)),
+        withCounty(admin.from("sesizari").select("id", { count: "exact", head: true }).eq("moderation_status", "approved")),
+        withCounty(admin.from("sesizari").select("id", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "rezolvat")),
+        withCounty(admin.from("sesizari").select("id", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "in-lucru")),
+        withCounty(admin.from("sesizari").select("id", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", todayIso)),
         withCounty(admin.from("sesizari").select("tip").eq("moderation_status", "approved").limit(5000)),
         countyId
           ? Promise.resolve({ data: [] as Array<{ county: string | null; status: string }> })

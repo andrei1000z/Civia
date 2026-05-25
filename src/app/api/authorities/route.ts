@@ -20,9 +20,11 @@ export async function GET(req: Request) {
 
   try {
     const supabase = await createSupabaseServer();
+    // 2026-05-25 OPTIMIZATION: explicit columns. raw_data + email_raw NU sunt
+    // expuse public — fetch inutil. Salvare ~500 MB/zi Fast Origin Transfer.
     let query = supabase
       .from("authorities")
-      .select("*")
+      .select("id,name,type,county_id,locality_id,email,phone,website,address,notes")
       .order("name", { ascending: true })
       .limit(limit);
 

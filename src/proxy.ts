@@ -105,8 +105,38 @@ async function refreshAuth(request: NextRequest, baseRes: NextResponse): Promise
   return updateSupabaseSession(request, baseRes);
 }
 
+// 2026-05-25 OPTIMIZATION: paths care NU au nevoie de auth refresh.
+// Sitemap, robots, RSS feeds, ICS, opengraph-image — toate sunt
+// cacheable la edge, zero per-user state. Early return → -100K
+// edge requests Supabase auth call/lună.
+const PUBLIC_NO_AUTH_PATHS = new Set([
+  "/sitemap.xml",
+  "/robots.txt",
+  "/feed.xml",
+  "/stiri-feed.xml",
+  "/manifest.webmanifest",
+  "/sw.js",
+]);
+
+function isPublicNoAuthPath(pathname: string): boolean {
+  if (PUBLIC_NO_AUTH_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/_next/")) return true;
+  if (pathname.startsWith("/api/intreruperi/rss")) return true;
+  if (pathname.startsWith("/api/v2/sesizari/export.csv")) return true;
+  if (pathname.startsWith("/proteste/feed")) return true;
+  if (pathname.startsWith("/intreruperi/rss")) return true;
+  if (pathname.endsWith("/opengraph-image")) return true;
+  return false;
+}
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 2026-05-25 EARLY RETURN: pe paths publice fără auth refresh nu mai
+  // facem updateSupabaseSession (skip Supabase getUser round-trip).
+  if (isPublicNoAuthPath(pathname)) {
+    return withNonce(NextResponse.next(), request);
+  }
 
   // ─── Legacy routes 308 redirects (rute sterse, vezi LEGACY_REDIRECTS) ──
   const legacyTarget = LEGACY_REDIRECTS[pathname];

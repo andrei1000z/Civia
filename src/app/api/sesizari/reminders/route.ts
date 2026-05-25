@@ -165,6 +165,7 @@ export async function GET(req: Request) {
 
   let sent = 0;
   let failed = 0;
+  const successInserts: { sesizare_id: string; step: string; channel: string }[] = [];
   for (const sez of candidates) {
     const daysOld = Math.floor((Date.now() - new Date(sez.created_at).getTime()) / (24 * 60 * 60 * 1000));
     const step = pickStep(daysOld);
@@ -176,11 +177,9 @@ export async function GET(req: Request) {
 
     try {
       await sendEmail({ to: sez.author_email, subject, html });
-      await admin.from("sesizari_reminders").insert({
-        sesizare_id: sez.id,
-        step,
-        channel: "email",
-      });
+      // 2026-05-25 OPTIMIZATION: collect pentru batch INSERT la sfârșit
+      // (în loc de INSERT individual per row × 60 rows = 60 DB calls).
+      successInserts.push({ sesizare_id: sez.id, step, channel: "email" });
       sent += 1;
     } catch {
       failed += 1;
@@ -188,6 +187,11 @@ export async function GET(req: Request) {
 
     // Rate-limit (Resend free tier: 10/sec).
     await new Promise((r) => setTimeout(r, 150));
+  }
+
+  // BATCH INSERT — single DB roundtrip în loc de N×INSERT. Salvare 60 calls/run.
+  if (successInserts.length > 0) {
+    await admin.from("sesizari_reminders").insert(successInserts);
   }
 
   return NextResponse.json({

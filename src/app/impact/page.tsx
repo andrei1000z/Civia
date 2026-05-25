@@ -22,8 +22,10 @@ export const metadata: Metadata = {
   },
 };
 
-// 2 minute ISR — cifrele se schimbă lent
-export const revalidate = 120;
+// 2026-05-25 OPTIMIZATION: 120s → 1800s (30 min). /impact stats refresh
+// la 2 min era overkill (-576 ISR writes/zi). Cifrele se schimbă lent;
+// 30 min refresh e mai mult decât suficient pentru un dashboard public.
+export const revalidate = 1800;
 
 interface Stats {
   total: number;

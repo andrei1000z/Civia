@@ -14,9 +14,10 @@ Sentry.init({
       name.includes("/api/auth") ||
       name.includes("/api/admin")
     ) {
-      return 0.5;
+      // 2026-05-25 OPTIMIZATION: 50% → 10%. Pe Pro plan revenim la 50%.
+      return 0.1;
     }
-    return 0.02;
+    return 0.01;
   },
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 0.5,

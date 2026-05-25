@@ -10,7 +10,10 @@ import { PRIMARII, PREFECTURI, ORASE_IMPORTANTE } from "@/data/autoritati-contac
 
 // 5/23/2026 — Search v2: relevance scoring + petitii + proteste + glosar +
 // autoritati + grouping. Cache scurt (60s) pentru rezultate populare.
-export const revalidate = 60;
+// 2026-05-25 OPTIMIZATION: ISR revalidate DELETE — duplicat cu HTTP
+// Cache-Control: s-maxage=60 deja setat per response. Salvare ~1.440 ISR
+// writes/zi (search e read-only, edge cache CDN suficient).
+export const dynamic = "force-dynamic";
 
 export type SearchResultType =
   | "sesizare"
