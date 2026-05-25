@@ -6,7 +6,7 @@ import {
   Activity, Users, Eye, Gauge, Globe2, MapPin, Smartphone, Monitor,
   Link2, TrendingUp, Clock, AlertTriangle, RefreshCw, Zap, MousePointerClick,
   Frown, Search, Bot, LogIn, Copy, Download, ExternalLink,
-  MessageSquareMore, Mail,
+  MessageSquareMore, Mail, Sparkles,
 } from "lucide-react";
 import { Sparkline } from "@/components/analytics/Sparkline";
 
@@ -414,6 +414,11 @@ export function AnalyticsDashboard() {
 
       {/* Weekly compare */}
       <WeeklyCompare />
+
+      {/* 2026-05-25 Faza 5 — Civic North-Star KPIs (closed-loop, county
+          coverage, multi-surface). Read din /api/admin/analytics/civic-kpi
+          care agregă din Supabase (cu 5min cache). */}
+      <CivicNorthStarPanel />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1361,6 +1366,149 @@ function CivicEventsPanel({ data }: { data: Summary }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 2026-05-25 Faza 5 — Civic North-Star KPIs din /api/admin/analytics/civic-kpi.
+ * Fetch separat de summary (cu 5min cache) ca să nu blocheze loading-ul
+ * dashboardului dacă SQL queries-urile sunt lente.
+ */
+interface CivicKpiData {
+  countyCoverage: { activeCount: number; totalCount: number; pct: number; dead: string[] };
+  multiSurface: {
+    sesizariOnly: number;
+    petitiiOnly: number;
+    both: number;
+    totalActiveUsers: number;
+    pct: number;
+  };
+  timeToFirstDraft: { medianMs: number; formalTextGeneratedCount: number };
+  closedLoop: { countLastMonth: number; totalLastMonth: number; pct: number };
+  generatedAt: string;
+}
+
+function CivicNorthStarPanel() {
+  const [kpi, setKpi] = useState<CivicKpiData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/analytics/civic-kpi")
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((j) => {
+        if (!cancelled) setKpi(j.data);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Eroare KPI");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="bg-[var(--color-surface)] border border-red-500/30 rounded-[var(--radius-md)] p-5 text-xs text-red-600">
+        Eroare la încărcare Civic KPI: {error}
+      </div>
+    );
+  }
+
+  if (!kpi) {
+    return (
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+        <p className="text-xs text-[var(--color-text-muted)]">Se încarcă Civic North-Star KPIs...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-emerald-50/50 via-transparent to-violet-50/50 dark:from-emerald-950/20 dark:to-violet-950/20 border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h3 className="font-semibold text-sm inline-flex items-center gap-2">
+          <Sparkles size={16} className="text-emerald-500" aria-hidden="true" />
+          Civic North-Star (impact real)
+        </h3>
+        <span className="text-[10px] text-[var(--color-text-muted)]">
+          ultimele 30 zile · cache 5min
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* #31 closed-loop */}
+        <div className="bg-[var(--color-surface)] rounded-[var(--radius-xs)] p-4 border-l-4 border-emerald-500">
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1">
+            🎯 Closed-loop sesizari
+          </p>
+          <p className="font-[family-name:var(--font-sora)] text-3xl font-extrabold tabular-nums">
+            {fmt(kpi.closedLoop.countLastMonth)}
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+            din {fmt(kpi.closedLoop.totalLastMonth)} total · {kpi.closedLoop.pct}%
+          </p>
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 italic">
+            Rezolvate + răspuns oficial
+          </p>
+        </div>
+
+        {/* #37 county coverage */}
+        <div className="bg-[var(--color-surface)] rounded-[var(--radius-xs)] p-4 border-l-4 border-amber-500">
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1">
+            🗺️ Acoperire județe
+          </p>
+          <p className="font-[family-name:var(--font-sora)] text-3xl font-extrabold tabular-nums">
+            {kpi.countyCoverage.activeCount}/{kpi.countyCoverage.totalCount}
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+            {kpi.countyCoverage.pct}% din 42 active
+          </p>
+          {kpi.countyCoverage.dead.length > 0 && (
+            <p
+              className="text-[10px] text-[var(--color-text-muted)] mt-1 italic truncate"
+              title={`Județe fără sesizari: ${kpi.countyCoverage.dead.join(", ")}`}
+            >
+              dead: {kpi.countyCoverage.dead.slice(0, 5).join(", ")}
+              {kpi.countyCoverage.dead.length > 5 ? "..." : ""}
+            </p>
+          )}
+        </div>
+
+        {/* #36 multi-surface */}
+        <div className="bg-[var(--color-surface)] rounded-[var(--radius-xs)] p-4 border-l-4 border-violet-500">
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1">
+            🔁 Multi-surface adoption
+          </p>
+          <p className="font-[family-name:var(--font-sora)] text-3xl font-extrabold tabular-nums">
+            {kpi.multiSurface.pct}%
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+            {fmt(kpi.multiSurface.both)} useri pe sesizari+petitii
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1 italic">
+            {fmt(kpi.multiSurface.totalActiveUsers)} useri activi total
+          </p>
+        </div>
+
+        {/* #32 time-to-first-draft */}
+        <div className="bg-[var(--color-surface)] rounded-[var(--radius-xs)] p-4 border-l-4 border-cyan-500">
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1">
+            ⏱️ Formal-text generate
+          </p>
+          <p className="font-[family-name:var(--font-sora)] text-3xl font-extrabold tabular-nums">
+            {fmt(kpi.timeToFirstDraft.formalTextGeneratedCount)}
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+            sesizari cu AI draft
+          </p>
+          <p className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-1 italic">
+            Median TTFA: TODO (necesită Redis funnel timing)
+          </p>
+        </div>
       </div>
     </div>
   );
