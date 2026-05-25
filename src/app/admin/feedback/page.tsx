@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { analyticsRedis } from "@/lib/analytics/redis";
 import { FeedbackList } from "./FeedbackList";
+import { FeedbackInbox } from "./FeedbackInbox";
 
 export const metadata = { title: "Feedback / Contact — Admin" };
 export const dynamic = "force-dynamic";
@@ -17,6 +19,16 @@ interface Row {
   status: string;
   admin_notes: string | null;
   created_at: string;
+}
+
+interface RedisFeedbackEntry {
+  t: number;
+  kind: string;
+  message: string;
+  email: string | null;
+  userId: string | null;
+  country: string | null;
+  pathname: string | null;
 }
 
 export default async function AdminFeedbackPage() {
@@ -39,6 +51,24 @@ export default async function AdminFeedbackPage() {
 
   const rows = (data ?? []) as Row[];
 
+  // Redis feedback — mesaje scrise via /api/feedback (FeedbackBox,
+  // ProposePetitieForm, etc.). Mutat aici 2026-05-25 din /admin/analytics.
+  let redisEntries: RedisFeedbackEntry[] = [];
+  if (analyticsRedis) {
+    const raw = await analyticsRedis.lrange("civia:feedback:messages", 0, 199);
+    for (const s of raw) {
+      try {
+        const entry =
+          typeof s === "string"
+            ? (JSON.parse(s) as RedisFeedbackEntry)
+            : (s as RedisFeedbackEntry);
+        redisEntries.push(entry);
+      } catch {
+        // skip malformed
+      }
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -51,12 +81,9 @@ export default async function AdminFeedbackPage() {
         <h1 className="font-[family-name:var(--font-sora)] text-2xl font-extrabold mt-2">
           Feedback / Contact
         </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Mesajele trimise prin formularul de contact (GDPR, bug, sugestii,
-          contact general). Răspunde la cele cu email opțional, marchează
-          restul ca arhivate.
-        </p>
       </div>
+
+      <FeedbackInbox redisEntries={redisEntries} sqlCount={rows.length} />
       <FeedbackList rows={rows} />
     </div>
   );

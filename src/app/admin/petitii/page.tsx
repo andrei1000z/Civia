@@ -24,6 +24,7 @@ import { useToast } from "@/components/Toast";
 import { cn } from "@/lib/utils";
 import { PETITIE_CATEGORII } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
+import { PropuneriCetateni } from "./PropuneriCetateni";
 
 export const dynamic = "force-dynamic";
 
@@ -181,9 +182,6 @@ export default function AdminPetitiiPage() {
             <Megaphone size={26} className="text-purple-600" aria-hidden="true" />
             Petiții civice
           </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Postează petițiile pe /petitii. Auto-save la 2s + AI helpers pentru sumar și slug.
-          </p>
         </div>
         <button
           type="button"
@@ -205,19 +203,14 @@ export default function AdminPetitiiPage() {
           verificare. Ascuns când form-ul e deja deschis. */}
       {!showForm && (
         <div className="mb-6 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:p-5">
-          <div className="flex items-start gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-3">
             <span
               className="shrink-0 w-9 h-9 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500/15 to-indigo-500/15 grid place-items-center"
               aria-hidden="true"
             >
               <Wand2 size={16} className="text-purple-600 dark:text-purple-400" />
             </span>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm">Adaugă petiție din URL extern</h3>
-              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mt-0.5">
-                Pune doar link-ul (Declic, Avaaz, Change.org, petitie.civica.ro) — AI extrage automat titlu, sumar, conținut, imagine, categorie. Tu verifici și salvezi.
-              </p>
-            </div>
+            <h3 className="font-semibold text-sm">Import din URL</h3>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -230,7 +223,7 @@ export default function AdminPetitiiPage() {
                   handleQuickImport();
                 }
               }}
-              placeholder="https://declic.ro/petitii/..."
+              aria-label="URL petiție externă"
               disabled={quickImporting}
               className="flex-1 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
             />
@@ -249,6 +242,18 @@ export default function AdminPetitiiPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Petiții propuse de cetățeni (Redis feedback kind=idea cu prefix
+          „[Petiție propusă]") — admin poate importa direct URL-ul în
+          form-ul de mai sus. */}
+      {!showForm && (
+        <PropuneriCetateni
+          onImportUrl={(url) => {
+            setQuickImportUrl(url);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       )}
 
       {showForm && (

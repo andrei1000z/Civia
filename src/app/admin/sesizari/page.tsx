@@ -52,7 +52,6 @@ export default function AdminSesizariPage() {
   const [rows, setRows] = useState<SesizareRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"toate" | SesizareStatus>("toate");
   const [polishDiff, setPolishDiff] = useState<PolishDiff | null>(null);
   const [statusEdit, setStatusEdit] = useState<{
     code: string;
@@ -185,8 +184,10 @@ export default function AdminSesizariPage() {
     }
   };
 
-  const filtered =
-    statusFilter === "toate" ? rows : rows.filter((r) => r.status === statusFilter);
+  // 2026-05-25 — filtrele de status pe sub-tab-uri scoase la cererea
+  // user-ului. Tot tabelul afișează toate sesizările; sorted/searched
+  // direct în lista de mai jos.
+  const filtered = rows;
 
   return (
     <div>
@@ -463,7 +464,7 @@ export default function AdminSesizariPage() {
         </div>
       )}
 
-      {/* Sub-tabs row: filter by status + a shortcut to the ticket queue */}
+      {/* Shortcut to ticket queue (filter chips scoase 2026-05-25). */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <Link
           href="/admin/sesizari/tickets"
@@ -478,45 +479,9 @@ export default function AdminSesizariPage() {
             </span>
           )}
         </Link>
-
-        <span className="w-px h-5 bg-[var(--color-border)] mx-1" aria-hidden="true" />
-
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1" role="group" aria-label="Filtrează după status">
-          <button
-            type="button"
-            onClick={() => setStatusFilter("toate")}
-            aria-pressed={statusFilter === "toate"}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-              statusFilter === "toate"
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-            }`}
-          >
-            Toate
-            <span className="ml-1 opacity-70 tabular-nums">({rows.length})</span>
-          </button>
-          {SESIZARE_STATUS_VALUES.map((s) => {
-            const count = rows.filter((r) => r.status === s).length;
-            const active = statusFilter === s;
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatusFilter(s)}
-                aria-pressed={active}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                  active
-                    ? "text-white"
-                    : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-                }`}
-                style={active ? { backgroundColor: SESIZARE_STATUS_META[s].color } : undefined}
-              >
-                {SESIZARE_STATUS_META[s].label}
-                <span className="ml-1 opacity-70 tabular-nums">({count})</span>
-              </button>
-            );
-          })}
-        </div>
+        <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
+          {rows.length} sesizări
+        </span>
       </div>
 
       {loading ? (
@@ -525,7 +490,7 @@ export default function AdminSesizariPage() {
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-center text-[var(--color-text-muted)] py-20">
-          Nicio sesizare {statusFilter !== "toate" ? `cu status „${SESIZARE_STATUS_META[statusFilter].label}"` : ""}.
+          Nicio sesizare.
         </p>
       ) : (
         <div className="space-y-3">

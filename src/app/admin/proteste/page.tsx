@@ -215,7 +215,11 @@ export default function AdminProtestePage() {
   const [uploading, setUploading] = useState(false);
   const [demandsInput, setDemandsInput] = useState("");
   const [tagsInput, setTagsInput] = useState("");
-  const [filter, setFilter] = useState<FilterTab>("pending");
+  // 2026-05-25 — filter chips scoase la cererea user-ului. Păstrăm
+  // variabila pe valoarea „all" (nu filtrăm) ca să atingem minim
+  // logica existentă din useMemo + empty states. setFilter rămâne
+  // disponibilă local pentru viitor.
+  const [filter] = useState<FilterTab>("all");
   const [moderating, setModerating] = useState<string | null>(null);
   const [aiFilling, setAiFilling] = useState(false);
   const [aiFilledKeys, setAiFilledKeys] = useState<Set<string>>(new Set());
@@ -587,17 +591,6 @@ export default function AdminProtestePage() {
               </span>
             )}
           </h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Listate public la{" "}
-            <Link
-              href="/proteste"
-              target="_blank"
-              className="text-[var(--color-primary)] hover:underline inline-flex items-center gap-0.5"
-            >
-              /proteste <ExternalLink size={10} aria-hidden="true" />
-            </Link>
-            . Submisii publice intră ca <strong>pending</strong> — verifică tab-ul „În așteptare" și aprobă sau respinge.
-          </p>
         </div>
         {!showForm && (
           <button
@@ -611,43 +604,9 @@ export default function AdminProtestePage() {
         )}
       </div>
 
-      {/* Moderation filter tabs */}
-      <div className="flex items-center gap-1 mb-5 overflow-x-auto no-scrollbar -mx-2 px-2">
-        {([
-          { value: "pending", label: "În așteptare", icon: Clock, count: counts.pending },
-          { value: "approved", label: "Aprobate", icon: Check, count: counts.approved },
-          { value: "rejected", label: "Respinse", icon: ShieldX, count: counts.rejected },
-          { value: "all", label: "Toate", icon: Tag, count: counts.all },
-        ] as const).map((t) => {
-          const Icon = t.icon;
-          const active = filter === t.value;
-          return (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setFilter(t.value)}
-              aria-current={active ? "page" : undefined}
-              className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-full)] text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                active
-                  ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-1)]"
-                  : "text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
-              }`}
-            >
-              <Icon size={12} aria-hidden="true" />
-              {t.label}
-              <span
-                className={`min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums ${
-                  active
-                    ? "bg-white/25 text-white"
-                    : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]"
-                }`}
-              >
-                {t.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Filter chips scoase 2026-05-25. Toate protestele afișate într-o
+          singură listă; cele pending au badge pulsing roșu pentru a fi
+          ușor de identificat la scroll. */}
 
       {/* FORM */}
       {showForm && (
@@ -1195,12 +1154,9 @@ Mai mult text aici.`}
         <div className="bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] p-10 text-center">
           <Megaphone size={28} className="text-[var(--color-text-muted)] mx-auto mb-3" />
           <p className="text-sm text-[var(--color-text-muted)] mb-3">
-            {filter === "pending" && "Nicio submisie publică în așteptare. 🎉"}
-            {filter === "approved" && "Niciun protest aprobat încă."}
-            {filter === "rejected" && "Niciun protest respins."}
-            {filter === "all" && "Nu există încă niciun protest."}
+            Nu există încă niciun protest.
           </p>
-          {!showForm && filter !== "pending" && (
+          {!showForm && (
             <button
               type="button"
               onClick={openCreate}

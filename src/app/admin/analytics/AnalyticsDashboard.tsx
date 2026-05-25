@@ -468,6 +468,11 @@ export function AnalyticsDashboard() {
         />
       </div>
 
+      {/* Engagement KPIs derivate — 2026-05-25, calcule client-side din
+          datele existente. Suplinesc rapid metricii lipsă (bounce proxy,
+          conversion rate sesizare, etc.) până se extinde colectarea server. */}
+      <DerivedKpiPanel data={data} />
+
       {/* Hourly chart */}
       <HourlyChart data={data.hourly} />
 
@@ -918,71 +923,35 @@ export function AnalyticsDashboard() {
         </div>
       )}
 
-      {/* Feedback inbox — what users told us */}
+      {/* Feedback inbox — mutat la /admin/feedback 2026-05-25. Aici
+          rămâne doar count + link spre noul home. */}
       {data.feedback && data.feedback.length > 0 && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
-          <div className="flex items-center justify-between mb-4">
+        <Link
+          href="/admin/feedback"
+          className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+        >
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <MessageSquareMore size={16} className="text-[var(--color-primary)]" />
               <h3 className="font-semibold text-sm">
-                Feedback · {data.feedback.length} mesaje
+                Feedback inbox →{" "}
+                <span className="font-normal text-[var(--color-text-muted)]">
+                  {data.feedback.length} mesaje recente
+                </span>
               </h3>
             </div>
             <div className="flex gap-3 text-[11px]">
               {Object.entries(data.feedbackCounts).map(([k, v]) => (
                 <span key={k} className="text-[var(--color-text-muted)]">
-                  {k}: <span className="font-semibold text-[var(--color-text)] tabular-nums">{toNum(v)}</span>
+                  {k}:{" "}
+                  <span className="font-semibold text-[var(--color-text)] tabular-nums">
+                    {toNum(v)}
+                  </span>
                 </span>
               ))}
             </div>
           </div>
-          <ul className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
-            {data.feedback.map((f, i) => (
-              <li
-                key={i}
-                className="p-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)]"
-              >
-                <div className="flex items-center gap-2 mb-2 text-[11px]">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                      f.kind === "bug"
-                        ? "bg-red-500/15 text-red-600 dark:text-red-400"
-                        : f.kind === "idea"
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                        : f.kind === "question"
-                        ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                        : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
-                    }`}
-                  >
-                    {f.kind}
-                  </span>
-                  <span className="text-[var(--color-text-muted)] tabular-nums">
-                    {timeAgo(f.t)}
-                  </span>
-                  {f.country && (
-                    <span className="text-[var(--color-text-muted)]">
-                      {COUNTRY_FLAGS[f.country] || f.country}
-                    </span>
-                  )}
-                  {f.email && (
-                    <a
-                      href={`mailto:${f.email}`}
-                      className="text-[var(--color-primary)] hover:underline font-mono truncate"
-                    >
-                      {f.email}
-                    </a>
-                  )}
-                </div>
-                <p className="text-sm whitespace-pre-wrap break-words">{f.message}</p>
-                {f.pathname && (
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-2 font-mono truncate">
-                    ← {f.pathname}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+        </Link>
       )}
 
       {/* Newsletter subscribers */}
@@ -1162,6 +1131,104 @@ function CompareCard({
       </div>
       <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
         săpt. trecută: <span className="tabular-nums">{previous.toLocaleString("ro-RO")}</span>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * KPI-uri derivate din datele existente — nu necesită nou tracking server.
+ * Construit 2026-05-25 ca răspuns la cererea „mai multe analitice".
+ * Toate metricile sunt CALCULATE din ce avem deja în Redis/SQL.
+ */
+function DerivedKpiPanel({ data }: { data: Summary }) {
+  const totalViews = toNum(data.total.views);
+  const totalSessions = toNum(data.total.sessions ?? 0);
+  const errorCount = sum(data.errors);
+  const eventsTotal = sum(data.eventsTotal);
+
+  // Bounce-rate proxy: sesiuni cu exact 1 pageview / total sesiuni.
+  // Folosim eventsTotal aproximativ ca proxy pentru engaged sessions.
+  const bounceProxy =
+    totalSessions > 0
+      ? Math.max(0, Math.min(100, Math.round(100 - (eventsTotal / totalSessions) * 100)))
+      : 0;
+
+  // Average pages per session.
+  const pagesPerSession = totalSessions > 0 ? (totalViews / totalSessions).toFixed(1) : "0";
+
+  // Error-rate per 1000 pageviews — semnal de calitate frontend.
+  const errorRate1k = totalViews > 0 ? ((errorCount / totalViews) * 1000).toFixed(1) : "0";
+
+  // Conversion proxy: scor evenimente / pageviews × 100. Reprezintă cât
+  // de „angajat" e userul mediu (cu cât mai mare, cu atât interacționează).
+  const engagementScore =
+    totalViews > 0 ? Math.round((eventsTotal / totalViews) * 100) : 0;
+
+  // Mobile share din date.total.mobile vs desktop.
+  const mobile = toNum(data.total.mobile ?? 0);
+  const desktop = toNum(data.total.desktop ?? 0);
+  const mobilePct = mobile + desktop > 0 ? Math.round((mobile / (mobile + desktop)) * 100) : 0;
+
+  // Returning vs new — folosim stickiness DAU/MAU ca proxy (loyalty).
+  const loyalty = data.stickiness ?? 0;
+
+  // % din toate pageview-urile care vin din county-aware routes
+  // (orice /[slug-judet]/... — primii 1-12 char ASCII slug).
+  const routeEntries = Object.entries(data.routes ?? {});
+  const countyHits = routeEntries
+    .filter(([k]) => /^\/[a-z]{1,12}(\/|$)/i.test(k) && k !== "/")
+    .reduce((acc, [, v]) => acc + toNum(v), 0);
+  const countyShare =
+    totalViews > 0 ? Math.round((countyHits / totalViews) * 100) : 0;
+
+  const kpis: Array<{ label: string; value: string | number; sub?: string; color: string }> = [
+    { label: "Bounce rate (proxy)", value: `${bounceProxy}%`, sub: "1-event sessions", color: "#DC2626" },
+    { label: "Pagini / sesiune", value: pagesPerSession, sub: "depth signal", color: "#7C3AED" },
+    { label: "Engagement score", value: `${engagementScore}%`, sub: "events / view", color: "#0891B2" },
+    { label: "Erori / 1000 views", value: errorRate1k, sub: "JS reliability", color: "#F59E0B" },
+    { label: "Mobile share", value: `${mobilePct}%`, sub: "mobile/desktop split", color: "#0EA5E9" },
+    { label: "Loyalty (DAU/MAU)", value: `${loyalty}%`, sub: "returning users", color: "#059669" },
+    { label: "Trafic județe", value: `${countyShare}%`, sub: "scoped routes", color: "#C2410C" },
+    { label: "Total sesiuni", value: fmt(totalSessions), sub: "unique visits", color: "#8B5CF6" },
+  ];
+
+  return (
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h3 className="font-semibold text-sm inline-flex items-center gap-2">
+          <Gauge size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
+          KPI derivate
+        </h3>
+        <span className="text-[10px] text-[var(--color-text-muted)]">
+          calculate client-side · fără tracking suplimentar
+        </span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {kpis.map((k) => (
+          <div
+            key={k.label}
+            className="bg-[var(--color-surface-2)] rounded-[var(--radius-xs)] p-3 border-l-2"
+            style={{ borderLeftColor: k.color }}
+          >
+            <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1 leading-tight">
+              {k.label}
+            </p>
+            <p className="font-[family-name:var(--font-sora)] text-xl font-extrabold tabular-nums">
+              {k.value}
+            </p>
+            {k.sub && (
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{k.sub}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
+        Sugestii viitoare colectare (necesită extindere CiviaTracker): time-to-first-action,
+        scroll-velocity, rage-click clusters, form-field abandonment per câmp, AI assistant
+        engagement, sesizare-photo-upload completion, petitie share-rate, county-switch
+        events, before/after view-rate, deep-link return-rate, push-permission-granted-rate,
+        offline-queue-drain-rate.
       </p>
     </div>
   );

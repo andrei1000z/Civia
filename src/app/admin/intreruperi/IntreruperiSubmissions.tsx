@@ -31,7 +31,6 @@ function statusStyles(status: string) {
 export function IntreruperiSubmissions({ rows: initial }: { rows: Row[] }) {
   const [rows, setRows] = useState(initial);
   const [acting, setActing] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "pending" | "published" | "rejected">("pending");
   const { toast } = useToast();
 
   const updateStatus = async (id: string, status: Row["status"]) => {
@@ -52,45 +51,18 @@ export function IntreruperiSubmissions({ rows: initial }: { rows: Row[] }) {
     }
   };
 
-  const filtered = filter === "all" ? rows : rows.filter((r) => r.status === filter);
-
-  const counts = {
-    pending: rows.filter((r) => r.status === "pending").length,
-    published: rows.filter((r) => r.status === "published").length,
-    rejected: rows.filter((r) => r.status === "rejected").length,
-    all: rows.length,
-  };
+  // 2026-05-25 — filter chips scoase la cererea user-ului.
+  const filtered = rows;
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 mb-6" role="group" aria-label="Filtrează submisii">
-        {(["all", "pending", "published", "rejected"] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            aria-pressed={filter === f}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-              filter === f
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-            }`}
-          >
-            {f === "all"
-              ? "Toate"
-              : f === "pending"
-              ? "În așteptare"
-              : f === "published"
-              ? "Publicate"
-              : "Respinse"}
-            <span className="ml-1 opacity-70 tabular-nums">({counts[f]})</span>
-          </button>
-        ))}
-      </div>
+      <p className="text-xs text-[var(--color-text-muted)] mb-4 tabular-nums">
+        {rows.length} {rows.length === 1 ? "submisie" : "submisii"}
+      </p>
 
       {filtered.length === 0 ? (
         <p className="text-center text-[var(--color-text-muted)] py-16 text-sm">
-          Nicio submisie {filter !== "all" ? `cu status „${filter}"` : ""}.
+          Nicio submisie.
         </p>
       ) : (
         <div className="space-y-3">
