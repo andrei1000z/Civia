@@ -2,8 +2,36 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { analyticsRedis, KEY } from "@/lib/analytics/redis";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * 2026-05-25 #4 — GDPR Art. 17 right-to-erasure pentru analytics.
+ * Șterge toate datele asociate cu un userId în Redis analytics:
+ *   - userMeta:{id}    (first_seen, last_seen, device, country, etc.)
+ *   - userRoutes:{id}  (paths visited)
+ *   - userCountries:{id}
+ *   - userDays:{id}    (per-day activity)
+ *   - topUsers ZREM    (leaderboard entry)
+ *
+ * Apelat la cont delete + manual din /admin pentru user-specific erasure.
+ */
+async function purgeAnalyticsForUser(userId: string): Promise<void> {
+  if (!analyticsRedis) return;
+  // Pipeline pentru o singură round-trip Redis.
+  const pipe = analyticsRedis.pipeline();
+  pipe.del(KEY.userMeta(userId));
+  pipe.del(KEY.userRoutes(userId));
+  pipe.del(KEY.userCountries(userId));
+  pipe.del(KEY.userDays(userId));
+  pipe.zrem(KEY.topUsers, userId);
+  // Excluded set: dacă user-ul era exclus de la tracking, păstrăm
+  // exclusion-ul (e oricum anonim un userId care nu mai există în DB).
+  // Actually delete it — clean slate.
+  pipe.srem(KEY.excluded, userId);
+  await pipe.exec();
+}
 
 // GDPR: Right to be forgotten — delete user + anonymize sesizari
 export async function DELETE() {
@@ -42,6 +70,15 @@ export async function DELETE() {
 
     // Delete profile
     await admin.from("profiles").delete().eq("id", user.id);
+
+    // 2026-05-25 #4 — GDPR Art. 17 also purge analytics in Redis.
+    // Best-effort: dacă Redis e down nu blocăm contul delete (DB e
+    // single source of truth pentru identitate; analytics e bonus).
+    try {
+      await purgeAnalyticsForUser(user.id);
+    } catch {
+      // silent — Redis-down nu trebuie să blocheze GDPR compliance pe SQL
+    }
 
     // Delete auth user (cascades)
     const { error } = await admin.auth.admin.deleteUser(user.id);

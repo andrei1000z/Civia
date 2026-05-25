@@ -82,6 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(returnTo)}`,
       },
     });
+    // 2026-05-25 #11 — track magic-link initiation (auth funnel step
+    // distinct de signin success — measures email sent vs verified).
+    if (!error && typeof window !== "undefined") {
+      import("@/components/analytics/CiviaTracker").then(({ trackCustomEvent }) => {
+        trackCustomEvent("auth-magic-link-sent");
+      }).catch(() => { /* silent */ });
+    }
     return { error: error?.message ?? null };
   };
 
@@ -95,10 +102,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(returnTo)}`,
       },
     });
+    if (!error && typeof window !== "undefined") {
+      import("@/components/analytics/CiviaTracker").then(({ trackCustomEvent }) => {
+        trackCustomEvent("auth-oauth-initiated", { provider });
+      }).catch(() => { /* silent */ });
+    }
     return { error: error?.message ?? null };
   };
 
   const signOut = async () => {
+    // Track înainte de actual signout — onAuthStateChange tracks
+    // succesul, dar acest event capturează intent (clicked sign out).
+    if (typeof window !== "undefined") {
+      import("@/components/analytics/CiviaTracker").then(({ trackCustomEvent }) => {
+        trackCustomEvent("auth-signout-clicked");
+      }).catch(() => { /* silent */ });
+    }
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
   };
