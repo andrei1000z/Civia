@@ -346,11 +346,15 @@ export function StiriList() {
                       )}
                       {featured.source}
                     </Badge>
-                    <Badge className="bg-black/40 text-white border border-white/20">Featured</Badge>
+                    <Badge className="bg-black/40 text-white border border-white/20 uppercase tracking-wider text-[10px] font-bold">Featured</Badge>
                   </div>
                 </div>
                 <div className="p-5 md:p-8 flex flex-col min-w-0">
-                  <Badge variant="primary" className="w-fit mb-3">{featured.category}</Badge>
+                  {/* 2026-05-25 — uppercase + tracking ca să fie consistent
+                      cu category badges de pe celelalte carduri (line ~427). */}
+                  <Badge variant="primary" className="w-fit mb-3 uppercase tracking-wider text-[10px]">
+                    {featured.category}
+                  </Badge>
                   <h2 className="font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-3xl font-bold mb-3 group-hover:text-[var(--color-primary)] transition-colors break-words">
                     {featured.title}
                   </h2>

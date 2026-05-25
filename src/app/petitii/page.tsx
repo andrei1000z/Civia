@@ -303,29 +303,10 @@ function PetitieCard({
           {p.summary}
         </p>
 
-        {/* 2026-05-25: Progress bar vizibil pe card (% atins din goal).
-            Plus urgency badge dacă <14 zile rămase. Click-prompt user să
-            vadă rapid câte semnături lipsesc. */}
-        {p.target_signatures > 0 && (
-          <div className="mb-3">
-            <div className="flex items-baseline justify-between mb-1">
-              <span className="text-xs font-semibold text-[var(--color-text)] tabular-nums">
-                {p.signature_count.toLocaleString("ro-RO")} / {p.target_signatures.toLocaleString("ro-RO")}
-              </span>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-petition)]">
-                {Math.min(100, Math.round((p.signature_count / Math.max(1, p.target_signatures)) * 100))}%
-              </span>
-            </div>
-            <div className="h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[var(--color-petition)] to-purple-500 rounded-full transition-all"
-                style={{
-                  width: `${Math.min(100, Math.round((p.signature_count / Math.max(1, p.target_signatures)) * 100))}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        {/* 2026-05-25 — Progress bar / nr semnături SCOS la cererea user-ului.
+            Petițiile sunt agregate de pe site-uri externe (Declic, Avaaz),
+            numărul de semnături din DB e desincronizat — afișa cifre vechi.
+            Mai bine zero număr decât număr greșit. */}
 
         <div className="mt-auto flex items-center justify-between text-xs">
           {externalHost && (

@@ -285,25 +285,46 @@ export async function POST(req: Request) {
     }
   }
 
-  // ─── 9. Push notification ───────────────────────────────────────
-  if (sesizareUserId && sesizareId && !classification.is_spam) {
+  // ─── 9. Push notification — autor + cosigners ───────────────────
+  // 2026-05-25 — Extins la cosigners: cei care au „trimis și ei" sesizarea
+  // (sesizare_cosigners cu user_id NOT NULL) primesc același push.
+  if (sesizareId && !classification.is_spam) {
     const emoji = classification.status === "rezolvat" ? "🎉"
-      : classification.status === "inregistrata" ? "✅"
+      : classification.status === "inregistrata" ? "📨"
       : classification.status === "in-lucru" ? "🛠️"
       : classification.status === "respins" ? "⚠️"
       : "📬";
+
+    // Construiesc lista de destinatari: autor + cosigners autentificați.
+    const recipients = new Set<string>();
+    if (sesizareUserId) recipients.add(sesizareUserId);
     try {
-      await sendPushToUsers([sesizareUserId], {
-        title: `${emoji} Răspuns primit la sesizarea ${extraction.code}`,
-        body: classification.summary,
-        url: `/sesizari/${extraction.code}`,
-        tag: `reply-${extraction.code}-${replyRow?.id ?? "x"}`,
-      });
-    } catch (e) {
-      Sentry.captureException(e, {
-        tags: { route: "inbox.reply", kind: "push_failed" },
-        extra: { user_id: sesizareUserId, code: extraction.code },
-      });
+      const { data: cosigns } = await admin
+        .from("sesizare_cosigners")
+        .select("user_id")
+        .eq("sesizare_id", sesizareId)
+        .not("user_id", "is", null);
+      for (const c of (cosigns ?? []) as { user_id: string | null }[]) {
+        if (c.user_id) recipients.add(c.user_id);
+      }
+    } catch {
+      // Best-effort — fallback la doar autor.
+    }
+
+    if (recipients.size > 0) {
+      try {
+        await sendPushToUsers([...recipients], {
+          title: `${emoji} Sesizarea ${extraction.code} — ${classification.status === "rezolvat" ? "Rezolvată" : classification.status === "inregistrata" ? "Înregistrată oficial" : classification.status === "in-lucru" ? "În lucru" : "Răspuns primit"}`,
+          body: classification.summary,
+          url: `/sesizari/${extraction.code}`,
+          tag: `reply-${extraction.code}-${replyRow?.id ?? "x"}`,
+        });
+      } catch (e) {
+        Sentry.captureException(e, {
+          tags: { route: "inbox.reply", kind: "push_failed" },
+          extra: { recipients_count: recipients.size, code: extraction.code },
+        });
+      }
     }
   }
 

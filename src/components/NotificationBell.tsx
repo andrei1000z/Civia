@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Bell, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
-  type: "comment" | "status" | "verify";
+  type: "status";
   sesizareCode: string;
   sesizareTitle: string;
   message: string;
@@ -17,9 +17,49 @@ interface Notification {
   read: boolean;
 }
 
-const STORAGE_KEY = "civia:notifications";
-const LAST_SEEN_KEY = "civia:notifications:lastSeen";
+// 2026-05-25 — STORAGE_KEY bump la v2 ca să șteargă notificările vechi
+// (clean slate per cerere user — „ștergere tot legat de notificări"). Versiunea
+// nouă persistă DOAR status changes scurte cu emoji, nu mai are noise.
+const STORAGE_KEY = "civia:notifications:v2";
+const LAST_SEEN_KEY = "civia:notifications:v2:lastSeen";
 const MAX_STORED = 30;
+
+// Mapare status sesizare → emoji + mesaj scurt (max 35 chars).
+// Folosit la status change events din timeline.
+const STATUS_NOTIFICATION: Record<string, { emoji: string; label: string }> = {
+  inregistrata: { emoji: "📨", label: "Înregistrată oficial" },
+  trimis: { emoji: "📤", label: "Trimisă către autorități" },
+  "in-lucru": { emoji: "🛠️", label: "În lucru la autoritate" },
+  "actiune-autoritate": { emoji: "🛠️", label: "În lucru la autoritate" },
+  interventie: { emoji: "🚧", label: "Intervenție pe teren" },
+  rezolvat: { emoji: "✅", label: "Rezolvată" },
+  redirectionata: { emoji: "↪️", label: "Redirecționată" },
+  amanata: { emoji: "⏸️", label: "Amânată" },
+  respins: { emoji: "⚠️", label: "Respinsă de autoritate" },
+};
+
+/**
+ * Extrage status-ul dintr-o descriere timeline. Formatul standard generat de
+ * trigger DB e „Status actualizat la: <status>" — match pe ultimul cuvânt.
+ * Returnează null dacă nu e un status change recognizable.
+ */
+function parseStatusFromDescription(description: string): string | null {
+  const m = description.match(/Status actualizat la:?\s*(\S+)/i);
+  if (m?.[1]) {
+    const key = m[1].toLowerCase().replace(/[^\w-]/g, "");
+    if (key in STATUS_NOTIFICATION) return key;
+  }
+  return null;
+}
+
+/**
+ * Extrage hint scurt de locație din titlu („Mașini parcate pe trotuar..." →
+ * „stâlpișori..."). Folosit ca să user știe care sesizare e — primele 3 cuvinte
+ * relevante, max 40 chars.
+ */
+function titleHint(title: string): string {
+  return title.slice(0, 45) + (title.length > 45 ? "…" : "");
+}
 
 function loadStored(): Notification[] {
   try {
@@ -88,16 +128,20 @@ export function NotificationBell() {
     const supabase = createSupabaseBrowser();
 
     async function init() {
-      const [followsRes, ownedRes] = await Promise.all([
+      // 2026-05-25 — cosigners (cei care au „trimis și ei" sesizarea) primesc
+      // și ei notificările de status change. Triplu fetch în paralel.
+      const [followsRes, ownedRes, cosignsRes] = await Promise.all([
         supabase.from("sesizare_follows").select("sesizare_id").eq("user_id", user!.id),
         supabase.from("sesizari").select("id").eq("user_id", user!.id).limit(200),
+        supabase.from("sesizare_cosigners").select("sesizare_id").eq("user_id", user!.id).limit(200),
       ]);
       const followedIds = (followsRes.data ?? []).map((f: { sesizare_id: string }) => f.sesizare_id);
       const ownedIds = (ownedRes.data ?? []).map((s: { id: string }) => s.id);
+      const cosignedIds = (cosignsRes.data ?? []).map((c: { sesizare_id: string }) => c.sesizare_id);
 
-      // Union for timeline (both owners and followers want status updates)
-      const timelineIds = Array.from(new Set([...followedIds, ...ownedIds]));
-      if (timelineIds.length === 0 && ownedIds.length === 0) return () => {};
+      // Union: status updates pe toate trei (owner + followed + cosigner).
+      const timelineIds = Array.from(new Set([...followedIds, ...ownedIds, ...cosignedIds]));
+      if (timelineIds.length === 0) return () => {};
 
       async function lookupSesizare(id: string) {
         const { data } = await supabase
@@ -115,33 +159,15 @@ export function NotificationBell() {
       const channelName = `notifications-${user!.id}-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
       const channel = supabase.channel(channelName);
 
-      // Comments — on followed sesizari
-      if (followedIds.length > 0) {
-        channel.on(
-          "postgres_changes" as never,
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "sesizare_comments",
-            filter: `sesizare_id=in.(${followedIds.join(",")})`,
-          },
-          async (payload: { new: { sesizare_id: string; body: string; author_name: string } }) => {
-            const sez = await lookupSesizare(payload.new.sesizare_id);
-            if (!sez) return;
-            addNotification({
-              id: `c-${Date.now()}-${Math.random()}`,
-              type: "comment",
-              sesizareCode: sez.code,
-              sesizareTitle: sez.titlu,
-              message: `${payload.new.author_name}: ${payload.new.body.slice(0, 60)}`,
-              createdAt: new Date().toISOString(),
-              read: false,
-            });
-          }
-        );
-      }
-
-      // Timeline (status change) — on any followed OR owned sesizare
+      // 2026-05-25 — RADICAL SIMPLIFICATION (user cerere):
+      //
+      // Notificările afișau prea multă noise (comments, votes, moderation,
+      // verifications) și mesaje greșite („aprobată și publică" la status
+      // change real). Scoase TOATE channels în afară de status change
+      // pe timeline, cu copy scurt + emoji per status real.
+      //
+      // Activează pe AMBELE seturi (followed + owned) — și autorul și
+      // cosignerii (care urmăresc) primesc notificarea.
       if (timelineIds.length > 0) {
         channel.on(
           "postgres_changes" as never,
@@ -152,98 +178,25 @@ export function NotificationBell() {
             filter: `sesizare_id=in.(${timelineIds.join(",")})`,
           },
           async (payload: { new: { sesizare_id: string; event_type: string; description: string } }) => {
+            // Doar status change events (event_type matches keys din map sau
+            // descrierea conține „Status actualizat la"). Restul (depusa,
+            // cosemnat, delivery_problem, raspuns_oficial) SKIP.
+            const statusKey =
+              payload.new.event_type in STATUS_NOTIFICATION
+                ? payload.new.event_type
+                : parseStatusFromDescription(payload.new.description);
+            if (!statusKey) return;
+
             const sez = await lookupSesizare(payload.new.sesizare_id);
             if (!sez) return;
+            const tone = STATUS_NOTIFICATION[statusKey];
+            if (!tone) return;
             addNotification({
-              id: `t-${Date.now()}-${Math.random()}`,
+              id: `s-${Date.now()}-${Math.random()}`,
               type: "status",
               sesizareCode: sez.code,
               sesizareTitle: sez.titlu,
-              message: payload.new.description,
-              createdAt: new Date().toISOString(),
-              read: false,
-            });
-          }
-        );
-      }
-
-      // Votes — on sesizari owned by the user (someone voted on my sesizare)
-      if (ownedIds.length > 0) {
-        channel.on(
-          "postgres_changes" as never,
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "sesizare_votes",
-            filter: `sesizare_id=in.(${ownedIds.join(",")})`,
-          },
-          async (payload: { new: { sesizare_id: string; value: number; user_id: string | null } }) => {
-            // Nu notificăm pe user-ul însuși când dă like la propria sesizare —
-            // raportat 2026-05-13: „dacă imi dau like singur îmi apare notificare".
-            if (payload.new.user_id && payload.new.user_id === user!.id) return;
-            const sez = await lookupSesizare(payload.new.sesizare_id);
-            if (!sez) return;
-            const isUp = payload.new.value > 0;
-            addNotification({
-              id: `v-${Date.now()}-${Math.random()}`,
-              type: "comment", // reuse icon category
-              sesizareCode: sez.code,
-              sesizareTitle: sez.titlu,
-              message: isUp ? "Cineva a votat ▲ sesizarea ta" : "Cineva a votat ▼ sesizarea ta",
-              createdAt: new Date().toISOString(),
-              read: false,
-            });
-          }
-        );
-
-        // Verifications — on owned sesizari
-        channel.on(
-          "postgres_changes" as never,
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "sesizare_verifications",
-            filter: `sesizare_id=in.(${ownedIds.join(",")})`,
-          },
-          async (payload: { new: { sesizare_id: string; agrees: boolean; user_id: string | null } }) => {
-            if (payload.new.user_id && payload.new.user_id === user!.id) return;
-            const sez = await lookupSesizare(payload.new.sesizare_id);
-            if (!sez) return;
-            addNotification({
-              id: `vf-${Date.now()}-${Math.random()}`,
-              type: "verify",
-              sesizareCode: sez.code,
-              sesizareTitle: sez.titlu,
-              message: payload.new.agrees
-                ? "Un cetățean a confirmat rezolvarea sesizării tale"
-                : "Un cetățean a contestat rezolvarea sesizării tale",
-              createdAt: new Date().toISOString(),
-              read: false,
-            });
-          }
-        );
-
-        // Moderation status change — on owned sesizari
-        channel.on(
-          "postgres_changes" as never,
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "sesizari",
-            filter: `id=in.(${ownedIds.join(",")})`,
-          },
-          async (payload: { new: { id: string; code: string; titlu: string; moderation_status: string; status: string } }) => {
-            const newMod = payload.new.moderation_status;
-            if (newMod !== "approved" && newMod !== "rejected") return;
-            addNotification({
-              id: `m-${Date.now()}-${Math.random()}`,
-              type: "status",
-              sesizareCode: payload.new.code,
-              sesizareTitle: payload.new.titlu,
-              message:
-                newMod === "approved"
-                  ? "Sesizarea ta a fost aprobată și e acum publică"
-                  : "Sesizarea ta a fost respinsă la moderare",
+              message: `${tone.emoji} ${tone.label} · ${titleHint(sez.titlu)}`,
               createdAt: new Date().toISOString(),
               read: false,
             });
@@ -362,15 +315,8 @@ export function NotificationBell() {
                     !n.read && "bg-[var(--color-primary-soft)]/30"
                   )}
                 >
-                  <div
-                    className={cn(
-                      "w-8 h-8 shrink-0 rounded-full flex items-center justify-center",
-                      n.type === "comment" && "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-                      n.type === "status" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-                      n.type === "verify" && "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                    )}
-                  >
-                    {n.type === "comment" ? <MessageCircle size={16} /> : <CheckCircle2 size={16} />}
+                  <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                    <CheckCircle2 size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold line-clamp-1">{n.sesizareTitle}</div>
