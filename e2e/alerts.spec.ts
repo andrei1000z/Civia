@@ -24,7 +24,7 @@ test.describe("Alerte adresă /intreruperi — flow complet", () => {
     await expect(section.getByRole("button", { name: /anun.*-m/i })).toBeVisible();
   });
 
-  test("buton sus „Anunță-mă pe adresa mea" scrolluiește la form", async ({ page }) => {
+  test(`buton sus „Anunță-mă pe adresa mea" scrolluiește la form`, async ({ page }) => {
     await page.goto("/intreruperi");
     const btn = page.getByRole("link", { name: /anun.*-m.*adresa/i }).first();
     await expect(btn).toBeVisible();
@@ -32,7 +32,7 @@ test.describe("Alerte adresă /intreruperi — flow complet", () => {
     expect(href).toBe("#alerts-form");
   });
 
-  test("buton sus „Raportează" scrolluiește la submit form", async ({ page }) => {
+  test(`buton sus „Raportează" scrolluiește la submit form`, async ({ page }) => {
     await page.goto("/intreruperi");
     const btn = page.getByRole("link", { name: /raporteaz.*Întrerupere/i }).first();
     await expect(btn).toBeVisible();

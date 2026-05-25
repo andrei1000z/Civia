@@ -375,7 +375,7 @@ function SummaryToolbar({ text }: { text: string }) {
     const refreshVoice = () => {
       const voices = synth.getVoices();
       if (voices.length === 0) return;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setChosenVoice(pickBestRoVoice(voices));
     };
     refreshVoice();

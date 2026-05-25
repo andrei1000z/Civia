@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
       // Next-themes requires setMounted pattern; strict rule too aggressive
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/refs": "warn",
+      // 2026-05-25: React Compiler purity/hoisting checks → warn (nu error).
+      // Compiler-ul e disabled în next.config.ts; aceste regule sunt false
+      // positives pe Server Components care folosesc Date.now()/Math.random().
+      "react-hooks/purity": "warn",
+      "react-hooks/use-memo": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/exhaustive-deps": "warn",
       // Args/vars cu underscore prefix sunt convențional „intentionally
       // unused" (Sentry callbacks, signature-only params, etc.). ESLint
       // default warneste pe ele — dezactivăm warning-ul ca să fie clean.

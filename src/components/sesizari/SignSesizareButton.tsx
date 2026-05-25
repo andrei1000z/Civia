@@ -85,7 +85,7 @@ export function SignSesizareButton({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   // Auto-fill din profile dacă user logat

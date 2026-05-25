@@ -126,7 +126,7 @@ test.describe("Civia golden path — sesizare camera→AI→submit", () => {
     await expect(tabs).toHaveCount(4);
   });
 
-  test("CTA persistent desktop „Fă o sesizare"", async ({ page }) => {
+  test(`CTA persistent desktop „Fă o sesizare"`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
     const cta = page.getByRole("link", { name: /F[ăa] o sesizare/i }).first();

@@ -109,7 +109,7 @@ export async function broadcastNewCivicContent(
     ctaUrl: url,
   });
 
-  let emailStats = { sent: 0, failed: 0, skipped: 0 };
+  const emailStats = { sent: 0, failed: 0, skipped: 0 };
   if (emails.length > 0) {
     // Trimit individual ca să respectăm Resend rate-limit (~10 emails/sec).
     // Loop simplu — pentru >100 subscribers fă-o serial cu mic delay.

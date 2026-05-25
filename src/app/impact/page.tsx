@@ -254,10 +254,13 @@ export default async function ImpactPage() {
         </section>
 
         <p className="text-xs text-[var(--color-text-muted)] text-center leading-relaxed">
-          Date deschise: <a href="/api/v1/stats" className="text-[var(--color-primary)] hover:underline">JSON API</a> ·
-          {" "}<a href="/api/v2/open311/requests.json" className="text-[var(--color-primary)] hover:underline">Open311</a> ·
+          Date deschise: <a href="/api/v1/stats" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] hover:underline">JSON API</a> ·
+          {" "}<a href="/api/v2/open311/requests.json" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] hover:underline">Open311</a> ·
           {" "}Toate cifrele sunt din DB Supabase la cerere.
         </p>
+        {/* 2026-05-25: link-uri JSON API rămân <a> (nu <Link>) pentru că
+            sunt download/external resources, nu Next.js routes. Lint regula
+            @next/next/no-html-link-for-pages e disabled aici via target=_blank. */}
       </div>
     </>
   );

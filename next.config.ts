@@ -42,15 +42,11 @@ const nextConfig: NextConfig = {
         ? { exclude: ["warn", "error"] }
         : false,
   },
-  // 2026-05-24 Faza 6: React Compiler (React 19 auto-memoization).
-  // Compiler-ul memoizează automat componente + hooks (useMemo/useCallback
-  // becomes implicit). Reduce INP semnificativ pe forms cu re-renders dense.
-  // Next 16 supports nativ via experimental flag.
-  // Type cast: reactCompiler nu e încă în ExperimentalConfig types Next 16
-  // dar runtime-ul îl recunoaște (e enabled în PPR-track + Vercel docs).
-  experimental: {
-    reactCompiler: true,
-  } as NextConfig["experimental"],
+  // 2026-05-25: React Compiler DISABLED — ESLint react-compiler plugin
+  // flag-uia 2 errors în Server Components (Date.now()/IIFE callable)
+  // care blocau CI lint. Compiler-ul e experimental și marginale beneficii
+  // de INP pe codebase-ul actual (manual memoization deja optimal). Re-enable
+  // după ce stable + after eslint plugin matures pe Next 16.
   images: {
     // Permissive wildcard — we aggregate news from 30+ Romanian press
     // outlets, each with their own CDN subdomain. Maintaining an
