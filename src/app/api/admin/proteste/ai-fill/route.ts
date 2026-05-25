@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/require-admin";
 import {
   callGemini,
   isGeminiConfigured,
@@ -99,21 +99,6 @@ function sanitize(raw: unknown): AiFill {
     out.color_theme = r.color_theme;
   }
   return out;
-}
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Auth required" };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Admin only" };
-  }
-  return { ok: true as const };
 }
 
 export async function POST(req: Request) {

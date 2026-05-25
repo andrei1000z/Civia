@@ -173,6 +173,83 @@ describe("generateFormalText — determinism (același input → același output
   });
 });
 
+describe("generateFormalText — folosește descrierea cetățeanului (bug fix 2026-05-25)", () => {
+  it(`include descrierea EXACT cum a scris-o cetățeanul`, () => {
+    const text = generateFormalText({
+      tip: "transport",
+      locatie: "linia 5 de tramvai",
+      descriere:
+        "Există un gard despărțitor pe linia 5 de tramvai, care ar putea fi instalat pentru a fluidiza șina de tramvai.",
+      nume: "Andrei",
+      adresa: "București",
+      hasPhotos: true,
+      date: new Date("2026-05-25"),
+    });
+    expect(text).toContain("Există un gard despărțitor pe linia 5 de tramvai");
+    expect(text).toContain("fluidiza șina de tramvai");
+  });
+
+  it(`NU halucinează conținut de tip când descrierea contrazice tip-ul`, () => {
+    // Bug 2026-05-25 — chiar dacă tip-ul e „stalpisori" (clasificare greșită),
+    // descrierea reală a cetățeanului trebuie să apară. Nu mai apare boilerplate
+    // hardcoded despre trotuar/stâlpișori/pietoni dacă user-ul nu menționează.
+    const text = generateFormalText({
+      tip: "stalpisori",
+      locatie: "Strada Barbu Văcărescu",
+      descriere:
+        "Există un gard despărțitor pe linia 5 de tramvai care ar putea fi instalat pentru a fluidiza șina.",
+      nume: "Test",
+      adresa: "Adresa Test",
+      hasPhotos: true,
+      date: new Date("2026-05-25"),
+    });
+    // Descrierea cetățeanului apare literal
+    expect(text).toContain("gard despărțitor pe linia 5 de tramvai");
+    // NU apare boilerplate-ul de stalpisori în declarația problemei
+    expect(text).not.toContain("lipsa elementelor de protecție");
+    expect(text).not.toContain("permite parcarea pe trotuar și pune în pericol pietonii");
+  });
+
+  it(`fallback la boilerplate tip când descrierea lipsește sau e prea scurtă`, () => {
+    const fara = generateFormalText({
+      tip: "parcare",
+      locatie: "Strada X",
+      nume: "Ana",
+      adresa: "Adresa A",
+      hasPhotos: false,
+      date: new Date("2026-05-25"),
+    });
+    expect(fara).toContain("siguranța pietonilor");
+    expect(fara).toContain("autovehicule sunt parcate ilegal");
+
+    const scurtFoarte = generateFormalText({
+      tip: "parcare",
+      locatie: "Strada X",
+      descriere: "rip",
+      nume: "Ana",
+      adresa: "Adresa A",
+      hasPhotos: false,
+      date: new Date("2026-05-25"),
+    });
+    expect(scurtFoarte).toContain("autovehicule sunt parcate ilegal");
+  });
+
+  it(`paragraful poze e neutru când există descriere reală`, () => {
+    const text = generateFormalText({
+      tip: "transport",
+      locatie: "linia 5",
+      descriere: "Există un gard despărțitor pe linia 5 de tramvai care lipsește.",
+      nume: "Ana",
+      adresa: "Adresa",
+      hasPhotos: true,
+      date: new Date("2026-05-25"),
+    });
+    expect(text).toContain("am atașat imagini care ilustrează situația descrisă mai sus");
+    // NU mai apare „evidențiază starea transportului public" boilerplate
+    expect(text).not.toContain("Acestea evidențiază starea transportului public");
+  });
+});
+
 describe("formatDateRo", () => {
   it(`formatează corect în română`, () => {
     expect(formatDateRo(new Date("2026-01-15"))).toBe("15 ianuarie 2026");

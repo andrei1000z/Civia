@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/require-admin";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
@@ -40,23 +40,6 @@ const createSchema = z.object({
   featured: z.boolean().default(false),
   color_theme: z.string().trim().max(40).default("warning"),
 });
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Auth required" };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Admin only" };
-  }
-  return { ok: true as const, userId: user.id };
-}
 
 /** Coerce empty-string fields back to null so Postgres stores NULL. */
 function emptyToNull<T extends Record<string, unknown>>(obj: T): T {

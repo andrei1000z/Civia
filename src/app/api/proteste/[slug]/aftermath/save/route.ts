@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { aftermathDataSchema, filterValidMedia } from "@/lib/proteste/aftermath";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,21 +11,6 @@ export const dynamic = "force-dynamic";
 const saveSchema = z.object({
   aftermath: aftermathDataSchema,
 });
-
-async function requireAdmin() {
-  const supa = await createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Trebuie să fii autentificat.", userId: null };
-  const { data: profile } = await supa
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Doar administratorii pot publica aftermath.", userId: null };
-  }
-  return { ok: true as const, userId: user.id };
-}
 
 export async function POST(
   req: Request,

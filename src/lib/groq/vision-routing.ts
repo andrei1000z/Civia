@@ -57,6 +57,7 @@ Restul:
 - Iluminat public stricat → "primarie_sector" (in Bucuresti) sau "primarie_municipiu".
 - Conducta termoficare stricata, abur in strada → "termoenergetica".
 - Tip "trecere_pietoni" (NU "pietonal") pentru zebra ceruta / amenajare.
+- Infrastructura TRAMVAI / METROU / TREN (sine, gard despartitor pe linia de tramvai, statie deteriorata, peron, oprire, semnalizare cale ferata) → tip="transport", NU "stalpisori". Stalpisorii anti-parcare sunt DOAR pe trotuar, nu pe linie tramvai. Daca vezi sine/cale rulanta in poza → transport.
 - Confidence < 50 daca poza e neclara/intuneric/dubla interpretare posibila.
 - DOAR JSON, fara markdown sau text suplimentar.`;
 

@@ -258,6 +258,13 @@ export interface GenerateFormalTextArgs {
   tip: string;
   /** Locația problemei (stradă, sector, oraș). Ex: „Strada X nr. 7, Sector 6, București". */
   locatie: string;
+  /** Descrierea problemei scrisă de cetățean. CRITICAL: dacă există, e
+   *  folosită direct ca declarație a problemei (în loc de boilerplate-ul
+   *  hardcoded din TIP_DATA). Bug fix 2026-05-25 — înainte ignoram complet
+   *  descrierea și halucinam conținut din template-ul de tip
+   *  („gard despărțitor tramvai" devenea „stâlpișori anti-parcare pe trotuar"
+   *  pentru că tip-ul era „stalpisori" iar descrierea era aruncată). */
+  descriere?: string | null;
   /** Numele cetățeanului (opțional — dacă lipsește, omitem fraza „Mă numesc..."). */
   nume?: string | null;
   /** Adresa cetățeanului (opțional — dacă lipsește, omitem fraza „Mă numesc..."). */
@@ -268,6 +275,20 @@ export interface GenerateFormalTextArgs {
   date?: Date;
 }
 
+/**
+ * Formatează descrierea cetățeanului ca declarație formală a problemei.
+ * - Trim + colapsare whitespace
+ * - Capitalize prima literă
+ * - Adaugă punct la final dacă lipsește
+ * Păstrăm exact cuvintele user-ului — fără reformulare, fără AI rewrite.
+ */
+function formalizeDescription(raw: string): string {
+  const cleaned = raw.replace(/\s+/g, " ").trim();
+  if (cleaned.length === 0) return "";
+  const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+}
+
 /** Generează textul formal DETERMINIST. Zero AI. */
 export function generateFormalText(args: GenerateFormalTextArgs): string {
   const tipData = TIP_DATA[args.tip] ?? TIP_DATA["altele"]!;
@@ -276,12 +297,19 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
   const nume = args.nume?.trim() || "";
   const adresa = args.adresa?.trim() || "";
   const locatie = args.locatie?.trim() || "în zona semnalată";
+  // Descrierea cetățeanului — sursa primară a declarației de problemă.
+  // Min 10 caractere ca să avem ceva substanțial; sub asta, fallback la
+  // boilerplate-ul de tip (mai puțin precis, dar formal viabil).
+  const descriereCetatean = formalizeDescription(args.descriere ?? "");
+  const hasRealDescription = descriereCetatean.length >= 10;
 
-  // Paragraf 1 — intro + identitate. 3 variante:
-  //  a) Avem ȘI nume ȘI adresa → „Mă numesc X, locuiesc în Y și doresc..."
-  //  b) Avem doar nume → „Mă numesc X și doresc..."
-  //  c) N-avem nici nume, nici adresa → „Doresc să vă aduc la cunoștință..."
-  const introBody = `doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
+  // Paragraf 1 — intro + identitate.
+  // Bug fix 2026-05-25 — folosim descrierea cetățeanului dacă există.
+  // Înainte hardcodam tipData.affects + tipData.problem indiferent dacă
+  // se potrivea cu ce a scris user-ul → halucinații (tram fence → stâlpișori).
+  const introBody = hasRealDescription
+    ? `doresc să vă aduc la cunoștință următoarea problemă constatată pe ${locatie}:\n\n${descriereCetatean}`
+    : `doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
   let intro: string;
   if (nume.length > 0 && adresa.length > 0) {
     intro = `Mă numesc ${nume}, locuiesc în ${adresa} și ${introBody}`;
@@ -291,15 +319,22 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
     intro = `D${introBody.slice(1)}`; // capitalize: „doresc..." → „Doresc..."
   }
 
-  // Paragraf 2 — măsuri solicitate
+  // Paragraf 2 — măsuri solicitate. Păstrăm acțiunile din tip template
+  // pentru că sunt concrete + cu referințe legale (utilitate ridicată
+  // chiar dacă tip-ul nu se potrivește 100% — cetățeanul a ales tip-ul,
+  // deci acțiunile sale rămân valide ca sugestii pentru autoritate).
   const actionsBlock = tipData.actions
     .map((a, i) => `${i + 1}. ${a}`)
     .join("\n");
   const masuri = `Pentru a rezolva această situație, vă solicit respectuos să luați următoarele măsuri:\n${actionsBlock}`;
 
-  // Paragraf 3 — poze (opțional)
+  // Paragraf 3 — poze (opțional). Folosim formulare neutră când avem
+  // descrierea cetățeanului (evităm să prescriem ce „evidențiază" pozele
+  // peste cuvintele user-ului).
   const photoBlock = args.hasPhotos
-    ? `În sprijinul acestei sesizări, am atașat imagini care ilustrează situația actuală. Acestea evidențiază ${tipData.evidence}.`
+    ? hasRealDescription
+      ? `În sprijinul acestei sesizări, am atașat imagini care ilustrează situația descrisă mai sus.`
+      : `În sprijinul acestei sesizări, am atașat imagini care ilustrează situația actuală. Acestea evidențiază ${tipData.evidence}.`
     : null;
 
   // Paragraf 4 — număr înregistrare + OG 27/2002

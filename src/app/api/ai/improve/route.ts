@@ -41,11 +41,15 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { tip, locatie, nume, adresa, imagini } = schema.parse(body);
+    const { descriere, tip, locatie, nume, adresa, imagini } = schema.parse(body);
 
     const formal_text = generateFormalText({
       tip: tip ?? "altele",
       locatie: locatie ?? "",
+      // 2026-05-25 — pasăm descrierea cetățeanului ca să apară EXACT cum
+      // a scris-o el în formal text. Înainte era ignorată, ceea ce ducea
+      // la halucinații (tram fence → boilerplate despre stâlpișori).
+      descriere,
       nume: nume ?? null,
       adresa: adresa ?? null,
       hasPhotos: (imagini ?? []).length > 0,

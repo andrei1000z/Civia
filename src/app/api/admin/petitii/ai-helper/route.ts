@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -11,23 +11,6 @@ const schema = z.object({
   title: z.string().min(3).max(300),
   body: z.string().max(10_000).optional(),
 });
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Auth required" };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Admin only" };
-  }
-  return { ok: true as const };
-}
 
 const SLUG_PROMPT = (title: string) => `Generează un slug URL pentru această petiție civică în limba română.
 

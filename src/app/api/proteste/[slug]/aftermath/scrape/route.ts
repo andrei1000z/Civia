@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/require-admin";
 import {
   AFTERMATH_SYSTEM_PROMPT,
   sanitizeAiResponse,
@@ -20,20 +20,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-async function requireAdmin() {
-  const supa = await createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Trebuie să fii autentificat." };
-  const { data: profile } = await supa
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Doar administratorii pot folosi această funcție." };
-  }
-  return { ok: true as const };
-}
 
 const inputSchema = z
   .object({

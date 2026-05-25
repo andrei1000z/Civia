@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -22,22 +22,6 @@ const updateSchema = z.object({
   status: z.enum(["draft", "active", "closed", "archived"]).optional(),
 });
 
-async function requireAdmin() {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, status: 401, error: "Auth required" };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if ((profile as { role?: string } | null)?.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Admin only" };
-  }
-  return { ok: true as const };
-}
 
 export async function PATCH(
   req: Request,

@@ -204,12 +204,12 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "copac" — copaci periculoși, căzuți, ramuri rupte, uscați
 - "gunoi" — tomberoane pline, depozitare ilegală, containere, salubrizare
 - "parcare" — mașini parcate ilegal, pe trotuar, blocaje, parcare sălbatică
-- "stalpisori" — ORICE menționează stâlpișori, bollards, anti-parcare, protecție trotuar, bariere fizice pe trotuar. PRIORITATE MAXIMĂ: dacă textul conține "stâlpișori" sau "stâlpisor" → alege NEAPĂRAT "stalpisori", NU "trotuar".
+- "stalpisori" — cerere de montare stâlpișori anti-parcare PE TROTUAR (bollards). REGULĂ STRICTĂ: doar dacă descrierea menționează EXPLICIT „stâlpișori" / „stâlpisor" / „bollards" ȘI contextul e CLAR despre trotuar / parcare pe trotuar. NU alege „stalpisori" pentru: gard pe linie tramvai (→ transport), barieră drum (→ semafor), separator carosabil (→ transport sau altele).
 - "canalizare" — inundație, capace lipsă, gură canal înfundată
 - "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere (INCL. zebră ștearsă, marcaj rutier necitiibil — distincție de „trecere_pietoni" care e CERERE NOUĂ)
 - "graffiti" — vandalism grafică, pictură ilegală, tagging pe pereți (NU afișe — alege "afisaj")
 - "mobilier" — bancă stricată, coșuri de gunoi lipsă, fântâni nefuncționale
-- "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație, intârziere, ruta scoasă
+- "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație, intârziere, ruta scoasă, GARD DESPĂRȚITOR pe linie tramvai/cale ferată, șine, linie tramvai blocată, infrastructură transport public deteriorată. PRIORITATE MARE: dacă textul conține „tramvai" / „tramvaiul" / „șine" / „linia [număr]" / „metrou" / „cale ferată" / „STB" / „Metrorex" → alege NEAPĂRAT „transport", NU „stalpisori" sau alt tip. Stâlpișorii anti-parcare există DOAR pe trotuar; un „gard despărțitor pe linie tramvai" e infrastructură de transport.
 - "afisaj" — afișe sălbatice, panouri publicitare ilegale, bannere fără autorizație, billboard-uri neautorizate
 - "banda_transport" — CERERE DE AMENAJARE bandă dedicată autobuz/troleibuz, separare carosabil pentru transport public. Cuvinte cheie: „bandă bus", „culoar dedicat", „bandă transport".
 - "trecere_pietoni" — CERERE DE AMENAJARE zebră/trecere pietoni NOUĂ (nu există ÎNCĂ acolo), semaforizare pietoni adăugată. Distincție vs „semafor": zebră ștearsă e „semafor", zebră CERUTĂ unde nu e nicio e „trecere_pietoni".
