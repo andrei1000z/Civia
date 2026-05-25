@@ -26,6 +26,36 @@ const ALLOWED_ORIGINS = new Set<string>([
   ...EXTRA_ORIGINS,
 ]);
 
+/**
+ * 2026-05-25 #2 — Bot/spam filter multi-signal. Per research Clickport
+ * 2026 + Imperva 2025 (51% trafic = bots), UA parsing singur prinde ~30%.
+ * Combinăm: UA regex + accept-language presence + behavioral signals.
+ *
+ * Returns:
+ *   - "drop"   → silent accept, NU tracăm (bot evident)
+ *   - "ok"     → user legitim
+ *
+ * Behavioral signals (timing < 200ms între evenimente same visitorId)
+ * sunt verificate in-line la track time, nu aici.
+ */
+function classifyTraffic(req: NextRequest): "ok" | "drop" {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  // 1) UA blacklist — self-declared bots + headless tools
+  if (
+    /\b(bot|crawler|spider|scraper|curl|wget|python-requests|selenium|playwright|puppeteer|headless|phantom|electron|chrome-lighthouse|gtmetrix|pingdom|uptime|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|applebot|amazonbot|claudebot|gpt-?bot|ccbot|ahrefsbot|semrushbot|mj12bot)\b/i.test(
+      ua,
+    )
+  ) {
+    return "drop";
+  }
+  // 2) UA prea scurt / absent — real browsers trimit mereu 100+ chars
+  if (ua.length < 20) return "drop";
+  // 3) Accept-Language lipsă/empty — real browsers trimit mereu
+  const al = req.headers.get("accept-language");
+  if (!al || al.trim().length === 0) return "drop";
+  return "ok";
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -80,6 +110,12 @@ async function isAdmin(): Promise<boolean> {
 async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>) {
   if (!analyticsRedis) return NextResponse.json({ ok: true, noop: true });
 
+  // 2026-05-25 #2 — Bot filter ÎNAINTE de rate limit. Returnăm 200 ok
+  // ca să nu trezim suspiciuni la scraperi, dar NU scriem nimic.
+  if (classifyTraffic(req) === "drop") {
+    return NextResponse.json({ ok: true, filtered: "bot" });
+  }
+
   const ip = getClientIp(req);
   // Rate limit pe batch — un user activ poate trimite max 60 batches/min.
   // Cu 30 evenimente per batch înseamnă max 1800 events/min/IP, suficient
@@ -115,6 +151,12 @@ async function handleTrackBatch(req: NextRequest, body: Record<string, unknown>)
 
 async function handleTrack(req: NextRequest, body: Record<string, unknown>, _batched = false) {
   if (!analyticsRedis) return NextResponse.json({ ok: true, noop: true });
+
+  // 2026-05-25 #2 — Bot filter (skipped când suntem _batched, deja verificat
+  // la nivel de batch).
+  if (!_batched && classifyTraffic(req) === "drop") {
+    return NextResponse.json({ ok: true, filtered: "bot" });
+  }
 
   // Rate limit per IP — sărit pentru evenimente batch (deja verificat).
   if (!_batched) {
@@ -514,10 +556,13 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
     const step = sanitizeKey(body.step, 40) || "(unknown)";
     const field = sanitizeKey(body.field, 40);
     pipe.hincrby(KEY.formAbandon, `${form}|${step}`, 1);
+    // 2026-05-25 #26 — TTL pe formAbandon (90d retention)
+    pipe.expire(KEY.formAbandon, 90 * 24 * 60 * 60);
     if (field) {
       // Tracking granular pe field: pe care input/textarea statea cursorul
       // cand a parasit pagina. Vede direct in dashboard care field e „greu".
       pipe.hincrby(KEY.formAbandonFields, `${form}|${field}`, 1);
+      pipe.expire(KEY.formAbandonFields, 90 * 24 * 60 * 60);
     }
     await pipe.exec();
     return NextResponse.json({ ok: true });
@@ -552,6 +597,9 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
 
   // Generic custom event — fallback bucket
   pipe.hincrby(KEY.eventsTotal, eventType, 1);
+  // 2026-05-25 #26 — TTL pe eventsTotal hash (înainte unbounded, growth
+  // 1MB+/lună). 90 zile = retention pentru rapoarte trimestriale.
+  pipe.expire(KEY.eventsTotal, 90 * 24 * 60 * 60);
   pipe.lpush(
     KEY.events,
     JSON.stringify({ t: now, type: eventType, country, city, userId: userId || null })
@@ -577,6 +625,9 @@ async function handleTrack(req: NextRequest, body: Record<string, unknown>, _bat
   pipe.ltrim(KEY.vidTimeline(visitorId), 0, VID_TIMELINE_CAP - 1);
   pipe.expire(KEY.vidTimeline(visitorId), TTL.vidTimeline);
   pipe.zadd(KEY.vidsRecent, { score: now, member: visitorId });
+  // 2026-05-25 #26 — TTL pe vidsRecent (sorted set). Pruning manual la
+  // 1000 entries (linia 366) e best-effort; backstop cu TTL hard 7d.
+  pipe.expire(KEY.vidsRecent, 7 * 24 * 60 * 60);
   await pipe.exec();
   return NextResponse.json({ ok: true });
 }

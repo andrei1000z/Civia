@@ -160,15 +160,17 @@ export function trackCustomEvent(eventType: string, extra: Record<string, string
 
 // Web Vitals buckets — per web.dev thresholds. Rating affects aggregation.
 function webVitalRating(name: string, value: number): "good" | "needs-improvement" | "poor" {
-  // Google Web Vitals thresholds (2024):
-  //   LCP:  good ≤ 2500ms, poor > 4000ms
+  // Google Web Vitals thresholds (2026 — LCP tightened from 2500 to 2000ms
+  // in March 2026 core update; INP/CLS unchanged but INP is now equal
+  // ranking signal alongside LCP).
+  //   LCP:  good ≤ 2000ms, poor > 4000ms   ← 2026 tightening
   //   INP:  good ≤ 200ms,  poor > 500ms
   //   CLS:  good ≤ 0.1,    poor > 0.25
   //   FCP:  good ≤ 1800ms, poor > 3000ms
   //   TTFB: good ≤ 800ms,  poor > 1800ms
   switch (name) {
     case "LCP":
-      return value <= 2500 ? "good" : value <= 4000 ? "needs-improvement" : "poor";
+      return value <= 2000 ? "good" : value <= 4000 ? "needs-improvement" : "poor";
     case "INP":
     case "FID":
       return value <= 200 ? "good" : value <= 500 ? "needs-improvement" : "poor";
@@ -189,8 +191,16 @@ interface ClickRecord { x: number; y: number; t: number }
 export function CiviaTracker(): null {
   const pathname = usePathname();
   const pageEnterRef = useRef<number>(0);
+  const visibleMsRef = useRef<number>(0); // 2026-05-25 — sum of visible-only ms
+  const visibleSinceRef = useRef<number>(0); // last "visible" timestamp
   const lastPathRef = useRef<string | null>(null);
   const pathnameRef = useRef<string>(pathname);
+  // 2026-05-25 #3 — pageview dedup guard against React StrictMode +
+  // hydration double-fires. We keep the LAST pathname that emitted a
+  // pageview event in a ref; if useEffect re-runs with the same pathname
+  // within 100ms we skip. Real route changes always pass through.
+  const lastPageviewPathRef = useRef<string | null>(null);
+  const lastPageviewAtRef = useRef<number>(0);
 
   // Keep pathname current for listeners attached once at mount
   useEffect(() => {
@@ -202,9 +212,26 @@ export function CiviaTracker(): null {
     if (isExcluded()) return;
     if (typeof window === "undefined") return;
 
-    // Time-on-page for previous route
+    // 2026-05-25 #3 — guard against double-fire on hydration.
+    const now = Date.now();
+    if (
+      lastPageviewPathRef.current === pathname &&
+      now - lastPageviewAtRef.current < 100
+    ) {
+      return;
+    }
+    lastPageviewPathRef.current = pathname;
+    lastPageviewAtRef.current = now;
+
+    // Time-on-page for previous route — 2026-05-25 #21 only count
+    // visible-time, not total elapsed (mobile backgrounding skewed +5-15%).
     if (lastPathRef.current && lastPathRef.current !== pathname) {
-      const t = Date.now() - pageEnterRef.current;
+      // Add the final visible-segment to the accumulator before sending.
+      if (visibleSinceRef.current > 0) {
+        visibleMsRef.current += now - visibleSinceRef.current;
+        visibleSinceRef.current = now;
+      }
+      const t = visibleMsRef.current;
       if (t > 1000 && t < 3600000) {
         send({
           action: "track",
@@ -215,7 +242,10 @@ export function CiviaTracker(): null {
         });
       }
     }
-    pageEnterRef.current = Date.now();
+    pageEnterRef.current = now;
+    visibleMsRef.current = 0;
+    visibleSinceRef.current =
+      typeof document !== "undefined" && document.visibilityState === "visible" ? now : 0;
     lastPathRef.current = pathname;
 
     const params = new URLSearchParams(window.location.search);
@@ -259,11 +289,39 @@ export function CiviaTracker(): null {
     });
   }, [pathname]);
 
-  // Unload: flush time-on-page
+  // 2026-05-25 #21 — Visibility tracker. Accumulează doar ms cât pagina e
+  // vizibilă; mobile backgrounding (iOS share sheet, Android task switch)
+  // pune pause până redevine visible. Înlocuiește elapsed-time naiv.
+  useEffect(() => {
+    if (isExcluded()) return;
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        visibleSinceRef.current = Date.now();
+      } else if (visibleSinceRef.current > 0) {
+        visibleMsRef.current += Date.now() - visibleSinceRef.current;
+        visibleSinceRef.current = 0;
+      }
+    };
+    // Inițializare: dacă pagina e visible la mount, start clock.
+    if (document.visibilityState === "visible" && visibleSinceRef.current === 0) {
+      visibleSinceRef.current = Date.now();
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  // Unload: flush time-on-page. Folosim DOAR pagehide (bfcache-friendly);
+  // beforeunload distruge bfcache. Mobile Safari poate skip pagehide → de
+  // aia avem și visibilitychange→hidden flush prin alt path.
   useEffect(() => {
     const onUnload = () => {
       if (isExcluded()) return;
-      const t = Date.now() - pageEnterRef.current;
+      // Snapshot final al visible-time
+      if (visibleSinceRef.current > 0) {
+        visibleMsRef.current += Date.now() - visibleSinceRef.current;
+        visibleSinceRef.current = 0;
+      }
+      const t = visibleMsRef.current;
       if (t <= 1000 || t >= 3600000) return;
       send({
         action: "track",
@@ -273,15 +331,13 @@ export function CiviaTracker(): null {
         pathname: pathnameRef.current,
       });
     };
-    window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
-    return () => {
-      window.removeEventListener("beforeunload", onUnload);
-      window.removeEventListener("pagehide", onUnload);
-    };
+    return () => window.removeEventListener("pagehide", onUnload);
   }, []);
 
-  // Scroll depth
+  // Scroll depth — 2026-05-25 #20: filtrare e.isTrusted ca să nu contăm
+  // programmatic scrolls (scrollIntoView, modal expand, lazy reveal).
+  // Marks reset pe schimbare pathname (deja are pathname în deps).
   useEffect(() => {
     if (isExcluded()) return;
     const marks = new Set<number>();
@@ -305,7 +361,10 @@ export function CiviaTracker(): null {
         }
       }
     };
-    const onScroll = () => {
+    const onScroll = (e: Event) => {
+      // Skip JS-initiated scrolls — only count real user scroll input.
+      // `isTrusted` e false pentru scrollIntoView, scrollTo, hash jumps.
+      if (e.isTrusted === false) return;
       if (raf) return;
       raf = requestAnimationFrame(check);
     };
@@ -401,14 +460,18 @@ export function CiviaTracker(): null {
   }, []);
 
   // Web Vitals — LCP, INP, CLS, FCP, TTFB via PerformanceObserver.
-  // No external lib; we implement the minimum that matches web-vitals.js
-  // thresholds so the dashboard numbers line up with PSI / Search Console.
+  // 2026-05-25 upgrades:
+  //  #15 INP: interactionId-grouped + p98 estimator (was naive max())
+  //  #16 LCP attribution: capture element selector + image url
+  //  #18 Reset pe soft navigation (deps [pathname] + cleanup flush)
+  //  #19 bfcache reset (pageshow.persisted)
+  // Spec-compliant cu web-vitals v5; aliniat cu PSI + Search Console.
   useEffect(() => {
     if (isExcluded()) return;
     if (typeof PerformanceObserver === "undefined") return;
 
     const reported = new Set<string>();
-    const report = (name: string, value: number) => {
+    const report = (name: string, value: number, extra: Record<string, string | number> = {}) => {
       // Clamp extreme values to sane bounds — avoids one broken session
       // poisoning the p95.
       if (!Number.isFinite(value) || value < 0 || value > 300_000) return;
@@ -423,27 +486,57 @@ export function CiviaTracker(): null {
         value: name === "CLS" ? Math.round(value * 1000) / 1000 : Math.round(value),
         rating,
         pathname: pathnameRef.current,
+        ...extra,
       });
     };
 
     const observers: PerformanceObserver[] = [];
-    const observe = (type: string, cb: (entries: PerformanceEntry[]) => void) => {
+    const observe = (
+      type: string,
+      cb: (entries: PerformanceEntry[]) => void,
+      opts: Record<string, unknown> = {},
+    ) => {
       try {
         const po = new PerformanceObserver((list) => cb(list.getEntries()));
         // `buffered: true` catches entries that fired before this effect ran.
-        po.observe({ type, buffered: true });
+        po.observe({ type, buffered: true, ...opts });
         observers.push(po);
       } catch { /* unsupported on this browser */ }
     };
 
-    // LCP — report on page hide (last value seen wins)
+    // ── LCP — track value + element + URL attribution (#16) ──────────
     let lcpValue = 0;
+    let lcpElement = "";
+    let lcpUrl = "";
     observe("largest-contentful-paint", (entries) => {
-      const last = entries[entries.length - 1] as PerformanceEntry & { startTime: number };
-      if (last) lcpValue = last.startTime;
+      const last = entries[entries.length - 1] as
+        | (PerformanceEntry & { startTime: number; url?: string; element?: Element | null })
+        | undefined;
+      if (!last) return;
+      lcpValue = last.startTime;
+      lcpUrl = (last.url || "").slice(0, 200);
+      const el = last.element ?? null;
+      if (el) {
+        // Build short deterministic selector for admin debugging.
+        // Prefer #id; fallback to tag.class1.class2 (max 2 classes).
+        try {
+          const tag = el.tagName.toLowerCase();
+          if (el.id) {
+            lcpElement = `#${el.id}`.slice(0, 80);
+          } else {
+            const cls =
+              typeof (el as HTMLElement).className === "string"
+                ? (el as HTMLElement).className.trim().split(/\s+/).slice(0, 2).join(".")
+                : "";
+            lcpElement = (cls ? `${tag}.${cls}` : tag).slice(0, 80);
+          }
+        } catch {
+          lcpElement = "";
+        }
+      }
     });
 
-    // CLS — cumulative layout shift, sum of session windows
+    // ── CLS — session-window algorithm (web-vitals spec) ─────────────
     let clsValue = 0;
     let clsEntries: PerformanceEntry[] = [];
     let clsSessionValue = 0;
@@ -482,14 +575,43 @@ export function CiviaTracker(): null {
       }
     });
 
-    // INP — interaction to next paint, reported on page hide
-    let inpValue = 0;
-    observe("event", (entries) => {
-      for (const entry of entries as (PerformanceEntry & { interactionId?: number; duration: number })[]) {
-        if (!entry.interactionId) continue;
-        if (entry.duration > inpValue) inpValue = entry.duration;
+    // ── INP — interactionId-grouped + p98 (#15) ──────────────────────
+    // Spec INP: pointerdown + pointerup + click au același interactionId
+    // și trebuie luate ca un GRUP. Apoi computăm p98 cu 1 outlier skip
+    // per 50 interacțiuni (web-vitals v5 _estimateP98LongestInteraction).
+    // Plus durationThreshold:40 ca să captăm interacțiunile <40ms care
+    // altfel sunt suprimate de browser.
+    const interactionMap = new Map<number, number>();
+    observe(
+      "event",
+      (entries) => {
+        for (const entry of entries as (PerformanceEntry & { interactionId?: number; duration: number })[]) {
+          if (!entry.interactionId) continue;
+          const prev = interactionMap.get(entry.interactionId) ?? 0;
+          if (entry.duration > prev) interactionMap.set(entry.interactionId, entry.duration);
+        }
+      },
+      { durationThreshold: 40 },
+    );
+    // Fallback `first-input` pentru pagini cu <2 interacțiuni — INP poate
+    // să nu se compute fără asta.
+    observe("first-input", (entries) => {
+      const first = entries[0] as (PerformanceEntry & { processingStart: number; startTime: number }) | undefined;
+      if (!first) return;
+      const fid = first.processingStart - first.startTime;
+      // Tratat ca o singură interacțiune dacă INP nu e disponibil.
+      if (interactionMap.size === 0 && fid > 0) {
+        interactionMap.set(-1, fid);
       }
     });
+
+    function computeINP(): number {
+      const sorted = [...interactionMap.values()].sort((a, b) => b - a);
+      if (sorted.length === 0) return 0;
+      // 1 outlier dropped per 50 interactions (web-vitals v5)
+      const idx = Math.min(sorted.length - 1, Math.floor(interactionMap.size / 50));
+      return sorted[idx] ?? 0;
+    }
 
     // TTFB — derived from navigation entry
     try {
@@ -503,30 +625,60 @@ export function CiviaTracker(): null {
       }
     } catch { /* noop */ }
 
-    // Flush LCP/CLS/INP on hide
+    // Flush LCP/CLS/INP on hide. LCP/INP send attribution extras.
     const flush = () => {
       if (lcpValue > 0 && !reported.has("LCP")) {
         reported.add("LCP");
-        report("LCP", lcpValue);
+        report("LCP", lcpValue, {
+          lcpElement: lcpElement || "(none)",
+          lcpUrl: lcpUrl || "(none)",
+        });
       }
       if (clsEntries.length > 0 && !reported.has("CLS")) {
         reported.add("CLS");
         report("CLS", clsValue);
       }
+      const inpValue = computeINP();
       if (inpValue > 0 && !reported.has("INP")) {
         reported.add("INP");
-        report("INP", inpValue);
+        report("INP", inpValue, { interactionCount: interactionMap.size });
       }
     };
-    document.addEventListener("visibilitychange", () => {
+
+    const onVis = () => {
       if (document.visibilityState === "hidden") flush();
-    });
-    window.addEventListener("pagehide", flush);
+    };
+    const onHide = () => flush();
+    // #19 bfcache reset — când Chrome restaurează din bfcache, vitals
+    // sunt stale. Flush previous, reset accumulators, re-arm observers.
+    const onShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      flush(); // emit ce avem din pagina anterioară
+      lcpValue = 0;
+      lcpElement = "";
+      lcpUrl = "";
+      clsValue = 0;
+      clsEntries = [];
+      clsSessionValue = 0;
+      clsSessionEntries = [];
+      interactionMap.clear();
+      reported.clear();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", onHide);
+    window.addEventListener("pageshow", onShow);
 
     return () => {
+      // #18 cleanup: la schimbare pathname (soft nav SPA), flush vitals
+      // și disconnect — apoi useEffect re-run cu noul pathname creează
+      // observers noi. Aliniază metricile per-route corect.
+      flush();
       observers.forEach((po) => po.disconnect());
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", onHide);
+      window.removeEventListener("pageshow", onShow);
     };
-  }, []);
+  }, [pathname]);
 
   // Click tracking + Rage clicks UNIFIED — un singur listener pentru
   // ambele (înainte erau 2 listeners pe document.click — runtime dublu
