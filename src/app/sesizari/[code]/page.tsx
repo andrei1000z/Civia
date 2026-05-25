@@ -37,7 +37,7 @@ import { ReminderButton } from "@/components/sesizari/ReminderButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { GovernmentServiceJsonLd } from "@/components/JsonLd";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
-import { getSesizareEventMeta, isRedundantEventDescription } from "@/lib/sesizari/events";
+import { getSesizareEventMeta, isRedundantEventDescription, isTerminalEvent, dedupeConsecutiveEvents } from "@/lib/sesizari/events";
 import { stripPrivateAddress } from "@/lib/privacy";
 import { SITE_URL } from "@/lib/constants";
 
@@ -102,7 +102,9 @@ export default async function SesizareDetailPage({
     "raspuns_oficial",
     "eveniment",
   ]);
-  const timeline = allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type));
+  const timeline = dedupeConsecutiveEvents(
+    allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type)),
+  );
 
   // Check if current user has voted / verified
   const supabase = await createSupabaseServer();
@@ -134,7 +136,10 @@ export default async function SesizareDetailPage({
   const beforeUrl = sesizare.imagini.length > 0 ? sesizare.imagini[0] : null;
   const afterUrl = sesizare.resolved_photo_url;
   const isResolved = sesizare.status === "rezolvat";
-  const hasBeforeAfter = isResolved && beforeUrl && afterUrl;
+  // 2026-05-25 — arătăm secțiunea before/after dacă sesizarea e rezolvată
+  // ȘI există măcar o poză „înainte". Poza „după" e opțională (când
+  // lipsește, BeforeAfter randă placeholder + CTA pentru autor).
+  const showBeforeAfter = isResolved && !!beforeUrl;
 
   const { label: tipLabel, icon: tipIcon } = resolveTipLabel(
     sesizare.tip,
@@ -358,15 +363,6 @@ export default async function SesizareDetailPage({
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-8">
         <div>
-          {/* Before / After (doar dacă e rezolvat) */}
-          {hasBeforeAfter && (
-            <BeforeAfter
-              beforeUrl={beforeUrl}
-              afterUrl={afterUrl}
-              resolvedAt={sesizare.resolved_at}
-            />
-          )}
-
           {/* Description */}
           <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
             <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
@@ -382,6 +378,18 @@ export default async function SesizareDetailPage({
               {sesizare.descriere}
             </p>
           </section>
+
+          {/* Before / After — DOAR pentru sesizări rezolvate.
+              Plasat sub Descriere ca să fie next logical info după ce
+              citești problema („uite cum arăta vs. cum arată acum"). */}
+          {showBeforeAfter && beforeUrl && (
+            <BeforeAfter
+              beforeUrl={beforeUrl}
+              afterUrl={afterUrl}
+              resolvedAt={sesizare.resolved_at}
+              isAuthor={isAuthor}
+            />
+          )}
 
           {/* Official response from authority — when admin pastes
               the email reply from the primărie/PMB/etc. Treated as a
@@ -557,6 +565,11 @@ export default async function SesizareDetailPage({
               <ol className="relative space-y-5">
                 {timeline.map((step, i) => {
                   const isLast = i === timeline.length - 1;
+                  const terminal = isTerminalEvent(step.event_type);
+                  // Highlight cu „Acum" pill + pulse doar dacă e ultimul ȘI
+                  // nu e status terminal (rezolvat/respins/ignorat = pentru
+                  // totdeauna; nu mai e „live").
+                  const isCurrent = isLast && !terminal;
                   const meta = getSesizareEventMeta(step.event_type);
                   const Icon = meta.icon;
                   const showDescription = !isRedundantEventDescription(step.event_type, step.description);
@@ -570,9 +583,10 @@ export default async function SesizareDetailPage({
                           style={{ backgroundColor: `${meta.color}30` }}
                         />
                       )}
-                      {/* Icon chip */}
+                      {/* Icon chip — filled pentru ultimul pas (live sau
+                          terminal); soft pentru pașii intermediari. */}
                       <span
-                        className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm ${isLast ? "animate-pulse" : ""}`}
+                        className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm ${isCurrent ? "animate-pulse" : ""}`}
                         style={{
                           backgroundColor: isLast ? meta.color : `${meta.color}1a`,
                           color: isLast ? "#fff" : meta.color,
@@ -585,7 +599,7 @@ export default async function SesizareDetailPage({
                         <p className={`text-sm leading-tight ${isLast ? "font-bold text-[var(--color-text)]" : "font-semibold text-[var(--color-text)]"}`}>
                           {meta.label}
                         </p>
-                        {isLast && (
+                        {isCurrent && (
                           <span
                             className="inline-flex items-center text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]"
                             style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}

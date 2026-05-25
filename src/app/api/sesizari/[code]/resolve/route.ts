@@ -6,6 +6,7 @@ import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { humanizeSupabaseError } from "@/lib/supabase/errors";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
 
 export const dynamic = "force-dynamic";
 
@@ -59,11 +60,16 @@ export async function POST(
       return NextResponse.json({ error: h.message }, { status: h.status });
     }
 
-    // Adaugă eveniment în timeline
-    await admin.from("sesizare_timeline").insert({
-      sesizare_id: sesizare.id,
-      event_type: "rezolvat",
-      description: "Marcată ca rezolvată de autor",
+    // Adaugă eveniment în timeline cu dedupe. Dacă admin-ul a flippat
+    // deja status pe „rezolvat" cu o notă reală (e.g. „S-au montat
+    // stâlpișori"), nu suprapunem cu un al doilea rând generic.
+    await appendTimelineEvent({
+      admin,
+      sesizareId: sesizare.id,
+      eventType: "rezolvat",
+      description: null, // → tratat ca generic; rezolvă conflictul cu admin row
+      sentryTags: { source: "citizen_resolve_route" },
+      sentryExtra: { code: sesizare.code },
     });
 
     invalidateSesizariCache();

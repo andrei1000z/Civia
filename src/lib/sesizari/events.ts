@@ -66,6 +66,55 @@ export function getSesizareEventMeta(eventType: string): SesizareEventVisual {
 }
 
 /**
+ * Status-uri „terminale" — sesizarea s-a încheiat. Nu mai e nimic
+ * „acum/live", așa că UI-ul nu afișează pill-ul „Acum" pe ele.
+ * 2026-05-25: user feedback — „Problemă rezolvată e pentru totdeauna,
+ * scoate Acum".
+ */
+export const TERMINAL_EVENT_TYPES = new Set<string>([
+  "rezolvat",
+  "respins",
+  "ignorat",
+  "escaladat_avp",
+]);
+
+export function isTerminalEvent(eventType: string): boolean {
+  return TERMINAL_EVENT_TYPES.has(eventType);
+}
+
+/**
+ * Colaps consecutive rows cu același `event_type` (e.g. două „rezolvat"
+ * scrise de resolve-route + admin-status în succesiune apropiată). Păstrăm
+ * rândul cu descriere reală — dacă ambele au, păstrăm ultimul (most recent).
+ *
+ * Asumă input sortat crescător după `created_at` (cum returnează
+ * `getTimeline` din repository.ts). Output păstrează aceeași ordine.
+ */
+export function dedupeConsecutiveEvents<
+  T extends { event_type: string; description: string | null },
+>(rows: T[]): T[] {
+  if (rows.length <= 1) return rows;
+  const out: T[] = [];
+  for (const row of rows) {
+    const prev = out[out.length - 1];
+    if (prev && prev.event_type === row.event_type) {
+      // Same event_type back-to-back → preferăm rândul cu descriere reală.
+      const prevHasReal = !isRedundantEventDescription(prev.event_type, prev.description);
+      const currHasReal = !isRedundantEventDescription(row.event_type, row.description);
+      if (currHasReal && !prevHasReal) {
+        out[out.length - 1] = row; // upgrade prev → curr (better description)
+      } else if (currHasReal && prevHasReal) {
+        out[out.length - 1] = row; // both real → keep most recent
+      }
+      // altfel: drop curr (e duplicat fără content extra)
+      continue;
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/**
  * Returns true when the timeline row's `description` is just a repeat of
  * the label (the resolve API writes "Status actualizat la: amanata" /
  * "respins" / etc., which adds nothing once we render the proper label).
@@ -78,6 +127,11 @@ export function isRedundantEventDescription(eventType: string, description: stri
   const generic = [
     `status actualizat la: ${eventType.toLowerCase()}`,
     `status actualizat: ${eventType.toLowerCase()}`,
+    // 2026-05-25 — resolve route (citizen self-marks) writes asta. Etichetă
+    // meta („CINE a marcat") fără conținut despre cum a fost rezolvată
+    // problema → redundant când label-ul deja spune „Problemă rezolvată".
+    "marcată ca rezolvată de autor",
+    "marcata ca rezolvata de autor",
   ];
   return generic.some((p) => normalized === p);
 }

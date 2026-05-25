@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
-import { getSesizareEventMeta, isRedundantEventDescription } from "@/lib/sesizari/events";
+import { getSesizareEventMeta, isRedundantEventDescription, isTerminalEvent, dedupeConsecutiveEvents } from "@/lib/sesizari/events";
 import type { SesizareFeedRow, SesizareTimelineRow } from "@/lib/supabase/types";
 
 interface Result {
@@ -61,6 +61,9 @@ export function UrmarireSesizare() {
   const cosignCount = result
     ? result.timeline.filter((e) => e.event_type === "cosemnat").length
     : 0;
+  // 2026-05-25 — dedupe consecutive same-event rows (e.g. resolve route
+  // + admin status emit „rezolvat" back-to-back). Mirror /sesizari/[code].
+  const timeline = result ? dedupeConsecutiveEvents(result.timeline) : [];
 
   return (
     <div className="space-y-6">
@@ -207,10 +210,10 @@ export function UrmarireSesizare() {
           {/* Timeline */}
           <div className="p-5 md:p-6">
             <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-4">
-              Istoric ({result.timeline.length}{" "}
-              {result.timeline.length === 1 ? "eveniment" : "evenimente"})
+              Istoric ({timeline.length}{" "}
+              {timeline.length === 1 ? "eveniment" : "evenimente"})
             </p>
-            {result.timeline.length === 0 ? (
+            {timeline.length === 0 ? (
               <div className="bg-[var(--color-surface-2)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-xs)] p-4 text-center">
                 <p className="text-sm text-[var(--color-text-muted)] italic leading-relaxed">
                   Sesizarea există dar nu are încă evenimente în istoric. Status-ul se actualizează
@@ -220,12 +223,14 @@ export function UrmarireSesizare() {
             ) : (
               <ol
                 className="relative space-y-5"
-                aria-label={`Istoric ${result.timeline.length} ${result.timeline.length === 1 ? "eveniment" : "evenimente"}`}
+                aria-label={`Istoric ${timeline.length} ${timeline.length === 1 ? "eveniment" : "evenimente"}`}
               >
-                {result.timeline.map((step, i) => {
+                {timeline.map((step, i) => {
                   const meta = getSesizareEventMeta(step.event_type);
                   const Icon = meta.icon;
-                  const isLast = i === result.timeline.length - 1;
+                  const isLast = i === timeline.length - 1;
+                  const terminal = isTerminalEvent(step.event_type);
+                  const isCurrent = isLast && !terminal;
                   const showDescription = !isRedundantEventDescription(step.event_type, step.description);
                   return (
                     <li key={step.id} className="relative pl-11">
@@ -239,7 +244,7 @@ export function UrmarireSesizare() {
                       <span
                         className={cn(
                           "absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm",
-                          isLast && "animate-pulse",
+                          isCurrent && "animate-pulse",
                         )}
                         style={{
                           backgroundColor: isLast ? meta.color : `${meta.color}1a`,
@@ -253,7 +258,7 @@ export function UrmarireSesizare() {
                         <p className={cn("text-sm leading-tight text-[var(--color-text)]", isLast ? "font-bold" : "font-semibold")}>
                           {meta.label}
                         </p>
-                        {isLast && (
+                        {isCurrent && (
                           <span
                             className="inline-flex items-center text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]"
                             style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
