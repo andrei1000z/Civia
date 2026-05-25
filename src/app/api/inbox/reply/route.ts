@@ -163,6 +163,8 @@ export async function POST(req: Request) {
   let sesizareId: string | null = null;
   let sesizareUserId: string | null = null;
   let sesizareTitlu: string | null = null;
+  let matchMethod: "code" | "sender_recent" | null = null;
+
   if (extraction.code) {
     const { data: ses } = await admin
       .from("sesizari")
@@ -173,8 +175,36 @@ export async function POST(req: Request) {
       sesizareId = ses.id as string;
       sesizareUserId = (ses.user_id as string | null) ?? null;
       sesizareTitlu = (ses.titlu as string | null) ?? null;
+      matchMethod = "code";
     }
   }
+
+  // 2026-05-25 — Fallback: match by sender_email → recent sesizari trimise.
+  // Cazuri reale (raport 25.05): „contact@politia6.ro" + „registratura@primarias1.ro"
+  // au răspuns dar subject NU conține cod și nici In-Reply-To header.
+  // Strategy: caut sesizari trimise în ultimele 14 zile care au senderEmail
+  // în sent_to_emails[]. Dacă exact UNA → match cu mare încredere. Dacă mai
+  // multe → ambiguu, rămâne unmatched (siguranță > convenience).
+  if (!sesizareId) {
+    const cutoff = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+    const { data: candidates } = await admin
+      .from("sesizari")
+      .select("id, user_id, titlu, sent_to_emails, sent_at")
+      .gte("sent_at", cutoff)
+      .contains("sent_to_emails", [senderEmail.toLowerCase()])
+      .order("sent_at", { ascending: false })
+      .limit(5);
+    if (candidates && candidates.length === 1) {
+      const c = candidates[0]!;
+      sesizareId = c.id as string;
+      sesizareUserId = (c.user_id as string | null) ?? null;
+      sesizareTitlu = (c.titlu as string | null) ?? null;
+      matchMethod = "sender_recent";
+    }
+    // Dacă >1 candidate, lăsăm unmatched — admin moderation manual.
+  }
+  void matchMethod;
+  void sesizareTitlu;
 
   // ─── 6. Classify + authenticity score (parallel for latency) ────
   const cleanBody = body_text || stripHtml(body_html) || "";
@@ -330,7 +360,7 @@ export async function POST(req: Request) {
 
   await logDebug({
     admin, req, http_status: 200, rawBody,
-    error_message: `OK | code=${extraction.code ?? "NULL"} | source=${extraction.source} | sesizare=${sesizareId?.slice(0, 8) ?? "NOMATCH"} | ai=${classification.status} | conf=${classification.confidence} | auto=${autoApply}`,
+    error_message: `OK | code=${extraction.code ?? "NULL"} | source=${extraction.source}${matchMethod === "sender_recent" ? "→sender" : ""} | sesizare=${sesizareId?.slice(0, 8) ?? "NOMATCH"} | ai=${classification.status} | conf=${classification.confidence} | auto=${autoApply}`,
   });
 
   return NextResponse.json({

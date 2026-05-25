@@ -417,9 +417,9 @@ export default async function ProtestDetailPage({
                 {p.tags.map((t) => (
                   <span
                     key={t}
-                    className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-pill)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-xs"
+                    className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-pill)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] text-[10px] uppercase tracking-wider font-semibold"
                   >
-                    {t}
+                    {t.replace(/^#/, "")}
                   </span>
                 ))}
               </div>

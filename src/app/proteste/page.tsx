@@ -442,9 +442,9 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
               {p.tags.slice(0, 4).map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-[10px]"
+                  className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-[10px] uppercase tracking-wider font-semibold"
                 >
-                  {t}
+                  {t.replace(/^#/, "")}
                 </span>
               ))}
             </div>

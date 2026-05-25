@@ -141,16 +141,31 @@ export async function POST(req: Request) {
     // bazat pe keyword + sursă + categorie.
     const { kept, discarded } = pickTopCivic(articles, TOP_CIVIC_PER_RUN);
 
+    // 2026-05-25 — AI smart category classifier înlocuiește keyword fallback
+    // pentru articolele clasificate "administratie" implicit (cazul cel mai
+    // frecvent de mis-categorizare). Concurrency 5, best-effort: dacă AI
+    // fail → folosim categoria originală din RSS keyword classifier.
+    const { classifyCategoryWithAI } = await import("@/lib/stiri/ai-category");
+    const aiCategoryPromises = kept.map(async (a) => {
+      if (a.category !== "administratie") return a.category; // skip dacă keyword classifier sigur
+      try {
+        return await classifyCategoryWithAI(a.title, a.excerpt ?? "", a.source);
+      } catch {
+        return a.category;
+      }
+    });
+    const aiCategoryResults = await Promise.all(aiCategoryPromises);
+
     // Insert new articles (top civic only). Include counties array.
     // Onconflict=url + ignoreDuplicates → re-runs nu strică nimic, dacă
     // articolul deja există (din run-ul precedent) îl skipuim.
-    const rows = kept.map((a) => ({
+    const rows = kept.map((a, i) => ({
       url: a.url,
       title: a.title,
       excerpt: a.excerpt,
       content: a.content,
       source: a.source,
-      category: a.category,
+      category: aiCategoryResults[i] ?? a.category,
       author: a.author,
       image_url: a.image_url,
       published_at: a.published_at,
