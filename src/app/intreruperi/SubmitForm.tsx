@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, Loader2, Check, Image as ImgIcon, X } from "lucide-react";
+import { trackFunnelStep } from "@/components/analytics/CiviaTracker";
 
 export function SubmitForm() {
   const [text, setText] = useState("");
@@ -12,6 +13,14 @@ export function SubmitForm() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [honey, setHoney] = useState("");
+  const startFiredRef = useRef(false);
+
+  // 2026-05-25 #13 — funnel intrerupere-submit, step „start" la mount form.
+  useEffect(() => {
+    if (startFiredRef.current) return;
+    startFiredRef.current = true;
+    trackFunnelStep("intrerupere-submit", "start");
+  }, []);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,7 +38,10 @@ export function SubmitForm() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Eroare upload");
       setImageUrl(j.data?.urls?.[0] ?? null);
+      // #13 funnel step: photo-uploaded
+      trackFunnelStep("intrerupere-submit", "photo-uploaded");
     } catch (e) {
+      trackFunnelStep("intrerupere-submit", "photo-fail");
       setError(e instanceof Error ? e.message : "Eroare upload");
     } finally {
       setUploading(false);
@@ -40,7 +52,14 @@ export function SubmitForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // #13 — submit-clicked înainte de validare
+    trackFunnelStep("intrerupere-submit", "submit-clicked", {
+      textLen: text.trim().length,
+      hasPhoto: imageUrl ? 1 : 0,
+      hasEmail: email.trim() ? 1 : 0,
+    });
     if (text.trim().length < 20) {
+      trackFunnelStep("intrerupere-submit", "validation-failed");
       setError("Scrie minim 20 de caractere despre întrerupere.");
       return;
     }
@@ -57,7 +76,11 @@ export function SubmitForm() {
         }),
       });
       const j = await res.json();
-      if (!res.ok) throw new Error(j.error || "Eroare trimitere");
+      if (!res.ok) {
+        trackFunnelStep("intrerupere-submit", "error");
+        throw new Error(j.error || "Eroare trimitere");
+      }
+      trackFunnelStep("intrerupere-submit", "submitted", { hasPhoto: imageUrl ? 1 : 0 });
       setSubmitted(true);
       setText("");
       setEmail("");

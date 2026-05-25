@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles, X, Send, Loader2, RefreshCw } from "lucide-react";
+import { trackCustomEvent } from "@/components/analytics/CiviaTracker";
 
 interface Message {
   role: "user" | "assistant";
@@ -80,6 +81,16 @@ export function CiviaAssistant() {
     const content = (text ?? input).trim();
     if (!content || loading) return;
 
+    // 2026-05-25 #12 — track AI chat message send. Include length +
+    // conversation depth (câte mesaje user în această sesiune).
+    const userMessageCount = messages.filter((m) => m.role === "user").length + 1;
+    trackCustomEvent("chat-message-send", {
+      length: content.length,
+      depth: userMessageCount,
+      isFirst: userMessageCount === 1 ? 1 : 0,
+    });
+    const startMs = Date.now();
+
     const userMsg: Message = { role: "user", content };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
@@ -116,16 +127,34 @@ export function CiviaAssistant() {
         }),
       });
       const json = await res.json();
+      const latencyMs = Date.now() - startMs;
       if (!res.ok) {
+        // #12 track AI error cu status + latency
+        trackCustomEvent("chat-message-error", {
+          status: res.status,
+          latencyMs,
+        });
         setError(json.error ?? "Eroare AI");
         return;
       }
+      // #12 track success cu latency + reply length
+      trackCustomEvent("chat-message-success", {
+        latencyMs,
+        replyLength: typeof json.reply === "string" ? json.reply.length : 0,
+        hasSuggestions: Array.isArray(json.suggestions) && json.suggestions.length > 0 ? 1 : 0,
+      });
       setMessages((prev) => [...prev, { role: "assistant", content: json.reply }]);
       // Batch 4 — render suggested follow-ups dupa raspuns AI.
       if (Array.isArray(json.suggestions)) {
         setSuggestions(json.suggestions.slice(0, 3));
       }
     } catch {
+      // #12 track network failure
+      trackCustomEvent("chat-message-error", {
+        status: 0,
+        latencyMs: Date.now() - startMs,
+        kind: "network",
+      });
       setError("Eroare retea. Reincearca.");
     } finally {
       setLoading(false);
@@ -145,7 +174,11 @@ export function CiviaAssistant() {
       {/* Floating button — bottom-right, desktop only (mobile uses fab) */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // #12 — chat-open event pentru funnel (open → first message → conversation)
+          trackCustomEvent("chat-open");
+          setOpen(true);
+        }}
         aria-label="Deschide Civia Assistant"
         className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 hidden md:inline-flex items-center justify-center lc-shine ${
           open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
