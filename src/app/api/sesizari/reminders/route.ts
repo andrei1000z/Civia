@@ -194,10 +194,104 @@ export async function GET(req: Request) {
     await admin.from("sesizari_reminders").insert(successInserts);
   }
 
+  // 2026-05-25 #31 — Closed-loop follow-up T+14 pentru sesizari rezolvate.
+  // North-star metric: % cetățeni care confirmă rezolvarea după 14 zile.
+  // Per MySociety FixMyStreet research, asta e singura metrică non-falsifiable
+  // pentru civic platforms.
+  const loopResult = await sendClosedLoopFollowups(admin);
+
   return NextResponse.json({
     ok: true,
-    scanned: candidates.length,
-    sent,
-    failed,
+    reminders: { scanned: candidates.length, sent, failed },
+    closedLoop: loopResult,
   });
+}
+
+/**
+ * 2026-05-25 #31 — Trimite email confirmation 14 zile după marcare rezolvat.
+ *
+ * Scan sesizari cu:
+ *   - status = "rezolvat"
+ *   - resolved_at între T-15d și T-13d (fereastră 48h, exact 14d ± 1d)
+ *   - author_email NOT NULL
+ *   - moderation_status = "approved"
+ *   - NICI un reminder cu step="loop-followup" deja trimis
+ *
+ * Email conține 2 link-uri 1-tap:
+ *   /api/sesizari/[code]/loop-confirm?outcome=yes
+ *   /api/sesizari/[code]/loop-confirm?outcome=no
+ * Cu HMAC token derivat din code+CRON_SECRET ca să prevenim spam.
+ */
+async function sendClosedLoopFollowups(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+): Promise<{ scanned: number; sent: number; failed: number }> {
+  const t15 = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+  const t13 = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: candidates } = await admin
+    .from("sesizari")
+    .select("id, code, titlu, author_email, author_name, resolved_at")
+    .eq("status", "rezolvat")
+    .eq("moderation_status", "approved")
+    .gte("resolved_at", t15)
+    .lte("resolved_at", t13)
+    .not("author_email", "is", null);
+
+  if (!candidates || candidates.length === 0) {
+    return { scanned: 0, sent: 0, failed: 0 };
+  }
+
+  const ids = candidates.map((c) => c.id);
+  const { data: alreadySent } = await admin
+    .from("sesizari_reminders")
+    .select("sesizare_id")
+    .in("sesizare_id", ids)
+    .eq("step", "loop-followup");
+  const sentSet = new Set((alreadySent ?? []).map((r) => r.sesizare_id));
+
+  const cronSecret = process.env.CRON_SECRET ?? "";
+  let sent = 0;
+  let failed = 0;
+  const inserts: { sesizare_id: string; step: string; channel: string }[] = [];
+
+  for (const sez of candidates) {
+    if (sentSet.has(sez.id)) continue;
+    if (!sez.author_email) continue;
+    // HMAC token simplu: hash(code + secret), 12 chars.
+    const tokenSrc = `${sez.code}:${cronSecret}`;
+    const { createHash } = await import("crypto");
+    const token = createHash("sha256").update(tokenSrc).digest("hex").slice(0, 12);
+    const yesLink = `${SITE_URL}/api/sesizari/${sez.code}/loop-confirm?outcome=yes&t=${token}`;
+    const noLink = `${SITE_URL}/api/sesizari/${sez.code}/loop-confirm?outcome=no&t=${token}`;
+
+    const subject = `Confirmi că s-a rezolvat? — "${sez.titlu}"`;
+    const html = emailTemplate({
+      title: "Confirmi că problema s-a rezolvat?",
+      kicker: "CIVIA · 14 ZILE DE LA REZOLVARE",
+      preheader: `Sesizare ${sez.code} — confirmă cu 1 click`,
+      body: `
+        <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
+        <p>Acum 14 zile sesizarea ta <strong>"${sez.titlu}"</strong> a fost marcată ca rezolvată. Confirmi că problema este într-adevăr rezolvată?</p>
+        <p style="margin:24px 0;text-align:center;">
+          <a href="${yesLink}" style="background:#059669;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-right:8px;">✓ DA, e rezolvată</a>
+          <a href="${noLink}" style="background:#DC2626;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">✗ NU, nu chiar</a>
+        </p>
+        <p style="font-size:13px;color:#666">Răspunsul tău alimentează North-Star metric Civia: <strong>Closed-Loop Sesizari</strong> — singura metrică pe care primăriile nu o pot „umfla". Mulțumim!</p>
+      `,
+    });
+
+    try {
+      await sendEmail({ to: sez.author_email, subject, html });
+      inserts.push({ sesizare_id: sez.id, step: "loop-followup", channel: "email" });
+      sent += 1;
+    } catch {
+      failed += 1;
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+
+  if (inserts.length > 0) {
+    await admin.from("sesizari_reminders").insert(inserts);
+  }
+
+  return { scanned: candidates.length, sent, failed };
 }
