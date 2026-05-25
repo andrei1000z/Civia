@@ -22,6 +22,7 @@ import {
 } from "@/lib/sesizari/status";
 import { timeAgo } from "@/lib/utils";
 import { useToast } from "@/components/Toast";
+import { PhotoUploader } from "@/components/sesizari/PhotoUploader";
 
 interface SesizareRow {
   id: string;
@@ -36,6 +37,7 @@ interface SesizareRow {
   created_at: string;
   lat?: number;
   lng?: number;
+  resolved_photo_url?: string | null;
 }
 
 interface PolishDiff {
@@ -60,6 +62,9 @@ export default function AdminSesizariPage() {
     status: SesizareStatus;
     response: string;
     note: string;
+    /** 2026-05-25 — poza „după" la marcare rezolvat. URL public Supabase
+     *  Storage după upload via /api/upload?kind=image. */
+    resolvedPhotoUrl: string | null;
   } | null>(null);
   const [pendingTickets, setPendingTickets] = useState<number>(0);
 
@@ -158,9 +163,16 @@ export default function AdminSesizariPage() {
 
   const submitStatus = async () => {
     if (!statusEdit) return;
-    const { code, status, response, note } = statusEdit;
+    const { code, status, response, note, resolvedPhotoUrl } = statusEdit;
     setActing(`status-${code}`);
     try {
+      // Trimitem resolved_photo_url DOAR pe statusul „rezolvat". Pentru
+      // alte status-uri îl ignorăm — n-are sens să atașăm poză „după"
+      // pe „În lucru" sau „Respins".
+      const photoPayload =
+        status === "rezolvat" && resolvedPhotoUrl !== undefined
+          ? { resolved_photo_url: resolvedPhotoUrl }
+          : {};
       const res = await fetch(`/api/admin/sesizari/${code}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -168,12 +180,22 @@ export default function AdminSesizariPage() {
           status,
           ...(response.trim() ? { official_response: response.trim() } : {}),
           ...(note.trim() ? { note: note.trim() } : {}),
+          ...photoPayload,
         }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Eroare");
       setRows((prev) =>
-        prev.map((r) => (r.code === code ? { ...r, status } : r)),
+        prev.map((r) =>
+          r.code === code
+            ? {
+                ...r,
+                status,
+                resolved_photo_url:
+                  status === "rezolvat" ? resolvedPhotoUrl : r.resolved_photo_url,
+              }
+            : r,
+        ),
       );
       toast(`Status actualizat: ${STATUS_LABELS[status] ?? status}`, "success");
       setStatusEdit(null);
@@ -434,6 +456,32 @@ export default function AdminSesizariPage() {
                   + se trimite autorului prin email.
                 </p>
               </div>
+
+              {/* Photo „după" — apare DOAR când selectezi rezolvat. */}
+              {statusEdit.status === "rezolvat" && (
+                <div className="rounded-[var(--radius-xs)] border border-emerald-300/40 dark:border-emerald-900/40 bg-emerald-500/5 p-4">
+                  <p className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold mb-2 flex items-center gap-1.5 flex-wrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                    Poza „după rezolvare"
+                    <span className="opacity-60 normal-case font-normal">
+                      (opțional, dar puternic — apare în Before/After)
+                    </span>
+                  </p>
+                  <PhotoUploader
+                    urls={statusEdit.resolvedPhotoUrl ? [statusEdit.resolvedPhotoUrl] : []}
+                    onChange={(arr) =>
+                      setStatusEdit((p) =>
+                        p ? { ...p, resolvedPhotoUrl: arr[0] ?? null } : p,
+                      )
+                    }
+                    max={1}
+                  />
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+                    Adaugă o poză cu rezultatul rezolvării — alimentează galeria publică
+                    de dovezi și încurajează cetățenii să raporteze din nou.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="px-5 py-4 border-t border-[var(--color-border)] flex items-center justify-end gap-2 bg-[var(--color-bg)]">
               <button
@@ -550,6 +598,7 @@ export default function AdminSesizariPage() {
                         status: (s.status as SesizareStatus) ?? "nou",
                         response: "",
                         note: "",
+                        resolvedPhotoUrl: s.resolved_photo_url ?? null,
                       })
                     }
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)]/40 transition-colors"

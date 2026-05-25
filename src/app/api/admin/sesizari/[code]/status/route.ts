@@ -37,6 +37,13 @@ const schema = z.object({
    * which the timeline UI hides via `isRedundantEventDescription`.
    */
   note: z.string().trim().max(500).optional(),
+  /**
+   * 2026-05-25 — opțional, URL-ul pozei „după" când admin marchează
+   * status=rezolvat. Apare în secțiunea Before/After pe pagina
+   * publică a sesizării. Validăm URL https să prevenim insert
+   * arbitrar de strings.
+   */
+  resolved_photo_url: z.string().url().nullable().optional(),
 });
 
 export async function POST(
@@ -98,6 +105,12 @@ export async function POST(
   // before/after surfaces still compute durations correctly.
   if (newStatus === "rezolvat" && !sesizare.resolved_at) {
     updatePayload.resolved_at = new Date().toISOString();
+  }
+  // 2026-05-25 — admin poate ataşa poza „dupa" la marcare rezolvat.
+  // Permitem set și pentru sesizari deja rezolvate (re-upload / fix).
+  // null trimis explicit = șterge poza existentă.
+  if (parsed.data.resolved_photo_url !== undefined) {
+    updatePayload.resolved_photo_url = parsed.data.resolved_photo_url;
   }
 
   const { error } = await admin
