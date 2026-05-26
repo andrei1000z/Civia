@@ -35,11 +35,16 @@ export async function GET(req: Request) {
       { data: data ?? [] },
       {
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          // 2026-05-27 — CORS wildcard scos. Acest endpoint e folosit din
+          // browserul propriu (autocomplete localitate); nu e API public.
           // 24h CDN cache — localities are administrative data that
           // changes only when new villages are registered. SWR keeps
           // the response warm for autocomplete typing.
-          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=86400",
+          // 2026-05-27 — 3-layer Cache-Control per Vercel docs ca s-maxage
+          // să nu fie strip-uit înainte de browser.
+          "Cache-Control": "max-age=10",
+          "CDN-Cache-Control": "max-age=3600",
+          "Vercel-CDN-Cache-Control": "max-age=86400",
         },
       }
     );

@@ -21,7 +21,9 @@ Sentry.init({
       // Cron-urile ruleaza rar — pastram 100% pentru visibility.
       return 1.0;
     }
-    return 0.01;
+    // 2026-05-27 — baseline bump 1% → 5% pentru observabilitate mai bună
+    // pe user flows non-critical (homepage, content pages). Cost +$5-10/mo.
+    return 0.05;
   },
   debug: false,
   enabled: process.env.NODE_ENV === "production",

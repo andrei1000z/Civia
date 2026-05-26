@@ -83,7 +83,15 @@ export async function GET(req: Request) {
     // schimbă rar; CDN cache hits reduce edge requests cu ~50%.
     return NextResponse.json(
       { data: rows },
-      { headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" } }
+      {
+        headers: {
+          // 2026-05-27 — 3-layer pe Vercel: fără CDN-Cache-Control, edge-ul
+          // strips s-maxage înainte de browser. Per Vercel docs.
+          "Cache-Control": "max-age=10",
+          "CDN-Cache-Control": "max-age=120",
+          "Vercel-CDN-Cache-Control": "max-age=300",
+        },
+      }
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";

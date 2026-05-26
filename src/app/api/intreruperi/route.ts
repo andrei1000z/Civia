@@ -83,7 +83,10 @@ export async function GET(req: NextRequest) {
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+        // 2026-05-27 — 3-layer Cache-Control (Vercel CDN).
+        "Cache-Control": "max-age=15",
+        "CDN-Cache-Control": "max-age=300",
+        "Vercel-CDN-Cache-Control": "max-age=900",
       },
     },
   );

@@ -234,25 +234,22 @@ async function callAiWithFallback(
     });
     return (out ?? "").trim();
   };
+  // 2026-05-27 — Cap fallback chain (audit recommendation). Înainte aveam
+  // 2 Gemini + 5 Gemini backups + 2 Groq = 9 candidați. Cele 5 backups
+  // (latest aliases) au quota separată dar majoritar ratează la fel când
+  // Google rate-limit-eaza projectul. Reducem la 2 Gemini → 2 Groq = 4
+  // candidați total. Save quota + latency on degraded conditions.
   const candidates: Candidate[] = [
     ...(isGeminiConfigured()
       ? [
           { provider: "gemini" as const, model: GEMINI_MODEL, run: geminiCall(GEMINI_MODEL) },
           { provider: "gemini" as const, model: GEMINI_MODEL_FAST, run: geminiCall(GEMINI_MODEL_FAST) },
-          // Backup models with INDEPENDENT per-day quota counters on
-          // Gemini's free tier — when 2.5-flash is 429, flash-latest
-          // still serves. Cycling through 5 of them is functionally 5×
-          // the daily budget from a single key.
-          ...GEMINI_MODEL_BACKUPS.map((m) => ({
-            provider: "gemini" as const,
-            model: m,
-            run: geminiCall(m),
-          })),
         ]
       : []),
     { provider: "groq" as const, model: GROQ_MODEL, run: groqCall(GROQ_MODEL, 900) },
     { provider: "groq" as const, model: GROQ_MODEL_FAST, run: groqCall(GROQ_MODEL_FAST, 900) },
   ];
+  void GEMINI_MODEL_BACKUPS; // Keep import; cap reduce explicit pentru cost
 
   // Minimum chars we'll accept as a "real" synthesis. Below this it's
   // either an empty response (Gemini safety-filtered, thinking-only,

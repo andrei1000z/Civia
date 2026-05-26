@@ -1,6 +1,10 @@
 // Database types — manually kept in sync with supabase/schema.sql
 // For generated types run: npx supabase gen types typescript --project-id <ref>
 
+// 2026-05-27 — Re-export tipurile Supabase ca app code să nu mai importe
+// direct din @supabase/supabase-js (per AGENTS.md guideline).
+export type { User, Session, SupabaseClient } from "@supabase/supabase-js";
+
 export type ModerationStatus = "pending" | "approved" | "rejected";
 
 export interface ProfileRow {

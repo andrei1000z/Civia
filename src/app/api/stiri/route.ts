@@ -169,7 +169,14 @@ export async function GET(req: Request) {
 
     return NextResponse.json(
       { data: diversified },
-      { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } },
+      {
+        headers: {
+          // 2026-05-27 — 3-layer Cache-Control (Vercel CDN).
+          "Cache-Control": "max-age=10",
+          "CDN-Cache-Control": "max-age=30",
+          "Vercel-CDN-Cache-Control": "max-age=60",
+        },
+      },
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";

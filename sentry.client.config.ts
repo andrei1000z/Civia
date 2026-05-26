@@ -17,7 +17,8 @@ Sentry.init({
       // 2026-05-25 OPTIMIZATION: 50% → 10%. Pe Pro plan revenim la 50%.
       return 0.1;
     }
-    return 0.01;
+    // 2026-05-27 — baseline 1% → 5% (audit recommended).
+    return 0.05;
   },
   // 2026-05-25 #30 — replays reduced: 0% baseline (cost), 0.1 pe erori
   // (per research Datadog + Sentry pricing guide). 0.5 era over-spec:

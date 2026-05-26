@@ -39,6 +39,9 @@ const submitSchema = z.object({
   is_organizer_submission: z.boolean().optional(),
   // URL produs de /api/upload?kind=document (image sau PDF)
   organizer_proof_url: z.string().url().max(500).optional().or(z.literal("")),
+
+  // 2026-05-27 — Honeypot. Bots completează automat câmpuri ascunse.
+  _honey: z.string().optional().default(""),
 });
 
 function emptyToNull<T extends Record<string, unknown>>(obj: T): T {
@@ -68,6 +71,11 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = submitSchema.parse(body);
+
+    // 2026-05-27 — Honeypot drop silent. Bots fill it, real users don't see.
+    if (parsed._honey && parsed._honey.length > 0) {
+      return NextResponse.json({ ok: true, note: "received" });
+    }
 
     // Anti-spam ușor: refuză titluri cu doar majuscule sau care conțin
     // URL-uri în titlu (red-flag pentru spam ad-uri).

@@ -12,6 +12,8 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civia.ro";
 const schema = z.object({
   email: z.string().email().max(200),
   address: z.string().min(5).max(300),
+  // 2026-05-27 — honeypot anti-bot
+  _honey: z.string().optional().default(""),
 });
 
 // Normalizare adresă pentru match-uri parțiale: lowercase, fără diacritice,
@@ -76,7 +78,11 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { email, address } = parsed.data;
+  const { email, address, _honey } = parsed.data;
+  // Honeypot — bots fill, silent-drop with fake success
+  if (_honey && _honey.length > 0) {
+    return NextResponse.json({ ok: true, note: "received" });
+  }
   const normalized = normalizeAddress(address);
   const { county, sector } = detectCounty(normalized);
 

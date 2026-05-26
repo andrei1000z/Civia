@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { User, Session } from "@supabase/supabase-js";
+// 2026-05-27 — import prin wrapper (AGENTS.md). Type-only re-export OK.
+import type { User, Session } from "@/lib/supabase/types";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 type OAuthProvider = "google" | "apple";

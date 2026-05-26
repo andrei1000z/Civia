@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
-import type { SupabaseClient } from "@supabase/supabase-js";
+// 2026-05-27 — import prin wrapper (AGENTS.md).
+import type { SupabaseClient } from "@/lib/supabase/types";
 import { isRedundantEventDescription } from "./events";
 
 interface AppendArgs {

@@ -4,6 +4,7 @@ import { fetchAllFeedsWithDiag } from "@/lib/stiri/rss";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { analyticsRedis } from "@/lib/analytics/redis";
 import { pingIndexNowDeleted } from "@/lib/seo/indexnow";
 import { pickTopCivic } from "@/lib/stiri/civic-relevance";
 import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
@@ -79,6 +80,31 @@ export async function POST(req: Request) {
         { error: "Prea multe refresh-uri. Încearcă peste un minut." },
         { status: 429 },
       );
+    }
+  }
+
+  // 2026-05-27 — Distributed lock anti-concurrent-runs (audit recommended).
+  // Vercel cron retry sau click manual concomitent cu cron-ul programat poate
+  // duplicate articole + irosi Groq tokens. Folosim Upstash Redis SET NX EX 120
+  // — primul caller obține lock-ul, ceilalți primesc 409 cu skip silent.
+  const LOCK_KEY = "stiri:fetch:lock";
+  let lockAcquired = false;
+  if (analyticsRedis) {
+    try {
+      const ok = await analyticsRedis.set(LOCK_KEY, Date.now().toString(), {
+        ex: 120,
+        nx: true,
+      });
+      // Upstash returns "OK" string când lock-ul a fost achiziționat, null altfel.
+      lockAcquired = ok !== null;
+      if (!lockAcquired) {
+        return NextResponse.json(
+          { ok: true, note: "skip_concurrent_run", lock: "held" },
+          { status: 200 },
+        );
+      }
+    } catch {
+      // Redis blocat — continue fără lock (preferable la blocked).
     }
   }
 

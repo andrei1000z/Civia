@@ -7,13 +7,24 @@ import type { ErrorEvent } from "@sentry/nextjs";
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const PHONE_RE = /\+?40\s?\d{2,3}[\s-]?\d{3}[\s-]?\d{3,4}/g;
-const CODE_RE = /\b[A-Z0-9]{6}\b/g;
+// 2026-05-27 — codurile sesizari sunt 5 digit numeric (00042). Pattern-ul
+// vechi `[A-Z0-9]{6}` nu match-uia. Nou pattern: context-aware ca să nu
+// redactăm ani / numere aleatoare. Acoperă:
+//  - /sesizari/00042
+//  - cod 00042 / cod: 00042 / code=00042
+//  - referire în text "sesizarea 00042"
+const CODE_PATH_RE = /\/sesizari\/\d{5}\b/g;
+const CODE_CONTEXT_RE = /\b(cod(?:ul)?|code|sesizar(?:e|ea|ile))[\s:=]+(\d{5})\b/gi;
+// Legacy pattern (6 char alphanumeric) — păstrat pentru cazuri vechi.
+const CODE_LEGACY_RE = /\b[A-Z0-9]{6}\b/g;
 
 function redact(input: string): string {
   return input
     .replace(EMAIL_RE, "[email]")
     .replace(PHONE_RE, "[phone]")
-    .replace(CODE_RE, "[code]");
+    .replace(CODE_PATH_RE, "/sesizari/[code]")
+    .replace(CODE_CONTEXT_RE, (_m, label) => `${label} [code]`)
+    .replace(CODE_LEGACY_RE, "[code]");
 }
 
 function redactValue(val: unknown): unknown {
