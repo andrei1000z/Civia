@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SESIZARE_TIPURI, SESIZARE_TIPURI_ACTIVE } from "@/lib/constants";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
+import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
 import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
@@ -144,6 +145,11 @@ export function SesizareForm() {
   // National geocoding state — pre-fill from county context if available
   const [detectedCounty, setDetectedCounty] = useState<string | null>(county?.id ?? null);
   const [detectedCountyName, setDetectedCountyName] = useState<string | null>(county?.name ?? null);
+
+  // 2026-05-26 — Auto-detect county din locatie text dacă reverse-geocode
+  // n-a setat încă valoarea. Critical pentru flow /sesizari (national) unde
+  // userul scrie „Cluj-Napoca" în locatie dar nu a făcut click pe GPS.
+  // Fără asta, routing-ul cade pe București default → email gresit.
   const [detectedLocality, setDetectedLocality] = useState<string | null>(null);
 
   // Parcare-specific state. Only used (and only rendered) when
@@ -365,6 +371,21 @@ export function SesizareForm() {
       trackFunnelStep("sesizare-create", "location-set", { has_coords: 1 });
     }
   }, [data.lat, data.locatie]);
+
+  // 2026-05-26 — Auto-detect county din `locatie` text când userul tastează.
+  // NU suprascrie un county deja setat (din county-context sau reverse-geocode
+  // GPS). Asta ca să nu pierdem precizia GPS dacă userul a făcut click pe pin.
+  // Fix pentru bug 00049: pe /sesizari (national), userul scrie „Cluj-Napoca"
+  // în locatie dar n-a făcut click pe GPS → detectedCounty rămânea null →
+  // routing default București.
+  useEffect(() => {
+    if (detectedCounty) return; // deja setat (county-context sau geocode)
+    if (!data.locatie || data.locatie.trim().length < 4) return;
+    const detected = detectCountyFromLocatie(data.locatie);
+    if (detected) {
+      setDetectedCounty(detected);
+    }
+  }, [data.locatie, detectedCounty]);
 
   const descriptionFiredRef = useRef(false);
   useEffect(() => {
@@ -1277,8 +1298,13 @@ export function SesizareForm() {
   // — gresit pentru ceilalti cetateni din alte orase. Acum asteptam adresa.
   const hasLocationSignal =
     !!data.locatie?.trim() || (data.lat != null && data.lng != null) || !!detectedCounty;
+  // 2026-05-26 — Fallback county DIN locatie text dacă reverse-geocode
+  // nu a setat detectedCounty (user e pe /sesizari national, scrie
+  // „Cluj-Napoca" în locatie). Mirror cu fix-ul server-side.
+  const effectiveCounty =
+    detectedCounty ?? (data.locatie ? detectCountyFromLocatie(data.locatie) : null);
   const recipients = data.tip && hasLocationSignal
-    ? getAuthoritiesFor(data.tip, data.sector, detectedCounty, data.locatie, parkingCtx)
+    ? getAuthoritiesFor(data.tip, data.sector, effectiveCounty, data.locatie, parkingCtx)
     : null;
 
   const LUNI_RO = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
