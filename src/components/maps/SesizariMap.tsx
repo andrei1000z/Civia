@@ -133,15 +133,23 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
       <LeafletMap center={county?.center} zoom={county ? 10 : zoom}>
         <MarkerLayer data={markers} />
       </LeafletMap>
-      <div className="absolute bottom-3 left-3 z-[400] bg-[var(--color-surface)] backdrop-blur border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 shadow-[var(--shadow-md)]">
-        <div className="flex flex-col gap-1.5">
-          {(["nou", "in-lucru", "rezolvat"] as const).map((status) => (
-            <div key={status} className="flex items-center gap-2 text-xs">
-              <span className="w-3 h-3 rounded-full" style={{ background: STATUS_COLORS[status] }} />
-              <span className="text-[var(--color-text)]">{STATUS_LABELS[status]}</span>
-            </div>
-          ))}
-        </div>
+      {/* 2026-05-26 — legenda mai mică + transparentă (cerere user). Pill
+          orizontal single-row în loc de panou bloc, cu blur pe bg ca harta
+          de dedesubt să rămână vizibilă. */}
+      <div
+        className="absolute bottom-3 left-3 z-[400] inline-flex items-center gap-2.5 px-2.5 py-1.5 rounded-full bg-[var(--color-surface)]/70 backdrop-blur-md border border-[var(--color-border)]/70 shadow-[var(--shadow-1)]"
+        aria-label="Legenda hărții"
+      >
+        {(["nou", "in-lucru", "rezolvat"] as const).map((status) => (
+          <span key={status} className="inline-flex items-center gap-1 text-[10px] font-medium leading-none">
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: STATUS_COLORS[status] }}
+              aria-hidden="true"
+            />
+            <span className="text-[var(--color-text)]">{STATUS_LABELS[status]}</span>
+          </span>
+        ))}
       </div>
     </div>
   );

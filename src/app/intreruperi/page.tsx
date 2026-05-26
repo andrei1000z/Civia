@@ -18,6 +18,7 @@ import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { AlertsSubscribeForm } from "@/components/intreruperi/AlertsSubscribeForm";
+import { IntreruperiQuickJump } from "@/components/intreruperi/IntreruperiQuickJump";
 
 export const metadata: Metadata = {
   title: "Întreruperi programate — apă, caldură, gaz, curent, lucrări stradă",
@@ -141,22 +142,10 @@ export default async function IntreruperiPage() {
         }
       />
 
-      {/* 2026-05-25: buton scroll spre formular raport. User a cerut acces
-          rapid la „Știi o întrerupere?" fără să caute manual la fundul paginii. */}
-      <div className="flex flex-wrap gap-2 justify-center -mt-2 mb-6">
-        <a
-          href="#submit-form"
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary-soft)] transition-colors"
-        >
-          📣 <span>Raportează o întrerupere</span>
-        </a>
-        <a
-          href="#alerts-form"
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-medium hover:shadow-[0_6px_20px_-4px_rgba(5,150,105,0.5)] transition-all"
-        >
-          🔔 <span>Anunță-mă pe adresa mea</span>
-        </a>
-      </div>
+      {/* 2026-05-26 — IntreruperiQuickJump (client component) → click face
+          scrollIntoView explicit. Anchor-urile native nu derulau pe primul
+          click în prod (probabil ScrollRestoration intercepta). */}
+      <IntreruperiQuickJump />
 
       {/* Stats quick — five real categories instead of four. The
           stat block was rendering apa/caldura/gaz/electricitate but

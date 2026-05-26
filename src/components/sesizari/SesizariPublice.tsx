@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
-import { NearbyMeButton } from "@/components/sesizari/NearbyMeButton";
+// 2026-05-26 — NearbyMeButton scos la cererea user-ului (UX clutter).
+// Filtrarea spațială rămâne via /sesizari-publice/harta + filtre județ.
 import dynamic from "next/dynamic";
 import { ShareButton } from "./ShareButton";
 import { OverdueBadge } from "./OverdueBadge";
@@ -224,8 +225,6 @@ export function SesizariPublice() {
             <MapIconLucide size={14} /> Hartă
           </button>
         </div>
-        {/* P3.27 — Geo-fence „Aproape de mine" */}
-        <NearbyMeButton />
       </div>
 
       {/* Filters — hidden on map view; the map already provides spatial
