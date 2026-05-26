@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { getSesizareEventMeta, isRedundantEventDescription, isTerminalEvent, dedupeConsecutiveEvents } from "@/lib/sesizari/events";
+import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
 import type { SesizareFeedRow, SesizareTimelineRow } from "@/lib/supabase/types";
 
 interface Result {
@@ -206,6 +207,23 @@ export function UrmarireSesizare() {
               <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
+
+          {/* 2026-05-26 — Before/After pe /urmareste când rezolvat.
+              Mirror pe pagina publică /sesizari/[code] — același UX
+              indiferent de surface. Apare doar dacă există MINIM o
+              poză „înainte" (s.imagini[0]); poza „după" e opțională
+              (BeforeAfter renderă placeholder dacă lipsește). */}
+          {result.sesizare.status === "rezolvat" &&
+            result.sesizare.imagini &&
+            result.sesizare.imagini.length > 0 && (
+              <div className="px-5 md:px-6 pt-5 md:pt-6">
+                <BeforeAfter
+                  beforeUrl={result.sesizare.imagini[0]!}
+                  afterUrl={result.sesizare.resolved_photo_url ?? null}
+                  resolvedAt={result.sesizare.resolved_at}
+                />
+              </div>
+            )}
 
           {/* Timeline */}
           <div className="p-5 md:p-6">
