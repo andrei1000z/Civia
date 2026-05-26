@@ -430,21 +430,29 @@ export function SesizariPublice() {
             {filtered.length === 1 ? " sesizare găsită" : " sesizări găsite"} cu filtrele tale
           </p>
         )}
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
+        {/* 2026-05-26 — Carduri UNIFORME ca dimensiune.
+            auto-rows-fr: toate cardurile dintr-un rând au aceeași înălțime.
+            Link container: flex flex-col h-full ca să umple înălțimea grid cell.
+            Description: flex-1 → consumă restul vertical disponibil.
+            Photos: înălțime fixă rezervată (56px), invizibilă când lipsesc
+              dar păstrează spațiul ca să nu varieze layout-ul vertical.
+            Bottom (cod + voturi + share): mt-auto pinned jos.
+            Ordine top→bottom: status+tip+timp → titlu → adresă+sector
+            → descriere → poze → bottom action row. */}
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0 auto-rows-fr">
           {filtered.map((s) => {
             const { label: tipLabel, icon: tipIcon } = resolveTipLabel(s.tip, s.custom_category);
+            const hasPhotos = s.imagini.length > 0 || !!s.resolved_photo_url;
             return (
               <Link
                 key={s.id}
                 href={`/sesizari/${s.code}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all overflow-hidden min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all overflow-hidden min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 flex flex-col h-full"
                 aria-label={`${s.titlu} — ${STATUS_LABELS[s.status]}, ${s.upvotes} ${s.upvotes === 1 ? "vot" : "voturi"}`}
               >
+                {/* TOP ROW: status + tip + acum X timp (dreapta) */}
                 <div className="flex items-start justify-between mb-3 gap-2 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    {/* Bug fix 5/22/2026 — status badge cu fallback la „Nou"
-                        cand status-ul e gol sau invalid. Inainte: badge gol
-                        invizibil (00044, 00046 raportate de user). */}
                     {STATUS_LABELS[s.status] ? (
                       <Badge bgColor={STATUS_COLORS[s.status]} color="white">
                         {STATUS_LABELS[s.status]}
@@ -458,8 +466,6 @@ export function SesizariPublice() {
                       <span className="mr-1" aria-hidden="true">{tipIcon}</span>
                       {tipLabel}
                     </Badge>
-                    {/* Badge „Formal" sters 5/22/2026 — userul a cerut sa
-                        nu mai apara nicaieri in site (era zgomot pe card). */}
                     <OverdueBadge
                       createdAt={s.created_at}
                       status={s.status}
@@ -474,43 +480,70 @@ export function SesizariPublice() {
                     {timeAgo(s.created_at)}
                   </time>
                 </div>
-                <h3 className="font-semibold mb-1 line-clamp-2 break-words">{s.titlu}</h3>
-                <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-2 min-w-0">
+
+                {/* TITLU — 2 linii fixe (line-clamp pentru consistency) */}
+                <h3 className="font-semibold mb-1.5 line-clamp-2 break-words min-h-[2.5em]">
+                  {s.titlu}
+                </h3>
+
+                {/* ADRESĂ + SECTOR (sector la dreapta, truncat) */}
+                <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-3 min-w-0">
                   <MapPin size={12} className="shrink-0" aria-hidden="true" />
                   <span className="truncate flex-1 min-w-0">{s.locatie}</span>
-                  <span className="shrink-0" aria-hidden="true">·</span>
-                  <span className="shrink-0">{s.sector}</span>
+                  {s.sector && (
+                    <>
+                      <span className="shrink-0" aria-hidden="true">·</span>
+                      <span className="shrink-0 font-medium">{s.sector}</span>
+                    </>
+                  )}
                 </div>
-                <p className="text-sm text-[var(--color-text)] mb-3 line-clamp-2 break-words">
+
+                {/* DESCRIERE — flex-1 ca să consume restul vertical pentru
+                    uniform height. 3 linii max (line-clamp), break-words. */}
+                <p className="text-sm text-[var(--color-text)] mb-3 line-clamp-3 break-words flex-1">
                   {s.formal_text ? stripForPreview(s.formal_text) : s.descriere}
                 </p>
-                {(s.imagini.length > 0 || s.resolved_photo_url) && (
-                  <div className="flex gap-1 mb-3">
-                    {s.imagini.slice(0, s.resolved_photo_url ? 2 : 3).map((url, i) => (
-                      <div key={i} className="relative w-14 h-14 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] overflow-hidden flex items-center justify-center">
-                        {url.startsWith("http") ? (
-                          <Image src={url} alt={`Fotografie sesizare ${s.code ?? ""}`} fill sizes="56px" className="object-cover" />
-                        ) : (
-                          <ImgIcon size={16} className="text-[var(--color-text-muted)]" aria-label="Imagine indisponibilă" />
-                        )}
-                        {i === 0 && s.resolved_photo_url && (
-                          <span className="absolute bottom-0 inset-x-0 bg-red-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
-                            BEFORE
+
+                {/* POZE — înălțime fixă rezervată (64px = w-14 h-14 + margine).
+                    Când lipsesc poze, randăm un placeholder invizibil cu
+                    aceeași înălțime ca să păstrăm aliniamentul cu cardurile
+                    care AU poze (uniform layout). */}
+                <div className="flex gap-1 mb-3 h-14" aria-hidden={!hasPhotos}>
+                  {hasPhotos ? (
+                    <>
+                      {s.imagini.slice(0, s.resolved_photo_url ? 2 : 3).map((url, i) => (
+                        <div key={i} className="relative w-14 h-14 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] overflow-hidden flex items-center justify-center shrink-0">
+                          {url.startsWith("http") ? (
+                            <Image src={url} alt={`Fotografie sesizare ${s.code ?? ""}`} fill sizes="56px" className="object-cover" />
+                          ) : (
+                            <ImgIcon size={16} className="text-[var(--color-text-muted)]" aria-label="Imagine indisponibilă" />
+                          )}
+                          {i === 0 && s.resolved_photo_url && (
+                            <span className="absolute bottom-0 inset-x-0 bg-red-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
+                              BEFORE
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {s.resolved_photo_url && (
+                        <div className="relative w-14 h-14 rounded-[var(--radius-xs)] overflow-hidden ring-2 ring-emerald-500 shrink-0">
+                          <Image src={s.resolved_photo_url} alt="După" fill sizes="56px" className="object-cover" />
+                          <span className="absolute bottom-0 inset-x-0 bg-emerald-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
+                            AFTER
                           </span>
-                        )}
-                      </div>
-                    ))}
-                    {s.resolved_photo_url && (
-                      <div className="relative w-14 h-14 rounded-[var(--radius-xs)] overflow-hidden ring-2 ring-emerald-500">
-                        <Image src={s.resolved_photo_url} alt="După" fill sizes="56px" className="object-cover" />
-                        <span className="absolute bottom-0 inset-x-0 bg-emerald-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
-                          AFTER
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)] gap-2 min-w-0">
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Spacer invizibil — păstrează înălțimea = w-14 h-14
+                    <div className="w-14 h-14" />
+                  )}
+                </div>
+
+                {/* BOTTOM: cod + voturi + comentarii + share. mt-auto NU mai e
+                    necesar pentru că flex-1 pe descriere consumă spațiul, dar
+                    îl păstrez pentru robustețe dacă descrierea e scurtă. */}
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)] gap-2 min-w-0 mt-auto">
                   <span className="text-xs text-[var(--color-text-muted)] truncate min-w-0 flex-1">
                     <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
