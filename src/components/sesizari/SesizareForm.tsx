@@ -373,19 +373,25 @@ export function SesizareForm() {
   }, [data.lat, data.locatie]);
 
   // 2026-05-26 — Auto-detect county din `locatie` text când userul tastează.
-  // NU suprascrie un county deja setat (din county-context sau reverse-geocode
-  // GPS). Asta ca să nu pierdem precizia GPS dacă userul a făcut click pe pin.
-  // Fix pentru bug 00049: pe /sesizari (national), userul scrie „Cluj-Napoca"
-  // în locatie dar n-a făcut click pe GPS → detectedCounty rămânea null →
-  // routing default București.
+  // Recalculează la fiecare schimbare ca să NU rămână sticky:
+  //   - User tastează „Iași" → detected = IS
+  //   - User șterge și tastează „București" → detected = B (corect, nu IS)
+  //   - User șterge tot → revine la county-context (fallback la county prop)
+  // GPS coords nu mai override aici — geocode-ul cheamă explicit setDetectedCounty
+  // în alt useEffect (reverse geocode). Aici doar text-based.
   useEffect(() => {
-    if (detectedCounty) return; // deja setat (county-context sau geocode)
-    if (!data.locatie || data.locatie.trim().length < 4) return;
-    const detected = detectCountyFromLocatie(data.locatie);
-    if (detected) {
-      setDetectedCounty(detected);
+    const text = data.locatie?.trim() ?? "";
+    if (text.length < 4) {
+      // Locatia goală/scurtă → fallback la county-context (county prop)
+      setDetectedCounty(county?.id ?? null);
+      return;
     }
-  }, [data.locatie, detectedCounty]);
+    const detected = detectCountyFromLocatie(text);
+    // Dacă text-ul are oraș clar identificabil, folosim asta.
+    // Dacă nu match nimic, fallback la county-context (nu rămânem
+    // pe vechea valoare detected).
+    setDetectedCounty(detected ?? county?.id ?? null);
+  }, [data.locatie, county?.id]);
 
   const descriptionFiredRef = useRef(false);
   useEffect(() => {
