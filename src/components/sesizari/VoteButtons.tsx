@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
-import { trackSesizareVote, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
+import { trackSesizareVote } from "@/components/analytics/CiviaTracker";
 
 interface VoteButtonsProps {
   code: string;
@@ -24,7 +23,6 @@ export function VoteButtons({
   size = "md",
   layout = "horizontal",
 }: VoteButtonsProps) {
-  const { user, openAuthModal } = useAuth();
   const { toast } = useToast();
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [downvotes, setDownvotes] = useState(initialDownvotes);
@@ -32,11 +30,9 @@ export function VoteButtons({
   const [loading, setLoading] = useState(false);
 
   const handleVote = async (value: 1 | -1) => {
-    if (!user) {
-      trackAuthModalOpen("vote");
-      openAuthModal();
-      return;
-    }
+    // 2026-05-26 — voting fără cont enabled. Server-ul dedupă anonim
+    // pe ip_hash. Userul logat folosește path-ul cu user_id (păstrat
+    // pentru civic streak + accurate counter cross-device).
     if (loading) return;
     setLoading(true);
 

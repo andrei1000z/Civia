@@ -430,6 +430,70 @@ export async function removeVote(params: {
   if (error) throw error;
 }
 
+/**
+ * 2026-05-26 — Vote anonim (fără cont). Dedup pe ip_hash (sha256 truncat
+ * la 16 chars). Aceeași tabela sesizare_votes, dar user_id NULL. View-ul
+ * sesizari_feed_view sumează upvotes/downvotes peste toate rândurile,
+ * indiferent dacă user_id e set sau nu — counter-ul public arată total.
+ */
+export async function upsertVoteAnon(params: {
+  sesizareId: string;
+  ipHash: string;
+  value: -1 | 1;
+}): Promise<void> {
+  const supabase = await createSupabaseServer();
+  // onConflict pe partial unique index (sesizare_id, ip_hash) where user_id is null.
+  // Supabase suportă onConflict cu lista coloane, dar partial indexes
+  // nu sunt direct exprimabile — folosim upsert manual: delete + insert.
+  await supabase
+    .from("sesizare_votes")
+    .delete()
+    .eq("sesizare_id", params.sesizareId)
+    .eq("ip_hash", params.ipHash)
+    .is("user_id", null);
+  const { error } = await supabase.from("sesizare_votes").insert({
+    sesizare_id: params.sesizareId,
+    user_id: null,
+    ip_hash: params.ipHash,
+    value: params.value,
+  });
+  if (error) throw error;
+}
+
+export async function removeVoteAnon(params: {
+  sesizareId: string;
+  ipHash: string;
+}): Promise<void> {
+  const supabase = await createSupabaseServer();
+  const { error } = await supabase
+    .from("sesizare_votes")
+    .delete()
+    .eq("sesizare_id", params.sesizareId)
+    .eq("ip_hash", params.ipHash)
+    .is("user_id", null);
+  if (error) throw error;
+}
+
+/**
+ * Citește votul curent al unui IP anonim (pentru a afișa state pe UI
+ * fără cont — userul vede dacă a votat deja).
+ */
+export async function getAnonVote(params: {
+  sesizareId: string;
+  ipHash: string;
+}): Promise<-1 | 1 | null> {
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("sesizare_votes")
+    .select("value")
+    .eq("sesizare_id", params.sesizareId)
+    .eq("ip_hash", params.ipHash)
+    .is("user_id", null)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { value: -1 | 1 }).value;
+}
+
 export async function getUserVote(params: {
   sesizareId: string;
   userId: string;
