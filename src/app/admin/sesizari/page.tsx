@@ -62,9 +62,9 @@ export default function AdminSesizariPage() {
     status: SesizareStatus;
     response: string;
     note: string;
-    /** 2026-05-25 — poza „după" la marcare rezolvat. URL public Supabase
-     *  Storage după upload via /api/upload?kind=image. */
-    resolvedPhotoUrl: string | null;
+    /** 2026-05-26 — multi-photo support (up to 5). Backwards compat:
+     *  prima poză e auto-copiată în resolved_photo_url server-side. */
+    resolvedPhotos: string[];
   } | null>(null);
   const [pendingTickets, setPendingTickets] = useState<number>(0);
 
@@ -163,23 +163,26 @@ export default function AdminSesizariPage() {
 
   const submitStatus = async () => {
     if (!statusEdit) return;
-    const { code, status, response, note, resolvedPhotoUrl } = statusEdit;
+    const { code, status, response, note, resolvedPhotos } = statusEdit;
     setActing(`status-${code}`);
     try {
-      // Trimitem resolved_photo_url DOAR pe statusul „rezolvat". Pentru
-      // alte status-uri îl ignorăm — n-are sens să atașăm poză „după"
-      // pe „În lucru" sau „Respins".
-      const photoPayload =
-        status === "rezolvat" && resolvedPhotoUrl !== undefined
-          ? { resolved_photo_url: resolvedPhotoUrl }
-          : {};
+      // 2026-05-26 — pe „rezolvat" trimitem DOAR pozele (note + response
+      // ascunse în UI). Pe alt status, trimitem note + response (foto
+      // n-are sens pentru „În lucru" / „Respins").
+      const isResolved = status === "rezolvat";
+      const photoPayload = isResolved ? { resolved_photos: resolvedPhotos } : {};
+      const textPayload = isResolved
+        ? {}
+        : {
+            ...(response.trim() ? { official_response: response.trim() } : {}),
+            ...(note.trim() ? { note: note.trim() } : {}),
+          };
       const res = await fetch(`/api/admin/sesizari/${code}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status,
-          ...(response.trim() ? { official_response: response.trim() } : {}),
-          ...(note.trim() ? { note: note.trim() } : {}),
+          ...textPayload,
           ...photoPayload,
         }),
       });
@@ -191,8 +194,9 @@ export default function AdminSesizariPage() {
             ? {
                 ...r,
                 status,
-                resolved_photo_url:
-                  status === "rezolvat" ? resolvedPhotoUrl : r.resolved_photo_url,
+                resolved_photo_url: isResolved
+                  ? (resolvedPhotos[0] ?? null)
+                  : r.resolved_photo_url,
               }
             : r,
         ),
@@ -413,73 +417,70 @@ export default function AdminSesizariPage() {
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="status-note"
-                  className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2"
-                >
-                  Notă internă <span className="opacity-60 normal-case">(opțional, apare în timeline)</span>
-                </label>
-                <input
-                  id="status-note"
-                  type="text"
-                  value={statusEdit.note}
-                  onChange={(e) =>
-                    setStatusEdit((p) => (p ? { ...p, note: e.target.value } : p))
-                  }
-                  placeholder="Ex: Confirmare PMB nr. 12345/30.04.2026"
-                  maxLength={500}
-                  className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                />
-              </div>
+              {/* 2026-05-26 — Note + response ascunse când status=rezolvat.
+                  Pentru rezolvat afișăm DOAR uploader-ul de poze. */}
+              {statusEdit.status !== "rezolvat" && (
+                <>
+                  <div>
+                    <label
+                      htmlFor="status-note"
+                      className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2"
+                    >
+                      Notă internă <span className="opacity-60 normal-case">(opțional, apare în timeline)</span>
+                    </label>
+                    <input
+                      id="status-note"
+                      type="text"
+                      value={statusEdit.note}
+                      onChange={(e) =>
+                        setStatusEdit((p) => (p ? { ...p, note: e.target.value } : p))
+                      }
+                      placeholder="Ex: Confirmare PMB nr. 12345/30.04.2026"
+                      maxLength={500}
+                      className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    />
+                  </div>
 
-              <div>
-                <label
-                  htmlFor="official-response"
-                  className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2"
-                >
-                  Răspunsul oficial al autorității{" "}
-                  <span className="opacity-60 normal-case">(opțional — copiază din email)</span>
-                </label>
-                <textarea
-                  id="official-response"
-                  value={statusEdit.response}
-                  onChange={(e) =>
-                    setStatusEdit((p) => (p ? { ...p, response: e.target.value } : p))
-                  }
-                  placeholder="Bună ziua, Vă mulțumim pentru sesizare..."
-                  rows={6}
-                  className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                />
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                  Dacă e completat, se afișează public pe pagina sesizării
-                  + se trimite autorului prin email.
-                </p>
-              </div>
+                  <div>
+                    <label
+                      htmlFor="official-response"
+                      className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2"
+                    >
+                      Răspunsul oficial al autorității{" "}
+                      <span className="opacity-60 normal-case">(opțional — copiază din email)</span>
+                    </label>
+                    <textarea
+                      id="official-response"
+                      value={statusEdit.response}
+                      onChange={(e) =>
+                        setStatusEdit((p) => (p ? { ...p, response: e.target.value } : p))
+                      }
+                      placeholder="Bună ziua, Vă mulțumim pentru sesizare..."
+                      rows={6}
+                      className="w-full px-3 py-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    />
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+                      Dacă e completat, se afișează public pe pagina sesizării
+                      + se trimite autorului prin email.
+                    </p>
+                  </div>
+                </>
+              )}
 
-              {/* Photo „după" — apare DOAR când selectezi rezolvat. */}
+              {/* Pe „rezolvat" — DOAR uploader 5 poze. Note + response ascunse. */}
               {statusEdit.status === "rezolvat" && (
                 <div className="rounded-[var(--radius-xs)] border border-emerald-300/40 dark:border-emerald-900/40 bg-emerald-500/5 p-4">
-                  <p className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold mb-2 flex items-center gap-1.5 flex-wrap">
+                  <p className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold mb-3 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                    Poza „după rezolvare"
-                    <span className="opacity-60 normal-case font-normal">
-                      (opțional, dar puternic — apare în Before/After)
-                    </span>
+                    Poze „după rezolvare" (până la 5)
                   </p>
                   <PhotoUploader
-                    urls={statusEdit.resolvedPhotoUrl ? [statusEdit.resolvedPhotoUrl] : []}
+                    urls={statusEdit.resolvedPhotos}
                     onChange={(arr) =>
-                      setStatusEdit((p) =>
-                        p ? { ...p, resolvedPhotoUrl: arr[0] ?? null } : p,
-                      )
+                      setStatusEdit((p) => (p ? { ...p, resolvedPhotos: arr } : p))
                     }
-                    max={1}
+                    max={5}
                   />
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
-                    Adaugă o poză cu rezultatul rezolvării — alimentează galeria publică
-                    de dovezi și încurajează cetățenii să raporteze din nou.
-                  </p>
                 </div>
               )}
             </div>
@@ -598,7 +599,12 @@ export default function AdminSesizariPage() {
                         status: (s.status as SesizareStatus) ?? "nou",
                         response: "",
                         note: "",
-                        resolvedPhotoUrl: s.resolved_photo_url ?? null,
+                        // 2026-05-26 — multi-photo. Dacă DB are doar
+                        // resolved_photo_url (legacy single), îl
+                        // promovăm în array pentru UI compat.
+                        resolvedPhotos: s.resolved_photo_url
+                          ? [s.resolved_photo_url]
+                          : [],
                       })
                     }
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)]/40 transition-colors"

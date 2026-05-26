@@ -44,6 +44,13 @@ const schema = z.object({
    * arbitrar de strings.
    */
   resolved_photo_url: z.string().url().nullable().optional(),
+  /**
+   * 2026-05-26 — multi-photo support. Până la 5 poze „după rezolvare"
+   * stocate în coloana nouă resolved_photos (text[]). Prima poză e
+   * automat copiată în resolved_photo_url pentru backwards compat
+   * cu BeforeAfter component + image-sitemap + alte consumeri.
+   */
+  resolved_photos: z.array(z.string().url()).max(5).optional(),
 });
 
 export async function POST(
@@ -111,6 +118,14 @@ export async function POST(
   // null trimis explicit = șterge poza existentă.
   if (parsed.data.resolved_photo_url !== undefined) {
     updatePayload.resolved_photo_url = parsed.data.resolved_photo_url;
+  }
+  // 2026-05-26 — multi-photo. Dacă vine `resolved_photos` array,
+  // overrides `resolved_photo_url` cu prima poză (backwards compat
+  // pentru BeforeAfter etc). Array gol = șterge toate pozele.
+  if (parsed.data.resolved_photos !== undefined) {
+    const photos = parsed.data.resolved_photos;
+    updatePayload.resolved_photos = photos;
+    updatePayload.resolved_photo_url = photos[0] ?? null;
   }
 
   const { error } = await admin
