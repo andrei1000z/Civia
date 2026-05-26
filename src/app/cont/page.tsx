@@ -26,7 +26,8 @@ import { useToast } from "@/components/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
-// ThemeSettings eliminat 5/22/2026 — dark mode forever, fara toggle.
+// 2026-05-26 — ThemeToggle revine: light + dark + system.
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
@@ -629,12 +630,20 @@ export default function ContPage() {
               />
             </section>
 
-            {/* Aspect — ThemeSettings (light/dark/system toggle) eliminat
-                5/22/2026, dark mode e default permanent. Pastram doar
-                SoundsToggle pentru efectele audio UI. */}
-            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-3 min-w-0">
+            {/* Aspect — ThemeToggle reactivat 2026-05-26.
+                Segmented 3-way: light / system / dark, cu localStorage
+                persistat + sync cu OS la „system". SoundsToggle separat. */}
+            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-4 min-w-0">
               <SectionTitle icon={Sparkles}>Aspect</SectionTitle>
-              <SoundsToggle />
+              <div>
+                <p className="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed">
+                  Alege cum arată Civia pentru tine. „Sistem" urmărește setarea OS-ului tău.
+                </p>
+                <ThemeToggle />
+              </div>
+              <div className="pt-3 border-t border-[var(--color-border)]/60">
+                <SoundsToggle />
+              </div>
             </section>
 
 

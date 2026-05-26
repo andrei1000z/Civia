@@ -133,11 +133,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  // 2026-05-19: defaultTheme=dark in ThemeProvider → fortam si themeColor
-  // dark pentru ca chrome-ul browserului sa nu apara light pe useri OS-light
-  // care intra prima oara pe site. Userii care comuta la light din /cont
-  // primesc tot #0a0a0a pe chrome — minor (nu pot personaliza per user).
-  themeColor: "#0a0a0a",
+  // 2026-05-26 — light mode revine. themeColor răspunde la media query
+  // (browser-ul alege automat funcție de OS preference). Boot-scriptul
+  // din <head> rescrie meta-tagul dinamic când user-ul comută manual.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
   // viewport-fit=cover extends content into iOS safe areas (notch,
   // home indicator). Combined with env(safe-area-inset-*) in layout
   // CSS, the fixed bottom-right MobileFab stays clear of the home
@@ -147,6 +149,19 @@ export const viewport = {
   initialScale: 1,
 };
 
+/**
+ * Anti-flash boot script — rulează SYNCHRONOUS în <head> înainte ca
+ * body-ul să paint-uiască. Citește localStorage["civia-theme"] și aplică
+ * clasa `.dark` pe <html> dacă theme-ul rezultat e "dark". Asta previne
+ * "flash of wrong mode" pe primul paint (cazul: user pe light mode →
+ * vede 80ms de dark UI înainte ca React să hidrateze și să corecteze).
+ *
+ * IIFE compact pe o singură linie — minified e ~340 chars, nu impactează
+ * TTFB. Try/catch întreg corpul în caz că localStorage e blocat
+ * (Safari Private, embedded webview cu policy strict).
+ */
+const themeBootScript = `(function(){try{var s=localStorage.getItem('civia-theme');var d=s==='dark'||((s==='system'||!s)&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';}catch(e){document.documentElement.classList.add('dark');}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -155,13 +170,22 @@ export default function RootLayout({
   return (
     <html
       lang="ro"
-      // 5/22/2026 — dark forever. `dark` class direct pe SSR ca sa nu mai
-      // existe „flash of light mode" pe primul paint inainte sa hidrateze
-      // ThemeProvider. CSS-ul `.dark { --color-bg: ... }` se aplica imediat.
-      className={`${inter.variable} ${sora.variable} h-full antialiased dark`}
+      // 2026-05-26 — `dark` class scoasă din SSR. Boot script-ul din <head>
+      // setează classul corect (light/dark) ÎNAINTE de prima paint, pe baza
+      // localStorage["civia-theme"] sau preferinței OS. suppressHydration
+      // necesar fiindcă boot-ul mutează className-ul înainte ca React să
+      // se atașeze.
+      className={`${inter.variable} ${sora.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
+        {/* Anti-flash theme boot — TREBUIE să fie primul element din <head>,
+            blocking, SYNCHRONOUS. Dacă rulează cu întârziere (chunk deferred,
+            async), user-ul pe light mode vede flash de dark pe primul paint. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootScript }}
+          suppressHydrationWarning
+        />
         {/* 2026-05-25 OPTIMIZATION: resource hints TIGHT — păstrăm doar
             cele 3 critice (Supabase, Groq, Plausible). Scoase dns-prefetch
             pentru open-meteo/openaq/nominatim/tiles — folosite pe paginile

@@ -310,6 +310,16 @@ body::after {
   z-index: -1;
   pointer-events: none;
   will-change: transform;
+  /* 2026-05-26 — Light mode: blob-urile sunt saturate optic pe alb. Pe
+     light reducem opacity-ul la 35% (~0.30 effective alpha pe canale).
+     Dark mode (.dark) revine la 100% — bg-ul dark are nevoie de pop-ul
+     coloristic ca să nu pară negru gol. */
+  opacity: 0.35;
+}
+
+.dark body::before,
+.dark body::after {
+  opacity: 1;
 }
 
 body::before {
