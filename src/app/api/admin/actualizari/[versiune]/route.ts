@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -77,6 +78,7 @@ export async function PATCH(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    revalidatePath("/actualizari");
     return NextResponse.json({ ok: true, data });
   } catch (e) {
     return NextResponse.json(
@@ -103,6 +105,7 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    revalidatePath("/actualizari");
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

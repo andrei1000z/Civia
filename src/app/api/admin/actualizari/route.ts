@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -102,6 +103,10 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    // 2026-05-26 — bust ISR cache pe pagina publică. Fără asta, /actualizari
+    // rămâne cu fallback v0.0.0 până la următoarea revalidare (1h) chiar
+    // dacă admin tocmai a adăugat versiunea nouă.
+    revalidatePath("/actualizari");
     return NextResponse.json({ ok: true, data });
   } catch (e) {
     return NextResponse.json(
