@@ -30,6 +30,31 @@ export const MAX_IMAGE_DIMENSION = 1920;
 // goqr.me e gratuit, fără tracking, returnează PNG (300x300 default).
 export const QR_API_BASE_URL = "https://api.qrserver.com/v1/create-qr-code/";
 
+/**
+ * 2026-05-27 — CTA copy unificat (per AGENTS.md). Înainte aveam mix de
+ * „Fă o sesizare" / „Trimite o sesizare" / „Sesizare" prin componente.
+ * Folosește aceste constante în orice CTA nou:
+ *   - HERO / entry CTA →  CTA.SESIZARE_HERO     („Fă o sesizare")
+ *   - Form-submit     →  CTA.SESIZARE_SUBMIT   („Trimite sesizarea")
+ *   - Cards „Vezi"    →  CTA.SESIZARE_VIEW     („Vezi detalii")
+ *   - Petiție hero    →  CTA.PETITION_HERO     („Semnează petiția")
+ *   - Petiție submit  →  CTA.PETITION_SIGN     („Semnează acum")
+ *   - Share / copy    →  CTA.SHARE             („Distribuie")
+ */
+export const CTA = {
+  SESIZARE_HERO: "Fă o sesizare",
+  SESIZARE_HERO_LONG: "Fă o sesizare acum",
+  SESIZARE_SUBMIT: "Trimite sesizarea",
+  SESIZARE_COSIGN: "Trimite și tu",
+  SESIZARE_VIEW: "Vezi detalii",
+  PETITION_HERO: "Semnează petiția",
+  PETITION_SIGN: "Semnează acum",
+  PETITION_INITIATE: "Inițiază o petiție",
+  PROTEST_PROPOSE: "Propune un protest",
+  SHARE: "Distribuie",
+  COPY_LINK: "Copiază link",
+} as const;
+
 // Categorii pentru petiții civice — listă predefinită ca admin să nu
 // inventeze 100 de categorii diferite. Folosit în /admin/petitii dropdown.
 export const PETITIE_CATEGORII = [

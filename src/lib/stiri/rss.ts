@@ -1,4 +1,5 @@
 import Parser from "rss-parser";
+import * as Sentry from "@sentry/nextjs";
 import { detectCounties } from "./county-keywords";
 
 export interface RssArticle {
@@ -293,7 +294,14 @@ export async function fetchFeed(feed: Feed): Promise<RssArticle[]> {
     }
     return articles;
   } catch (e) {
-    console.error(`Failed to fetch ${feed.source}:`, (e as Error).message);
+    // 2026-05-27 — console.error → Sentry breadcrumb (avoid Vercel log noise
+    // pe feed-uri RSS care eșuează frecvent — Cloudflare blocks, timeouts).
+    Sentry.addBreadcrumb({
+      category: "stiri.rss",
+      level: "warning",
+      message: `Failed to fetch ${feed.source}`,
+      data: { error: (e as Error).message.slice(0, 200) },
+    });
     return [];
   }
 }
@@ -377,12 +385,15 @@ export async function fetchAllFeedsWithDiag(): Promise<FetchAllResult> {
     if (r?.status === "fulfilled") {
       articles.push(...r.value);
       perFeed.push({ source: f.source, count: r.value.length, ok: true });
-      if (r.value.length === 0) {
-        console.warn(`[stiri] ${f.source} returned 0 articles`);
-      }
+      // 2026-05-27 — zero articles e tracked in perFeed; no console noise.
     } else {
       perFeed.push({ source: f.source, count: 0, ok: false });
-      console.error(`[stiri] ${f.source} REJECTED:`, (r?.reason as Error)?.message);
+      Sentry.addBreadcrumb({
+        category: "stiri.rss",
+        level: "warning",
+        message: `${f.source} REJECTED`,
+        data: { error: (r?.reason as Error)?.message?.slice(0, 200) ?? "unknown" },
+      });
     }
   }
 
