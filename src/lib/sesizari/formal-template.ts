@@ -296,7 +296,10 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
   const dataRo = formatDateRo(date);
   const nume = args.nume?.trim() || "";
   const adresa = args.adresa?.trim() || "";
-  const locatie = args.locatie?.trim() || "în zona semnalată";
+  // Curăță locatia de punctuație terminală (`.!?`) — template-ul o
+  // inserează în mijlocul unei propoziții urmată de „:" sau „. În prezent",
+  // iar dacă user-ul a încheiat textul cu „." obținem „.:". Defensive trim.
+  const locatie = (args.locatie?.trim() || "în zona semnalată").replace(/[.!?]+$/, "");
   // Descrierea cetățeanului — sursa primară a declarației de problemă.
   // Min 10 caractere ca să avem ceva substanțial; sub asta, fallback la
   // boilerplate-ul de tip (mai puțin precis, dar formal viabil).

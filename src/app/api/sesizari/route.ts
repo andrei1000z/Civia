@@ -266,13 +266,61 @@ export async function POST(req: Request) {
       if (detected) resolvedCounty = detected;
     }
 
+    // 2026-05-26 — Identity fallback. Standard Civia.ro: textul formal
+    // arată ÎNTOTDEAUNA „Mă numesc X, locuiesc în Y" (cu redactare pe
+    // pagina publică). Dacă form-ul a omis author_address dar avem nume +
+    // county/locality, derivăm un fallback civic — numele orașului. Pe
+    // pagina publică e oricum redactat la „[adresa]"; pentru autorități
+    // adresa de oraș + cod sesizare e suficientă pentru identificare.
+    let resolvedAuthorAddress = parsed.author_address;
+    if (!resolvedAuthorAddress) {
+      if (parsed.locality && parsed.locality.trim().length > 0) {
+        resolvedAuthorAddress = parsed.locality.trim();
+      } else if (resolvedCounty) {
+        const { getCountyById } = await import("@/data/counties");
+        const countyName = getCountyById(resolvedCounty)?.name;
+        if (countyName) resolvedAuthorAddress = countyName;
+      }
+    }
+
+    // Dacă formal_text a fost generat fără identitate (author_address era
+    // null la apel /api/ai/improve), regenerăm acum că avem fallback.
+    // Heuristic: text fără „Mă numesc" sau „Subsemnat" → no identity.
+    let identityHardenedFormalText = safeFormalText;
+    if (
+      safeFormalText &&
+      !/M[ăa]\s+numesc/i.test(safeFormalText) &&
+      !/Subsemnat/i.test(safeFormalText) &&
+      resolvedAuthorAddress
+    ) {
+      try {
+        const { generateFormalText } = await import("@/lib/sesizari/formal-template");
+        identityHardenedFormalText = generateFormalText({
+          tip: parsed.tip,
+          locatie: polished.locatie,
+          descriere: polished.descriere,
+          nume: sanitizeText(parsed.author_name, 120),
+          adresa: resolvedAuthorAddress,
+          hasPhotos: (parsed.imagini ?? []).length > 0,
+        });
+      } catch (regenErr) {
+        Sentry.captureException(regenErr, {
+          tags: { kind: "formal_text_identity_regen_failed" },
+          extra: { code },
+        });
+        // Păstrăm safeFormalText original — mai bine fără identitate decât
+        // să blocăm submisia.
+      }
+    }
+
     try {
       const row = await createSesizare({
         code,
         user_id: resolvedUserId,
         ...parsed,
         county: resolvedCounty,
-        formal_text: safeFormalText,
+        author_address: resolvedAuthorAddress,
+        formal_text: identityHardenedFormalText,
         author_name: sanitizeText(parsed.author_name, 120),
         author_display_name: authorDisplayName,
         titlu: polished.titlu,

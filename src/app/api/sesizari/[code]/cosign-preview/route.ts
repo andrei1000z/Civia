@@ -112,6 +112,11 @@ export async function GET(
     data: {
       recipients: recipientsLine,
       recipientsLabel: recipients.label,
+      // 2026-05-26 — Listă structurată pentru UI bogat (chips cu nume +
+      // email separat). Modal-ul de preview folosește astea ca să arate
+      // destinatarii ca cards individuale.
+      to: recipients.primary.map((r) => ({ name: r.name, email: r.email })),
+      cc: recipients.cc.map((r) => ({ name: r.name, email: r.email })),
       subject,
       body: formalText,
       hasPhotos: (sez.imagini ?? []).length > 0,

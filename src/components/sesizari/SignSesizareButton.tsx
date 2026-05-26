@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, X, CheckCircle2, Loader2, ArrowRight, Eye } from "lucide-react";
+import {
+  UserPlus,
+  X,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+  Eye,
+  Mail,
+  Building2,
+  FileText,
+  Paperclip,
+  Pencil,
+} from "lucide-react";
 import { getRecipientsLabel } from "@/lib/sesizari/mailto";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
@@ -28,6 +40,28 @@ interface UserData {
   name: string;
   address: string;
   email: string;
+}
+
+/** Etichetă + valoare pentru un câmp în previzualizarea emailului
+ *  (Către / Cc / Subiect). Aliniat ca un client real de email. */
+function PreviewField({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[68px_1fr] sm:grid-cols-[88px_1fr] gap-3 items-start">
+      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--color-text-muted)] pt-1.5">
+        {icon}
+        {label}
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
 }
 
 /**
@@ -85,6 +119,8 @@ export function SignSesizareButton({
   const [previewData, setPreviewData] = useState<{
     recipients: string;
     recipientsLabel: string;
+    to: { name: string; email: string }[];
+    cc: { name: string; email: string }[];
     subject: string;
     body: string;
     hasPhotos: boolean;
@@ -401,7 +437,7 @@ export function SignSesizareButton({
           formal_text cu nume + adresa substituite real (compute server-side). */}
       {showPreview && previewData && (
         <div
-          className="fixed inset-0 z-[calc(var(--z-modal)+1)] bg-black/70 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-[calc(var(--z-modal)+1)] bg-black/60 backdrop-blur-md flex items-start md:items-center justify-center p-2 md:p-4 overflow-y-auto animate-fade-in"
           onClick={() => setShowPreview(false)}
           role="presentation"
         >
@@ -410,61 +446,141 @@ export function SignSesizareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cosign-preview-title"
-            className="w-full max-w-2xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-8"
+            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-4 md:my-8 animate-modal-pop flex flex-col max-h-[calc(100vh-2rem)]"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
-              <h3 id="cosign-preview-title" className="font-semibold inline-flex items-center gap-2">
-                <Eye size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
-                Previzualizare email
-              </h3>
+            {/* Header — gradient cu eyebrow + titlu + close */}
+            <header className="relative bg-gradient-to-br from-[var(--color-secondary)] via-emerald-700 to-emerald-800 text-white px-5 md:px-6 py-5">
               <button
                 type="button"
                 onClick={() => setShowPreview(false)}
                 aria-label="Închide previzualizarea"
-                className="w-8 h-8 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <X size={16} aria-hidden="true" />
               </button>
-            </div>
-            <div className="p-5 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
-                  Destinatari
-                </p>
-                <p className="font-medium text-[var(--color-text)]">{previewData.recipientsLabel}</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1 font-mono break-all">
-                  {previewData.recipients}
-                </p>
+              <div className="flex items-start gap-3 pr-12">
+                <div className="shrink-0 w-11 h-11 rounded-[var(--radius-xs)] bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                  <Mail size={20} aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-white/75 mb-1">
+                    Previzualizare
+                  </p>
+                  <h3
+                    id="cosign-preview-title"
+                    className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-bold leading-tight"
+                  >
+                    Așa pleacă emailul către autorități
+                  </h3>
+                  <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                    De la <span className="font-semibold">sesizari@civia.ro</span> în numele tău · OG 27/2002
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
-                  Subiect
-                </p>
-                <p className="font-medium text-[var(--color-text)]">{previewData.subject}</p>
+            </header>
+
+            {/* Scroll area */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Email header fields — From/To/CC/Subject */}
+              <div className="px-5 md:px-6 py-4 space-y-3 bg-[var(--color-surface-2)]/40 border-b border-[var(--color-border)]">
+                <PreviewField icon={<Building2 size={14} aria-hidden="true" />} label="Către">
+                  <p className="font-semibold text-[var(--color-text)] mb-2">
+                    {previewData.recipientsLabel}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {previewData.to.map((r) => (
+                      <span
+                        key={r.email}
+                        className="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs"
+                        title={`${r.name} <${r.email}>`}
+                      >
+                        <span className="font-medium text-[var(--color-text)] truncate">{r.name}</span>
+                        <span className="text-[var(--color-text-muted)] font-mono text-[10px] truncate hidden sm:inline">
+                          {r.email}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </PreviewField>
+
+                {previewData.cc.length > 0 && (
+                  <PreviewField icon={<Mail size={14} aria-hidden="true" />} label="Cc">
+                    <div className="flex flex-wrap gap-1.5">
+                      {previewData.cc.map((r) => (
+                        <span
+                          key={r.email}
+                          className="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs"
+                          title={`${r.name} <${r.email}>`}
+                        >
+                          <span className="font-medium text-[var(--color-text)] truncate">{r.name}</span>
+                          <span className="text-[var(--color-text-muted)] font-mono text-[10px] truncate hidden sm:inline">
+                            {r.email}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </PreviewField>
+                )}
+
+                <PreviewField icon={<FileText size={14} aria-hidden="true" />} label="Subiect">
+                  <p className="font-semibold text-[var(--color-text)] leading-snug">
+                    {previewData.subject}
+                  </p>
+                </PreviewField>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+
+              {/* Email body — rendered ca document */}
+              <div className="px-5 md:px-6 py-5">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)] font-bold mb-2">
                   Mesaj
                 </p>
-                <pre className="whitespace-pre-wrap break-words bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 text-xs leading-relaxed font-sans">
+                <div className="rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-inner">
+                  <div className="px-4 py-4 md:px-5 md:py-5 max-h-[40vh] md:max-h-[45vh] overflow-y-auto">
+                    <pre className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-sans text-[var(--color-text)]">
 {previewData.body}
-                </pre>
+                    </pre>
+                  </div>
+                </div>
+
+                {previewData.hasPhotos && (
+                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
+                    <Paperclip size={14} className="text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                    <span className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                      {previewData.photoCount} {previewData.photoCount === 1 ? "poză atașată" : "poze atașate"} automat
+                    </span>
+                  </div>
+                )}
               </div>
-              {previewData.hasPhotos && (
-                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1.5">
-                  📎 {previewData.photoCount} {previewData.photoCount === 1 ? "poză atașată" : "poze atașate"} automat
-                </p>
-              )}
             </div>
-            <div className="px-5 py-4 border-t border-[var(--color-border)] flex justify-end gap-2 bg-[var(--color-bg)]">
-              <button
-                type="button"
-                onClick={() => setShowPreview(false)}
-                className="h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-border)] transition-colors"
-              >
-                Înapoi la editare
-              </button>
-            </div>
+
+            {/* Footer — back + send */}
+            <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-5 md:px-6 py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed text-center sm:text-left">
+                🇪🇺 Date stocate în UE · Conform OG 27/2002
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                  Editez datele
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPreview(false);
+                    handleSubmit(new Event("submit") as unknown as React.FormEvent);
+                  }}
+                  disabled={state === "sending"}
+                  className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                >
+                  Trimite acum
+                  <ArrowRight size={14} aria-hidden="true" />
+                </button>
+              </div>
+            </footer>
           </div>
         </div>
       )}
