@@ -21,6 +21,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
+import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { buildFormalText } from "@/lib/sesizari/mailto";
 
 export const dynamic = "force-dynamic";
@@ -124,11 +125,26 @@ export async function POST(
     );
   }
 
+  // 2026-05-26 — Fallback county detection când DB are county=null.
+  let effectiveCounty = sesizare.county;
+  if (!effectiveCounty) {
+    const detected = detectCountyFromLocatie(sesizare.locatie);
+    if (detected) {
+      effectiveCounty = detected;
+      const adminCounty = createSupabaseAdmin();
+      await adminCounty
+        .from("sesizari")
+        .update({ county: detected })
+        .eq("id", sesizare.id)
+        .then(() => undefined, () => undefined);
+    }
+  }
+
   // Build text + recipients
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
-    sesizare.county,
+    effectiveCounty,
     sesizare.locatie,
   );
   if (!recipients.primary || recipients.primary.length === 0) {

@@ -256,11 +256,22 @@ export async function POST(req: Request) {
       authorDisplayName = firstWord || null;
     }
 
+    // 2026-05-26 — Fallback county la creare. Dacă form-ul nu a trimis
+    // county (county-context national/anonim), derivăm din `locatie` text
+    // ÎNAINTE de insert. Previne bug 00049 (Cluj sesizare → routing București).
+    let resolvedCounty = parsed.county;
+    if (!resolvedCounty) {
+      const { detectCountyFromLocatie } = await import("@/lib/sesizari/county-from-locatie");
+      const detected = detectCountyFromLocatie(polished.locatie);
+      if (detected) resolvedCounty = detected;
+    }
+
     try {
       const row = await createSesizare({
         code,
         user_id: resolvedUserId,
         ...parsed,
+        county: resolvedCounty,
         formal_text: safeFormalText,
         author_name: sanitizeText(parsed.author_name, 120),
         author_display_name: authorDisplayName,

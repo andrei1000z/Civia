@@ -27,6 +27,7 @@ import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
 import { extractLocality } from "@/lib/sesizari/extract-locality";
+import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -114,11 +115,30 @@ export async function POST(
   }
   const sesizare = data as SesizareRow;
 
+  // 2026-05-26 — Fallback county detection când rândul DB are county=null.
+  // Bug 00049: sesizare din Cluj-Napoca avea county null → routing default
+  // București. Acum derivăm din `locatie` text dacă lipsește. Update inline
+  // DB ca să fix permanent (next reads să vadă valoarea corectă).
+  let effectiveCounty = sesizare.county;
+  if (!effectiveCounty) {
+    const detected = detectCountyFromLocatie(sesizare.locatie);
+    if (detected) {
+      effectiveCounty = detected;
+      // Best-effort: persist back. Dacă eșuează (RLS, etc.), continuăm
+      // cu valoarea derivată în-memory pentru routing-ul curent.
+      await admin
+        .from("sesizari")
+        .update({ county: detected })
+        .eq("id", sesizare.id)
+        .then(() => undefined, () => undefined);
+    }
+  }
+
   // Resolve authorities
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
-    sesizare.county,
+    effectiveCounty,
     sesizare.locatie,
   );
   if (!recipients.primary || recipients.primary.length === 0) {

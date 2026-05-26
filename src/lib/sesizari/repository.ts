@@ -342,6 +342,9 @@ export interface CreateSesizareInput {
   custom_category_confidence?: number | null;
   /** Nume afisat public (display_name din profile, sau primul cuvant author_name). */
   author_display_name?: string | null;
+  /** 2026-05-26 — cod județ pentru routing autorități. Dacă null, codul de
+   *  creare derivă din locatie text (detectCountyFromLocatie). */
+  county?: string | null;
 }
 
 export async function createSesizare(input: CreateSesizareInput): Promise<SesizareRow> {

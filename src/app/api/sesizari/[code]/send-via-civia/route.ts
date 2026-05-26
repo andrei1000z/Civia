@@ -5,6 +5,7 @@ import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email/resend";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
+import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { buildFormalText } from "@/lib/sesizari/mailto";
 import { ENV } from "@/lib/env";
 import * as Sentry from "@sentry/nextjs";
@@ -132,11 +133,28 @@ export async function POST(
     );
   }
 
+  // 2026-05-26 — Fallback county detection când DB are county=null.
+  // Bug 00049: sesizare din Cluj-Napoca avea county null → routing
+  // default București. Derive din `locatie` ca fallback + persist back.
+  let effectiveCounty = sesizare.county;
+  if (!effectiveCounty) {
+    const detected = detectCountyFromLocatie(sesizare.locatie);
+    if (detected) {
+      effectiveCounty = detected;
+      const adminCounty = createSupabaseAdmin();
+      await adminCounty
+        .from("sesizari")
+        .update({ county: detected })
+        .eq("id", sesizare.id)
+        .then(() => undefined, () => undefined);
+    }
+  }
+
   // Rezolva destinatarii — primary + cc.
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
-    sesizare.county,
+    effectiveCounty,
     sesizare.locatie,
   );
 
