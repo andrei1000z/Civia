@@ -105,28 +105,29 @@ export default async function HomePage() {
           user-ului. Acum doar gradient curat emerald → dark + 2 radiale
           subtle pentru profunzime. -300ms LCP (no image fetch) + look
           mai curat. */}
-      <section className="relative overflow-hidden -mt-16 text-white">
+      <section className="relative overflow-hidden -mt-16 text-[var(--color-text)] dark:text-white">
         {/* 5/23/2026 v7 — bg solid scos. Animated body::before/::after gradient
-            blob-urile se văd PRIN secțiunea hero (Liquid Glass). Singurul overlay
-            e un subtle dark vignette pentru contrast text (top/bottom). */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[var(--color-bg)]/40 pointer-events-none" />
+            blob-urile se văd PRIN secțiunea hero (Liquid Glass). Vignette-ul
+            de contrast text e DARK-ONLY (în light mode bg-ul e deja deschis,
+            nu ne trebuie întunecare suplimentară). */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-[var(--color-bg)]/40 dark:from-black/30 pointer-events-none" />
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.07] pointer-events-none" />
 
         <div className="container-narrow relative z-10 pt-32 pb-16 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
+            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
               Ajută la schimbarea{" "}
-              <span className="bg-gradient-to-r from-emerald-200 via-cyan-100 to-violet-200 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-violet-600 dark:from-emerald-200 dark:via-cyan-100 dark:to-violet-200 bg-clip-text text-transparent">
                 României.
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
-              <strong className="text-white">Faci o poză. Scrii câteva fraze. Apeși trimite.</strong>{" "}
+            <p className="text-lg md:text-xl text-[var(--color-text)]/85 dark:text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed dark:drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
+              <strong className="text-[var(--color-text)] dark:text-white">Faci o poză. Scrii câteva fraze. Apeși trimite.</strong>{" "}
               Restul facem noi — generăm sesizarea formală, o trimitem la primărie
               cu temei legal OG 27/2002 și te anunțăm de fiecare dată când răspund.
             </p>
-            <p className="text-sm md:text-base text-white/75 mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
+            <p className="text-sm md:text-base text-[var(--color-text-muted)] dark:text-white/75 mb-10 max-w-2xl mx-auto leading-relaxed dark:drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
               Plus: notificare la fiecare petiție nouă, la fiecare protest anunțat,
               la întreruperile programate din zona ta și știri civice agregate din presă —
               totul gratuit, fără cont obligatoriu.
@@ -135,14 +136,14 @@ export default async function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/sesizari"
-                className="lc-liquid lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-400/95 to-cyan-500/95 text-white font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                className="lc-liquid lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-500 to-cyan-600 dark:from-emerald-400/95 dark:to-cyan-500/95 text-white font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
               >
                 <Send size={16} aria-hidden="true" />
                 Fă o sesizare acum
               </Link>
               <Link
                 href="/petitii"
-                className="lc-liquid lc-liquid-violet lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-white/10 text-white font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="lc-liquid lc-liquid-violet lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-[var(--color-surface)] dark:bg-white/10 border border-[var(--color-border)] dark:border-transparent text-[var(--color-text)] dark:text-white font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] dark:focus-visible:ring-white"
               >
                 <Megaphone size={16} aria-hidden="true" />
                 Semnează petiții
@@ -153,10 +154,10 @@ export default async function HomePage() {
                 aprobate. Mai puternic decat „X cetateni" pt ca arata
                 rezultate concrete, nu doar prezenta. Stat ISR-cached. */}
             {totalSesizari !== null && totalSesizari > 0 && (
-              <p className="mt-6 text-sm text-emerald-100/85 inline-flex items-center gap-2">
+              <p className="mt-6 text-sm text-[var(--color-primary)] dark:text-emerald-100/85 inline-flex items-center gap-2">
                 <Megaphone size={14} aria-hidden="true" />
                 <span>
-                  <strong className="text-white tabular-nums">
+                  <strong className="text-[var(--color-text)] dark:text-white tabular-nums">
                     {totalSesizari.toLocaleString("ro-RO")}
                   </strong>{" "}
                   {totalSesizari === 1 ? "sesizare trimisă" : "sesizări trimise"} prin Civia
