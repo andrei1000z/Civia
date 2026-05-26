@@ -109,6 +109,26 @@ export async function POST(
     );
   }
 
+  // 2026-05-26 — Content moderation pre-send (raportat dkrandu pe Reddit).
+  // Verificăm nume + descriere + locație înainte ca emailul să plece la
+  // primărie de la sesizari@civia.ro. La acest stadiu sesizarea există în
+  // DB; nu o ștergem, doar blocăm sendul (user-ul vede mesaj de eroare).
+  const { moderateSesizareContent } = await import("@/lib/sesizari/content-moderation");
+  const mod = moderateSesizareContent({
+    author_name: sesizare.author_name,
+    titlu: sesizare.titlu,
+    descriere: sesizare.descriere ?? "",
+    locatie: sesizare.locatie,
+  });
+  if (mod.block) {
+    return NextResponse.json(
+      {
+        error: `Trimitere blocată: ${mod.reason}. Modifică textul sesizării — emailul pleacă în numele tău către autoritate.`,
+      },
+      { status: 400 },
+    );
+  }
+
   // Ownership check — doar autorul poate trimite via Civia. Alternativ
   // ar fi sa permitem cosignaturi sa trimita un email separate, dar
   // pentru moment limitam la owner sa nu confuzam primariile.

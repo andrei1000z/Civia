@@ -98,6 +98,27 @@ export async function POST(
     return NextResponse.json({ ok: true, note: "bot_silent_drop" });
   }
 
+  // 2026-05-26 — Content moderation pe numele co-semnatarului (raportat
+  // dkrandu pe Reddit). La cosign, doar numele e user-input (descrierea
+  // e a sesizării originale, deja moderată). Blocăm dacă numele conține
+  // profanity/slur/caractere ciudate — ar ajunge în signature + subject
+  // email către primărie cu reputația civia.ro.
+  const { moderateSesizareContent } = await import("@/lib/sesizari/content-moderation");
+  const mod = moderateSesizareContent({
+    author_name: nume,
+    descriere: "",
+    locatie: "",
+    isCosign: true,
+  });
+  if (mod.block) {
+    return NextResponse.json(
+      {
+        error: `Cosign respins: ${mod.reason}. Folosește numele tău real — emailul pleacă de la sesizari@civia.ro către autoritate.`,
+      },
+      { status: 400 },
+    );
+  }
+
   // Lookup sesizare
   const admin = createSupabaseAdmin();
   const { data, error } = await admin

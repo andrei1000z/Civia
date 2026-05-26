@@ -137,6 +137,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ data: { code: "XXXXXX", titlu: parsed.titlu } });
     }
 
+    // 2026-05-26 — Content moderation (raportat de dkrandu pe Reddit).
+    // Civia trimite acum server-side via Resend de la sesizari@civia.ro,
+    // așa că dacă cineva ar pune o amenințare în câmpul nume sau în
+    // descriere, ar ajunge la primărie cu reputația civia.ro. Blocăm
+    // amenințările clare + profanity în nume ÎNAINTE de generare cod +
+    // INSERT în DB.
+    const { moderateSesizareContent } = await import("@/lib/sesizari/content-moderation");
+    const mod = moderateSesizareContent({
+      author_name: parsed.author_name,
+      titlu: parsed.titlu,
+      descriere: parsed.descriere,
+      locatie: parsed.locatie,
+    });
+    if (mod.block) {
+      Sentry.captureMessage("content moderation blocked sesizare submission", {
+        level: "warning",
+        tags: { kind: "content_moderation_block", reason: mod.reason },
+        extra: {
+          ip_hash: getClientIp(req).slice(0, 8) + "…",
+          matched: mod.matched ?? [],
+          author_name_len: parsed.author_name.length,
+          descriere_len: parsed.descriere.length,
+        },
+      });
+      return NextResponse.json(
+        {
+          error: `Sesizarea nu poate fi trimisă: ${mod.reason}. Sesizările prin Civia trec către primării în numele tău — limbajul ofensator sau amenințător nu este permis.`,
+        },
+        { status: 400 },
+      );
+    }
+
     const user = rlUser; // already resolved at rate-limit time
 
     const code = await generateUniqueCode();
