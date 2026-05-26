@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, X, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, X, Loader2, ChevronLeft, ChevronRight, Camera } from "lucide-react";
 import {
   MAX_UPLOAD_BYTES as MAX_BYTES,
   COMPRESS_THRESHOLD_BYTES as COMPRESS_THRESHOLD,
@@ -89,6 +89,11 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
   const [dragging, setDragging] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 2026-05-26 — Input separat pentru cameră (capture="environment").
+  // Buton dedicat pe mobile ca user-ul să poată alege explicit „fă poza
+  // acum" vs „aleg din galerie". Default input fără capture → picker
+  // nativ cu toate opțiunile.
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   // 2026-05-24 Faza 4: Auto-trigger camera când URL conține ?camera=1.
   // QuickCameraCTA de pe homepage trimite cu acest param → user ajunge direct
@@ -238,39 +243,61 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
       className="outline-none"
     >
       {canAdd && (
-        <button
-          type="button"
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          aria-label={`Încarcă poze (${totalCount} din ${max} folosite)`}
-          className={`w-full flex flex-col items-center justify-center gap-1.5 h-24 rounded-[var(--radius-xs)] border-2 border-dashed cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
-            dragging
-              ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-              : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
-          } text-sm text-[var(--color-text-muted)]`}
-        >
-          <Upload size={18} aria-hidden="true" />
-          <span>
-            Încarcă, trage sau lipește poze (<span className="tabular-nums">{totalCount}/{max}</span>)
-          </span>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
+            aria-label={`Încarcă poze (${totalCount} din ${max} folosite)`}
+            className={`w-full flex flex-col items-center justify-center gap-1.5 h-24 rounded-[var(--radius-xs)] border-2 border-dashed cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
+              dragging
+                ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
+            } text-sm text-[var(--color-text-muted)]`}
+          >
+            <Upload size={18} aria-hidden="true" />
+            <span>
+              Încarcă, trage sau lipește poze (<span className="tabular-nums">{totalCount}/{max}</span>)
+            </span>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFiles}
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+          </button>
+
+          {/* 2026-05-26 — Buton secundar dedicat pentru camera (mobile).
+              Vizibil doar pe mobile (sm:hidden). Cetățeanul care vrea
+              EXPLICIT „fă poza acum" apasă aici; restul folosește picker
+              nativ care arată Galerie + Camera + Files. Pe desktop input-ul
+              cu capture e ignorat de browser → ascuns. */}
+          <button
+            type="button"
+            onClick={() => cameraRef.current?.click()}
+            aria-label="Fă poza acum cu camera"
+            className="sm:hidden w-full inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            <Camera size={16} aria-hidden="true" />
+            Fă poza acum cu camera
+          </button>
           <input
-            ref={inputRef}
+            ref={cameraRef}
             type="file"
             accept="image/*"
-            multiple
-            // 2026-05-24 Faza 4: capture="environment" hint mobile browsers
-            // să deschidă direct camera (back-facing). Pe Chrome/Safari mobile
-            // utilizatorul tot poate alege „Galerie" — capture e doar default.
-            // Pe desktop ignorat. Zero impact pe utilizatori existenți.
             capture="environment"
             className="hidden"
             onChange={handleFiles}
             aria-hidden="true"
             tabIndex={-1}
           />
-        </button>
+        </div>
       )}
 
       {error && <p role="alert" className="text-xs text-red-500 mt-2">{error}</p>}

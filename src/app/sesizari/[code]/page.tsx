@@ -306,6 +306,7 @@ export default async function SesizareDetailPage({
                     titlu={sesizare.titlu}
                     locatie={sesizare.locatie}
                     sector={sesizare.sector}
+                    county={sesizare.county}
                     descriere={sesizare.descriere}
                     formal_text={sesizare.formal_text}
                     imagini={sesizare.imagini}

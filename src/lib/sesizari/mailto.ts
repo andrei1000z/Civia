@@ -527,11 +527,23 @@ export function getRecipientsLabel(
   sector?: string | null,
   locationText?: string | null,
   parking?: { jurisdiction?: ParkingJurisdiction | null },
+  countyCode?: string | null,
 ): string {
+  // 2026-05-26 — Bug fix: countyCode era hardcoded null aici, deci
+  // toate sesizările (Cluj, Iași, etc.) erau preview-uite cu autoritățile
+  // București (default). Trecem countyCode prin + fallback la detectare
+  // din text dacă lipsește.
+  let effectiveCounty = countyCode ?? null;
+  if (!effectiveCounty && locationText) {
+    // Import lazy ca să nu adăugăm dependency cycle în mailto.ts
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { detectCountyFromLocatie } = require("./county-from-locatie") as typeof import("./county-from-locatie");
+    effectiveCounty = detectCountyFromLocatie(locationText);
+  }
   return getAuthoritiesFor(
     tip,
     sector ?? null,
-    null,
+    effectiveCounty,
     locationText ?? null,
     parking ? { jurisdiction: parking.jurisdiction ?? null } : undefined,
   ).label;

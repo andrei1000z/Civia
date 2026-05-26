@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, X, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { UserPlus, X, CheckCircle2, Loader2, ArrowRight, Eye } from "lucide-react";
 import { getRecipientsLabel } from "@/lib/sesizari/mailto";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,9 @@ interface Props {
   titlu: string;
   locatie: string;
   sector?: string | null;
+  /** 2026-05-26 — cod județ pentru routing autorități corect în preview.
+   *  Dacă lipsește, preview-ul fallback la detectCountyFromLocatie. */
+  county?: string | null;
   descriere: string;
   formal_text?: string | null;
   imagini?: string[];
@@ -48,7 +51,9 @@ interface UserData {
 export function SignSesizareButton({
   tip,
   titlu,
+  locatie,
   sector,
+  county,
   code,
   variant = "primary",
 }: Props) {
@@ -73,6 +78,18 @@ export function SignSesizareButton({
   const [profileLoaded, setProfileLoaded] = useState(false);
   // Honeypot — bots completează automat, respinge silent
   const [honey, setHoney] = useState("");
+  // 2026-05-26 — Preview pe demand. Fetch real email text de pe server
+  // (cu county-fallback rezolvat + nume/adresă substituite în formal_text).
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    recipients: string;
+    recipientsLabel: string;
+    subject: string;
+    body: string;
+    hasPhotos: boolean;
+    photoCount: number;
+  } | null>(null);
 
   // Escape closes + body scroll lock
   useEffect(() => {
@@ -108,6 +125,26 @@ export function SignSesizareButton({
   }, [user, profileLoaded]);
 
   const canSubmit = data.name.trim().length >= 2 && data.address.trim().length >= 3;
+
+  async function handlePreview() {
+    if (!canSubmit || previewLoading) return;
+    setPreviewLoading(true);
+    try {
+      const params = new URLSearchParams({
+        nume: data.name.trim(),
+        adresa: data.address.trim(),
+      });
+      const res = await fetch(`/api/sesizari/${code}/cosign-preview?${params}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Nu am putut genera previzualizarea");
+      setPreviewData(json.data);
+      setShowPreview(true);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Eroare previzualizare");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -240,7 +277,8 @@ export function SignSesizareButton({
                   <p className="font-semibold text-[var(--color-text)] mb-1">Despre sesizare:</p>
                   <p className="line-clamp-2">{titlu}</p>
                   <p className="mt-2">
-                    <strong>Se trimite la:</strong> {getRecipientsLabel(tip, sector)}
+                    <strong>Se trimite la:</strong>{" "}
+                    {getRecipientsLabel(tip, sector, locatie, undefined, county)}
                   </p>
                 </div>
 
@@ -309,23 +347,39 @@ export function SignSesizareButton({
                   </span>
                 </label>
 
-                <button
-                  type="submit"
-                  disabled={!canSubmit || state === "sending"}
-                  className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-                >
-                  {state === "sending" ? (
-                    <>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePreview}
+                    disabled={!canSubmit || previewLoading || state === "sending"}
+                    className="shrink-0 inline-flex items-center justify-center gap-1.5 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:bg-[var(--color-border)]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    title="Vezi exact ce email pleacă"
+                  >
+                    {previewLoading ? (
                       <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                      Trimit emailul către autorități...
-                    </>
-                  ) : (
-                    <>
-                      Trimite acum
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </>
-                  )}
-                </button>
+                    ) : (
+                      <Eye size={16} aria-hidden="true" />
+                    )}
+                    <span className="hidden sm:inline">Previzualizare</span>
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!canSubmit || state === "sending"}
+                    className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                  >
+                    {state === "sending" ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                        Trimit emailul către autorități...
+                      </>
+                    ) : (
+                      <>
+                        Trimite acum
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 {state === "error" && errorMsg && (
                   <p className="text-xs text-red-500 dark:text-red-400" role="alert">
@@ -338,6 +392,79 @@ export function SignSesizareButton({
                 </p>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Preview modal — overlayed peste cosign modal când user apasă „Previzualizare".
+          Arată EXACT: destinatari (cu county-fallback aplicat), subject, body
+          formal_text cu nume + adresa substituite real (compute server-side). */}
+      {showPreview && previewData && (
+        <div
+          className="fixed inset-0 z-[calc(var(--z-modal)+1)] bg-black/70 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowPreview(false)}
+          role="presentation"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cosign-preview-title"
+            className="w-full max-w-2xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-8"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+              <h3 id="cosign-preview-title" className="font-semibold inline-flex items-center gap-2">
+                <Eye size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
+                Previzualizare email
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                aria-label="Închide previzualizarea"
+                className="w-8 h-8 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+                  Destinatari
+                </p>
+                <p className="font-medium text-[var(--color-text)]">{previewData.recipientsLabel}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 font-mono break-all">
+                  {previewData.recipients}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+                  Subiect
+                </p>
+                <p className="font-medium text-[var(--color-text)]">{previewData.subject}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+                  Mesaj
+                </p>
+                <pre className="whitespace-pre-wrap break-words bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3 text-xs leading-relaxed font-sans">
+{previewData.body}
+                </pre>
+              </div>
+              {previewData.hasPhotos && (
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1.5">
+                  📎 {previewData.photoCount} {previewData.photoCount === 1 ? "poză atașată" : "poze atașate"} automat
+                </p>
+              )}
+            </div>
+            <div className="px-5 py-4 border-t border-[var(--color-border)] flex justify-end gap-2 bg-[var(--color-bg)]">
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-border)] transition-colors"
+              >
+                Înapoi la editare
+              </button>
+            </div>
           </div>
         </div>
       )}
