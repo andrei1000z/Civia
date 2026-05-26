@@ -317,10 +317,15 @@ export default async function SesizareDetailPage({
                   />
                 </>
               )}
-              <StatusTicketButton
-                code={sesizare.code}
-                currentStatus={sesizare.status}
-              />
+              {/* 2026-05-26 — „Ai văzut progres? Raportează" ascuns pe
+                  rezolvat. Pentru impact retroactiv (problema revine),
+                  cetățeanul poate folosi „Distribuie" + comentarii. */}
+              {!isResolved && (
+                <StatusTicketButton
+                  code={sesizare.code}
+                  currentStatus={sesizare.status}
+                />
+              )}
               <MarkResolvedButton
                 code={sesizare.code}
                 status={sesizare.status}
