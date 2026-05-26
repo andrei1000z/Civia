@@ -10,6 +10,7 @@ import {
   getSimilarSesizari,
   isFollowing,
   getNrInregistrareForAuthor,
+  getCosignersCount,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
@@ -70,10 +71,11 @@ export default async function SesizareDetailPage({
   const sesizare = await getSesizareByCode(code);
   if (!sesizare) notFound();
 
-  const [allTimelineEvents, comments, similar] = await Promise.all([
+  const [allTimelineEvents, comments, similar, cosignersCount] = await Promise.all([
     getTimeline(sesizare.id),
     getComments(sesizare.id),
     getSimilarSesizari(sesizare.id, 300),
+    getCosignersCount(sesizare.id),
   ]);
 
   // 2026-05-24 PRIVACY FIX (user request „să NU mai apară numele full public"):
@@ -291,22 +293,30 @@ export default async function SesizareDetailPage({
                   4. „S-a rezolvat" (DOAR autor)
                   5. „Distribuie" (last, neutral) */}
             <div className="flex flex-wrap items-stretch gap-2">
-              <SignSesizareButton
-                tip={sesizare.tip}
-                titlu={sesizare.titlu}
-                locatie={sesizare.locatie}
-                sector={sesizare.sector}
-                descriere={sesizare.descriere}
-                formal_text={sesizare.formal_text}
-                imagini={sesizare.imagini}
-                code={sesizare.code}
-                variant="primary"
-              />
-              <FollowButton
-                code={sesizare.code}
-                initialFollowing={userFollowing}
-                initialCount={sesizare.nr_followers ?? 0}
-              />
+              {/* 2026-05-26 — pe rezolvat ascundem „Trimite și tu" +
+                  „Urmărești" — nu mai are sens să trimiți / urmărești o
+                  sesizare deja închisă. Distribuie + Status ticket rămân
+                  (impact retroactiv: cetățeanul poate raporta revenire). */}
+              {!isResolved && (
+                <>
+                  <SignSesizareButton
+                    tip={sesizare.tip}
+                    titlu={sesizare.titlu}
+                    locatie={sesizare.locatie}
+                    sector={sesizare.sector}
+                    descriere={sesizare.descriere}
+                    formal_text={sesizare.formal_text}
+                    imagini={sesizare.imagini}
+                    code={sesizare.code}
+                    variant="primary"
+                  />
+                  <FollowButton
+                    code={sesizare.code}
+                    initialFollowing={userFollowing}
+                    initialCount={sesizare.nr_followers ?? 0}
+                  />
+                </>
+              )}
               <StatusTicketButton
                 code={sesizare.code}
                 currentStatus={sesizare.status}
@@ -604,6 +614,17 @@ export default async function SesizareDetailPage({
                         <Clock size={10} aria-hidden="true" />
                         <time dateTime={step.created_at}>{formatDateTime(step.created_at)}</time>
                       </p>
+                      {/* 2026-05-26 — Sub „Sesizare depusă pe platformă"
+                          afișăm câți cetățeni au CO-TRIMIS sesizarea prin
+                          sesizari@civia.ro (count exact din sesizare_cosigners,
+                          fiecare rând = 1 email trimis cu succes Resend). */}
+                      {step.event_type === "depusa" && cosignersCount > 0 && (
+                        <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-2 inline-flex items-center gap-1.5 font-medium">
+                          <UserPlus size={11} aria-hidden="true" />
+                          Co-trimisă de alți {cosignersCount}{" "}
+                          {cosignersCount === 1 ? "cetățean" : "cetățeni"}
+                        </p>
+                      )}
                     </li>
                   );
                 })}

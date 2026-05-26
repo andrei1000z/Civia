@@ -122,6 +122,11 @@ export function dedupeConsecutiveEvents<
 export function isRedundantEventDescription(eventType: string, description: string | null): boolean {
   if (!description) return true;
   if (eventType === "cosemnat") return true; // label already says everything
+  // 2026-05-26 — user explicit: NU vrea descrieri sub aceste evenimente
+  // (label-urile sunt deja explicite). Boilerplate „Sesizare depusă de
+  // cetățean" / „S-au montat stâlpișori" cluttering up timeline-ul.
+  if (eventType === "depusa") return true;
+  if (eventType === "rezolvat") return true;
   const normalized = description.toLowerCase().replace(/\s+/g, " ").trim();
   // Patterns the resolve / status-update endpoints emit
   const generic = [

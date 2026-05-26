@@ -260,6 +260,27 @@ export async function getTimeline(sesizareId: string): Promise<SesizareTimelineR
   return (data ?? []) as SesizareTimelineRow[];
 }
 
+/**
+ * 2026-05-26 — Numărul REAL de cetățeni care au co-trimis sesizarea
+ * prin sesizari@civia.ro (email trimis cu succes via Resend).
+ *
+ * Sursa: tabelul `sesizare_cosigners` — fiecare rând = 1 email trimis
+ * cu succes. Endpoint-ul de cosign INSERT doar după ce Resend confirmă
+ * delivery (vezi cosign-send/route.ts:207-213). Zero false positives.
+ *
+ * Folosit pentru a afișa „Co-trimisă de alți X cetățeni" în timeline-ul
+ * de pe pagina sesizării — count exact, nu cosemnat-events-count.
+ */
+export async function getCosignersCount(sesizareId: string): Promise<number> {
+  const supabase = await createSupabaseServer();
+  const { count, error } = await supabase
+    .from("sesizare_cosigners")
+    .select("id", { count: "exact", head: true })
+    .eq("sesizare_id", sesizareId);
+  if (error) return 0; // best-effort: 0 dacă DB error
+  return count ?? 0;
+}
+
 export async function getComments(sesizareId: string): Promise<SesizareCommentRow[]> {
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
