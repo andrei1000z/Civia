@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { SESIZARE_STATUS_VALUES } from "@/lib/sesizari/status";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { SesizareFeedRow } from "@/lib/supabase/types";
 import { useCountyOptional } from "@/lib/county-context";
@@ -133,15 +134,16 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
       <LeafletMap center={county?.center} zoom={county ? 10 : zoom}>
         <MarkerLayer data={markers} />
       </LeafletMap>
-      {/* 2026-05-26 — legenda mai mică + transparentă (cerere user). Pill
-          orizontal single-row în loc de panou bloc, cu blur pe bg ca harta
-          de dedesubt să rămână vizibilă. */}
+      {/* 2026-05-26 — legenda: TOATE statusurile, mai transparent (20%).
+          Flex-wrap max-width 280px pe mobile / 360px pe desktop ca să nu
+          ocupe toată harta. Backdrop blur puternic ca textul să rămână
+          lizibil peste tile-urile OSM. */}
       <div
-        className="absolute bottom-3 left-3 z-[400] inline-flex items-center gap-2.5 px-2.5 py-1.5 rounded-full bg-[var(--color-surface)]/70 backdrop-blur-md border border-[var(--color-border)]/70 shadow-[var(--shadow-1)]"
+        className="absolute bottom-3 left-3 z-[400] flex flex-wrap items-center gap-x-2 gap-y-1 px-2.5 py-1.5 max-w-[280px] sm:max-w-[400px] rounded-[var(--radius-xs)] bg-[var(--color-surface)]/40 backdrop-blur-xl border border-[var(--color-border)]/50 shadow-[var(--shadow-1)]"
         aria-label="Legenda hărții"
       >
-        {(["nou", "in-lucru", "rezolvat"] as const).map((status) => (
-          <span key={status} className="inline-flex items-center gap-1 text-[10px] font-medium leading-none">
+        {SESIZARE_STATUS_VALUES.map((status) => (
+          <span key={status} className="inline-flex items-center gap-1 text-[10px] font-medium leading-none whitespace-nowrap">
             <span
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: STATUS_COLORS[status] }}
