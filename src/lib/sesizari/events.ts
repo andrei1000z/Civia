@@ -41,7 +41,7 @@ export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   // dar nu era in catalog, deci aparea „Eveniment" generic in timeline.
   trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#059669" },
   cosemnat: { label: "Un alt cetățean a trimis și el sesizarea", icon: UserPlus, color: "#0891B2" },
-  inregistrata: { label: "Înregistrată la registratură", icon: Building2, color: "#7C3AED" },
+  inregistrata: { label: "Înregistrată", icon: Building2, color: "#7C3AED" },
   rutata: { label: "Trimisă la direcția de resort", icon: Megaphone, color: "#0891B2" },
   redirectionata: { label: "Redirecționată către altă instituție", icon: Shuffle, color: "#0EA5E9" },
   in_teren: { label: "Inspector pe teren", icon: Wrench, color: "#F59E0B" },

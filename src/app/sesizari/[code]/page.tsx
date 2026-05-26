@@ -7,7 +7,6 @@ import {
   getTimeline,
   getComments,
   getUserVote,
-  getUserVerification,
   getSimilarSesizari,
   isFollowing,
   getNrInregistrareForAuthor,
@@ -25,7 +24,6 @@ import { publicAuthorName } from "@/lib/sesizari/display-name";
 import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
-import { VerifyPanel } from "@/components/sesizari/VerifyPanel";
 import { SimilarSesizari } from "@/components/sesizari/SimilarSesizari";
 import { FollowButton } from "@/components/sesizari/FollowButton";
 import { ResendButton } from "@/components/sesizari/ResendButton";
@@ -106,18 +104,13 @@ export default async function SesizareDetailPage({
     allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type)),
   );
 
-  // Check if current user has voted / verified
+  // Check if current user has voted / followed
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   let userVote: -1 | 1 | null = null;
-  let userVerification: boolean | null = null;
   let userFollowing = false;
   if (user) {
     userVote = await getUserVote({ sesizareId: sesizare.id, userId: user.id });
-    userVerification = await getUserVerification({
-      sesizareId: sesizare.id,
-      userId: user.id,
-    });
     userFollowing = await isFollowing({ sesizareId: sesizare.id, userId: user.id });
   }
 
@@ -529,16 +522,10 @@ export default async function SesizareDetailPage({
             </p>
           </div>
 
-          {/* Verify panel (doar la rezolvate) */}
-          {isResolved && (
-            <VerifyPanel
-              code={sesizare.code}
-              verifDa={sesizare.verif_da}
-              verifNu={sesizare.verif_nu}
-              initialUserChoice={userVerification}
-              isAuthor={isAuthor}
-            />
-          )}
+          {/* 2026-05-26 — VerifyPanel scos la cererea user-ului. Confirmarea
+              rezolvării se face acum prin email loop-followup la T+14
+              (1-tap DA/NU în inbox). Da/Nu count rămâne pe sesizare ca
+              pentru analytics dar nu mai e expus public. */}
 
           {/* Timeline — shares the same EVENT_META catalog as /urmareste so
               labels, icons and colors stay consistent across surfaces.

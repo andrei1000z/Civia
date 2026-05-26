@@ -344,7 +344,7 @@ export async function POST(req: Request) {
     if (recipients.size > 0) {
       try {
         await sendPushToUsers([...recipients], {
-          title: `${emoji} Sesizarea ${extraction.code} — ${classification.status === "rezolvat" ? "Rezolvată" : classification.status === "inregistrata" ? "Înregistrată oficial" : classification.status === "in-lucru" ? "În lucru" : "Răspuns primit"}`,
+          title: `${emoji} Sesizarea ${extraction.code} — ${classification.status === "rezolvat" ? "Rezolvată" : classification.status === "inregistrata" ? "Înregistrată" : classification.status === "in-lucru" ? "În lucru" : "Răspuns primit"}`,
           body: classification.summary,
           url: `/sesizari/${extraction.code}`,
           tag: `reply-${extraction.code}-${replyRow?.id ?? "x"}`,

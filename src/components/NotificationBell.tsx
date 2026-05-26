@@ -27,7 +27,7 @@ const MAX_STORED = 30;
 // Mapare status sesizare → emoji + mesaj scurt (max 35 chars).
 // Folosit la status change events din timeline.
 const STATUS_NOTIFICATION: Record<string, { emoji: string; label: string }> = {
-  inregistrata: { emoji: "📨", label: "Înregistrată oficial" },
+  inregistrata: { emoji: "📨", label: "Înregistrată" },
   trimis: { emoji: "📤", label: "Trimisă către autorități" },
   "in-lucru": { emoji: "🛠️", label: "În lucru la autoritate" },
   "actiune-autoritate": { emoji: "🛠️", label: "În lucru la autoritate" },
