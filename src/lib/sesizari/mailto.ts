@@ -150,10 +150,16 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
     }
 
     // Fallback: no identity line at all — inject after "Bună ziua,"
+    // 2026-05-26 fix: înainte injectam „...și doresc să vă aduc la
+    // cunoștință o problemă care necesită intervenția dumneavoastră."
+    // dar textul existent începe deja cu „Doresc să vă aduc la
+    // cunoștință..." → DUBLU intro. Acum doar identitate ca propoziție
+    // terminată (Mă numesc X, locuiesc Y.), iar verb-ul de intent din
+    // textul existent rămâne neschimbat.
     if (!/M[ăa]\s+numesc/i.test(text) && !/Subsemnat/i.test(text)) {
       text = text.replace(
         /(Bun[ăa] ziua,?)/i,
-        `$1\n\nMă numesc ${name}, locuiesc în ${address} și doresc să vă aduc la cunoștință o problemă care necesită intervenția dumneavoastră.`,
+        `$1\n\nMă numesc ${name}, locuiesc în ${address}.`,
       );
     }
   }

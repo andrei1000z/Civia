@@ -15,6 +15,7 @@ import {
 import { SESIZARE_TIPURI, SESIZARE_TIPURI_ACTIVE } from "@/lib/constants";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
+import { ALL_COUNTIES } from "@/data/counties";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
 import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
@@ -392,6 +393,50 @@ export function SesizareForm() {
     // pe vechea valoare detected).
     setDetectedCounty(detected ?? county?.id ?? null);
   }, [data.locatie, county?.id]);
+
+  // 2026-05-26 — AI city detection FALLBACK via Groq pentru adrese pe care
+  // regex-ul detectCountyFromLocatie nu le poate identifica (ex: „lângă
+  // Universitate", „Drumul Taberei" fără București menționat, „Piața
+  // Centrală" cu nume comun). Debounce 3s după ultima tastare ca să nu
+  // spammăm Groq. Server cache 60s. Trigger DOAR dacă regex-ul a eșuat
+  // (detected null) și textul e suficient lung (>=8 chars). Pe dispozitive
+  // mobile cu connection slabă, abort previous fetch ca să nu blocăm UI.
+  useEffect(() => {
+    const text = data.locatie?.trim() ?? "";
+    if (text.length < 8) return;
+    // Skip dacă regex-ul deja a returnat un county valid din text
+    if (detectCountyFromLocatie(text)) return;
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/ai/detect-city", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locatie: text }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const d = json.data as { county: string | null; sector: string | null } | undefined;
+        if (!d) return;
+        if (d.county) {
+          setDetectedCounty(d.county);
+        }
+        if (d.county === "B" && d.sector && !data.sector) {
+          // Pre-fill sector dacă lipsește și AI a detectat unul
+          setData((prev) => ({ ...prev, sector: d.sector! }));
+        }
+      } catch {
+        // silent — fail open (regex fallback rămâne valoarea curentă)
+      }
+    }, 3000);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.locatie]);
 
   const descriptionFiredRef = useRef(false);
   useEffect(() => {
@@ -1665,6 +1710,47 @@ ${today}`;
                 </li>
               ))}
             </ul>
+            {/* 2026-05-26 — Picker manual județ pentru destinatari greșiți.
+                Dacă AI/regex a detectat greșit orașul, userul poate alege
+                manual județul corect. Dropdown compact, doar listă scurtă. */}
+            <details className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-900/60">
+              <summary className="cursor-pointer text-[11px] text-blue-700 dark:text-blue-400 hover:underline font-medium select-none">
+                Destinatari greșiți? Schimbă județul manual ↓
+              </summary>
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <label
+                  htmlFor="county-override"
+                  className="text-[10px] text-blue-800 dark:text-blue-300 font-medium"
+                >
+                  Județ:
+                </label>
+                <select
+                  id="county-override"
+                  value={detectedCounty ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value || null;
+                    setDetectedCounty(val);
+                    if (val) {
+                      const co = ALL_COUNTIES.find((c) => c.id === val);
+                      if (co) setDetectedCountyName(co.name);
+                    }
+                  }}
+                  className="h-8 px-2 rounded-[var(--radius-xs)] bg-white dark:bg-blue-950 border border-blue-300 dark:border-blue-800 text-[11px] text-blue-900 dark:text-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <option value="">— Selectează —</option>
+                  {ALL_COUNTIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.id === "B" ? "București" : c.name} ({c.id})
+                    </option>
+                  ))}
+                </select>
+                {detectedCounty && (
+                  <span className="text-[10px] text-blue-700 dark:text-blue-400">
+                    Detectat: <strong>{detectedCountyName ?? detectedCounty}</strong>
+                  </span>
+                )}
+              </div>
+            </details>
           </div>
         )}
 
