@@ -500,8 +500,18 @@ export function SesizariPublice() {
 
                 {/* DESCRIERE — flex-1 ca să consume restul vertical pentru
                     uniform height. 3 linii max (line-clamp), break-words. */}
+                {/* 2026-05-26 — Preferăm DESCRIEREA REALĂ a cetățeanului
+                    (s.descriere) peste formal_text. Formal text începe cu
+                    „Bună ziua, Mă numesc [nume], locuiesc în [adresa]..."
+                    — info juridic boilerplate. Pe card vrem descrierea
+                    civic, exact ce a scris user-ul. Fallback la formal_text
+                    doar dacă descriere lipsește (legacy rows). */}
                 <p className="text-sm text-[var(--color-text)] mb-3 line-clamp-3 break-words flex-1">
-                  {s.formal_text ? stripForPreview(s.formal_text) : s.descriere}
+                  {s.descriere && s.descriere.length > 10
+                    ? s.descriere
+                    : s.formal_text
+                      ? stripForPreview(s.formal_text)
+                      : ""}
                 </p>
 
                 {/* POZE — înălțime fixă rezervată (64px = w-14 h-14 + margine).

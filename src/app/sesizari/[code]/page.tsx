@@ -20,7 +20,6 @@ import { VoteButtons } from "@/components/sesizari/VoteButtons";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
-import { CosignersBadge } from "@/components/sesizari/CosignersBadge";
 import { publicAuthorName } from "@/lib/sesizari/display-name";
 import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
@@ -236,7 +235,10 @@ export default async function SesizareDetailPage({
                 <time dateTime={sesizare.created_at}>{formatDate(sesizare.created_at)}</time>
               </span>
             </div>
-            <CosignersBadge code={sesizare.code} />
+            {/* 2026-05-26 — CosignersBadge scos de aici. Counter-ul real
+                apare în „Status & activitate" timeline sub event-ul
+                „Sesizare depusă pe platformă" („Co-trimisă de alți X
+                cetățeni"). Evităm duplicare informație în header + sidebar. */}
 
             {/* 5/23/2026 — Banner de confirmare oficială DOAR pentru autor.
                 Numărul de înregistrare e unic per sesizare → expunere publică
