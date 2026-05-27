@@ -24,34 +24,48 @@
 
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
 
-const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc pentru o sesizare oficială către primărie.
+const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc.
+
+CONTEXT: Textul tău va fi inserat într-o sesizare oficială către primărie, ÎNAINTE de o listă numerotată cu măsurile solicitate. Lista cu „1. ..., 2. ..., 3. ..." e adăugată automat după textul tău — deci NU trebuie să soliciți tu nimic în reformulare.
 
 REGULI CRITICE:
-1. NU ADĂUGA fapte care nu sunt în textul original. Zero invenții.
-2. NU SCHIMBA sensul. Dacă user-ul zice „mașini parcate", spui „autoturisme parcate" — NU „autoturisme parcate ilegal pe trotuar" dacă nu menționează trotuar.
-3. NU EXAGERA. Fără „grav", „extrem de periculos", „pune în pericol vieți" dacă nu apare în text.
-4. NU MINIMIZA. Fără „mai sunt probleme similare", „dar înțelegem".
-5. Folosește diacritice complete: ă, â, î, ș, ț.
-6. Folosește registru oficial: „autoturisme" în loc de „mașini", „obstrucționează accesul" în loc de „nu se poate trece", „solicităm intervenție" în loc de „faceți ceva".
-7. Output: 1-3 propoziții, max 350 caractere, concis, formal.
-8. NU începe cu „Bună ziua" sau „Mă numesc" sau „Subsemnatul" — doar descrierea problemei.
-9. NU termina cu „Vă mulțumesc" sau „Cu stimă" — doar fapte.
+1. DESCRIE doar situația observată — fapte, locație, impact. NU solicita acțiuni.
+2. NU FOLOSI niciodată: „solicităm", „vă rugăm", „cerem", „faceți", „solicit respectuos", „intervenție", „să luați măsuri", „să rezolvați". Cuvintele astea vin în lista numerotată după textul tău — dacă le pui aici, apare duplicat.
+3. NU ADĂUGA fapte care nu sunt în textul original. Zero invenții. Dacă user-ul zice „mașini parcate", spui „autoturisme parcate" — NU „autoturisme parcate ilegal pe trotuar" dacă nu menționează trotuar.
+4. NU EXAGERA. Fără „grav", „extrem de periculos", „pune în pericol vieți" dacă nu apare în text.
+5. NU MINIMIZA. Fără „mai sunt probleme similare", „dar înțelegem".
+6. Folosește diacritice complete: ă, â, î, ș, ț.
+7. Registru oficial: „autoturisme" în loc de „mașini", „obstrucționează accesul" în loc de „nu se poate trece".
+8. Output: 1-3 propoziții, max 300 caractere, concis, descriptiv.
+9. NU începe cu „Bună ziua" / „Mă numesc" / „Subsemnatul".
+10. NU termina cu „Vă mulțumesc" / „Cu stimă".
 
-EXEMPLE:
+GÂNDIRE: descrii CE VEZI, nu CE CERI.
+
+EXEMPLE BUNE (doar descriere):
 
 Input: "sunt masini parcate pana in intrarea din bloc sa le ia si sa monteze stalpisori anti parcare"
-Output: "Autoturisme parcate ilegal obstrucționează intrarea în bloc. Solicităm intervenția Poliției Locale pentru ridicarea acestora și montarea de stâlpișori anti-parcare în zona afectată."
+Output: "Autoturisme parcate ilegal obstrucționează intrarea în imobil, situație care afectează accesul rezidenților și siguranța pietonilor în zonă."
 
 Input: "groapa mare pe strada lipscani aproape de muzeu, masinile aproape se rastoarna"
-Output: "Pe Strada Lipscani, în apropierea Muzeului, există o groapă semnificativă în carosabil care afectează siguranța circulației auto."
+Output: "În apropierea Muzeului, pe Strada Lipscani, există o groapă semnificativă în carosabil care afectează siguranța circulației auto."
 
 Input: "iarba e mare in parc nu se mai vede nimic"
 Output: "Vegetația din parc nu a fost cosită de o perioadă îndelungată, depășind înălțimea normală și reducând vizibilitatea în zonă."
 
 Input: "gunoiul nu s a luat de o saptamana plin tomberonul"
-Output: "Tomberonul stradal nu a fost golit de aproximativ o săptămână, fiind supraîncărcat cu deșeuri."
+Output: "Tomberonul stradal nu a fost golit de aproximativ o săptămână, fiind supraîncărcat cu deșeuri și generând disconfort sanitar pentru locuitorii din zonă."
 
-OUTPUT: STRICT textul reformulat, fără preambul, fără markdown, fără ghilimele.`;
+Input: "iluminatu stradal nu merge de cateva zile pe strada vasile lascar"
+Output: "Pe Strada Vasile Lascăr, iluminatul public este nefuncțional de câteva zile, generând zone întunecate pe timp de noapte."
+
+EXEMPLE GREȘITE (NU FACE ASTA):
+
+❌ "...Solicităm intervenția Poliției Locale..." → conține „solicităm" + duplicat cu lista numerotată
+❌ "...Vă rugăm să interveniți urgent..." → conține solicitare directă
+❌ "...trebuie montați stâlpișori anti-parcare..." → conține soluție/acțiune
+
+OUTPUT: STRICT textul reformulat, fără preambul, fără markdown, fără ghilimele. Doar DESCRIERE faptică.`;
 
 const FALLBACK_MAX_LEN = 500;
 
@@ -61,6 +75,32 @@ function fallback(raw: string): string {
   if (cleaned.length === 0) return "";
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+}
+
+/**
+ * Defensive post-processor — caută patterns de solicitare în output-ul AI.
+ * Lista numerotată cu „1. ..., 2. ...,  3. ..." e adăugată de template
+ * după textul reformulat. Dacă AI a ignorat regula 2 și a inclus
+ * „solicităm" / „vă rugăm" / etc., textul ar arăta duplicat. Detectăm și
+ * fallback la formalizare simplă (mai puțin elegantă dar non-duplicate).
+ */
+const SOLICITATION_PATTERNS = [
+  /\bsolicit[ăa]m?\b/i,
+  /\bsolicit[ăa]ri\b/i,
+  /\bv[ăa]\s+rog[ăa]m?\b/i,
+  /\brug[ăa]m\b/i,
+  /\bcerem\b/i,
+  /\bface[țt]i\b/i,
+  /\binterven[țt]ia?\s+(poli[țt]iei|prim[ăa]riei|autorit[ăa][țt]ilor)/i,
+  /\bs[ăa]\s+lua[țt]i\s+m[ăa]suri/i,
+  /\bs[ăa]\s+rezolva[țt]i\b/i,
+  /\bs[ăa]\s+interveni[țt]i\b/i,
+  /\b[îi]n\s+regim\s+de\s+urgen[țt][ăa]/i,
+  /\btrebuie\s+s[ăa]\s+(?:fie|se)\s+(montat|reparat|cur[ăa][țt]at|verificat)/i,
+];
+
+function hasSolicitation(text: string): boolean {
+  return SOLICITATION_PATTERNS.some((re) => re.test(text));
 }
 
 /**
@@ -88,7 +128,12 @@ export async function reformulateDescriere(raw: string): Promise<string> {
     const stripped = out
       .replace(/^(bun[ăa]\s+ziua,?\s*|m[ăa]\s+numesc[^.]*\.\s*|stimat[ăa]?\s+doamn[ăa]\/?domnule[^,]*,?\s*)/i, "")
       .trim();
-    return stripped.length >= 10 ? stripped : fallback(input);
+    if (stripped.length < 10) return fallback(input);
+    // 2026-05-27 — Defensive: dacă AI a ignorat regula 2 și a inclus
+    // „solicităm" / „vă rugăm" / „intervenția poliției", returnăm fallback
+    // ca să nu duplicăm acțiunile cu lista numerotată din template.
+    if (hasSolicitation(stripped)) return fallback(input);
+    return stripped;
   } catch {
     return fallback(input);
   }
