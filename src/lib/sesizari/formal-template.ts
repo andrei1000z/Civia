@@ -273,6 +273,9 @@ export interface GenerateFormalTextArgs {
   hasPhotos?: boolean;
   /** Data trimiterii — default azi. Pentru backfill, folosim data inițială a sesizării. */
   date?: Date;
+  /** 2026-05-27 — Acțiuni custom generate de AI (ordine: imediat → planificare → permanent).
+   *  Dacă e furnizată, folosim asta în loc de TIP_DATA[tip].actions. */
+  customActions?: string[];
 }
 
 /**
@@ -327,7 +330,12 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
   // pentru că sunt concrete + cu referințe legale (utilitate ridicată
   // chiar dacă tip-ul nu se potrivește 100% — cetățeanul a ales tip-ul,
   // deci acțiunile sale rămân valide ca sugestii pentru autoritate).
-  const actionsBlock = tipData.actions
+  // 2026-05-27 — Permitem customActions (generate AI cu reorder logică
+  // imediat → planificare → permanent) ca să suprascriem ordine prefab.
+  const actionsList = args.customActions && args.customActions.length > 0
+    ? args.customActions
+    : tipData.actions;
+  const actionsBlock = actionsList
     .map((a, i) => `${i + 1}. ${a}`)
     .join("\n");
   const masuri = `Pentru a rezolva această situație, vă solicit respectuos să luați următoarele măsuri:\n${actionsBlock}`;
@@ -372,6 +380,11 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
 /** Pentru consumatori care vor doar lista de tipuri suportate. */
 export function getSupportedTipuri(): string[] {
   return Object.keys(TIP_DATA);
+}
+
+/** Returnează acțiunile prefab pentru un tip (folosit de reorderActions AI). */
+export function getPrefabActions(tip: string): string[] {
+  return [...(TIP_DATA[tip] ?? TIP_DATA["altele"]!).actions];
 }
 
 /** Backwards-compat helper — TEMPLATES (vechi) e încă referit în câteva

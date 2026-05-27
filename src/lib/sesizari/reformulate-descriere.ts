@@ -125,16 +125,103 @@ export async function reformulateDescriere(raw: string): Promise<string> {
     const out = completion.choices[0]?.message?.content?.trim() ?? "";
     if (!out || out.length < 10) return fallback(input);
     // Strip cazuri în care AI ignoră regulile și începe cu „Bună ziua" / etc.
-    const stripped = out
+    let stripped = out
       .replace(/^(bun[ăa]\s+ziua,?\s*|m[ăa]\s+numesc[^.]*\.\s*|stimat[ăa]?\s+doamn[ăa]\/?domnule[^,]*,?\s*)/i, "")
       .trim();
+    // Strip trailing „1. ... 2. ... 3. ..." (AI confuz, include literal lista).
+    stripped = stripped
+      .replace(/\s*\d+\.\s*\.{2,}.*$/, "")
+      .replace(/\s*\b\d+\.\s+[A-ZĂÂÎȘȚ][^.]*?\.(?=\s*\d+\.|\s*$)/g, "")
+      .replace(/\s*-\s*$/, "")
+      .trim();
     if (stripped.length < 10) return fallback(input);
-    // 2026-05-27 — Defensive: dacă AI a ignorat regula 2 și a inclus
-    // „solicităm" / „vă rugăm" / „intervenția poliției", returnăm fallback
-    // ca să nu duplicăm acțiunile cu lista numerotată din template.
     if (hasSolicitation(stripped)) return fallback(input);
     return stripped;
   } catch {
     return fallback(input);
+  }
+}
+
+// ─── ACȚIUNI SOLICITATE — AI reordonează + ajustează minor ──────────
+
+const ACTIONS_REORDER_PROMPT = `Ești un asistent care primește o listă de măsuri pre-formulate pentru o sesizare oficială către primărie. Sarcina ta e DOAR să REORDONEZI lista (eventual ajustând minimal textul) în ordine logică: imediat → planificare → permanent.
+
+REGULI CRITICE:
+1. NU REFORMULA acțiunile complet — păstrează cuvintele și referințele legale (OUG 195/2002, art. 108 etc.) EXACT ca în input.
+2. DOAR reordonează după urgență:
+   • PRIMA: acțiune imediată — Poliția Locală, sancțiuni, ridicare, intervenție urgentă, curățare.
+   • A DOUA: verificare / planificare — analiza zonei, identificarea autorităților, planificare lucrare.
+   • A TREIA: lucrare permanentă — montare stâlpișori, asfaltare, reabilitare, instalare echipamente.
+3. POȚI ajusta MINIM textul DOAR dacă descrierea cetățeanului indică nevoie specifică (ex: dacă user-ul zice „în special noaptea" la iluminat, poți menționa „în special pe timp de noapte" la sfârșitul acțiunii relevante).
+4. NU ADĂUGA acțiuni noi care nu sunt în input.
+5. NU ELIMINA acțiuni din input.
+6. NU INVENTA articole sau referințe legale noi.
+7. Output: exact aceleași 2-4 acțiuni, în ordine nouă, format „1. ... 2. ... 3. ...".
+
+EXEMPLE:
+
+Input acțiuni:
+1. Montarea stâlpișorilor anti-parcare.
+2. Verificarea zonei.
+3. Intervenția Poliției Locale pentru sancționarea șoferilor.
+
+Output reordonat:
+1. Intervenția Poliției Locale pentru sancționarea șoferilor.
+2. Verificarea zonei.
+3. Montarea stâlpișorilor anti-parcare.
+
+Input acțiuni:
+1. Plombarea gropii.
+2. Verificarea integrității carosabilului în zonă.
+
+Output (verificarea înainte):
+1. Verificarea integrității carosabilului în zonă.
+2. Plombarea gropii.
+
+OUTPUT: STRICT lista numerotată, fără preambul, fără markdown.`;
+
+/**
+ * Reordonează acțiunile prefab în ordine imediat → planificare → permanent,
+ * cu ajustări minime contextualizate pe descriere. Fallback la input
+ * neschimbat dacă AI eșuează.
+ */
+export async function reorderActions(args: {
+  tip: string;
+  descriere: string;
+  prefabActions: string[];
+}): Promise<string[]> {
+  const desc = args.descriere?.trim() || "";
+  if (args.prefabActions.length <= 1) return args.prefabActions;
+  if (desc.length < 10) return args.prefabActions;
+
+  try {
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL_FAST,
+      messages: [
+        { role: "system", content: ACTIONS_REORDER_PROMPT },
+        {
+          role: "user",
+          content: `tip=${args.tip}\ndescriere="${desc}"\nacțiuni:\n${args.prefabActions.map((a, i) => `${i + 1}. ${a}`).join("\n")}`,
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 700,
+    });
+    const out = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!out) return args.prefabActions;
+
+    const lines = out
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter((l) => /^\d+\.\s+/.test(l))
+      .map((l) => l.replace(/^\d+\.\s*/, "").trim())
+      .filter((l) => l.length >= 15 && l.length <= 600);
+
+    // Sanity: dacă AI a returnat alt număr de acțiuni decât input, fallback.
+    if (lines.length !== args.prefabActions.length) return args.prefabActions;
+    return lines;
+  } catch {
+    return args.prefabActions;
   }
 }

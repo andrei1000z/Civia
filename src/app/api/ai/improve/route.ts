@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
-import { generateFormalText } from "@/lib/sesizari/formal-template";
-import { reformulateDescriere } from "@/lib/sesizari/reformulate-descriere";
+import { generateFormalText, getPrefabActions } from "@/lib/sesizari/formal-template";
+import { reformulateDescriere, reorderActions } from "@/lib/sesizari/reformulate-descriere";
 
 /**
  * Generator text formal sesizare — TEMPLATE DETERMINIST, fără AI.
@@ -44,20 +44,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { descriere, tip, locatie, nume, adresa, imagini } = schema.parse(body);
 
-    // 2026-05-27 — AI reformulează descrierea înainte de generare formal_text.
-    // User a observat: descrierea cetățeanului (lowercase, fără diacritice,
-    // scrieri colocviale) apărea brut în textul oficial → arăta neserios.
-    // Reformularea face limbaj formal românesc PĂSTRÂND faptele exacte.
-    // Pe eșec AI: fallback la capitalize + punct (comportament anterior).
-    const descriereReformulata = await reformulateDescriere(descriere);
+    // 2026-05-27 — 2 apeluri AI în PARALEL pentru latency optim:
+    //   1. reformulateDescriere: scrieri colocviale → registru oficial
+    //      (PĂSTRÂND faptele, fără solicitări care duplică lista)
+    //   2. reorderActions: ia acțiunile prefab pentru tip-ul respectiv și
+    //      le REORDONEAZĂ în ordine imediat → planificare → permanent
+    //      (păstrează textul prefab + referințele legale exact).
+    // Pe eșec AI ambele cad în picioare cu fallback la comportament prefab.
+    const tipFinal = tip ?? "altele";
+    const prefab = getPrefabActions(tipFinal);
+    const [descriereReformulata, customActions] = await Promise.all([
+      reformulateDescriere(descriere),
+      reorderActions({ tip: tipFinal, descriere, prefabActions: prefab }),
+    ]);
 
     const formal_text = generateFormalText({
-      tip: tip ?? "altele",
+      tip: tipFinal,
       locatie: locatie ?? "",
       descriere: descriereReformulata,
       nume: nume ?? null,
       adresa: adresa ?? null,
       hasPhotos: (imagini ?? []).length > 0,
+      customActions,
     });
 
     return NextResponse.json({ data: { formal_text } });
