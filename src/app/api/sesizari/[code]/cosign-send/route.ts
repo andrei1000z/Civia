@@ -212,8 +212,9 @@ export async function POST(
   // nouă obișnuită, doar cu identitatea persoanei care trimite acum.
   const subject = `Sesizare ${sesizare.code} — ${sesizare.titlu}`;
 
-  // Reply-To rămâne sesizari@civia.ro (Worker → /api/inbox/reply pipeline)
-  const replyTo = `sesizari@civia.ro`;
+  // 2026-05-27 — plus-addressing Reply-To pentru match 99% (Subaddressing
+  // toggle ON în Cloudflare Email Routing — vezi audit 2026-05-27).
+  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
   // From = numele co-semnatarului <sesizari@civia.ro>
   const fromHeader = `${nume} <sesizari@civia.ro>`;
 

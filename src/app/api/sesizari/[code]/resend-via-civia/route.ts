@@ -193,7 +193,8 @@ export async function POST(
 
   // Subject prefix [RETRIMITERE] ca primăria să nu creadă că e duplicate spam
   const subject = `[RETRIMITERE] Sesizare ${sesizare.code} — ${sesizare.titlu}`;
-  const replyTo = `sesizari@civia.ro`;
+  // 2026-05-27 — plus-addressing pentru match 99% (audit Cloudflare 2026-05-27)
+  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
   const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
 
   const result = await sendEmail({

@@ -1,175 +1,93 @@
-# Civia Inbox Email Worker — setup & debug
+# Civia Inbox Email Worker
 
-## 🎯 Ce face
+Cloudflare Worker care procesează emailurile primite la `sesizari@civia.ro`
+de la primării/autorități. Folosit pentru a clasifica replies + atașa la
+sesizarea corectă + push notification pentru cetățean.
 
-Când o autoritate răspunde la o sesizare trimisă prin Civia, emailul ajunge
-pe `sesizari@civia.ro`. Acest Worker (rulează pe Cloudflare Email Routing):
+## Deploy manual (curent)
 
-1. Primește emailul
-2. Pinge `/api/inbox/heartbeat` (no-auth, log pentru proof-of-life)
-3. Parsează MIME → extrage From, To, Subject, body
-4. POSTează la `/api/inbox/reply` cu Bearer auth → AI clasifică → update status
-5. Forwardează emailul la `musateduardandrei10@gmail.com` ca fail-safe
+1. Cloudflare → Workers & Pages → **civia-inbox-handler** → **Edit code**
+2. Copy-paste `email-handler.js` integral
+3. **Save and Deploy**
+4. Verifică deploy: `https://civia-inbox-handler.musateduardandrei10.workers.dev/`
+   → trebuie să răspundă `Civia Inbox Email Worker v3.1.0 — OK`
 
-## 🚀 Setup complet (5 pași)
+## Env vars (Settings → Variables and Secrets)
 
-### Pasul 1 — Deploy Worker code
+### Required
+| Type | Name | Value | Note |
+|------|------|-------|------|
+| Secret | `INBOX_WEBHOOK_SECRET` | (random 32-char) | Bearer auth pentru `/api/inbox/reply` |
+| Plain text | `WEBHOOK_URL` | `https://www.civia.ro/api/inbox/reply` | **TREBUIE www** (civia.ro 307→www drops auth) |
+| Plain text | `HEARTBEAT_URL` | `https://www.civia.ro/api/inbox/heartbeat` | Audit logging |
 
-1. Cloudflare → **Workers & Pages** → `civia-inbox-handler`
-2. Apasă **Edit code** (sau „Quick edit")
-3. **Șterge tot** codul default
-4. Copiază integral `cloudflare-worker/email-handler.js` din repo
-5. **Save and Deploy**
+### Optional (păstrate doar pentru debug)
+| Type | Name | Value | Note |
+|------|------|-------|------|
+| Plain text | `FORWARD_TO` | (Gmail address) | **Default: ștears.** Doar dacă admin debug. |
+| Plain text | `FORWARD_ENABLED` | `"true"` | **Default: ștears (OFF).** Necesar EXPLICIT pentru forward la Gmail. |
 
-### Pasul 2 — Setează env variables în Worker
+## Manual setup checklist (audit 2026-05-27)
 
-Mergi la **Settings** → **Variables and Secrets**.
+Acțiuni one-time în Cloudflare dashboard:
 
-| Type | Variable name | Value |
-|------|---------------|-------|
-| **Secret** | `INBOX_WEBHOOK_SECRET` | (același string ca în Vercel) |
-| **Plain text** | `WEBHOOK_URL` | `https://www.civia.ro/api/inbox/reply` ⚠️ |
-| **Plain text** | `HEARTBEAT_URL` | `https://www.civia.ro/api/inbox/heartbeat` ⚠️ |
-| **Plain text** | `FORWARD_TO` | `musateduardandrei10@gmail.com` |
+### 🔴 Critic
+- [ ] **Email Routing → Settings → ☑ Enable Subaddressing** (activează `sesizari+CODE@civia.ro`)
+- [ ] **DNS → + TXT record `_dmarc`** cu `v=DMARC1; p=quarantine; rua=mailto:musateduardandrei10@gmail.com; pct=100; aspf=s; adkim=s`
+- [ ] **Workers → Settings → Variables → DELETE `FORWARD_TO`** (cleanup)
 
-> ⚠️ **CRITICAL:** URL-urile MUST să folosească `www.civia.ro` (nu doar `civia.ro`).
-> `civia.ro` redirectează la `www.civia.ro` cu 307 și `Authorization` header
-> e scos pe redirect cross-host (regulă de securitate browser).
+### 🟡 Important
+- [ ] **DNS → DELETE `send.civia.ro` MX + TXT records** (Amazon SES legacy)
+- [ ] **Workers → Settings → Build → Connect GitHub** (auto-deploy din `cloudflare-worker/`)
+- [ ] **Workers → Settings → Domains → + `inbox.civia.ro` Custom Domain**
+- [ ] **Workers → Settings → Observability → ☑ Enable Traces**
 
-### Pasul 3 — Verifică config-ul Worker
+### 🟢 Nice-to-have
+- [ ] **Email Routing → Catch-All → change Drop → Send to Worker** (audit unknown addresses)
+- [ ] **Workers → Settings → Logs sampling → 25%** (when traffic > 1000/day)
 
-Vizitează în browser:
-
-```
-https://civia-inbox-handler.<subdomain>.workers.dev/__config
-```
-
-(URL-ul subdomeniu îl găsești în Cloudflare → Worker → Overview, e ceva
-gen `civia-inbox-handler.musateduardandrei10.workers.dev`)
-
-Ar trebui să vezi JSON:
-
-```json
-{
-  "version": "2.0.0",
-  "webhook_url": "https://www.civia.ro/api/inbox/reply",
-  "heartbeat_url": "https://www.civia.ro/api/inbox/heartbeat",
-  "forward_to": "musateduardandrei10@gmail.com",
-  "has_secret": true
-}
-```
-
-Dacă vezi `MISSING` la oricare variabilă → re-verifică Settings.
-
-### Pasul 4 — Conectează Worker la routing rule
-
-1. Cloudflare → **Email** → **Email Routing** → tab **Routing rules**
-2. Edit ruta `sesizari@civia.ro`:
-   - Action: **„Send to a Worker"** (nu „Send to email")
-   - Destination: `civia-inbox-handler`
-3. **Save**
-
-### Pasul 5 — Adaugă `INBOX_WEBHOOK_SECRET` în Vercel
-
-1. [vercel.com](https://vercel.com) → proiectul `civia` → **Settings** → **Environment Variables**
-2. Add new (dacă nu există deja):
-   - Key: `INBOX_WEBHOOK_SECRET`
-   - Value: (același string ca în Worker)
-   - Environments: All
-3. **Save** → **Redeploy** (Deployments tab → cel mai recent → Redeploy)
-
----
-
-## 🧪 Cum testezi că merge
-
-### Test 1 — Trimite email pe `sesizari+00044@civia.ro`
-
-Din Gmail-ul tău:
-
-**To:** `sesizari+00044@civia.ro`
-
-**Subject:** `Re: Sesizare 00044 — Răspuns`
-
-**Body:**
-```
-Bună ziua,
-
-Sesizarea dvs a fost înregistrată cu nr 7421/2026.
-Vom transmite răspunsul în maxim 30 de zile.
-
-Cu stimă,
-Primăria Sector 5
-```
-
-### Test 2 — Verifică debug log
-
-Rulează local:
-
-```bash
-npm run check:inbox
-```
-
-Asta îți arată ultimele 20 entries din `inbox_debug_log`. Ar trebui să vezi:
+## Architecture
 
 ```
-2026-05-21T... | HEARTBEAT | status=200 | UA: civia-inbox-worker/2.0.0
-  body: {"worker_version":"2.0.0","from":"musateduardandrei10@gmail.com",...}
-─────────
-2026-05-21T... | REPLY | status=200 | UA: civia-inbox-worker/2.0.0
-  Error/Info: OK | code=00044 | source=plus-address | ai=inregistrata | conf=95
-  authorization: Bearer [64 chars]
-─────────
-2026-05-21T... | HEARTBEAT | status=200 (post-webhook log)
-  body: {"phase":"post-webhook","webhook_status":200,...}
+Authority → SMTP → Cloudflare MX → Email Routing
+                                       ↓
+                          sesizari@civia.ro (or +CODE)
+                                       ↓
+                            civia-inbox-handler (Worker)
+                                       ↓
+              ┌────────────────────────┼────────────────────────┐
+              ↓                        ↓                        ↓
+       Pre-ingest filters     Parse MIME → payload      ctx.waitUntil()
+       (RFC 3834,             Extract Message-ID,        ↓
+        self-forward,         In-Reply-To, References    POST /api/inbox/reply
+        mailer-daemon)                                   POST /api/inbox/heartbeat
+                                                         (Vercel: classification
+                                                          + Groq AI + DB insert)
 ```
 
-### Test 3 — Verifică status pe sesizare
+Worker returnează rapid (~50-200ms) și fire-and-forget toate network calls
+prin `ctx.waitUntil()`. Cloudflare accepă emailul în <1s în loc de 5-10s
+(audit 2026-05-27 a arătat P99 wall time = 10s, peste prag).
 
-```bash
-npm run check:replies
-```
+## Filtering
 
-Sau direct pe `civia.ro/sesizari/00044` — vezi status „Înregistrată" cu nr 7421/2026.
+Worker dropulește înainte de webhook (NU mai ajung la /api/inbox/reply):
 
----
+1. **mailer-daemon** — `mailer-daemon@`, `postmaster@`, `noreply@`, `bounce*@`, Return-Path: `<>`
+2. **Auto-Submitted ≠ no** (RFC 3834)
+3. **Precedence: bulk|list|junk|auto_reply** (+ X-Precedence variant Exchange)
+4. **X-Auto-Response-Suppress** (Exchange OOO)
+5. **X-Autorespond / X-Autoreply** (Exim, cPanel)
+6. **Self-forward** — subject `FW:`/`Fwd:` + body conține `mailto:sesizari@civia.ro`
+7. **Loop counter** — `X-Civia-Loop-Count >= 3`
+8. **Sender domain == civia.ro** — echo back from our own emails
+9. **List-Id / List-Unsubscribe** — newsletters / lists
 
-## 🐛 Debug: ce vezi în log îți spune unde e problema
+## Versioning
 
-| Pattern în `inbox_debug_log` | Ce înseamnă | Fix |
-|------------------------------|-------------|-----|
-| **NIMIC** — log gol după ce ai trimis email | Worker nu rulează / nu e conectat la `sesizari@civia.ro` | Verifică Step 4 |
-| Un HEARTBEAT cu „phase: pre-webhook" dar NICIUN reply log | Worker fire dar fetch la `WEBHOOK_URL` eșuează | Probably WEBHOOK_URL fără `www` |
-| HEARTBEAT + REPLY 401 cu „Auth header mismatch. Got: Bearer [N chars]" | Secret-ul din Worker ≠ secret-ul din Vercel | Resetează ambele să fie EXACT același string |
-| HEARTBEAT + REPLY 401 cu „Got: MISSING" | Worker NU trimite Bearer header | Verifică codul Worker (poate ai un version vechi) |
-| HEARTBEAT + REPLY 400 „Schema validation failed" | Payload-ul Worker e malformat | Trimite-mi un screenshot, fix codul Worker |
-| HEARTBEAT + REPLY 200 dar status sesizare nu se schimbă | AI confidence < 80% sau sender NU e trusted | Verifică domeniul From-ului |
-| REPLY 200 ✅ | TOTUL MERGE PERFECT | 🎉 |
-
----
-
-## 🧹 Cleanup test data
-
-După ce ai testat și vrei să cureți (sesizarea 00044 înapoi la „trimis"):
-
-```bash
-npm run cleanup:test
-```
-
-Asta șterge:
-- Reply-uri pe 00044 create azi
-- Timeline events `inregistrata` create azi
-- Revert sesizari.status la `trimis`, clear `nr_inregistrare`
-
----
-
-## 🆘 Dacă nimic NU merge
-
-1. **Vizitează `https://civia-inbox-handler.<...>.workers.dev/__config`** —
-   confirmă că toate URL-urile au `www`
-2. **Cloudflare → Worker → Logs** → apasă **Begin log stream** → trimite test
-   email → vei vedea log live cu `console.log` din Worker
-3. **`npm run check:inbox`** local — vezi exact ce a primit Civia
-4. **Vercel → Project → Logs** → search `/api/inbox/reply` — verifică
-   request-urile live
-
-Dacă tot nimic, trimite-mi screenshot-uri din toate cele 4 + voi face fix.
+| Version | Date | Changes |
+|---------|------|---------|
+| v3.1.0 | 2026-05-27 | `ctx.waitUntil()` fire-and-forget (fix P99 wall time 10s → <500ms); plus-addressing Reply-To în send-via-civia |
+| v3.0.0 | 2026-05-26 | Pre-ingest filters (RFC 3834 + self-forward); forward la Gmail dezactivat default |
+| v2.0.0 | 2026-05-22 | Threading via In-Reply-To/References; heartbeat endpoint |
+| v1.0.0 | 2026-05-20 | Initial deploy: parse MIME + POST to webhook + forward to Gmail |

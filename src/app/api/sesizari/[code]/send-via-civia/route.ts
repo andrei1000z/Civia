@@ -237,15 +237,15 @@ export async function POST(
   // „Re: Sesizare CODE — ...") → clasificare + status update + push.
   //
   // 5/21/2026: anterior aveam plus-addressing („sesizari+CODE@civia.ro")
-  // dar Cloudflare drop-a toate emailurile (6/6 dropped) — sub-addressing
-  // nu se onoreaza cand destinatia rulei e Worker, doar la simple forwards.
-  // Subject-based code extraction merge la fel de bine si e robust si la
-  // mail relays care strip-uiesc plus-addressing.
-  const replyTo = `sesizari@civia.ro`;
+  // 2026-05-27 — Subaddressing pe Cloudflare Email Routing ACTIVAT (audit
+  // a clarificat: cu Subaddressing toggle ON în settings, replies la
+  // sesizari+CODE@civia.ro ajung tot la Worker, NU drop). Folosim
+  // plus-addressing pe Reply-To ca să maximizăm code extraction confidence
+  // (worker găsește codul direct în To: header, 99% accuracy).
+  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
 
-  // From: doar numele user-ului + adresa sesizari@civia.ro.
-  // Display name = nume cetățean ca primăria să vadă cine reclamă,
-  // fără branding-ul „via Civia".
+  // From: doar numele user-ului + adresa sesizari@civia.ro (fără +CODE,
+  // ca să rămână clean în signature către primărie).
   const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
 
   // Trimite email-ul.
