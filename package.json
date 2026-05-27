@@ -20,6 +20,8 @@
     "check": "npm run lint && npx tsc --noEmit && npm test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1054.0",
+    "@google/generative-ai": "^0.24.1",
     "@sentry/nextjs": "^10.47.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
@@ -29,6 +31,7 @@
     "groq-sdk": "^1.1.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.8.0",
+    "mammoth": "^1.12.0",
     "next": "^16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -39,6 +42,7 @@
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.5.0",
     "tesseract.js": "^7.0.0",
+    "unpdf": "^1.6.2",
     "web-push": "^3.6.7",
     "zod": "^4.3.6"
   },

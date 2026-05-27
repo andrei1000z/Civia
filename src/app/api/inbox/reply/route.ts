@@ -8,9 +8,13 @@ import { classifyReply } from "@/lib/inbox/classify";
 import { scoreAuthenticity, shouldAutoApplyEnhanced } from "@/lib/inbox/authenticity";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { getClientIp } from "@/lib/ratelimit";
+import { fetchR2Object } from "@/lib/inbox/r2-client";
+import { extractAttachment, type AttachmentExtractionResult } from "@/lib/inbox/attachment-extractors";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+// 2026-05-27 — bump 30s → 60s pentru attachment extraction (OCR PDF scanat
+// poate dura 5-15s per atașament; cu 3 atașamente atingem 45s).
+export const maxDuration = 60;
 
 async function logDebug(opts: {
   admin: ReturnType<typeof createSupabaseAdmin>;
@@ -81,6 +85,9 @@ const payloadSchema = z.object({
         filename: z.string().max(500).optional(),
         content_type: z.string().max(200).optional(),
         size: z.number().optional(),
+        // 2026-05-27 — Cloudflare Worker v4 încarcă conținutul în R2 și
+        // trimite cheia. Backend-ul fetch-uiește bytes pentru extracție.
+        r2_key: z.string().max(500).optional().nullable(),
       }),
     )
     .optional()
@@ -327,19 +334,105 @@ export async function POST(req: Request) {
   void matchMethod;
   void sesizareTitlu;
 
-  // ─── 6. Classify + authenticity score (parallel for latency) ────
+  // ─── 5.5 Extract text din atașamente (PDF, DOCX, imagini) ──────
+  // 2026-05-27 — Înainte primăriile răspundeau cu PDF atașat și body
+  // email gol → AI nu vedea nimic → confidence mică, status „necunoscut".
+  // Acum: pentru fiecare atașament fetch-uim bytes din R2 + rulăm
+  // extractor specializat (unpdf pentru PDF text-native, Gemini Vision
+  // pentru PDF scanat / imagini, mammoth pentru DOCX). Concat la body.
+  //
+  // Concurrency: Promise.all paralel per atașament. Timeout 30s/file
+  // gestionat în extractor. Pe failure individual marcăm și continuăm.
   const cleanBody = body_text || stripHtml(body_html) || "";
+  const extractionResults: Array<{
+    filename: string;
+    content_type: string;
+    size: number;
+    r2_key: string | null;
+    result: AttachmentExtractionResult;
+  }> = [];
+
+  if (attachments.length > 0) {
+    const extractedTexts = await Promise.all(
+      attachments.map(async (att) => {
+        const filename = att.filename ?? "unknown";
+        const contentType = att.content_type ?? "application/octet-stream";
+        const size = att.size ?? 0;
+        const r2Key = att.r2_key ?? null;
+
+        if (!r2Key) {
+          return {
+            filename,
+            content_type: contentType,
+            size,
+            r2_key: null,
+            result: {
+              extracted_text: null,
+              extraction_method: "skipped" as const,
+              extraction_ms: 0,
+              extraction_error: "no r2_key — worker did not upload content",
+            },
+          };
+        }
+
+        const bytes = await fetchR2Object(r2Key);
+        if (!bytes) {
+          return {
+            filename,
+            content_type: contentType,
+            size,
+            r2_key: r2Key,
+            result: {
+              extracted_text: null,
+              extraction_method: "failed" as const,
+              extraction_ms: 0,
+              extraction_error: "R2 fetch failed (network or 404)",
+            },
+          };
+        }
+
+        const result = await extractAttachment({
+          bytes,
+          contentType,
+          filename,
+        });
+
+        return {
+          filename,
+          content_type: contentType,
+          size,
+          r2_key: r2Key,
+          result,
+        };
+      }),
+    );
+
+    extractionResults.push(...extractedTexts);
+  }
+
+  // Concat textele extrase la cleanBody → ai_input_text trimis la classifyReply.
+  const attachmentTextParts: string[] = [];
+  for (const e of extractionResults) {
+    if (e.result.extracted_text) {
+      attachmentTextParts.push(
+        `\n\n[ATAȘAT: ${e.filename}]\n${e.result.extracted_text}`,
+      );
+    }
+  }
+  const aiInputText = cleanBody + attachmentTextParts.join("");
+
+  // ─── 6. Classify + authenticity score (parallel for latency) ────
   const [classification, authenticity] = await Promise.all([
     classifyReply({
       subject,
-      body: cleanBody,
+      body: aiInputText, // ← acum include textele extrase din atașamente
       sender_name: sender?.authority_name ?? sender?.email,
       authority_hint: sender?.authority_name,
     }),
     scoreAuthenticity({
       from,
       subject: subject || "",
-      body_text: cleanBody,
+      body_text: cleanBody, // authenticity rămâne pe body original (semnale tehnice)
       headers,
       received_at: new Date().toISOString(),
     }),
@@ -369,7 +462,24 @@ export async function POST(req: Request) {
       body_text: cleanBody || null,
       body_html: body_html || null,
       raw_headers: headers,
-      attachments: attachments.length > 0 ? attachments : null,
+      // 2026-05-27 — attachments JSONB îmbogățit cu extracted_text, method, ms.
+      // Format vechi (filename, content_type, size) pentru emailuri fără
+      // atașamente sau în lipsa extracției (fallback la schema 057).
+      attachments: extractionResults.length > 0
+        ? extractionResults.map((e) => ({
+            filename: e.filename,
+            content_type: e.content_type,
+            size: e.size,
+            r2_key: e.r2_key,
+            extracted_text: e.result.extracted_text,
+            extraction_method: e.result.extraction_method,
+            extraction_ms: e.result.extraction_ms,
+            extraction_error: e.result.extraction_error,
+          }))
+        : (attachments.length > 0 ? attachments : null),
+      // 2026-05-27 — ai_input_text: textul exact pasat la classifyReply
+      // (body + textele extrase). Permite re-classify fără re-extract.
+      ai_input_text: aiInputText || null,
       // 2026-05-27 v3 — RFC 5322 §3.6.4 headers extras pentru dedup + threading
       message_id: messageId,
       in_reply_to: inReplyTo,

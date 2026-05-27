@@ -12,6 +12,13 @@ sesizarea corectă + push notification pentru cetățean.
 4. Verifică deploy: `https://civia-inbox-handler.musateduardandrei10.workers.dev/`
    → trebuie să răspundă `Civia Inbox Email Worker v3.1.0 — OK`
 
+## Bindings (Settings → Bindings)
+
+### Required (v4.0+)
+| Type | Variable name | Value | Purpose |
+|------|---------------|-------|---------|
+| R2 bucket | `CIVIA_INBOX_R2` | `civia-inbox-attachments` | Upload atașamente PDF/DOCX/imagini pentru AI extraction backend |
+
 ## Env vars (Settings → Variables and Secrets)
 
 ### Required
@@ -87,6 +94,7 @@ Worker dropulește înainte de webhook (NU mai ajung la /api/inbox/reply):
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.0.0 | 2026-05-27 | R2 attachment upload (PDF/DOCX/imagini → CIVIA_INBOX_R2 bucket) cu key `attachments/{date}/{uuid}-{filename}`. Payload include `r2_key` per attachment. Backend AI extraction (unpdf, Gemini Vision, mammoth) îmbogățește body înainte de classifyReply. |
 | v3.1.0 | 2026-05-27 | `ctx.waitUntil()` fire-and-forget (fix P99 wall time 10s → <500ms); plus-addressing Reply-To în send-via-civia |
 | v3.0.0 | 2026-05-26 | Pre-ingest filters (RFC 3834 + self-forward); forward la Gmail dezactivat default |
 | v2.0.0 | 2026-05-22 | Threading via In-Reply-To/References; heartbeat endpoint |

@@ -1,52 +1,63 @@
 /**
- * Civia Inbox Email Worker — v3.1 (fire-and-forget pattern)
- * =========================================================
+ * Civia Inbox Email Worker — v4.0 (R2 attachment upload)
+ * =======================================================
  *
  * Runs on Cloudflare Email Routing. When an email arrives at
  * `sesizari@civia.ro` (with optional +CODE plus-addressing if Subaddressing
  * is ENABLED in Email Routing settings), this Worker:
  *
- *   1. Reads raw email + parses minimal MIME (SYNC, ~50-200ms)
+ *   1. Reads raw email + parses MIME (SYNC, ~50-200ms)
  *   2. Applies pre-ingest filters (auto-reply, self-forward, mailer-daemon)
- *   3. Fire-and-forget webhook POST via ctx.waitUntil() — no longer blocks
- *      email handler. Reduce wall time de la P99 ~10s la P99 <500ms.
- *   4. Email returnată ca acceptată în <1s; webhook + heartbeat continuă în
- *      background pentru max 30s după return.
- *   5. FORWARD la Gmail DEZACTIVAT (env var FORWARD_TO ștearsă 2026-05-27).
+ *   3. Uploads each attachment to R2 bucket civia-inbox-attachments
+ *   4. Fire-and-forget webhook POST cu r2_keys via ctx.waitUntil()
+ *   5. Email returnată ca acceptată în <1s
+ *
+ * NEW v4 (2026-05-27): R2 attachment upload pentru AI extraction
+ *   - Atașamentele (PDF, DOCX, JPG, PNG) sunt uploadate în R2 bucket
+ *     civia-inbox-attachments cu cheie attachments/{YYYY-MM-DD}/{uuid}-{filename}
+ *   - Payload-ul webhook include r2_key per attachment → backend
+ *     fetch-uiește bytes pentru extracție text (unpdf, Gemini Vision, mammoth)
+ *   - R2 binding: CIVIA_INBOX_R2 (configurat în Settings → Bindings)
+ *   - Lifecycle: obiecte > 90 zile auto-delete (configurat în R2 bucket settings)
  *
  * Deploy:
  *   1. Cloudflare → Workers & Pages → civia-inbox-handler → Edit code
  *   2. Replace EVERYTHING with this file
  *   3. Save and Deploy
  *
+ * Required bindings (Settings → Bindings):
+ *   R2 bucket:  CIVIA_INBOX_R2 → civia-inbox-attachments
+ *
  * Required env variables (Settings → Variables and Secrets):
  *   Secret:     INBOX_WEBHOOK_SECRET = <same as Vercel>
  *   Plain text: WEBHOOK_URL          = https://www.civia.ro/api/inbox/reply
  *   Plain text: HEARTBEAT_URL        = https://www.civia.ro/api/inbox/heartbeat
  *
- * Optional env variables:
- *   FORWARD_TO       = adresa Gmail (default: unset/empty)
- *   FORWARD_ENABLED  = "true" pentru a activa forward (default = OFF)
- *
  * ⚠️ IMPORTANT: WEBHOOK_URL and HEARTBEAT_URL MUST use `www.civia.ro`
  * (NOT `civia.ro` without www). civia.ro redirects to www.civia.ro with
  * 307 and the redirect drops the Authorization header.
- *
- * Manual setup checklist (audit 2026-05-27):
- *   [ ] Email Routing → Settings → Enable Subaddressing ☑ (pentru plus-addr)
- *   [ ] DNS → Add TXT _dmarc record (anti-spoofing)
- *   [ ] Workers → Settings → Variables → DELETE FORWARD_TO (cleanup)
- *   [ ] DNS → Remove send.civia.ro MX + TXT (Amazon SES legacy)
- *   [ ] Workers → Settings → Observability → Enable Traces (debug)
- *   [ ] Email Routing → Catch-All → Send to Worker (audit unknown addresses)
  */
 
-const WORKER_VERSION = "3.1.0";
+const WORKER_VERSION = "4.0.0";
+
+// Limite atașamente — protejează R2 cost + Vercel function timeout.
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB per file
+const MAX_TOTAL_ATTACHMENT_BYTES = 25 * 1024 * 1024; // 25MB total (Cloudflare email limit)
+const ACCEPTED_ATTACHMENT_MIMES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "application/msword", // .doc (legacy, mammoth can handle some)
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 
 export default {
   /**
    * Email handler — entry point for inbound emails from Email Routing.
-   * Strategy: parse SYNC, network calls ASYNC via ctx.waitUntil().
+   * Strategy: parse + R2 upload SYNC, webhook network call ASYNC via ctx.waitUntil().
    */
   async email(message, env, ctx) {
     const startMs = Date.now();
@@ -70,7 +81,6 @@ export default {
     // ─── 2. Pre-ingest filters (SYNC, decision in <1ms) ──────────
     const filterReason = preIngestFilter(parsed, message.from || "");
     if (filterReason) {
-      // Fire-and-forget filter log (audit only, fail doesn't matter)
       if (env.HEARTBEAT_URL) {
         ctx.waitUntil(
           safeFetch(env.HEARTBEAT_URL, {
@@ -94,7 +104,100 @@ export default {
       return;
     }
 
-    // ─── 3. Build payload (SYNC) ────────────────────────────────
+    // ─── 3. Upload attachments la R2 (SYNC, dar paralel) ─────────
+    // 2026-05-27 — Pentru AI extraction backend, avem nevoie de bytes-urile
+    // atașamentelor accesibile din Vercel. Upload în R2 bucket privat;
+    // backend folosește S3 SDK cu credentials pentru fetch.
+    //
+    // Key format: attachments/YYYY-MM-DD/uuid-filename
+    // (uuid evită collision dacă 2 emailuri au atașamente cu același nume)
+    //
+    // Filter:
+    //   - reject MIME-uri nesuportate (executabile, archives) — log dar nu upload
+    //   - reject > 10MB per file (R2 cost guard)
+    //   - reject > 25MB total per email (Cloudflare hard limit oricum)
+    const attachmentsWithR2 = [];
+    let totalSize = 0;
+
+    if (env.CIVIA_INBOX_R2 && parsed.attachments && parsed.attachments.length > 0) {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const messageIdShort = (parsed.headers["message-id"] || "")
+        .replace(/[<>]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .slice(0, 16) || randomShortId();
+
+      const uploads = parsed.attachments.map(async (att) => {
+        const baseMeta = {
+          filename: att.filename,
+          content_type: att.content_type,
+          size: att.size,
+        };
+
+        // Filter MIME unsupported (e.g. .exe rebranded ca .pdf cu content-type
+        // greșit — backend va detect spoofing via magic bytes; aici filter
+        // doar declared MIME ca să evităm upload risipit).
+        if (!ACCEPTED_ATTACHMENT_MIMES.some((m) => att.content_type.toLowerCase().includes(m.toLowerCase()))) {
+          return { ...baseMeta, r2_key: null, skip_reason: "unsupported-mime" };
+        }
+
+        // Size guard (per file).
+        if (att.size > MAX_ATTACHMENT_BYTES) {
+          return { ...baseMeta, r2_key: null, skip_reason: "too-large" };
+        }
+
+        // Total size guard.
+        if (totalSize + att.size > MAX_TOTAL_ATTACHMENT_BYTES) {
+          return { ...baseMeta, r2_key: null, skip_reason: "total-cap-exceeded" };
+        }
+        totalSize += att.size;
+
+        // Sanitize filename pentru R2 key (remove path traversal).
+        const safeFilename = (att.filename || "unknown")
+          .replace(/[\/\\]/g, "_")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(0, 100);
+        const r2Key = `attachments/${today}/${messageIdShort}-${randomShortId()}-${safeFilename}`;
+
+        try {
+          // att.bytes e ArrayBuffer-like (Uint8Array sau string binary).
+          // Conversie sigură la Uint8Array pentru R2 put.
+          const body = att.bytes instanceof Uint8Array
+            ? att.bytes
+            : (typeof att.bytes === "string"
+                ? Uint8Array.from(att.bytes, (c) => c.charCodeAt(0))
+                : new Uint8Array(att.bytes));
+
+          await env.CIVIA_INBOX_R2.put(r2Key, body, {
+            httpMetadata: { contentType: att.content_type },
+            customMetadata: {
+              filename: att.filename || "unknown",
+              uploaded_at: new Date().toISOString(),
+              worker_version: WORKER_VERSION,
+            },
+          });
+          return { ...baseMeta, r2_key: r2Key };
+        } catch (e) {
+          console.error(`R2 upload failed for ${att.filename}: ${e?.message ?? e}`);
+          return { ...baseMeta, r2_key: null, skip_reason: `r2-error:${(e?.message ?? "unknown").slice(0, 80)}` };
+        }
+      });
+
+      const results = await Promise.all(uploads);
+      attachmentsWithR2.push(...results);
+    } else if (parsed.attachments && parsed.attachments.length > 0) {
+      // R2 binding lipsește (legacy deploy) — păstrăm metadata only.
+      for (const att of parsed.attachments) {
+        attachmentsWithR2.push({
+          filename: att.filename,
+          content_type: att.content_type,
+          size: att.size,
+          r2_key: null,
+          skip_reason: "r2-not-bound",
+        });
+      }
+    }
+
+    // ─── 4. Build payload (SYNC) ────────────────────────────────
     const payload = {
       from: message.from || parsed.from || "",
       to: message.to || parsed.to || "",
@@ -102,28 +205,15 @@ export default {
       body_text: parsed.text || "",
       body_html: parsed.html || "",
       headers: parsed.headers,
-      attachments: parsed.attachments,
-      // RFC 5322 §3.6.4 — Message-ID + threading headers explicit
+      attachments: attachmentsWithR2,
       message_id: parsed.headers["message-id"] || null,
       in_reply_to: parsed.headers["in-reply-to"] || null,
       references: parsed.headers["references"] || null,
       auth_results: parsed.headers["authentication-results"] || null,
     };
 
-    // ─── 4. Background work via ctx.waitUntil() ──────────────────
-    // 2026-05-27 — Cloudflare Workers timeout pe email handlers e ~30s
-    // wall time. Async network calls (webhook Vercel cu cold-start 3-7s
-    // + heartbeat 1-2s + posibil forward) dădeau P99 ~10s sync.
-    //
-    // Fix: ctx.waitUntil() keeps worker process alive în background pentru
-    // PROMISE-urile pasate, dar email() handler returnează imediat. Email
-    // routing treats email as accepted; client (autoritate) primește 250 OK
-    // în <500ms în loc de 5-10s.
-    //
-    // Risk: dacă webhook eșuează, NU putem retry. Acceptat tradeoff — un
-    // post-webhook heartbeat ne arată în log dacă webhook s-a făcut sau nu.
+    // ─── 5. Background work via ctx.waitUntil() ──────────────────
     const backgroundWork = (async () => {
-      // 4a. Initial heartbeat (prove arrival)
       if (env.HEARTBEAT_URL) {
         await safeFetch(env.HEARTBEAT_URL, {
           method: "POST",
@@ -133,11 +223,12 @@ export default {
             from: message.from || "unknown",
             to: message.to || "unknown",
             received_at: new Date().toISOString(),
+            attachment_count: attachmentsWithR2.length,
+            attachments_uploaded: attachmentsWithR2.filter((a) => a.r2_key).length,
           }),
         });
       }
 
-      // 4b. Webhook POST cu Bearer auth
       let webhookStatus = 0;
       let webhookBody = "";
       try {
@@ -157,7 +248,6 @@ export default {
         webhookBody = `FETCH_ERROR: ${e?.message ?? e}`;
       }
 
-      // 4c. Post-webhook heartbeat (visibility)
       if (env.HEARTBEAT_URL) {
         await safeFetch(env.HEARTBEAT_URL, {
           method: "POST",
@@ -169,11 +259,16 @@ export default {
             webhook_status: webhookStatus,
             webhook_response_preview: webhookBody.slice(0, 200),
             duration_ms: Date.now() - startMs,
+            attachments: attachmentsWithR2.map((a) => ({
+              filename: a.filename,
+              r2_key: a.r2_key,
+              skip_reason: a.skip_reason ?? null,
+            })),
           }),
         });
       }
 
-      // 4d. Optional forward (disabled by default per user request 2026-05-27)
+      // Forward la Gmail dezactivat default.
       if (env.FORWARD_ENABLED === "true" && env.FORWARD_TO) {
         try {
           await message.forward(env.FORWARD_TO);
@@ -184,12 +279,8 @@ export default {
     })();
 
     ctx.waitUntil(backgroundWork);
-    // Email handler returnează aici cu success — wall time ~50-200ms total
   },
 
-  /**
-   * Health check via HTTP — visit Worker's URL to verify deploy.
-   */
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/__config") {
@@ -200,6 +291,7 @@ export default {
         forward_to: env.FORWARD_TO ?? "(unset)",
         forward_enabled: env.FORWARD_ENABLED === "true",
         has_secret: !!env.INBOX_WEBHOOK_SECRET,
+        has_r2_binding: !!env.CIVIA_INBOX_R2,
       }, null, 2), {
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
@@ -220,7 +312,6 @@ function jsonHeaders() {
   };
 }
 
-/** Fetch care nu aruncă (best-effort, useful for ctx.waitUntil chains). */
 async function safeFetch(url, init) {
   try {
     return await fetch(url, init);
@@ -230,24 +321,17 @@ async function safeFetch(url, init) {
   }
 }
 
+function randomShortId() {
+  // crypto.randomUUID disponibil în Workers runtime
+  return crypto.randomUUID().slice(0, 8);
+}
+
 // ─── PRE-INGEST FILTER ────────────────────────────────────────────
 
-/**
- * Returnează un string cu motivul de filter, sau null dacă mail-ul trece.
- * Filtrele aplicate (în ordine, ieșire la primul match):
- *   1. mailer-daemon / postmaster / noreply senders
- *   2. RFC 3834 Auto-Submitted ≠ no
- *   3. Precedence: bulk|list|junk
- *   4. X-Auto-Response-Suppress (Exchange)
- *   5. Self-forward (body conține mailto:sesizari@civia.ro și subject FW/Fwd)
- *   6. Loop counter X-Civia-Loop-Count >= 3 (anti-bombă)
- *   7. Sender contains civia.ro (echo back)
- */
 function preIngestFilter(parsed, msgFrom) {
   const h = parsed.headers || {};
   const fromAddr = String(msgFrom || h.from || "").toLowerCase();
 
-  // 1. Mailer-daemon / bounce
   if (
     /mailer-daemon|postmaster|^noreply@|^no-reply@|bounce[s]?@/i.test(fromAddr) ||
     /<>/.test(h["return-path"] || "")
@@ -255,68 +339,50 @@ function preIngestFilter(parsed, msgFrom) {
     return "mailer-daemon";
   }
 
-  // 2. RFC 3834 — Auto-Submitted header
   const autoSubmitted = (h["auto-submitted"] || "").toLowerCase().trim();
   if (autoSubmitted && autoSubmitted !== "no") {
     return `auto-submitted:${autoSubmitted}`;
   }
 
-  // 3. Precedence: bulk/list/junk
   const precedence = (h["precedence"] || "").toLowerCase().trim();
   if (/(bulk|list|junk|auto_reply)/.test(precedence)) {
     return `precedence:${precedence}`;
   }
 
-  // 3.1 X-Precedence (variant Exchange/legacy)
   const xPrecedence = (h["x-precedence"] || "").toLowerCase().trim();
   if (/(bulk|list|junk|auto_reply)/.test(xPrecedence)) {
     return `x-precedence:${xPrecedence}`;
   }
 
-  // 4. X-Auto-Response-Suppress (Microsoft Exchange)
   const xAutoSuppress = (h["x-auto-response-suppress"] || "").toLowerCase();
   if (xAutoSuppress && /\b(all|autoreply|oof|dr)\b/.test(xAutoSuppress)) {
     return `x-auto-response-suppress:${xAutoSuppress.slice(0, 40)}`;
   }
 
-  // 4.1 X-Autorespond (used by Exim auto-replies)
-  if (h["x-autorespond"]) {
-    return "x-autorespond";
-  }
+  if (h["x-autorespond"]) return "x-autorespond";
+  if (h["x-autoreply"]) return "x-autoreply";
 
-  // 4.2 X-Autoreply (cPanel + various)
-  if (h["x-autoreply"]) {
-    return "x-autoreply";
-  }
-
-  // 5. Self-forward (FW/Fwd cu mailto:sesizari@civia.ro în body)
   const body = (parsed.text || parsed.html || "").toLowerCase();
   const isForward = /^(fw|fwd|re:\s*fw|re:\s*fwd):/i.test(parsed.subject || "");
   const containsCiviaMailto = /mailto:sesizari@civia\.ro|sesizari@civia\.ro/i.test(body);
-  if (isForward && containsCiviaMailto) {
-    return "self-forward";
-  }
+  if (isForward && containsCiviaMailto) return "self-forward";
 
-  // 6. Loop counter
   const loopCount = parseInt(h["x-civia-loop-count"] || "0", 10);
-  if (loopCount >= 3) {
-    return `loop-count:${loopCount}`;
-  }
+  if (loopCount >= 3) return `loop-count:${loopCount}`;
 
-  // 7. Sender domain == civia.ro (echo back from our own mail)
   if (/@civia\.ro\b/i.test(fromAddr) || /civia\.ro/.test(h["sender"] || "")) {
     return "echo-from-civia";
   }
 
-  // 8. List-Id (newsletter-like — never auto-process)
-  if (h["list-id"] || h["list-unsubscribe"]) {
-    return "list-message";
-  }
+  if (h["list-id"] || h["list-unsubscribe"]) return "list-message";
 
-  return null; // pass
+  return null;
 }
 
 // ─── MIME parsing (minimal but robust) ────────────────────────────
+//
+// 2026-05-27 v4 — Atașamentele acum păstrează BYTES decoded (pentru R2 upload),
+// nu doar metadata. parsed.attachments[].bytes = Uint8Array.
 
 function parseEmail(raw) {
   const headers = {};
@@ -324,7 +390,6 @@ function parseEmail(raw) {
   let bodyStart = 0;
   let lastKey = null;
 
-  // Read headers until blank line
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line === "") { bodyStart = i + 1; break; }
@@ -361,19 +426,22 @@ function parseEmail(raw) {
       const pct = ph["content-type"] || "";
       const disp = ph["content-disposition"] || "";
       const cte = (ph["content-transfer-encoding"] || "").toLowerCase();
-      const decoded = decodeBody(part.body, cte);
 
       if (/attachment|inline/i.test(disp) && /filename/i.test(disp)) {
         const fn = disp.match(/filename="?([^";]+)"?/i);
+        // 2026-05-27 v4 — decodeBinary returnează Uint8Array pentru upload R2
+        // (decodeBody veche returna string care strica binary).
+        const bytes = decodeBinary(part.body, cte);
         attachments.push({
-          filename: fn ? fn[1] : "unknown",
+          filename: fn ? decodeMime(fn[1]) : "unknown",
           content_type: pct.split(";")[0].trim(),
-          size: decoded.length,
+          size: bytes.length,
+          bytes, // NEW: bytes decoded pentru upload R2
         });
       } else if (/text\/html/i.test(pct)) {
-        html = decoded;
+        html = decodeBody(part.body, cte);
       } else if (/text\/plain/i.test(pct)) {
-        text = decoded;
+        text = decodeBody(part.body, cte);
       } else if (/multipart\//i.test(pct)) {
         const nb = pct.match(/boundary="?([^";]+)"?/i);
         if (nb) {
@@ -381,10 +449,24 @@ function parseEmail(raw) {
           for (const np of nps) {
             const nph = parseHeaders(np.headers);
             const nct = nph["content-type"] || "";
+            const ndisp = nph["content-disposition"] || "";
             const ncte = (nph["content-transfer-encoding"] || "").toLowerCase();
-            const nd = decodeBody(np.body, ncte);
-            if (/text\/html/i.test(nct) && !html) html = nd;
-            else if (/text\/plain/i.test(nct) && !text) text = nd;
+
+            // Nested attachment (rare but happens with .eml forwards)
+            if (/attachment|inline/i.test(ndisp) && /filename/i.test(ndisp)) {
+              const nfn = ndisp.match(/filename="?([^";]+)"?/i);
+              const nbytes = decodeBinary(np.body, ncte);
+              attachments.push({
+                filename: nfn ? decodeMime(nfn[1]) : "unknown",
+                content_type: nct.split(";")[0].trim(),
+                size: nbytes.length,
+                bytes: nbytes,
+              });
+            } else if (/text\/html/i.test(nct) && !html) {
+              html = decodeBody(np.body, ncte);
+            } else if (/text\/plain/i.test(nct) && !text) {
+              text = decodeBody(np.body, ncte);
+            }
           }
         }
       }
@@ -442,6 +524,31 @@ function decodeBody(body, encoding) {
   }
   if (encoding === "quoted-printable") return decodeQP(body);
   return body;
+}
+
+/**
+ * v4 — decodează body BINARY (pentru atașamente) ca Uint8Array.
+ * decodeBody veche returna string care strica bytes peste 0x7F (UTF-8 mojibake).
+ */
+function decodeBinary(body, encoding) {
+  if (encoding === "base64") {
+    try {
+      const binary = atob(body.replace(/\s/g, ""));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    } catch {
+      return new TextEncoder().encode(body);
+    }
+  }
+  if (encoding === "quoted-printable") {
+    const decoded = decodeQP(body);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) bytes[i] = decoded.charCodeAt(i) & 0xff;
+    return bytes;
+  }
+  // 7bit / 8bit / binary
+  return new TextEncoder().encode(body);
 }
 
 function decodeQP(str) {
