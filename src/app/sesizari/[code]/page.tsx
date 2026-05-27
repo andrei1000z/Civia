@@ -612,6 +612,19 @@ export default async function SesizareDetailPage({
                             Acum
                           </span>
                         )}
+                        {/* 2026-05-27 — Collapse counter: când autoritatea a
+                            trimis mai multe confirmări identice <24h, arătăm
+                            un singur eveniment cu badge „×N" (caz Cluj-Napoca
+                            5 confirmări pentru 00049 cu același nr 563). */}
+                        {(step as { _collapsed_count?: number })._collapsed_count &&
+                          (step as { _collapsed_count?: number })._collapsed_count! > 1 && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-[var(--radius-full)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
+                            title={`Autoritatea a trimis ${(step as { _collapsed_count?: number })._collapsed_count} confirmări în 24h`}
+                          >
+                            ×{(step as { _collapsed_count?: number })._collapsed_count}
+                          </span>
+                        )}
                       </div>
                       {showDescription && step.description && (
                         <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">

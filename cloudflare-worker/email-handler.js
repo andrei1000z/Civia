@@ -1,18 +1,17 @@
 /**
- * Civia Inbox Email Worker — v2 SIMPLIFIED
- * =========================================
+ * Civia Inbox Email Worker — v3 HARDENED
+ * =======================================
  *
  * Runs on Cloudflare Email Routing. When an email arrives at
  * `sesizari@civia.ro` (with optional +CODE plus-addressing), this Worker:
  *
- *   1. Pings /api/inbox/heartbeat to prove we received the email (no-auth,
- *      always logs). This way even if main webhook fails, we KNOW the
- *      Worker is firing.
- *   2. Reads the raw email (standard Cloudflare API: new Response(message.raw))
- *   3. Extracts From, To, Subject, body from MIME using a minimal parser
- *   4. POSTs to /api/inbox/reply with Bearer auth + structured payload
- *   5. Forwards the email to FORWARD_TO (Gmail) as a fail-safe so user
- *      ALWAYS sees the email even if Civia processing breaks
+ *   1. Pings /api/inbox/heartbeat (no-auth, proof of receipt)
+ *   2. Reads raw email + parses minimal MIME
+ *   3. Applies pre-ingest filters (auto-reply, self-forward, mailer-daemon)
+ *   4. POSTs to /api/inbox/reply with Bearer auth (only if filters pass)
+ *   5. FORWARD la Gmail e CONDIȚIONAT — implicit STOP (user a cerut explicit
+ *      2026-05-27: „nu mai imi da FW la nimic"). Reactivează prin
+ *      `FORWARD_ENABLED=true` env var.
  *
  * Deploy:
  *   1. Cloudflare → Workers & Pages → civia-inbox-handler → Edit code
@@ -21,16 +20,19 @@
  *
  * Required env variables (Settings → Variables and Secrets):
  *   Secret:     INBOX_WEBHOOK_SECRET = <same as Vercel>
- *   Plain text: WEBHOOK_URL = https://www.civia.ro/api/inbox/reply
- *   Plain text: HEARTBEAT_URL = https://www.civia.ro/api/inbox/heartbeat
- *   Plain text: FORWARD_TO = musateduardandrei10@gmail.com
+ *   Plain text: WEBHOOK_URL          = https://www.civia.ro/api/inbox/reply
+ *   Plain text: HEARTBEAT_URL        = https://www.civia.ro/api/inbox/heartbeat
+ *
+ * Optional env variables:
+ *   FORWARD_TO       = adresa Gmail (sau gol pentru a opri forward complet)
+ *   FORWARD_ENABLED  = "true" pentru a activa forward (default = OFF post 2026-05-27)
  *
  * ⚠️ IMPORTANT: WEBHOOK_URL and HEARTBEAT_URL MUST use `www.civia.ro`
  * (NOT `civia.ro` without www). civia.ro redirects to www.civia.ro with
  * 307 and the redirect drops the Authorization header.
  */
 
-const WORKER_VERSION = "2.0.0";
+const WORKER_VERSION = "3.0.0";
 
 export default {
   /**
@@ -41,15 +43,12 @@ export default {
 
     // ─── 0. Validate env config (loud failure if missing) ────────
     if (!env.WEBHOOK_URL || !env.INBOX_WEBHOOK_SECRET) {
-      // Forward to Gmail so user sees the email, but log warning to console.
       console.error("Missing env: WEBHOOK_URL or INBOX_WEBHOOK_SECRET");
-      if (env.FORWARD_TO) {
-        try { await message.forward(env.FORWARD_TO); } catch {}
-      }
+      // 2026-05-27 — NU forward la Gmail nici aici (per user request).
       return;
     }
 
-    // ─── 1. Heartbeat ping (no-auth, can never fail meaningfully) ──
+    // ─── 1. Heartbeat ping (no-auth) ──────────────────────────────
     const heartbeatBody = {
       worker_version: WORKER_VERSION,
       from: message.from || "unknown",
@@ -62,9 +61,6 @@ export default {
           method: "POST",
           headers: { "Content-Type": "application/json", "User-Agent": `civia-inbox-worker/${WORKER_VERSION}` },
           body: JSON.stringify(heartbeatBody),
-          // Critical: don't follow redirects manually — let fetch do it.
-          // BUT if redirect strips auth, the heartbeat is no-auth anyway
-          // so we don't care for this call.
           redirect: "follow",
         });
       } catch (e) {
@@ -78,15 +74,45 @@ export default {
       rawEmail = await new Response(message.raw).text();
     } catch (e) {
       console.error("Reading raw email failed:", e?.message ?? e);
-      // Forward anyway so user sees it.
-      if (env.FORWARD_TO) {
-        try { await message.forward(env.FORWARD_TO); } catch {}
-      }
       return;
     }
 
     // ─── 3. Parse minimal MIME ───────────────────────────────────
     const parsed = parseEmail(rawEmail);
+
+    // ─── 3.1. PRE-INGEST FILTERS (v3 hardening) ──────────────────
+    // Detect emails care nu trebuie să ajungă în /api/inbox/reply:
+    //   - Auto-replies (out-of-office, vacation, confirmare automată)
+    //   - Self-forwards (FW: către noi ale propriilor noastre emailuri)
+    //   - Mailer daemons (bounce-uri trimite în alt pipeline)
+    //   - Loop counter > 3 (anti-bombă infinită)
+    const filterReason = preIngestFilter(parsed, message.from || "");
+    if (filterReason) {
+      // Loghez decizia ca să avem audit, dar NU procesez mai departe.
+      if (env.HEARTBEAT_URL) {
+        try {
+          await fetch(env.HEARTBEAT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "User-Agent": `civia-inbox-worker/${WORKER_VERSION}` },
+            body: JSON.stringify({
+              phase: "filter-drop",
+              reason: filterReason,
+              from: message.from || "unknown",
+              subject: (parsed.subject || "").slice(0, 200),
+              worker_version: WORKER_VERSION,
+            }),
+          });
+        } catch { /* ignore */ }
+      }
+      // Reject explicit ca să-i spunem upstream că nu acceptăm (decât forward
+      // silent care lasă mailul să dispară). Cloudflare acceptă reject().
+      try {
+        message.setReject(`Filtered by Civia (${filterReason})`);
+      } catch {
+        /* unele runtime-uri Cloudflare nu permit reject; skip */
+      }
+      return;
+    }
 
     const payload = {
       from: message.from || parsed.from || "",
@@ -96,6 +122,12 @@ export default {
       body_html: parsed.html || "",
       headers: parsed.headers,
       attachments: parsed.attachments,
+      // 2026-05-27 — pasăm explicit Message-ID + In-Reply-To + References
+      // pentru dedup la nivel Postgres + threading prin chain RFC 5322 §3.6.4
+      message_id: parsed.headers["message-id"] || null,
+      in_reply_to: parsed.headers["in-reply-to"] || null,
+      references: parsed.headers["references"] || null,
+      auth_results: parsed.headers["authentication-results"] || null,
     };
 
     // ─── 4. POST to webhook with Bearer auth ─────────────────────
@@ -110,7 +142,7 @@ export default {
           "User-Agent": `civia-inbox-worker/${WORKER_VERSION}`,
         },
         body: JSON.stringify(payload),
-        redirect: "follow", // ⚠️ may drop Authorization if redirected cross-host!
+        redirect: "follow",
       });
       webhookStatus = res.status;
       try { webhookBody = (await res.text()).slice(0, 500); } catch {}
@@ -120,7 +152,7 @@ export default {
       webhookBody = `FETCH_ERROR: ${e?.message ?? e}`;
     }
 
-    // ─── 5. Log result via heartbeat (so we have visibility) ─────
+    // ─── 5. Log result via heartbeat (visibility) ─────────────────
     if (env.HEARTBEAT_URL) {
       try {
         await fetch(env.HEARTBEAT_URL, {
@@ -138,9 +170,15 @@ export default {
       } catch {}
     }
 
-    // ─── 6. ALWAYS forward to Gmail as fail-safe ─────────────────
-    if (env.FORWARD_TO) {
-      try { await message.forward(env.FORWARD_TO); } catch (e) {
+    // ─── 6. Forward to Gmail — DEZACTIVAT IMPLICIT (2026-05-27) ──
+    // User a cerut explicit: „nu mai imi da FW la nimic nimic lasa ma in
+    // pace uita de emailul meu". Forward-ul rămâne CODEAT dar gated pe
+    // env var explicit `FORWARD_ENABLED=true`. Pentru re-activare ulterioară
+    // (e.g. admin debugging), seteaza env var în Cloudflare dashboard.
+    if (env.FORWARD_ENABLED === "true" && env.FORWARD_TO) {
+      try {
+        await message.forward(env.FORWARD_TO);
+      } catch (e) {
         console.error("Forward failed:", e?.message ?? e);
       }
     }
@@ -156,7 +194,8 @@ export default {
         version: WORKER_VERSION,
         webhook_url: env.WEBHOOK_URL ?? "MISSING",
         heartbeat_url: env.HEARTBEAT_URL ?? "MISSING",
-        forward_to: env.FORWARD_TO ?? "MISSING",
+        forward_to: env.FORWARD_TO ?? "(unset)",
+        forward_enabled: env.FORWARD_ENABLED === "true",
         has_secret: !!env.INBOX_WEBHOOK_SECRET,
       }, null, 2), {
         headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -168,6 +207,93 @@ export default {
     });
   },
 };
+
+// ─── PRE-INGEST FILTER (v3) ───────────────────────────────────────
+
+/**
+ * Returnează un string cu motivul de filter, sau null dacă mail-ul trece.
+ * Filtrele aplicate (în ordine, ieșire la primul match):
+ *   1. mailer-daemon / postmaster / noreply senders
+ *   2. RFC 3834 Auto-Submitted ≠ no
+ *   3. Precedence: bulk|list|junk
+ *   4. X-Auto-Response-Suppress (Exchange)
+ *   5. Self-forward (body conține mailto:sesizari@civia.ro și subject FW/Fwd)
+ *   6. Loop counter X-Civia-Loop-Count >= 3 (anti-bombă)
+ *   7. Sender contains civia.ro (echo back)
+ */
+function preIngestFilter(parsed, msgFrom) {
+  const h = parsed.headers || {};
+  const fromAddr = String(msgFrom || h.from || "").toLowerCase();
+
+  // 1. Mailer-daemon / bounce
+  if (
+    /mailer-daemon|postmaster|^noreply@|^no-reply@|bounce[s]?@/i.test(fromAddr) ||
+    /<>/.test(h["return-path"] || "")
+  ) {
+    return "mailer-daemon";
+  }
+
+  // 2. RFC 3834 — Auto-Submitted header
+  const autoSubmitted = (h["auto-submitted"] || "").toLowerCase().trim();
+  if (autoSubmitted && autoSubmitted !== "no") {
+    return `auto-submitted:${autoSubmitted}`;
+  }
+
+  // 3. Precedence: bulk/list/junk
+  const precedence = (h["precedence"] || "").toLowerCase().trim();
+  if (/(bulk|list|junk|auto_reply)/.test(precedence)) {
+    return `precedence:${precedence}`;
+  }
+
+  // 3.1 X-Precedence (variant Exchange/legacy)
+  const xPrecedence = (h["x-precedence"] || "").toLowerCase().trim();
+  if (/(bulk|list|junk|auto_reply)/.test(xPrecedence)) {
+    return `x-precedence:${xPrecedence}`;
+  }
+
+  // 4. X-Auto-Response-Suppress (Microsoft Exchange)
+  const xAutoSuppress = (h["x-auto-response-suppress"] || "").toLowerCase();
+  if (xAutoSuppress && /\b(all|autoreply|oof|dr)\b/.test(xAutoSuppress)) {
+    return `x-auto-response-suppress:${xAutoSuppress.slice(0, 40)}`;
+  }
+
+  // 4.1 X-Autorespond (used by Exim auto-replies)
+  if (h["x-autorespond"]) {
+    return "x-autorespond";
+  }
+
+  // 4.2 X-Autoreply (cPanel + various)
+  if (h["x-autoreply"]) {
+    return "x-autoreply";
+  }
+
+  // 5. Self-forward (FW/Fwd cu mailto:sesizari@civia.ro în body)
+  const subject = (parsed.subject || "").toLowerCase();
+  const body = (parsed.text || parsed.html || "").toLowerCase();
+  const isForward = /^(fw|fwd|re:\s*fw|re:\s*fwd):/i.test(parsed.subject || "");
+  const containsCiviaMailto = /mailto:sesizari@civia\.ro|sesizari@civia\.ro/i.test(body);
+  if (isForward && containsCiviaMailto) {
+    return "self-forward";
+  }
+
+  // 6. Loop counter
+  const loopCount = parseInt(h["x-civia-loop-count"] || "0", 10);
+  if (loopCount >= 3) {
+    return `loop-count:${loopCount}`;
+  }
+
+  // 7. Sender domain == civia.ro (echo back from our own mail)
+  if (/@civia\.ro\b/i.test(fromAddr) || /civia\.ro/.test(h["sender"] || "")) {
+    return "echo-from-civia";
+  }
+
+  // 8. List-Id (newsletter-like — never auto-process)
+  if (h["list-id"] || h["list-unsubscribe"]) {
+    return "list-message";
+  }
+
+  return null; // pass
+}
 
 // ─── MIME parsing (minimal but robust) ────────────────────────────
 

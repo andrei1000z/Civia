@@ -87,27 +87,56 @@ export function isTerminalEvent(eventType: string): boolean {
  * scrise de resolve-route + admin-status în succesiune apropiată). Păstrăm
  * rândul cu descriere reală — dacă ambele au, păstrăm ultimul (most recent).
  *
+ * 2026-05-27 — Bonus: same-type events în fereastră <24h sunt colapsate
+ * într-un singur rând (cazul Cluj-Napoca pe sesizarea 00049 — 5 confirmări
+ * „inregistrata" în 42 min de la operatori diferiți). Atașăm `_collapsed_count`
+ * și `_collapsed_window_h` pentru UI ca să afișeze „autoritatea a trimis N
+ * confirmări" în loc de N evenimente identice.
+ *
  * Asumă input sortat crescător după `created_at` (cum returnează
  * `getTimeline` din repository.ts). Output păstrează aceeași ordine.
  */
 export function dedupeConsecutiveEvents<
-  T extends { event_type: string; description: string | null },
->(rows: T[]): T[] {
+  T extends { event_type: string; description: string | null; created_at?: string },
+>(rows: T[]): (T & { _collapsed_count?: number; _collapsed_window_h?: number })[] {
   if (rows.length <= 1) return rows;
-  const out: T[] = [];
+  const COLLAPSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+  // Tipuri pentru care colapsăm într-o fereastră lungă (nu doar back-to-back).
+  // „inregistrata" e cel mai important — autoritățile RO trimit 2-5 confirmări
+  // pentru același nr înregistrare (variante de formatare / operatori diferiți).
+  const WINDOWED_TYPES = new Set(["inregistrata", "trimis", "actiune-autoritate"]);
+
+  const out: (T & { _collapsed_count?: number; _collapsed_window_h?: number })[] = [];
   for (const row of rows) {
     const prev = out[out.length - 1];
     if (prev && prev.event_type === row.event_type) {
-      // Same event_type back-to-back → preferăm rândul cu descriere reală.
       const prevHasReal = !isRedundantEventDescription(prev.event_type, prev.description);
       const currHasReal = !isRedundantEventDescription(row.event_type, row.description);
-      if (currHasReal && !prevHasReal) {
-        out[out.length - 1] = row; // upgrade prev → curr (better description)
-      } else if (currHasReal && prevHasReal) {
-        out[out.length - 1] = row; // both real → keep most recent
+
+      // Verifică fereastra de timp (dacă tipul suportă collapse-windowed)
+      let withinWindow = true;
+      if (WINDOWED_TYPES.has(row.event_type) && prev.created_at && row.created_at) {
+        const dt = new Date(row.created_at).getTime() - new Date(prev.created_at).getTime();
+        withinWindow = Math.abs(dt) <= COLLAPSE_WINDOW_MS;
       }
-      // altfel: drop curr (e duplicat fără content extra)
-      continue;
+
+      if (withinWindow) {
+        // Incrementăm collapsed counter
+        const prevCount = prev._collapsed_count ?? 1;
+        const merged = {
+          ...row,
+          _collapsed_count: prevCount + 1,
+          _collapsed_window_h: 24,
+        };
+        if (currHasReal || !prevHasReal) {
+          // Upgrade la rândul mai bun (cu descriere reală) sau cel mai recent
+          out[out.length - 1] = merged;
+        } else {
+          // Păstrăm prev dar bump counter
+          out[out.length - 1] = { ...prev, _collapsed_count: prevCount + 1, _collapsed_window_h: 24 };
+        }
+        continue;
+      }
     }
     out.push(row);
   }

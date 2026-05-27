@@ -85,11 +85,59 @@ const payloadSchema = z.object({
     )
     .optional()
     .default([]),
+  // 2026-05-27 v3 — worker now sends Message-ID + threading headers explicit
+  message_id: z.string().max(1000).optional().nullable(),
+  in_reply_to: z.string().max(1000).optional().nullable(),
+  references: z.string().max(5000).optional().nullable(),
+  auth_results: z.string().max(2000).optional().nullable(),
 });
 
 // Route version marker (helps confirm which build is deployed)
 // v2 = with authenticity scoring (5/21/2026)
-const ROUTE_VERSION = "inbox-reply-v2";
+// v3 = with dedup + threading + auto-reply guard (5/27/2026)
+const ROUTE_VERSION = "inbox-reply-v3";
+
+/** Normalize Message-ID — strip <>, lowercase domain part, RFC 5322 §3.6.4. */
+function normalizeMessageId(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim().replace(/^<|>$/g, "");
+  if (!trimmed) return null;
+  return trimmed.toLowerCase();
+}
+
+/** RFC 3834 auto-reply detection. Returnează motivul sau null. */
+function detectAutoReply(headers: Record<string, string>, from: string): string | null {
+  const h = (k: string) => (headers[k] || headers[k.toLowerCase()] || "").toLowerCase();
+  // Auto-Submitted ≠ no (RFC 3834)
+  const autoSubmitted = h("auto-submitted").trim();
+  if (autoSubmitted && autoSubmitted !== "no") return `auto-submitted:${autoSubmitted}`;
+  // Precedence: bulk|list|junk|auto_reply
+  if (/(bulk|list|junk|auto_reply)/.test(h("precedence"))) return `precedence:${h("precedence")}`;
+  if (/(bulk|list|junk|auto_reply)/.test(h("x-precedence"))) return `x-precedence:${h("x-precedence")}`;
+  // X-Auto-Response-Suppress (Exchange)
+  if (/\b(all|autoreply|oof|dr)\b/.test(h("x-auto-response-suppress"))) {
+    return "x-auto-response-suppress";
+  }
+  // X-Autorespond / X-Autoreply (Exim/cPanel)
+  if (headers["x-autorespond"] || headers["x-autoreply"]) return "x-autorespond";
+  // From: mailer-daemon | postmaster | noreply
+  if (/mailer-daemon|postmaster|^noreply@|^no-reply@|bounce[s]?@/i.test(from)) {
+    return "mailer-daemon";
+  }
+  // Return-Path: <> (bounce envelope)
+  if (/<>/.test(h("return-path"))) return "return-path-empty";
+  return null;
+}
+
+/** Self-forward detection — email is one of OUR sent emails forwarded back. */
+function detectSelfForward(subject: string, body: string, from: string): boolean {
+  const isFwd = /^(fw|fwd|re:\s*fw|re:\s*fwd):/i.test(subject);
+  const containsCiviaMailto = /mailto:sesizari@civia\.ro|sesizari@civia\.ro/i.test(body);
+  if (isFwd && containsCiviaMailto) return true;
+  // Echo from civia.ro domain
+  if (/@civia\.ro\b/i.test(from)) return true;
+  return false;
+}
 
 export async function POST(req: Request) {
   void ROUTE_VERSION;
@@ -143,6 +191,55 @@ export async function POST(req: Request) {
   }
   const { from, to, subject, body_text, body_html, headers, attachments } = parsed.data;
 
+  // 2026-05-27 v3 — Extract Message-ID din payload OR headers fallback
+  const messageId = normalizeMessageId(parsed.data.message_id || headers["message-id"]);
+  const inReplyTo = normalizeMessageId(parsed.data.in_reply_to || headers["in-reply-to"]);
+  const referencesChain = (parsed.data.references || headers["references"] || "").toLowerCase().trim() || null;
+
+  // ─── 2.5 PRE-INGEST GUARDS (v3 hardening) ──────────────────────
+  // Worker-ul deja filtrează, dar avem aici defense-in-depth în caz că
+  // worker-ul nu se updateaza (backward compat) sau cineva apelează direct.
+
+  // A. Auto-reply guard (RFC 3834)
+  const autoReplyReason = detectAutoReply(headers, from);
+  if (autoReplyReason) {
+    try {
+      await admin.from("inbox_filter_log").insert({
+        from_email: from.toLowerCase().slice(0, 200),
+        subject: subject?.slice(0, 500) ?? null,
+        filter_reason: `auto-reply:${autoReplyReason}`,
+        worker_version: req.headers.get("user-agent") ?? null,
+      });
+    } catch { /* best-effort */ }
+    return NextResponse.json({ ok: true, note: "auto-reply-filtered", reason: autoReplyReason });
+  }
+
+  // B. Self-forward guard
+  const cleanBodyForFilter = body_text || body_html || "";
+  if (detectSelfForward(subject || "", cleanBodyForFilter, from)) {
+    try {
+      await admin.from("inbox_filter_log").insert({
+        from_email: from.toLowerCase().slice(0, 200),
+        subject: subject?.slice(0, 500) ?? null,
+        filter_reason: "self-forward",
+        worker_version: req.headers.get("user-agent") ?? null,
+      });
+    } catch { /* best-effort */ }
+    return NextResponse.json({ ok: true, note: "self-forward-filtered" });
+  }
+
+  // C. Dedup pe Message-ID (RFC 5322 §3.6.4)
+  if (messageId) {
+    const { data: existing } = await admin
+      .from("sesizare_replies")
+      .select("id")
+      .eq("message_id", messageId)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json({ ok: true, note: "duplicate-message-id", existing_id: existing.id });
+    }
+  }
+
   // Success path — log at the end (after processing) with status 200.
 
   // ─── 3. Extract code ────────────────────────────────────────────
@@ -163,7 +260,7 @@ export async function POST(req: Request) {
   let sesizareId: string | null = null;
   let sesizareUserId: string | null = null;
   let sesizareTitlu: string | null = null;
-  let matchMethod: "code" | "sender_recent" | null = null;
+  let matchMethod: "code" | "threading" | "sender_recent" | null = null;
 
   if (extraction.code) {
     const { data: ses } = await admin
@@ -179,7 +276,31 @@ export async function POST(req: Request) {
     }
   }
 
-  // 2026-05-25 — Fallback: match by sender_email → recent sesizari trimise.
+  // 2026-05-27 v3 — Fallback 1: threading prin In-Reply-To/References (RFC 5322 §3.6.4).
+  // Dacă subject nu conține codul dar email-ul are In-Reply-To care
+  // pointează la un Message-ID generat de Civia la trimitere, putem
+  // recupera sesizarea. Worker-ul nostru pune Message-ID la trimitere ca
+  // <sesizare-CCCCC-uuid@civia.ro> deci poate extrage codul din chain.
+  if (!sesizareId && (inReplyTo || referencesChain)) {
+    const chain = `${inReplyTo ?? ""} ${referencesChain ?? ""}`;
+    // Caut pattern: <sesizare-CCCCC-...@civia.ro> sau similar
+    const m = chain.match(/sesizare[-_](\d{5})[-_@]/i);
+    if (m && m[1]) {
+      const { data: ses } = await admin
+        .from("sesizari")
+        .select("id, user_id, titlu")
+        .eq("code", m[1])
+        .maybeSingle();
+      if (ses) {
+        sesizareId = ses.id as string;
+        sesizareUserId = (ses.user_id as string | null) ?? null;
+        sesizareTitlu = (ses.titlu as string | null) ?? null;
+        matchMethod = "threading";
+      }
+    }
+  }
+
+  // 2026-05-25 — Fallback 2: match by sender_email → recent sesizari trimise.
   // Cazuri reale (raport 25.05): „contact@politia6.ro" + „registratura@primarias1.ro"
   // au răspuns dar subject NU conține cod și nici In-Reply-To header.
   // Strategy: caut sesizari trimise în ultimele 14 zile care au senderEmail
@@ -249,6 +370,10 @@ export async function POST(req: Request) {
       body_html: body_html || null,
       raw_headers: headers,
       attachments: attachments.length > 0 ? attachments : null,
+      // 2026-05-27 v3 — RFC 5322 §3.6.4 headers extras pentru dedup + threading
+      message_id: messageId,
+      in_reply_to: inReplyTo,
+      references_chain: referencesChain,
       ai_status: classification.status,
       ai_confidence: classification.confidence,
       ai_summary: classification.summary,
