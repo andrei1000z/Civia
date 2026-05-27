@@ -13,8 +13,13 @@
  * ENV vars necesare:
  *   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME
  *
- * R2 endpoint format: https://{account_id}.eu.r2.cloudflarestorage.com
- * (jurisdicție EU — date stocate în UE, GDPR-safe)
+ * R2 endpoint format (jurisdicție-aware):
+ *   - Default (multi-region, US-anchored): https://{account_id}.r2.cloudflarestorage.com
+ *   - EU jurisdiction: https://{account_id}.eu.r2.cloudflarestorage.com
+ *
+ * Civia bucket civia-inbox-attachments e în jurisdicția DEFAULT (verified
+ * 2026-05-27 prin S3 ListObjects call). Pentru a forța EU, set
+ * R2_JURISDICTION=eu (necesită bucket creat cu „Location: EU").
  */
 
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -32,9 +37,11 @@ function getR2Client(): S3Client | null {
     // breakuim moduli care nu folosesc R2 (ex: tests).
     return null;
   }
+  // R2_JURISDICTION = "eu" pentru bucket-uri EU; orice altceva = default.
+  const jurisdiction = process.env.R2_JURISDICTION === "eu" ? ".eu" : "";
   _client = new S3Client({
     region: "auto",
-    endpoint: `https://${accountId}.eu.r2.cloudflarestorage.com`,
+    endpoint: `https://${accountId}${jurisdiction}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
   });
   return _client;
