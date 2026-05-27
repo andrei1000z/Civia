@@ -103,7 +103,9 @@ export async function GET(
     code: sez.code,
   });
 
-  const subject = `Co-semnătură — Sesizare ${sez.code} — ${sez.titlu}`;
+  // 2026-05-27 — fără prefix „Co-semnătură" (user request): emailul să arate
+  // ca o sesizare regulată către primărie. Match cu subject din cosign-send.
+  const subject = `Sesizare ${sez.code} — ${sez.titlu}`;
   const recipientsLine = [...recipients.primary, ...recipients.cc]
     .map((r) => `${r.name} <${r.email}>`)
     .join(", ");

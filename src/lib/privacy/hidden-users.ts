@@ -51,20 +51,34 @@ export async function setHideName(
     }
     return;
   }
-  if (hide) {
-    await redis.sadd(KEY, userId);
-    if (normalizedEmail) await redis.sadd(EMAIL_KEY, normalizedEmail);
-  } else {
-    await redis.srem(KEY, userId);
-    if (normalizedEmail) await redis.srem(EMAIL_KEY, normalizedEmail);
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // sau API outage NU trebuie să rupă PUT /api/profile (user nu poate
+  // salva nimic). Hide-name toggle e best-effort; user poate retoggle.
+  try {
+    if (hide) {
+      await redis.sadd(KEY, userId);
+      if (normalizedEmail) await redis.sadd(EMAIL_KEY, normalizedEmail);
+    } else {
+      await redis.srem(KEY, userId);
+      if (normalizedEmail) await redis.srem(EMAIL_KEY, normalizedEmail);
+    }
+  } catch {
+    /* silent — celelalte profile updates trec OK */
   }
 }
 
 export async function getHideName(userId: string): Promise<boolean> {
   if (!userId) return false;
   if (!redis) return memoryFallback.has(userId);
-  const res = await redis.sismember(KEY, userId);
-  return Number(res) === 1;
+  // 2026-05-27 — defensive try/catch (vezi getHiddenUserIds rationale).
+  // /cont încarcă /api/profile la mount; dacă Redis 500-uiește, /cont rămâne
+  // pe skeleton forever. Fail-open: assume nu e hidden.
+  try {
+    const res = await redis.sismember(KEY, userId);
+    return Number(res) === 1;
+  } catch {
+    return false;
+  }
 }
 
 /**

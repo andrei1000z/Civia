@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Mail, Copy } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import {
-  buildMailtoLink,
-  buildGmailLink,
-  buildGmailAndroidIntent,
-  buildGmailIosLink,
   type MailtoInput,
 } from "@/lib/sesizari/mailto";
 import { playSound } from "@/lib/liquid-civic/sound";
 import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
 
 /**
@@ -38,29 +35,7 @@ export function SuccessScreen({
   isFirstSesizare?: boolean;
 }) {
   const router = useRouter();
-  type Platform = "ios" | "android" | "desktop";
-  const [platform] = useState<Platform>(() => {
-    if (typeof navigator === "undefined") return "desktop";
-    const ua = navigator.userAgent || "";
-    if (/iPad|iPhone|iPod/.test(ua)) return "ios";
-    if (/Android/.test(ua)) return "android";
-    return "desktop";
-  });
-  const [autoOpened, setAutoOpened] = useState(false);
-
-  const isMobile = platform === "ios" || platform === "android";
-
-  const mailtoUrl = buildMailtoLink(emailInput);
-  const emailAddr = emailInput.author_email?.toLowerCase() ?? "";
-  const isGmailAddr =
-    emailAddr.endsWith("@gmail.com") || emailAddr.endsWith("@googlemail.com");
-  const gmailWebUrl = isGmailAddr ? buildGmailLink(emailInput) : null;
-  const gmailAppUrl =
-    platform === "android"
-      ? buildGmailAndroidIntent(emailInput)
-      : platform === "ios"
-        ? buildGmailIosLink(emailInput)
-        : null;
+  const { user } = useAuth();
 
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -68,24 +43,46 @@ export function SuccessScreen({
     playSound("success");
   }, []);
 
-  // BUG 2026-05-24: anteriorul auto-open mailto făcea ca user-ul să creadă că
-  // mailto E FLOW-UL PRIMAR. 45/48 sesizări rămâneau cu sent_via_civia=false
-  // pentru că mailto se deschidea fără să apese cineva pe Civia 1-click.
-  // Acum: NU mai auto-deschidem nimic — user-ul vede butonul mare verde
-  // „Trimite oficial cu Civia" ca prima opțiune. Mailto e fallback opțional.
-  // (autoOpened state păstrat pentru afișarea „Re-deschide emailul" la mailto.)
+  // 2026-05-27 — User a cerut: la submit, automat să trimit prin Civia
+  // fără să mai apese „Trimite acum" pe success screen. Auto-trigger
+  // pe mount pentru utilizatori logați (cu nume+adresă în sesizare).
+  // Pentru anonimi, SendViaCiviaButton arată CTA login (NU auto-trigger).
+  const [autoSendStatus, setAutoSendStatus] = useState<"idle" | "sending" | "sent" | "error" | "needs-identity">(
+    user ? "sending" : "idle",
+  );
 
-  const [codeCopied, setCodeCopied] = useState(false);
-  const copyCode = () => {
-    if (typeof navigator === "undefined" || !navigator.clipboard) return;
-    navigator.clipboard
-      .writeText(code)
-      .then(() => {
-        setCodeCopied(true);
-        setTimeout(() => setCodeCopied(false), 2000);
-      })
-      .catch(() => { /* silent */ });
-  };
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/sesizari/${code}/send-via-civia`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        if (cancelled) return;
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setAutoSendStatus("sent");
+          playSound("success");
+        } else if (res.status === 409 && json.already) {
+          setAutoSendStatus("sent");
+        } else if (res.status === 400 && json.needs_identity) {
+          setAutoSendStatus("needs-identity");
+        } else {
+          setAutoSendStatus("error");
+        }
+      } catch {
+        if (!cancelled) setAutoSendStatus("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, code]);
+  void emailInput; // keep param for backward compat
 
   return (
     <div ref={cardRef} className="max-w-md mx-auto py-8 text-center scroll-mt-4">
@@ -98,116 +95,45 @@ export function SuccessScreen({
         Sesizare înregistrată cu succes. Cod: {code.split("").join(" ")}
       </div>
 
-      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-        <CheckCircle2 size={32} className="text-emerald-600 dark:text-emerald-400" />
-      </div>
-      <h3 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-2">
-        Sesizare înregistrată!
-      </h3>
-      <p className="text-[var(--color-text-muted)] mb-5 text-sm">
-        🚀 <strong>Următorul pas: trimite-o oficial primăriei.</strong>
-        <br />
-        Apasă butonul verde — Civia o trimite din partea ta.
-      </p>
-
-      <SendViaCiviaButton code={code} className="mb-6" />
-
-      <details className="mb-3 text-left">
-        <summary className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] px-3 py-2 rounded-[var(--radius-xs)] hover:bg-[var(--color-surface-2)] transition-colors list-none [&::-webkit-details-marker]:hidden">
-          <span aria-hidden="true">⚙️</span>
-          Vrei să trimiți tu personal din emailul tău? (avansat)
-        </summary>
-        <div className="mt-3 px-1">
-
-      {platform === "android" && (
-        <a
-          href={gmailAppUrl!}
-          className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 mb-3 rounded-[var(--radius-md)] bg-[var(--color-primary)] text-white text-base font-bold hover:bg-[var(--color-primary-hover)] active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-        >
-          <Mail size={20} aria-hidden="true" />
-          Deschide în aplicația Gmail
-        </a>
-      )}
-
-      {platform === "ios" && (
-        <>
-          <a
-            href={gmailAppUrl!}
-            className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 mb-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] text-white text-base font-bold hover:bg-[var(--color-primary-hover)] active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-          >
-            <Mail size={20} aria-hidden="true" />
-            Deschide în Gmail
-          </a>
-          <a
-            href={mailtoUrl}
-            className="inline-flex w-full items-center justify-center gap-2 h-12 px-4 mb-3 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          >
-            Sau deschide în Mail (iOS)
-          </a>
-        </>
-      )}
-
-      {platform === "desktop" && (
-        <>
-          <a
-            href={mailtoUrl}
-            className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 mb-3 rounded-[var(--radius-md)] bg-[var(--color-primary)] text-white text-base font-bold hover:bg-[var(--color-primary-hover)] active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-          >
-            <Mail size={20} aria-hidden="true" />
-            {autoOpened ? "Re-deschide emailul" : "Deschide emailul"}
-          </a>
-          {gmailWebUrl && (
-            <a
-              href={gmailWebUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 h-11 px-4 mb-3 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] hover:border-[var(--color-primary)]/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            >
-              Sau deschide în Gmail web →
-            </a>
-          )}
-        </>
-      )}
-
-      <p className="text-[11px] text-[var(--color-text-muted)] mb-6 leading-relaxed">
-        {platform === "android"
-          ? `Se deschide aplicația Gmail cu textul completat. Tu apeși Trimite. Dacă nu ai Gmail instalat, te trimite la aplicația ta default de email.`
-          : platform === "ios"
-            ? `Apasă Gmail dacă ai aplicația instalată. Altfel apasă Mail (iOS) și se deschide aplicația ta de email default.`
-            : `Sau apasă butonul de sus ca să deschizi emailul în aplicația ta.`}
-      </p>
-        </div>
-      </details>
-
-      <p className="text-[var(--color-text-muted)] mb-1 text-xs">Cod unic — salvează-l pentru urmărire:</p>
-
-      <button
-        type="button"
-        onClick={copyCode}
-        className="group inline-flex items-center gap-2 mb-1 px-4 py-2 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] hover:bg-[var(--color-primary)]/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-        aria-label={`Copiază codul ${code}`}
-      >
-        <span className="font-mono font-bold text-2xl text-[var(--color-primary)] tracking-wide">
-          {code}
-        </span>
-        {codeCopied ? (
-          <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+      {/* 2026-05-27 — UI simplificat per cerere user.
+          Auto-send pe mount (pentru utilizatori logați). Anonimii văd
+          SendViaCiviaButton cu CTA „Login + trimite". Restul (cod unic,
+          mailto fallback, Gmail deep-links) scos. */}
+      <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+        {autoSendStatus === "sending" ? (
+          <Loader2 size={28} className="text-emerald-600 dark:text-emerald-400 animate-spin" />
         ) : (
-          <Copy
-            size={16}
-            className="text-[var(--color-primary)]/60 group-hover:text-[var(--color-primary)] transition-colors"
-            aria-hidden="true"
-          />
+          <CheckCircle2 size={28} className="text-emerald-600 dark:text-emerald-400" />
         )}
-      </button>
-      <p className="text-[10px] text-[var(--color-text-muted)] mb-6">
-        {codeCopied ? "Copiat în clipboard" : "Apasă să-l copiezi"}
+      </div>
+
+      <h3 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-1">
+        {autoSendStatus === "sending"
+          ? "Trimitem la primărie..."
+          : autoSendStatus === "sent"
+          ? "Trimisă cu succes!"
+          : "Sesizare înregistrată"}
+      </h3>
+      <p className="text-[var(--color-text-muted)] mb-6 text-sm">
+        Cod sesizare: <strong className="font-mono text-[var(--color-text)]">{code}</strong>
       </p>
+
+      {/* Anonim → arată CTA login pentru a putea trimite. Auto-send rulează
+          DOAR pentru utilizatori logați (au nume + adresă în profile). */}
+      {!user && <SendViaCiviaButton code={code} className="mb-6" />}
+
+      {autoSendStatus === "error" && (
+        <SendViaCiviaButton code={code} className="mb-6" />
+      )}
+
+      {autoSendStatus === "needs-identity" && (
+        <SendViaCiviaButton code={code} className="mb-6" />
+      )}
 
       <div className="flex flex-col gap-3">
         <button
           onClick={() => router.push(`/sesizari/${code}`)}
-          className="h-11 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+          className="h-11 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
         >
           Vezi sesizarea ta →
         </button>
