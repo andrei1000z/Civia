@@ -71,13 +71,21 @@ export async function rateLimitAsync(
   { limit, windowMs }: { limit: number; windowMs: number }
 ): Promise<RateLimitResult> {
   if (hasUpstash) {
-    const rl = getUpstashLimiter(windowMs, limit);
-    const result = await rl.limit(key);
-    return {
-      success: result.success,
-      remaining: result.remaining,
-      resetIn: result.reset - Date.now(),
-    };
+    try {
+      const rl = getUpstashLimiter(windowMs, limit);
+      const result = await rl.limit(key);
+      return {
+        success: result.success,
+        remaining: result.remaining,
+        resetIn: result.reset - Date.now(),
+      };
+    } catch {
+      // 2026-05-27 — Upstash poate fi rate-limited (10k/day free tier) sau
+      // outage. NU blocăm cereri când Redis pică — fallback la in-memory
+      // ratelimit (mai laxe în serverless dar previne 500 cascade).
+      const result = memoryLimit(key, limit, windowMs);
+      return { ...result, resetIn: windowMs };
+    }
   }
   const result = memoryLimit(key, limit, windowMs);
   return { ...result, resetIn: windowMs };

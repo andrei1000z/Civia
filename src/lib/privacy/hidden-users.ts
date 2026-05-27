@@ -77,13 +77,19 @@ export async function getHiddenUserIds(userIds: string[]): Promise<Set<string>> 
   if (!redis) {
     return new Set(userIds.filter((id) => memoryFallback.has(id)));
   }
-  // Upstash's SMISMEMBER returns an array of 0/1 in the same order.
-  const flags = (await redis.smismember(KEY, userIds)) as number[];
-  const hidden = new Set<string>();
-  userIds.forEach((id, i) => {
-    if (flags[i] === 1) hidden.add(id);
-  });
-  return hidden;
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // sau API outage NU trebuie să taie listings. Fallback fail-open: nu
+  // ascundem nimic (defensiv preferable la blank-page error 500).
+  try {
+    const flags = (await redis.smismember(KEY, userIds)) as number[];
+    const hidden = new Set<string>();
+    userIds.forEach((id, i) => {
+      if (flags[i] === 1) hidden.add(id);
+    });
+    return hidden;
+  } catch {
+    return new Set();
+  }
 }
 
 /**
@@ -100,7 +106,13 @@ export async function getHiddenEmails(emails: string[]): Promise<Set<string>> {
   if (!redis) {
     return new Set(normalized.filter((e) => memoryEmailFallback.has(e)));
   }
-  const flags = (await redis.smismember(EMAIL_KEY, normalized)) as number[];
+  // 2026-05-27 — defensive try/catch (vezi getHiddenUserIds rationale).
+  let flags: number[];
+  try {
+    flags = (await redis.smismember(EMAIL_KEY, normalized)) as number[];
+  } catch {
+    return new Set();
+  }
   const hidden = new Set<string>();
   normalized.forEach((e, i) => {
     if (flags[i] === 1) hidden.add(e);
