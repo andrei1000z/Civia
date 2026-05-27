@@ -42,14 +42,20 @@ export default async function AdminFeedbackPage() {
     .maybeSingle();
   if ((profile as { role?: string } | null)?.role !== "admin") notFound();
 
+  // 2026-05-27 — try/catch defensiv. Supabase outage/timeout NU trebuie
+  // sa crash-eze /admin/feedback (Redis fallback deja gestionat mai jos).
   const admin = createSupabaseAdmin();
-  const { data } = await admin
-    .from("feedback_submissions")
-    .select("id, text, email, topic, page_path, ip_hash, status, admin_notes, created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  const rows = (data ?? []) as Row[];
+  let rows: Row[] = [];
+  try {
+    const { data } = await admin
+      .from("feedback_submissions")
+      .select("id, text, email, topic, page_path, ip_hash, status, admin_notes, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    rows = (data ?? []) as Row[];
+  } catch {
+    // SQL outage → admin vede doar Redis entries (sau lista goala).
+  }
 
   // Redis feedback — mesaje scrise via /api/feedback (FeedbackBox,
   // ProposePetitieForm, etc.). Mutat aici 2026-05-25 din /admin/analytics.

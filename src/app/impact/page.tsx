@@ -41,7 +41,39 @@ interface Stats {
 }
 
 async function getStats(): Promise<Stats | null> {
+  // 2026-05-27 — try/catch larg. Promise.all aruncă pe primul fail, iar
+  // /impact e pagină publică (cetățeni o vizitează des). Pe Supabase
+  // outage / query error → return null, page-ul afișează fallback UI
+  // (linia 114 jos).
   const admin = createSupabaseAdmin();
+  let queries: [
+    { count: number | null },
+    { count: number | null },
+    { count: number | null },
+    { count: number | null },
+    { data: Array<{ sesizare_id: string }> | null },
+    { count: number | null },
+    { count: number | null },
+    { count: number | null },
+    { data: Array<{ county: string }> | null },
+    { data: Array<{ status: string }> | null },
+  ];
+  try {
+    queries = (await Promise.all([
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved"),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("sent_via_civia", true),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "rezolvat"),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "ignorat"),
+      admin.from("sesizare_replies").select("sesizare_id").not("sesizare_id", "is", null),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").not("imagini", "eq", "{}"),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString()),
+      admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString()),
+      admin.from("sesizari").select("county").eq("moderation_status", "approved").not("county", "is", null),
+      admin.from("sesizari").select("status").eq("moderation_status", "approved"),
+    ])) as typeof queries;
+  } catch {
+    return null;
+  }
   const [
     { count: total },
     { count: trimisViaCivia },
@@ -53,18 +85,7 @@ async function getStats(): Promise<Stats | null> {
     { count: pe30Zile },
     { data: byCounty },
     { data: byStatus },
-  ] = await Promise.all([
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved"),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("sent_via_civia", true),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "rezolvat"),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").eq("status", "ignorat"),
-    admin.from("sesizare_replies").select("sesizare_id").not("sesizare_id", "is", null),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").not("imagini", "eq", "{}"),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString()),
-    admin.from("sesizari").select("*", { count: "exact", head: true }).eq("moderation_status", "approved").gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString()),
-    admin.from("sesizari").select("county").eq("moderation_status", "approved").not("county", "is", null),
-    admin.from("sesizari").select("status").eq("moderation_status", "approved"),
-  ]);
+  ] = queries;
 
   // Unique sesizari cu reply
   const cuRaspuns = new Set((cuRaspunsData ?? []).map((r) => r.sesizare_id)).size;

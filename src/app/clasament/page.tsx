@@ -36,13 +36,21 @@ type CountyStats = {
 };
 
 async function fetchCountyStats(): Promise<CountyStats[]> {
+  // 2026-05-27 — try/catch defensiv. /clasament e public; Supabase outage
+  // NU trebuie sa crash-eze pagina (return [] → leaderboard gol cu PageHero).
   const admin = createSupabaseAdmin();
-  const { data } = await admin
-    .from("sesizari")
-    .select("county, status")
-    .eq("moderation_status", "approved")
-    .eq("publica", true)
-    .not("county", "is", null);
+  let data: Array<{ county: string | null; status: string | null }> | null = null;
+  try {
+    const res = await admin
+      .from("sesizari")
+      .select("county, status")
+      .eq("moderation_status", "approved")
+      .eq("publica", true)
+      .not("county", "is", null);
+    data = res.data;
+  } catch {
+    return [];
+  }
 
   const buckets = new Map<string, { total: number; resolved: number }>();
   for (const row of data ?? []) {
@@ -77,12 +85,18 @@ async function fetchCountyStats(): Promise<CountyStats[]> {
 
 async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; total: number; rank: number }>> {
   const admin = createSupabaseAdmin();
-  const { data } = await admin
-    .from("sesizari")
-    .select("author_name, author_display_name, status")
-    .eq("moderation_status", "approved")
-    .eq("publica", true)
-    .not("author_name", "is", null);
+  let data: Array<{ author_name: string | null; author_display_name: string | null; status: string | null }> | null = null;
+  try {
+    const res = await admin
+      .from("sesizari")
+      .select("author_name, author_display_name, status")
+      .eq("moderation_status", "approved")
+      .eq("publica", true)
+      .not("author_name", "is", null);
+    data = res.data;
+  } catch {
+    return [];
+  }
 
   const buckets = new Map<string, { total: number; resolved: number }>();
   for (const row of data ?? []) {
