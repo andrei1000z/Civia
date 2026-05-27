@@ -45,7 +45,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, noop: true, reason: "Redis not configured" });
   }
 
-  const data = await analyticsRedis.hgetall<Record<string, string>>(KEY.vitalPerRoute("LCP"));
+  // 2026-05-27 — defensive try/catch. Cron-ul rulează 1×/zi; pe Redis
+  // outage skip cu noop (next run will retry).
+  let data: Record<string, string> | null = null;
+  try {
+    data = await analyticsRedis.hgetall<Record<string, string>>(KEY.vitalPerRoute("LCP"));
+  } catch {
+    return NextResponse.json({ ok: true, alerts: [], redis: "degraded" });
+  }
   if (!data) return NextResponse.json({ ok: true, alerts: [] });
 
   // Agregam pe path: { good, needsImprovement, poor, total }

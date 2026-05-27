@@ -77,11 +77,26 @@ export async function checkAndIncrementQuota(args: {
   const userKey = `${QUOTA_PREFIX}:user:${day}:${args.identifier}`;
   const globalKey = `${QUOTA_PREFIX}:global:${day}`;
 
-  // Fetch curent counts (înainte de increment).
-  const [userCurrentRaw, globalCurrentRaw] = await Promise.all([
-    redis.get<number>(userKey),
-    redis.get<number>(globalKey),
-  ]);
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // sau API outage NU trebuie să blocheze AI calls (vision, chat, improve).
+  // Fail-open: allow call, returnam counts = 0. Worst case: depasim quota
+  // pe scurt; Vercel budget alert prinde abuse-ul real.
+  let userCurrentRaw: number | null = null;
+  let globalCurrentRaw: number | null = null;
+  try {
+    [userCurrentRaw, globalCurrentRaw] = await Promise.all([
+      redis.get<number>(userKey),
+      redis.get<number>(globalKey),
+    ]);
+  } catch {
+    return {
+      allowed: true,
+      userUsed: 0,
+      userLimit: USER_DAILY_LIMIT,
+      globalUsed: 0,
+      globalLimit: GLOBAL_DAILY_BUDGET,
+    };
+  }
   const userCurrent = Number(userCurrentRaw ?? 0);
   const globalCurrent = Number(globalCurrentRaw ?? 0);
 
@@ -107,17 +122,21 @@ export async function checkAndIncrementQuota(args: {
     };
   }
 
-  // Increment atomic (pipeline).
-  const pipe = redis.pipeline();
-  pipe.incr(userKey);
-  pipe.expire(userKey, DAILY_TTL_SECONDS);
-  pipe.incr(globalKey);
-  pipe.expire(globalKey, DAILY_TTL_SECONDS);
-  // Per-feature counter pentru analytics (#92 din plan).
-  const featureKey = `${QUOTA_PREFIX}:feature:${day}:${args.feature}`;
-  pipe.incr(featureKey);
-  pipe.expire(featureKey, DAILY_TTL_SECONDS);
-  await pipe.exec();
+  // Increment atomic (pipeline). Pe failure Redis: allow oricum (fail-open).
+  try {
+    const pipe = redis.pipeline();
+    pipe.incr(userKey);
+    pipe.expire(userKey, DAILY_TTL_SECONDS);
+    pipe.incr(globalKey);
+    pipe.expire(globalKey, DAILY_TTL_SECONDS);
+    // Per-feature counter pentru analytics (#92 din plan).
+    const featureKey = `${QUOTA_PREFIX}:feature:${day}:${args.feature}`;
+    pipe.incr(featureKey);
+    pipe.expire(featureKey, DAILY_TTL_SECONDS);
+    await pipe.exec();
+  } catch {
+    /* increment best-effort; AI call continues */
+  }
 
   return {
     allowed: true,
@@ -143,16 +162,22 @@ export async function getQuotaSnapshot(): Promise<{
     return { day, globalUsed: 0, globalLimit: GLOBAL_DAILY_BUDGET, perFeature: {} };
   }
   const globalKey = `${QUOTA_PREFIX}:global:${day}`;
-  const globalUsed = Number((await redis.get<number>(globalKey)) ?? 0);
-  // Feature counters — știm fixe (5 features) → bulk get.
-  const features = ["improve", "vision", "chat", "classify", "severity"];
-  const featureKeys = features.map((f) => `${QUOTA_PREFIX}:feature:${day}:${f}`);
-  const featureCounts = await Promise.all(
-    featureKeys.map((k) => redis.get<number>(k)),
-  );
-  const perFeature: Record<string, number> = {};
-  features.forEach((f, i) => {
-    perFeature[f] = Number(featureCounts[i] ?? 0);
-  });
-  return { day, globalUsed, globalLimit: GLOBAL_DAILY_BUDGET, perFeature };
+  // 2026-05-27 — defensive try/catch. Admin dashboard nu trebuie sa
+  // crash-eze daca Redis down.
+  try {
+    const globalUsed = Number((await redis.get<number>(globalKey)) ?? 0);
+    // Feature counters — știm fixe (5 features) → bulk get.
+    const features = ["improve", "vision", "chat", "classify", "severity"];
+    const featureKeys = features.map((f) => `${QUOTA_PREFIX}:feature:${day}:${f}`);
+    const featureCounts = await Promise.all(
+      featureKeys.map((k) => redis.get<number>(k)),
+    );
+    const perFeature: Record<string, number> = {};
+    features.forEach((f, i) => {
+      perFeature[f] = Number(featureCounts[i] ?? 0);
+    });
+    return { day, globalUsed, globalLimit: GLOBAL_DAILY_BUDGET, perFeature };
+  } catch {
+    return { day, globalUsed: 0, globalLimit: GLOBAL_DAILY_BUDGET, perFeature: {} };
+  }
 }

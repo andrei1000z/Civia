@@ -45,7 +45,14 @@ export async function GET(req: Request) {
   // Citim ultimele `limit` mesaje. Trimite redis o singură rundă chiar
   // dacă filtrăm după kind/prefix — lista e capped la 500 oricum, deci
   // overhead-ul de transfer e minimal.
-  const raw = await analyticsRedis.lrange("civia:feedback:messages", 0, limit - 1);
+  // 2026-05-27 — defensive try/catch. Upstash outage → empty list în loc
+  // de 500 spre admin dashboard.
+  let raw: unknown[] = [];
+  try {
+    raw = await analyticsRedis.lrange("civia:feedback:messages", 0, limit - 1);
+  } catch {
+    return NextResponse.json({ data: [], redis: "degraded" });
+  }
   const parsed: FeedbackEntry[] = [];
   for (const s of raw) {
     try {

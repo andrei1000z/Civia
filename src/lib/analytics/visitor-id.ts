@@ -36,25 +36,34 @@ function saltKey(date = new Date()): string {
  * nopții fără gap).
  */
 async function fetchOrCreateDailySalt(): Promise<string> {
+  const fallbackSalt = process.env.ANALYTICS_FALLBACK_SALT || "dev-fallback-salt-unused-in-prod";
   if (!analyticsRedis) {
     // Fallback când Redis lipsește — folosim un salt fix din env sau
     // un fixed string (dev only). În production fără Redis n-ar trebui
     // să ajungi aici, dar nu blocăm dev.
-    return process.env.ANALYTICS_FALLBACK_SALT || "dev-fallback-salt-unused-in-prod";
+    return fallbackSalt;
   }
-  const key = saltKey();
-  const existing = await analyticsRedis.get<string>(key);
-  if (existing) return existing;
-  // Race: două workeri ar putea încerca să seteze în paralel. SET NX
-  // garantează că doar primul câștigă; ceilalți iau valoarea existentă.
-  const fresh = randomBytes(32).toString("hex");
-  const set = await analyticsRedis.set(key, fresh, {
-    nx: true,
-    ex: 26 * 60 * 60, // 26h — overlap cu ziua următoare ca să nu pierdem evenimente la cusătură
-  });
-  if (set === "OK") return fresh;
-  // NX a respins; alt worker a setat valoarea — recitim-o.
-  return (await analyticsRedis.get<string>(key)) || fresh;
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // NU trebuie să crash-eze analytics tracking. Pe failure folosim fallback
+  // salt — visitorId va fi mai puțin stabil (salt fix pe perioada outage),
+  // dar tracking-ul continuă (preferabil la zero-visibility).
+  try {
+    const key = saltKey();
+    const existing = await analyticsRedis.get<string>(key);
+    if (existing) return existing;
+    // Race: două workeri ar putea încerca să seteze în paralel. SET NX
+    // garantează că doar primul câștigă; ceilalți iau valoarea existentă.
+    const fresh = randomBytes(32).toString("hex");
+    const set = await analyticsRedis.set(key, fresh, {
+      nx: true,
+      ex: 26 * 60 * 60, // 26h — overlap cu ziua următoare ca să nu pierdem evenimente la cusătură
+    });
+    if (set === "OK") return fresh;
+    // NX a respins; alt worker a setat valoarea — recitim-o.
+    return (await analyticsRedis.get<string>(key)) || fresh;
+  } catch {
+    return fallbackSalt;
+  }
 }
 
 /**

@@ -187,10 +187,17 @@ export async function maybeTriggerBackgroundRefresh(): Promise<void> {
   if (!analyticsRedis) return;
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return;
-  const lock = await analyticsRedis.set(FETCH_LOCK_KEY, Date.now(), {
-    nx: true,
-    ex: FETCH_LOCK_TTL_S,
-  });
+  // 2026-05-27 — defensive try/catch pe Redis lock. Upstash outage NU
+  // trebuie să propage unhandled rejection în after().
+  let lock: unknown;
+  try {
+    lock = await analyticsRedis.set(FETCH_LOCK_KEY, Date.now(), {
+      nx: true,
+      ex: FETCH_LOCK_TTL_S,
+    });
+  } catch {
+    return;
+  }
   if (lock !== "OK") return;
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civia.ro";

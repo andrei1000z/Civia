@@ -202,8 +202,14 @@ async function handleTrack(
     return NextResponse.json({ ok: true, excluded: true });
   }
   if (userId) {
-    const excluded = await analyticsRedis.sismember(KEY.excluded, userId);
-    if (excluded) return NextResponse.json({ ok: true, excluded: true });
+    // 2026-05-27 — defensive try/catch. Pe Upstash outage, track normal
+    // (preferable la blocking pageview). Excluded check best-effort.
+    try {
+      const excluded = await analyticsRedis.sismember(KEY.excluded, userId);
+      if (excluded) return NextResponse.json({ ok: true, excluded: true });
+    } catch {
+      /* continue tracking */
+    }
   }
 
   const eventType = sanitizeKey(body.eventType, 30) || "pageview";
@@ -653,7 +659,14 @@ async function handleTrack(
   // 2026-05-25 #26 — TTL pe vidsRecent (sorted set). Pruning manual la
   // 1000 entries (linia 366) e best-effort; backstop cu TTL hard 7d.
   pipe.expire(KEY.vidsRecent, 7 * 24 * 60 * 60);
-  await pipe.exec();
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // NU trebuie să crash-eze CiviaTracker (browser console error spam). Pe
+  // failure return ok — analytics best-effort, nu critic.
+  try {
+    await pipe.exec();
+  } catch {
+    return NextResponse.json({ ok: true, redis: "degraded" });
+  }
   return NextResponse.json({ ok: true });
 }
 
