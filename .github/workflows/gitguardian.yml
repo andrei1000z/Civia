@@ -1,0 +1,49 @@
+# GitGuardian ggshield — detectează secrete commit-ate accidental.
+# 2026-05-28 — pre-merge guard pe PRs + push la main.
+#
+# 550+ tipuri de secrete detectate (Stripe, AWS, Supabase service role,
+# Resend, Cloudflare API tokens, OpenAI/Anthropic keys, Gemini, etc.).
+#
+# Free pentru solo developer. Necesită:
+#   - GitHub repo → Settings → Secrets → New secret
+#     GITGUARDIAN_API_KEY = token de la dashboard.gitguardian.com
+# Fără secret setat, jobul skip-ează silent (nu blochează PRs).
+
+name: GitGuardian secret scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scan:
+    name: ggshield scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event.repository.full_name == 'andrei1000z/Civia' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Skip silent dacă API key nu e setat — admin poate enable mai târziu.
+      - name: Check if GitGuardian configured
+        id: check
+        run: |
+          if [ -z "${{ secrets.GITGUARDIAN_API_KEY }}" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::GitGuardian not configured. Add GITGUARDIAN_API_KEY in repo secrets to enable."
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: GitGuardian scan
+        if: steps.check.outputs.configured == 'true'
+        uses: GitGuardian/ggshield-action@v1
+        env:
+          GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GITHUB_PUSH_BASE_SHA: ${{ github.event.base }}
+          GITHUB_PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}

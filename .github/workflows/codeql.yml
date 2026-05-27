@@ -1,0 +1,55 @@
+# CodeQL Security Analysis — Free GitHub SAST scanning.
+# 2026-05-28 — automatic SAST pe push la main + PRs + weekly.
+# Result-uri în GitHub repo → Security → Code scanning alerts.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "cloudflare-worker/**"
+      - "scripts/**"
+      - "package.json"
+      - ".github/workflows/codeql.yml"
+  schedule:
+    # Weekly Monday 3 AM Bucharest — surprinde vulnerabilities noi descoperite
+    # în deps existente (CodeQL queries evoluează).
+    - cron: "0 1 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-extended adaugă verificări dincolo de default
+          # (CWE-79 XSS, CWE-89 SQL injection, CWE-352 CSRF, etc.).
+          # security-and-quality include și quality smells (unused vars,
+          # dead code) — păstrăm doar security pentru a reduce noise.
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
