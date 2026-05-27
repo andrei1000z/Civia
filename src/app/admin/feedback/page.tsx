@@ -53,19 +53,26 @@ export default async function AdminFeedbackPage() {
 
   // Redis feedback — mesaje scrise via /api/feedback (FeedbackBox,
   // ProposePetitieForm, etc.). Mutat aici 2026-05-25 din /admin/analytics.
+  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
+  // sau API outage NU trebuie să crash-eze toată pagina /admin/feedback
+  // (SQL list încă util fără Redis entries).
   let redisEntries: RedisFeedbackEntry[] = [];
   if (analyticsRedis) {
-    const raw = await analyticsRedis.lrange("civia:feedback:messages", 0, 199);
-    for (const s of raw) {
-      try {
-        const entry =
-          typeof s === "string"
-            ? (JSON.parse(s) as RedisFeedbackEntry)
-            : (s as RedisFeedbackEntry);
-        redisEntries.push(entry);
-      } catch {
-        // skip malformed
+    try {
+      const raw = await analyticsRedis.lrange("civia:feedback:messages", 0, 199);
+      for (const s of raw) {
+        try {
+          const entry =
+            typeof s === "string"
+              ? (JSON.parse(s) as RedisFeedbackEntry)
+              : (s as RedisFeedbackEntry);
+          redisEntries.push(entry);
+        } catch {
+          // skip malformed
+        }
       }
+    } catch {
+      // Redis outage → afișăm doar SQL feedback, fără Redis entries.
     }
   }
 
