@@ -1,0 +1,21 @@
+Contact: mailto:security@civia.ro
+Contact: mailto:musateduardandrei10@gmail.com
+Expires: 2027-05-27T00:00:00.000Z
+Preferred-Languages: ro, en
+Canonical: https://civia.ro/.well-known/security.txt
+Policy: https://civia.ro/legal/security-policy
+
+# Civia — civic platform for Romania
+# Open-source: https://github.com/andrei1000z/Civia
+#
+# Report any security issue (XSS, SQLi, RCE, IDOR, privacy leak, etc.)
+# directly to the contacts above. We respond within 72 hours.
+#
+# Please give us reasonable time to fix before public disclosure.
+# We commit to:
+#  - Acknowledge receipt within 72h
+#  - Provide a fix or mitigation timeline within 7 days
+#  - Credit you in the changelog if you wish (responsible disclosure)
+#
+# Scope: civia.ro + *.civia.ro + cloudflare-worker civia-inbox-handler
+# Out of scope: third-party services (Supabase, Resend, Groq, Cloudflare)
