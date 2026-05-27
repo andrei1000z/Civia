@@ -277,10 +277,11 @@ export interface GenerateFormalTextArgs {
 
 /**
  * Formatează descrierea cetățeanului ca declarație formală a problemei.
- * - Trim + colapsare whitespace
- * - Capitalize prima literă
- * - Adaugă punct la final dacă lipsește
- * Păstrăm exact cuvintele user-ului — fără reformulare, fără AI rewrite.
+ * 2026-05-27 — AI reformulează acum descrierea în /api/ai/improve via
+ * `reformulateDescriere()` ÎNAINTE de a ajunge aici. Această funcție rămâne
+ * doar ca fallback defensive (capitalize + punct) — în cazul în care
+ * generateFormalText e apelat direct cu text raw (backfill scripts,
+ * teste, edge cases).
  */
 function formalizeDescription(raw: string): string {
   const cleaned = raw.replace(/\s+/g, " ").trim();
