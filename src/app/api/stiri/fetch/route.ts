@@ -168,11 +168,28 @@ export async function POST(req: Request) {
       });
     }
 
+    // 2026-05-27 — Near-duplicate dedup ÎNAINTE de pickTopCivic, ca să nu
+    // pierdem slot-uri în top 20 pe twins. Same RSS run poate avea 2-3
+    // articole cu aceeași poză din aceeași sursă (burst editorial pe
+    // același subiect). Păstrăm cel mai recent. Cross-source rămâne.
+    const { dedupeArticles } = await import("@/lib/stiri/dedup");
+    const articlesPreDedup = articles.length;
+    const dedupedArticles = dedupeArticles(
+      articles.map((a) => ({
+        title: a.title,
+        source: a.source,
+        image_url: a.image_url,
+        published_at: a.published_at,
+        __orig: a,
+      })),
+    ).map((a) => a.__orig);
+    const dedupedCount = articlesPreDedup - dedupedArticles.length;
+
     // FILTRARE CIVIC-RELEVANCE — păstrăm doar top 20 din toate articolele
     // RSS aduse. Civia e platformă civică; nu vrem rețete + horoscop +
     // showbiz care apar în feed-urile mainstream. Heuristic determinist
     // bazat pe keyword + sursă + categorie.
-    const { kept, discarded } = pickTopCivic(articles, TOP_CIVIC_PER_RUN);
+    const { kept, discarded } = pickTopCivic(dedupedArticles, TOP_CIVIC_PER_RUN);
 
     // 2026-05-25 — AI smart category classifier înlocuiește keyword fallback
     // pentru articolele clasificate "administratie" implicit (cazul cel mai
@@ -264,6 +281,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       data: {
         total: articles.length,
+        deduplicated: dedupedCount,
         kept: kept.length,
         discarded,
         inserted: count ?? 0,

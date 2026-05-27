@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { allowedSourcesForView } from "@/lib/stiri/sources";
 import { analyticsRedis } from "@/lib/analytics/redis";
+import { dedupeArticles } from "@/lib/stiri/dedup";
 
 // 2026-05-19: 5min → 30min. Stirile noi apar 1x/zi via cron. Plus
 // self-healing background refresh fires un /api/stiri/fetch oricum.
@@ -158,6 +159,22 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
+    // 2026-05-27 — Near-duplicate filter ÎNAINTE de diversificare.
+    // Bug raportat: 2 carduri Gândul cu aceeași poză + titluri quasi-
+    // identice pe aceeași știre („Eugen Tomac, iepurele scos..." vs
+    // „Eugen Tomac, primul mesaj..."). URL-uri diferite → UNIQUE(url)
+    // DB nu prinde. Dedup pe (source, image_url) + Jaccard tokens > 0.7
+    // pe titluri din aceeași sursă. Cross-source articolele rămân
+    // (perspective editoriale = valoare).
+    const deduplicated = dedupeArticles(
+      (data ?? []) as Array<{
+        title: string;
+        source: string;
+        image_url: string | null;
+        published_at: string;
+      }>,
+    );
+
     // Source diversification — no single outlet may dominate the
     // first window of articles. Without this, a publisher with a
     // burst of recent posts (PressOne uploaded 12 articles in one
@@ -165,7 +182,7 @@ export async function GET(req: Request) {
     // The diversifier keeps recency as the primary key but caps
     // per-source occurrence within a sliding window.
     const diversified = diversifyBySource(
-      (data ?? []) as Array<{ source: string }>,
+      deduplicated,
       { maxPerWindow: 2, windowSize: 8 },
     );
 
