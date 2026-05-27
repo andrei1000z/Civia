@@ -16,6 +16,7 @@ import {
   type AttachmentExtractionResult,
   truncateExtracted,
 } from "./types";
+import { cloudflareAIVision } from "../cloudflare-ai";
 
 export async function extractImage(
   input: AttachmentExtractionInput,
@@ -24,11 +25,24 @@ export async function extractImage(
 
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) {
+    // Fallback Cloudflare Workers AI (free 10k neurons/zi).
+    const cf = await cloudflareAIVision({
+      imageBytes: input.bytes,
+      prompt: `Extract all visible text from this Romanian document image, including registration numbers, dates, signatures, headers. Preserve diacritics (ă, â, î, ș, ț). Return ONLY the extracted text.`,
+    });
+    if (cf.text) {
+      return {
+        extracted_text: truncateExtracted(cf.text),
+        extraction_method: "gemini-vision-image",
+        extraction_ms: Date.now() - t0,
+        extraction_error: null,
+      };
+    }
     return {
       extracted_text: null,
       extraction_method: "failed",
       extraction_ms: Date.now() - t0,
-      extraction_error: "GEMINI_API_KEY missing",
+      extraction_error: `GEMINI missing + CF AI: ${cf.error}`,
     };
   }
 
