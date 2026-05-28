@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Guard against shipping localhost URLs to a real production deploy.
 // Skip the check for local prod builds (npm run build on dev machine).
@@ -200,4 +201,32 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// 2026-05-28 — withSentryConfig wrapper essential pentru:
+//   1. Client-side Sentry SDK loading (sentry.client.config.ts)
+//   2. Source map upload la build (debug symbols pentru stack traces)
+//   3. Auto-inject Sentry routing instrumentation
+//
+// FĂRĂ acest wrapper: doar instrumentation.ts server config se încarcă, dar
+// client errors + edge errors NU sunt capturate. Verified live 2026-05-28 prin
+// Sentry MCP — 0 events în 90 zile cu DSN corect setat în Vercel ENV.
+//
+// silent: true ca să nu spam build logs.
+// hideSourceMaps: true ca să nu expunem .map fișierele în production bundle.
+// disableLogger: true pentru bundle size optim (Sentry logger tree-shaken).
+export default withSentryConfig(nextConfig, {
+  org: "andrei-z4",
+  project: "javascript-nextjs",
+  silent: !process.env.CI,
+  // 2026-05-28 — upload source maps DOAR pe Vercel/CI; local builds skip.
+  // Necesar SENTRY_AUTH_TOKEN env pentru upload — setat în Vercel ENV.
+  // hideSourceMaps: nu expunem .map fișierele în production bundle.
+  sourcemaps: {
+    disable: !process.env.CI && !process.env.VERCEL,
+    deleteSourcemapsAfterUpload: true,
+  },
+  disableLogger: true,
+  automaticVercelMonitors: true,
+  // Tunnel route — evită ad-blockers care blochează *.ingest.sentry.io.
+  // Browser-ul send la /monitoring (rewrite la Sentry server-side).
+  tunnelRoute: "/monitoring",
+});
