@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { analyticsRedis, KEY, TTL, VITAL_SAMPLE_CAP, VID_TIMELINE_CAP, VIDS_RECENT_CAP } from "@/lib/analytics/redis";
 import { sanitizeStr, sanitizeKey, sanitizeId } from "@/lib/analytics/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -1196,7 +1197,35 @@ export async function POST(req: NextRequest) {
     if (action === "session-timeline") return await handleSessionTimeline(body);
     if (action === "weekly-compare") return await handleWeeklyCompare();
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (e) {
+    // 2026-05-28 — log la Sentry pentru diag (acum că withSentryConfig e
+    // wireuit). Pe summary fallback la empty-state ca să nu rupem admin UI.
+    Sentry.captureException(e, {
+      tags: { route: "/api/analytics", action: action || "unknown" },
+    });
+    if (action === "summary") {
+      return NextResponse.json({
+        ok: true,
+        degraded: true,
+        error: e instanceof Error ? e.message : "unknown",
+        total: {}, routes: {}, referrers: {}, countries: {}, cities: {}, languages: {},
+        hourly: {}, errors: {}, errorPaths: {}, eventsTotal: {}, scrollDepth: {},
+        utmSource: {}, utmMedium: {}, utmCampaign: {}, landingPages: {},
+        today: { dau: 0 }, yesterday: { dau: 0 }, wau: 0, mau: 0, stickiness: 0,
+        topUsers: [], eventsStream: [], perf: { avgLoadTime: 0, avgTimeOnPage: 0 },
+        vitals: {}, clicks: {}, outbound: {}, rageClicks: {}, searchTerms: {},
+        searchZero: {}, aiUsage: {}, authEvents: {}, formAbandon: {},
+        formAbandonFields: {}, copyEvents: {}, pwaEvents: {}, visionConfidence: {},
+        visionTips: {}, visionAuthorities: {}, visionAcceptance: {},
+        sessionsPerReferrer: {}, nonBouncesPerReferrer: {}, funnels: {},
+        rageClicksPerRoute: {}, lcpPerRoute: {}, trendDau7d: [0,0,0,0,0,0,0],
+        feedback: [], feedbackCounts: {}, newsletter: [], newsletterCounts: {},
+        serverTime: Date.now(),
+      });
+    }
+    return NextResponse.json(
+      { error: "Server error", message: e instanceof Error ? e.message : "unknown" },
+      { status: 500 },
+    );
   }
 }
