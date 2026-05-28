@@ -26,7 +26,11 @@ Sentry.init({
     return 0.05;
   },
   debug: false,
-  enabled: process.env.NODE_ENV === "production",
+  // 2026-05-28 — TEMPORAR enabled in toate env-urile + sampleRate 1.0 ca
+  // să confirmăm wireup post-withSentryConfig fix. După ce vedem events
+  // apar, revenim la enabled: NODE_ENV === "production".
+  enabled: true,
+  sampleRate: 1.0,
   sendDefaultPii: false,
   beforeSend: scrubSentryEvent,
 });
