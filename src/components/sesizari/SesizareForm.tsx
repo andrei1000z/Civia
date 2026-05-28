@@ -1327,18 +1327,16 @@ export function SesizareForm() {
       // A11y: announce success cu codul pentru screen readers
       announce(`Sesizare inregistrata cu succes. Codul tau este ${json.data.code.split("").join(" ")}`);
       trackFunnelStep("sesizare-create", "submitted", { hasPhotos: imagini.length > 0 ? 1 : 0 });
-      // 2026-05-28 — Auto-trigger send-via-civia IMEDIAT (paralel cu mount
-      // SuccessScreen) pentru utilizatori logați. User request: 1-click
-      // submit, nu doi (submit → succes → trimite). SuccessScreen are
-      // propriul auto-trigger care va primi 409 already_sent + skip.
-      // Fire-and-forget — nu blocăm UI-ul.
-      if (user) {
-        void fetch(`/api/sesizari/${json.data.code}/send-via-civia`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-        }).catch(() => { /* SuccessScreen retry-uiește */ });
-      }
+      // 2026-05-28 — Auto-trigger send-via-civia IMEDIAT pentru TOATĂ
+      // lumea (logați + anonimi). User request: 1-click submit, nu doi.
+      // Backend accept anonimi dacă sesizarea e < 24h vechime + rate
+      // limit 5/h/IP. SuccessScreen are propriul auto-trigger care va
+      // primi 409 already_sent + skip. Fire-and-forget.
+      void fetch(`/api/sesizari/${json.data.code}/send-via-civia`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }).catch(() => { /* SuccessScreen retry-uiește */ });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Eroare trimitere";
       setError(msg);

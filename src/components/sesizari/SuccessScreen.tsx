@@ -43,16 +43,11 @@ export function SuccessScreen({
     playSound("success");
   }, []);
 
-  // 2026-05-27 — User a cerut: la submit, automat să trimit prin Civia
-  // fără să mai apese „Trimite acum" pe success screen. Auto-trigger
-  // pe mount pentru utilizatori logați (cu nume+adresă în sesizare).
-  // Pentru anonimi, SendViaCiviaButton arată CTA login (NU auto-trigger).
-  const [autoSendStatus, setAutoSendStatus] = useState<"idle" | "sending" | "sent" | "error" | "needs-identity">(
-    user ? "sending" : "idle",
-  );
+  // 2026-05-28 — Auto-trigger send pe mount pentru TOATĂ lumea (logați
+  // + anonimi). Backend accept anonimi dacă sesizarea e <24h vechime.
+  const [autoSendStatus, setAutoSendStatus] = useState<"idle" | "sending" | "sent" | "error" | "needs-identity">("sending");
 
   useEffect(() => {
-    if (!user) return;
     let cancelled = false;
     (async () => {
       try {

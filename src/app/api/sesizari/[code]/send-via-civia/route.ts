@@ -43,12 +43,12 @@ export async function POST(
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json(
-      { error: "Trebuie sa te autentifici pentru a trimite via Civia. Foloseste optiunea cu emailul tau." },
-      { status: 401 },
-    );
-  }
+  // 2026-05-28 — Anonimii pot trimite dacă:
+  //   1. Sesizarea există + are nume + adresă populate
+  //   2. NU a fost deja trimisă (sent_via_civia=false)
+  //   3. Created < 24h ago (anti-abuse: nu trigger sends pe sesizari vechi)
+  //   4. Rate limit IP 5/h deja aplicat sus
+  // Logat-ii păstrează ownership check (sigur că trimit DOAR sesizarea lor).
 
   // 5/22/2026 — accept optional body cu nume + adresa daca userul nu le-a
   // furnizat la submit. Backend update-eaza sesizarea + trimite email-ul
@@ -129,17 +129,34 @@ export async function POST(
     );
   }
 
-  // Ownership check — doar autorul poate trimite via Civia. Alternativ
-  // ar fi sa permitem cosignaturi sa trimita un email separate, dar
-  // pentru moment limitam la owner sa nu confuzam primariile.
-  const isOwner =
-    sesizare.user_id === user.id ||
-    sesizare.author_email?.toLowerCase().trim() === user.email?.toLowerCase().trim();
-  if (!isOwner) {
-    return NextResponse.json(
-      { error: "Doar autorul sesizarii poate trimite via Civia." },
-      { status: 403 },
-    );
+  // 2026-05-28 — Ownership check ADAPTAT pentru anonimi:
+  //   - Logat: trebuie să fie owner (user.id sau email match)
+  //   - Anonim: sesizarea trebuie să fie CREATĂ RECENT (<24h) ca anti-abuse
+  //     pe sesizari vechi pe care nu ești autor. Combinat cu rate-limit
+  //     5/h/IP + sent_via_civia check, securitate practică.
+  if (user) {
+    const isOwner =
+      sesizare.user_id === user.id ||
+      sesizare.author_email?.toLowerCase().trim() === user.email?.toLowerCase().trim();
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Doar autorul sesizarii poate trimite via Civia." },
+        { status: 403 },
+      );
+    }
+  } else {
+    // Anonim: verifică sesizarea e recentă (autorul probabil)
+    const sesizareAge = Date.now() - new Date(sesizare.created_at).getTime();
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    if (sesizareAge > ONE_DAY_MS) {
+      return NextResponse.json(
+        {
+          error: "Pentru a trimite o sesizare mai veche de 24h, autentifică-te.",
+          needs_login: true,
+        },
+        { status: 401 },
+      );
+    }
   }
 
   if (sesizare.sent_via_civia) {
@@ -194,13 +211,13 @@ export async function POST(
     descriere: sesizare.descriere ?? "",
     formal_text: sesizare.formal_text,
     author_name: sesizare.author_name,
-    author_email: user.email ?? null,
+    author_email: user?.email ?? sesizare.author_email ?? null,
     author_address: sesizare.author_address ?? null,
     imagini: sesizare.imagini ?? [],
     code: sesizare.code,
   });
 
-  const userEmail = user.email ?? sesizare.author_email ?? "";
+  const userEmail = user?.email ?? sesizare.author_email ?? "";
   // Subject include codul sesizarii ca PRIMUL token. Bug raportat user
   // 5/21/2026: Cloudflare Email Routing nu onoreaza plus-addressing
   // (sesizari+CODE@civia.ro) cand destinatia rulei e Worker — toate
@@ -349,7 +366,7 @@ export async function POST(
     sesizare_id: sesizare.id,
     event_type: "trimis_via_civia",
     description: `Email trimis automat de Civia către ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"} oficiale. Așteptăm răspunsul.`,
-    created_by: user.id,
+    created_by: user?.id ?? null,
   });
   if (tlError) {
     Sentry.captureMessage("send-via-civia: timeline insert failed", {
