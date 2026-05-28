@@ -93,6 +93,10 @@ export default async function SesizareDetailPage({
   // NOISE: delivery_problem (legacy ghost-send false positives), raspuns_oficial
   // (duplicat al „inregistrata" status update event), eveniment generic. Toate
   // afișate ca „Eveniment" placeholder fără ikonografie — distrag user-ul.
+  // 2026-05-28 — adăugat „status_changed_trimis" (event-ul tipic „Sesizare
+  // trimisă către autorități") la lista de filter per user request. Vrem
+  // doar „Sesizare depusă pe platformă" pe timeline + badge dedesubt cu
+  // numărul de cetățeni care au trimis.
   const PRIVATE_EVENT_TYPES = new Set([
     "cosemnat",
     "cosign_send",
@@ -100,6 +104,9 @@ export default async function SesizareDetailPage({
     "delivery_problem",
     "raspuns_oficial",
     "eveniment",
+    "trimis",
+    "status_changed_trimis",
+    "status_change_trimis",
   ]);
   const timeline = dedupeConsecutiveEvents(
     allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type)),
@@ -223,13 +230,12 @@ export default async function SesizareDetailPage({
                 <MapPin size={12} aria-hidden="true" />
                 {sesizare.locatie}
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <User size={12} aria-hidden="true" />
-                {publicAuthorName({
-                  display_name: sesizare.author_display_name,
-                  author_name: sesizare.author_name,
-                })}
-              </span>
+              {/* 2026-05-28 — Author name ASCUNS complet per user request.
+                  Nu mai afișăm nici numele complet, nici prenumele, nici
+                  fallback „Cetățean". Sesizările sunt afișate public ca
+                  acțiuni civice colective, nu personale. Numele rămâne în
+                  DB pentru OG 27/2002 (primăria are nevoie să răspundă)
+                  dar nu mai apare în UI. */}
               <span className="inline-flex items-center gap-1.5">
                 <Calendar size={12} aria-hidden="true" />
                 <time dateTime={sesizare.created_at}>{formatDate(sesizare.created_at)}</time>
@@ -635,15 +641,16 @@ export default async function SesizareDetailPage({
                         <Clock size={10} aria-hidden="true" />
                         <time dateTime={step.created_at}>{formatDateTime(step.created_at)}</time>
                       </p>
-                      {/* 2026-05-26 — Sub „Sesizare depusă pe platformă"
-                          afișăm câți cetățeni au CO-TRIMIS sesizarea prin
-                          sesizari@civia.ro (count exact din sesizare_cosigners,
-                          fiecare rând = 1 email trimis cu succes Resend). */}
-                      {step.event_type === "depusa" && cosignersCount > 0 && (
+                      {/* 2026-05-28 — Sub „Sesizare depusă pe platformă"
+                          afișăm câți cetățeni au trimis sesizarea în total
+                          (autor + co-semnatari prin sesizari@civia.ro).
+                          Schimbat per user request: „Co-trimisă de alți X"
+                          → „Trimisă de X cetățeni" (inclusiv autor în count). */}
+                      {step.event_type === "depusa" && (
                         <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-2 inline-flex items-center gap-1.5 font-medium">
                           <UserPlus size={11} aria-hidden="true" />
-                          Co-trimisă de alți {cosignersCount}{" "}
-                          {cosignersCount === 1 ? "cetățean" : "cetățeni"}
+                          Trimisă de {cosignersCount + 1}{" "}
+                          {cosignersCount + 1 === 1 ? "cetățean" : "cetățeni"}
                         </p>
                       )}
                     </li>

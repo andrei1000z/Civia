@@ -94,10 +94,8 @@ export default async function CountySesizareDetail({
             <MapPin size={14} />
             {sesizare.locatie}
           </span>
-          <span className="flex items-center gap-1.5">
-            <User size={14} />
-            {sesizare.author_name}
-          </span>
+          {/* 2026-05-28 — Author name ASCUNS per user request (vezi page.tsx
+              principal pentru rationale). */}
           <span className="flex items-center gap-1.5">
             <Calendar size={14} />
             {formatDate(sesizare.created_at)}
