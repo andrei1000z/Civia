@@ -54,13 +54,13 @@ const TIP_DATA: Record<string, TipData> = {
   },
   stalpisori: {
     affects: "siguranța pietonilor",
-    problem: "lipsa elementelor de protecție (stâlpișori anti-parcare) permite parcarea pe trotuar și pune în pericol pietonii, contrar art. 144 din HG 1391/2006 care prevede o lățime minimă de 1 metru liber pentru pietoni",
+    problem: "lipsa elementelor de protecție (stâlpișori anti-parcare) permite parcarea ilegală în zonă și pune în pericol pietonii",
     actions: [
-      "Montarea de stâlpișori anti-parcare pentru a delimita carosabilul de trotuar.",
+      "Montarea de stâlpișori anti-parcare în zona afectată.",
       "Verificarea zonei și planificarea unui număr suficient de stâlpișori pentru tot tronsonul afectat.",
       "Până la montare, intervenția Poliției Locale pentru sancționarea șoferilor conform art. 108 alin. (1) lit. b) pct. 1 din OUG 195/2002 (amendă 810-1012,5 lei + ridicare).",
     ],
-    evidence: "lipsa stâlpișorilor și parcarea pe trotuar",
+    evidence: "lipsa stâlpișorilor și parcarea ilegală",
   },
   groapa: {
     affects: "siguranța rutieră",

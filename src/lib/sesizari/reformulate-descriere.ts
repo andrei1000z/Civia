@@ -225,3 +225,85 @@ export async function reorderActions(args: {
     return args.prefabActions;
   }
 }
+
+// ─── ADRESĂ + LOCAȚIE — AI normalizează diacritice + format formal ──
+
+/**
+ * 2026-05-28 — user request: AI să normalizeze și adresa userului
+ * + locația problemei (diacritice, abrevieri expand, capitalizare).
+ *
+ * Cetățenii scriu „str panduri 33 sect 1 bucuresti" → ar trebui să devină
+ * „Strada Panduri nr. 33, Sector 1, București". Fără AI textul ajunge brut
+ * în formal_text spre primărie.
+ *
+ * Constraint: NU INVENTA. Dacă lipsește sectorul, NU îl pune. Dacă lipsește
+ * orașul, NU îl pune. Doar normalizează ce e deja acolo.
+ *
+ * Fallback: capitalize first letter dacă AI eșuează.
+ */
+const ADDRESS_NORMALIZE_PROMPT = `Ești un asistent care normalizează adrese românești pentru o sesizare oficială către primărie.
+
+REGULI CRITICE:
+1. Adaugă DIACRITICE complete: ă, â, î, ș, ț (ex: „bucuresti" → „București", „septembrie" → „Septembrie", „sosea" → „Șosea").
+2. Capitalizează numele proprii (Strada, Bulevardul, Șoseaua, București, Cluj-Napoca, numele străzilor).
+3. Expand abrevieri: „str" → „Strada", „bd" → „Bulevardul", „sos" → „Șoseaua", „sect" → „Sector", „nr" → „nr.", „bl" → "bloc", „sc" → "sc.", "ap" → "ap.".
+4. NU ADĂUGA fapte care nu sunt în input. Dacă nu menționează sector, NU pune sector. Dacă nu menționează oraș, NU pune oraș.
+5. Format final cu virgule între componente: „Strada Panduri nr. 33, Sector 1, București" sau „Bulevardul Magheru, Cluj-Napoca".
+6. Păstrează exact numerele (nr. 33 rămâne nr. 33, NU devine nr. 30 sau nr. 33A).
+7. Numele de străzi rămân ca în input (doar capitalizate + diacritice). NU schimbi „Petru Rares" → „Petru Rareș" decât dacă e clar nume istoric standard.
+
+OUTPUT: STRICT adresa normalizată, fără preambul, fără ghilimele, fără markdown. Doar text.
+
+EXEMPLE:
+Input: "str panduri 33 sc a"
+Output: "Strada Panduri nr. 33, sc. A"
+
+Input: "soseaua panduri 33 bloc P1 sc A bucuresti"
+Output: "Șoseaua Panduri nr. 33, bloc P1, sc. A, București"
+
+Input: "bd basarabia sect 2"
+Output: "Bulevardul Basarabia, Sector 2"
+
+Input: "intersectia Petru Rares si Ioan Bianu sector 1"
+Output: "Intersecția străzilor Petru Rareș și Ioan Bianu, Sector 1"
+
+Input: "calea 13 septembrie cluj napoca"
+Output: "Calea 13 Septembrie, Cluj-Napoca"`;
+
+function fallbackAddress(raw: string): string {
+  return raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+/**
+ * Normalizează o adresă românească via Groq AI. Fallback la capitalize
+ * simplă dacă AI eșuează. NU adaugă fapte.
+ */
+export async function reformulateAdresa(raw: string | null | undefined): Promise<string> {
+  const input = (raw ?? "").trim();
+  if (input.length < 3) return input;
+
+  try {
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL_FAST,
+      messages: [
+        { role: "system", content: ADDRESS_NORMALIZE_PROMPT },
+        { role: "user", content: input },
+      ],
+      temperature: 0.1,
+      max_tokens: 150,
+    });
+    const out = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!out || out.length < 3) return fallbackAddress(input);
+    // Strip ghilimele dacă AI le-a pus accidental.
+    const cleaned = out.replace(/^["'„«]+|["'»"]+$/g, "").trim();
+    if (cleaned.length < 3) return fallbackAddress(input);
+    return cleaned;
+  } catch {
+    return fallbackAddress(input);
+  }
+}
+

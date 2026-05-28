@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { generateFormalText, getPrefabActions } from "@/lib/sesizari/formal-template";
-import { reformulateDescriere, reorderActions } from "@/lib/sesizari/reformulate-descriere";
+import { reformulateDescriere, reorderActions, reformulateAdresa } from "@/lib/sesizari/reformulate-descriere";
 
 /**
  * Generator text formal sesizare — TEMPLATE DETERMINIST, fără AI.
@@ -44,26 +44,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { descriere, tip, locatie, nume, adresa, imagini } = schema.parse(body);
 
-    // 2026-05-27 — 2 apeluri AI în PARALEL pentru latency optim:
+    // 2026-05-27/28 — 4 apeluri AI în PARALEL pentru latency optim:
     //   1. reformulateDescriere: scrieri colocviale → registru oficial
-    //      (PĂSTRÂND faptele, fără solicitări care duplică lista)
-    //   2. reorderActions: ia acțiunile prefab pentru tip-ul respectiv și
-    //      le REORDONEAZĂ în ordine imediat → planificare → permanent
-    //      (păstrează textul prefab + referințele legale exact).
-    // Pe eșec AI ambele cad în picioare cu fallback la comportament prefab.
+    //   2. reorderActions: prefab → reordonate imediat→planificare→permanent
+    //   3. reformulateAdresa(adresa): adresa cetățeanului → format formal
+    //      cu diacritice + abrevieri expandate (str→Strada, sos→Șoseaua etc)
+    //   4. reformulateAdresa(locatie): locația problemei → același tratament
+    // Toate au fallback la input brut dacă AI eșuează.
     const tipFinal = tip ?? "altele";
     const prefab = getPrefabActions(tipFinal);
-    const [descriereReformulata, customActions] = await Promise.all([
+    const [descriereReformulata, customActions, adresaNorm, locatieNorm] = await Promise.all([
       reformulateDescriere(descriere),
       reorderActions({ tip: tipFinal, descriere, prefabActions: prefab }),
+      reformulateAdresa(adresa),
+      reformulateAdresa(locatie),
     ]);
 
     const formal_text = generateFormalText({
       tip: tipFinal,
-      locatie: locatie ?? "",
+      locatie: locatieNorm ?? locatie ?? "",
       descriere: descriereReformulata,
       nume: nume ?? null,
-      adresa: adresa ?? null,
+      adresa: adresaNorm || (adresa ?? null),
       hasPhotos: (imagini ?? []).length > 0,
       customActions,
     });
