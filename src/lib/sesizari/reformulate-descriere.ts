@@ -226,6 +226,115 @@ export async function reorderActions(args: {
   }
 }
 
+// ─── ACȚIUNI CONTEXTUALE — generate din descriere când prefab e generic ──
+
+/**
+ * 2026-05-29 — Pentru tip "altele" prefab actions sunt generice
+ * ("Verificarea situației la fața locului", "Luarea măsurilor corespunzătoare
+ * conform competențelor instituției"). User-ul a observat că emailul către
+ * primărie suna gol și impersonal când contextul descrierii cerea acțiuni
+ * SPECIFICE (ex: sancționare șofer pe trotuar, investigare conduită poliție).
+ *
+ * Această funcție generează 2-4 acțiuni CONCRETE bazate pe descriere —
+ * cu referințe legale când e cazul (OUG 195/2002 art. 35 pt circulație pe
+ * trotuar, OG 27/2002 pt răspuns, etc.).
+ *
+ * Constraint: NU INVENTA fapte noi. Acțiunile sunt DERIVATE din ce e în
+ * descriere — nu adăugăm "investigarea poliției" dacă cetățeanul nu a
+ * menționat poliție.
+ *
+ * Fallback la prefab actions dacă AI eșuează.
+ */
+const CONTEXTUAL_ACTIONS_PROMPT = `Ești un asistent care primește descrierea unei probleme civice și generează 2-4 acțiuni concrete pe care le solicită cetățeanul autorității.
+
+CONTEXT: Acțiunile tale ajung într-o listă numerotată într-o sesizare oficială către primărie/poliție.
+
+REGULI CRITICE:
+1. DOAR 2-4 acțiuni. Fără introducere, fără concluzie. Direct lista.
+2. Acțiunile trebuie să fie DERIVATE din descrierea cetățeanului — NU INVENTA acțiuni pentru fapte care nu sunt în text.
+3. Fii CONCRET. „Verificarea situației la fața locului" e generic și inutil. Spune EXACT ce trebuie făcut: „Sancționarea șoferului identificat cu numărul de înmatriculare [X]", „Investigarea conduitei echipajului de poliție".
+4. INCLUDE REFERINȚE LEGALE când relevant:
+   - Circulație vehicul pe trotuar: art. 35 din OUG 195/2002
+   - Staționare neregulamentară: art. 142 din OUG 195/2002
+   - Conduită demnitar/funcționar: art. 11 din Codul Etic al funcționarilor publici
+   - Răspuns autoritate: OG 27/2002 art. 8 (30 zile)
+   - Curățenie domeniu public: HCGMB 120/2010
+   - Iluminat public: HCGMB 281/2006
+5. ORDINE LOGICĂ: imediat (sancțiune, intervenție) → planificare (verificare, anchetă) → permanent (reabilitare, montare echipamente).
+6. Fiecare acțiune termină cu PUNCT.
+7. Limba: română CU DIACRITICE (ă, â, î, ș, ț).
+8. NU prefa cu „1. ..., 2. ..." — listă brută, fiecare acțiune pe linie nouă.
+9. NU folosi „solicităm", „vă rugăm", „cerem" — acțiunile sunt în lista numerotată după paragraful de solicitare, nu repeta cuvântul.
+
+EXEMPLE:
+
+Descriere: "În intersecția Chișinău cu Pantelimon, un șofer cu numărul B-957-MUT a circulat pe trotuar printre pietoni. Un echipaj de Poliție Locală (B-38-BZD) a trecut prin față, ignorând semnalul, salutând șoferul și ne aplicând nicio măsură."
+Acțiuni:
+Identificarea și sancționarea șoferului autoturismului cu numărul de înmatriculare B-957-MUT pentru circulație pe trotuar, conform art. 35 din OUG 195/2002.
+Investigarea conduitei echipajului de Poliție Locală cu numărul de înmatriculare B-38-BZD pentru neîndeplinirea atribuțiilor de serviciu și pasivitate față de o încălcare flagrantă observată.
+Aplicarea măsurilor disciplinare ce se impun conform legislației în vigoare și a Codului Etic al funcționarilor publici.
+
+Descriere: "Iluminatul stradal pe strada Vasile Lascăr nu funcționează de o săptămână, zona e foarte întunecată noaptea, e periculos."
+Acțiuni:
+Verificarea funcționării corpurilor de iluminat public pe Strada Vasile Lascăr.
+Înlocuirea sau repararea în regim de urgență a becurilor defecte sau a tabloului electric afectat.
+Comunicarea unui termen estimativ pentru remediere, conform HCGMB 281/2006.
+
+Descriere: "Pe trotuarul de la blocul 14 e o groapă mare, persoanele în vârstă riscă să cadă."
+Acțiuni:
+Verificarea integrității trotuarului la adresa indicată și evaluarea gradului de pericol.
+Plombarea sau reabilitarea zonei afectate de către administratorul rețelei de utilități responsabile.
+Semnalizarea temporară a zonei până la finalizarea reparațiilor pentru protecția pietonilor.
+
+OUTPUT: STRICT lista de acțiuni (2-4 linii), fiecare pe rând nou, fără numerotare, fără preambul, fără markdown.`;
+
+/**
+ * Generează acțiuni contextuale derivate din descrierea cetățeanului.
+ * Folosit pentru tip "altele" sau când prefab e prea generic. Fallback
+ * la prefab dacă AI eșuează sau output e invalid.
+ */
+export async function generateContextualActions(args: {
+  descriere: string;
+  tip: string;
+  locatie?: string | null;
+  prefabFallback: string[];
+}): Promise<string[]> {
+  const desc = args.descriere?.trim() || "";
+  if (desc.length < 20) return args.prefabFallback;
+
+  try {
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL_FAST,
+      messages: [
+        { role: "system", content: CONTEXTUAL_ACTIONS_PROMPT },
+        {
+          role: "user",
+          content: `tip=${args.tip}\nlocatie=${args.locatie || "N/A"}\ndescriere="${desc}"`,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 600,
+    });
+    const out = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!out) return args.prefabFallback;
+
+    // Parse: split pe linii, scoate numerotare daca AI a inclus, filtru length.
+    const lines = out
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .map((l) => l.replace(/^[\d]+[.)]\s*/, "")) // strip "1. " sau "1) "
+      .map((l) => l.replace(/^[-•*]\s*/, ""))     // strip bullet markers
+      .filter((l) => l.length >= 20 && l.length <= 400)
+      .filter((l) => !/^solicit|^v[ăa]\s+rog|^cerem|^rug[ăa]m/i.test(l)); // skip solicit lines
+
+    if (lines.length < 2) return args.prefabFallback;
+    return lines.slice(0, 4); // max 4 actions
+  } catch {
+    return args.prefabFallback;
+  }
+}
+
 // ─── ADRESĂ + LOCAȚIE — AI normalizează diacritice + format formal ──
 
 /**

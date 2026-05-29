@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { generateFormalText, getPrefabActions } from "@/lib/sesizari/formal-template";
-import { reformulateDescriere, reorderActions, reformulateAdresa } from "@/lib/sesizari/reformulate-descriere";
+import {
+  reformulateDescriere,
+  reorderActions,
+  reformulateAdresa,
+  generateContextualActions,
+} from "@/lib/sesizari/reformulate-descriere";
+import { detectsPoliceContext } from "@/lib/sesizari/authorities";
 
 /**
  * Generator text formal sesizare — TEMPLATE DETERMINIST, fără AI.
@@ -53,9 +59,30 @@ export async function POST(req: Request) {
     // Toate au fallback la input brut dacă AI eșuează.
     const tipFinal = tip ?? "altele";
     const prefab = getPrefabActions(tipFinal);
+
+    // 2026-05-29 — Decide intre prefab + reorder VS contextual actions.
+    // Cazuri unde generam contextual din descriere (user-raport):
+    //   • tip = "altele" → prefab e generic ("Verificarea situatiei...")
+    //   • context politie detectat in descriere (vehicul pe trotuar, politie
+    //     inactiva, plate raportata) → prefab pentru groapa/iluminat/etc
+    //     ratează specificul cazului
+    // Restul cazurilor: prefab + reorder logic (mai predictibil).
+    const police = detectsPoliceContext(descriere, locatie);
+    const needsContextualActions =
+      tipFinal === "altele" || police.needsTraffic || police.needsLocal;
+
+    const actionsPromise = needsContextualActions
+      ? generateContextualActions({
+          descriere,
+          tip: tipFinal,
+          locatie,
+          prefabFallback: prefab,
+        })
+      : reorderActions({ tip: tipFinal, descriere, prefabActions: prefab });
+
     const [descriereReformulata, customActions, adresaNorm, locatieNorm] = await Promise.all([
       reformulateDescriere(descriere),
-      reorderActions({ tip: tipFinal, descriere, prefabActions: prefab }),
+      actionsPromise,
       reformulateAdresa(adresa),
       reformulateAdresa(locatie),
     ]);
