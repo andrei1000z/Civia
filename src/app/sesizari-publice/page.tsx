@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/sesizari-publice" },
 };
 
+// 2026-05-29 — ISR cu revalidate 60s. Pagina dynamic per request era
+// costisitoare; lista publică update lent. Cu revalidate=60, primul request
+// post-60s declanseaza re-render in background, restul servesc cache.
+export const revalidate = 60;
+
 export default function SesizariPublicePage() {
   return (
     <div className="container-narrow py-8 md:py-12">
