@@ -16,24 +16,38 @@ export function ReadingProgress() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // 2026-05-29 — rAF throttle + cached scrollHeight + integer pct diff.
+    let raf = 0;
+    let max = document.documentElement.scrollHeight - window.innerHeight;
+    let lastPct = -1;
+    const recalcMax = () => {
+      max = document.documentElement.scrollHeight - window.innerHeight;
+      setEnabled(max > 0);
+    };
     const compute = () => {
-      const doc = document.documentElement;
-      const scrolled = window.scrollY;
-      const max = doc.scrollHeight - window.innerHeight;
-      if (max <= 0) {
-        setEnabled(false);
-        return;
-      }
-      setEnabled(true);
-      setPct(Math.max(0, Math.min(100, (scrolled / max) * 100)));
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        if (max <= 0) {
+          raf = 0;
+          return;
+        }
+        const next = Math.max(0, Math.min(100, Math.round((window.scrollY / max) * 100)));
+        if (next !== lastPct) {
+          lastPct = next;
+          setPct(next);
+        }
+        raf = 0;
+      });
     };
 
+    recalcMax();
     compute();
     window.addEventListener("scroll", compute, { passive: true });
-    window.addEventListener("resize", compute);
+    window.addEventListener("resize", recalcMax, { passive: true });
     return () => {
       window.removeEventListener("scroll", compute);
-      window.removeEventListener("resize", compute);
+      window.removeEventListener("resize", recalcMax);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, []);
 

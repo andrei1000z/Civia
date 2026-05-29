@@ -35,21 +35,31 @@ export function GhidLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    // 2026-05-29 — passive + rAF throttle. Era non-passive (default false),
+    // bloca scroll thread cu offsetTop reads per frame.
+    let raf = 0;
     const handleScroll = () => {
-      const scrollY = window.scrollY + 200;
-      for (let i = chapters.length - 1; i >= 0; i--) {
-        const ch = chapters[i];
-        if (!ch) continue;
-        const el = document.getElementById(ch.id);
-        if (el && el.offsetTop <= scrollY) {
-          setActiveChapter(ch.id);
-          break;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        const scrollY = window.scrollY + 200;
+        for (let i = chapters.length - 1; i >= 0; i--) {
+          const ch = chapters[i];
+          if (!ch) continue;
+          const el = document.getElementById(ch.id);
+          if (el && el.offsetTop <= scrollY) {
+            setActiveChapter(ch.id);
+            break;
+          }
         }
-      }
+        raf = 0;
+      });
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [chapters]);
 
   return (
