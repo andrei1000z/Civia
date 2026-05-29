@@ -47,7 +47,20 @@ type ResendEvent = {
     from?: string;
     to?: string[];
     subject?: string;
-    bounce?: { type?: string; sub_type?: string; message?: string };
+    bounce?: {
+      type?: string;
+      sub_type?: string;
+      message?: string;
+      // 2026-05-29 — Resend (via AWS SES) trimite array cu adresele
+      // exacte care au facut bounce. Folosit ca sa marcam per-recipient
+      // status in loc de „bounced" pentru intregul email.
+      bouncedRecipients?: Array<{
+        emailAddress?: string;
+        action?: string;
+        status?: string;
+        diagnosticCode?: string;
+      }>;
+    };
     tags?: Array<{ name: string; value: string }>;
   };
 };
@@ -138,15 +151,78 @@ export async function POST(req: Request) {
       deliveryStatus = "delivered";
       extraFields.delivered_at = new Date(event.created_at).toISOString();
       break;
-    case "email.bounced":
-      deliveryStatus = "bounced";
+    case "email.bounced": {
+      // 2026-05-29 — Per-recipient bounce tracking. Resend trimite cate
+      // un bounce event pentru fiecare adresa care fail. Email-ul cu 4
+      // destinatari poate avea 1-3 bounce events + 1-3 delivered events
+      // (deliveries partial).
+      //
+      // Inainte: orice bounce = delivery_status="bounced" pe TOATA sesizarea
+      // → utilizatorul credea ca NU s-a trimis. In realitate PMB primise
+      // si chiar RASPUNDEA cu numar de inregistrare.
+      //
+      // Acum:
+      //   • Extragem bouncedRecipients din event.data.bounce
+      //   • Cite-im sesizarea sa vedem sent_to_emails (lista TOATA)
+      //   • Daca toate destinatarii au facut bounce → status="bounced"
+      //   • Daca doar UNELE → status="partial_bounced" + bounced_recipients
+      //   • Loghez raw bounce in Sentry breadcrumb pentru forensic
+      deliveryStatus = "bounced"; // overridden mai jos daca partial
       extraFields.bounced_at = new Date(event.created_at).toISOString();
       extraFields.bounce_reason =
         event.data?.bounce?.message?.slice(0, 200) ||
         event.data?.bounce?.sub_type ||
         event.data?.bounce?.type ||
         "unknown bounce";
+
+      // Extract per-recipient bounce list (Resend/SES format)
+      const bouncedList =
+        event.data?.bounce?.bouncedRecipients
+          ?.map((r) => r.emailAddress?.toLowerCase().trim())
+          .filter((e): e is string => !!e) ?? [];
+
+      if (bouncedList.length > 0) {
+        // Citim sesizarea curenta sa comparam cu sent_to_emails
+        const { data: sezData } = await admin
+          .from("sesizari")
+          .select("sent_to_emails")
+          .eq("resend_message_id", messageId)
+          .maybeSingle();
+        const sentList =
+          ((sezData as { sent_to_emails?: string[] } | null)?.sent_to_emails ?? [])
+            .map((e) => e.toLowerCase().trim());
+
+        if (sentList.length > 0 && bouncedList.length < sentList.length) {
+          // Partial bounce: unele primesc, unele bounce
+          deliveryStatus = "partial_bounced";
+        }
+
+        // Salvam lista exacta + raw payload (best-effort; coloanele pot lipsi
+        // pana cand migration 085 ruleaza in prod). Cast-uim catre Record
+        // ca sa nu spargem TS daca tipul row nu le are inca.
+        const optionalCols: Record<string, unknown> = {
+          bounced_recipients: bouncedList,
+          bounce_raw: event.data?.bounce ?? null,
+        };
+        Object.assign(extraFields as Record<string, unknown>, optionalCols);
+      }
+
+      // Sentry breadcrumb cu raw event pentru forensic (user vede in
+      // Sentry „bouncedRecipients: [bpr@b.politiaromana.ro]" exact).
+      Sentry.addBreadcrumb({
+        category: "email.bounce",
+        message: `bounce on email_id ${messageId}`,
+        level: "warning",
+        data: {
+          bouncedRecipients: bouncedList,
+          to: event.data?.to,
+          bounceType: event.data?.bounce?.type,
+          subType: event.data?.bounce?.sub_type,
+          msg: event.data?.bounce?.message?.slice(0, 300),
+        },
+      });
       break;
+    }
     case "email.complained":
       deliveryStatus = "complained";
       break;
