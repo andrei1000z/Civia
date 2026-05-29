@@ -422,12 +422,17 @@ export async function POST(req: Request) {
   const aiInputText = cleanBody + attachmentTextParts.join("");
 
   // ─── 6. Classify + authenticity score (parallel for latency) ────
+  // 2026-05-29 — trusted_sender pasat la classifier ca să poată folosi
+  // signals de tip „subject Sesizare X de la PMB = inregistrata cu 85%"
+  // chiar și fără pattern explicit în body.
+  const trustedSender = sender !== null;
   const [classification, authenticity] = await Promise.all([
     classifyReply({
       subject,
       body: aiInputText, // ← acum include textele extrase din atașamente
       sender_name: sender?.authority_name ?? sender?.email,
       authority_hint: sender?.authority_name,
+      trusted_sender: trustedSender,
     }),
     scoreAuthenticity({
       from,

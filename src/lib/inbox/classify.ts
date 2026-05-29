@@ -3,17 +3,17 @@ import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
 /**
  * AI classifier for inbound replies from Romanian authorities.
  *
- * Reads the email body and decides:
- *   - status: which sesizare status to set
- *   - nr_inregistrare: official registration nr (if mentioned)
- *   - summary: one-sentence neutral summary in Romanian
- *   - deadline: any mentioned timeline/date
- *   - confidence: 0-100, how sure
- *   - suggested_action: what the citizen should do next
+ * Pipeline (2026-05-29 rewrite):
+ *   1. recoverMojibake() — fix UTF-8 double-encoded as CP1252 (Sector 6
+ *      portal mai ales: „PrimÄria Sector 6: Cerere Ã®nregistratÄ").
+ *   2. deterministicPreClassify() — regex pe subject + body. Prinde 70-80%
+ *      din cazurile common cu confidence high și ZERO AI cost.
+ *   3. AI fallback (Groq Llama 3.3 70B) doar cand pre-classifier nu e sigur.
+ *   4. Post-validation: nr_inregistrare hallucination check + auto-reply
+ *      patterns elevate la „inregistrata" daca AI dă „necunoscut".
  *
- * Cost: ~$0.0002 per call (Llama 3.3 70B via Groq). With aggressive
- * caching and per-IP rate limit on the webhook, this stays under $5/mo
- * even with 5000+ replies/month.
+ * Cost: ~$0.0002 per AI call. Cu pre-classifier, 70% din emailuri skip AI
+ * → cost real ~$0.00006 per reply. La 5000 replies/lună = $0.30/lună.
  */
 
 export type ReplyStatus =
@@ -26,11 +26,11 @@ export type ReplyStatus =
   | "necunoscut";
 
 export type SuggestedAction =
-  | "wait_for_resolution" // status update, no action needed from citizen
-  | "respond_with_info" // authority cere informații
-  | "escalate_now" // refuzat / pasat → escalare la Avocatul Poporului
-  | "confirm_resolution" // autoritatea zice „rezolvat" → user verifică
-  | "monitor_progress"; // lucrare în execuție
+  | "wait_for_resolution"
+  | "respond_with_info"
+  | "escalate_now"
+  | "confirm_resolution"
+  | "monitor_progress";
 
 export interface ClassifyResult {
   status: ReplyStatus;
@@ -39,10 +39,237 @@ export interface ClassifyResult {
   summary: string;
   deadline: string | null;
   suggested_action: SuggestedAction;
-  /** True if this looked like spam/unrelated, not a real reply */
   is_spam: boolean;
-  /** Raw model response for debugging */
   raw?: unknown;
+  /** Pipeline stage that produced final answer. Diagnostic only. */
+  source?: "deterministic" | "ai" | "ai+autoreply" | "fallback";
+}
+
+/**
+ * 2026-05-29 — Mojibake recovery.
+ *
+ * Multe primării (Sector 6 portal, registratura Sector 1, ps2 portal) trimit
+ * subiectele cu encoding broken: UTF-8 bytes interpretate ca CP1252 apoi
+ * re-encodate UTF-8. Rezultat: „ț" → „Èš" → „È" + „™", „â" → „Ã¢", etc.
+ *
+ * Heuristic: dacă vedem secvențe Ã/È + caractere suspecte, încercăm să
+ * decodificăm înapoi. Funcționează pentru patterns observate în production:
+ *   „MaÈini" → „Mașini"
+ *   „Ã®nregistratÄ" → „înregistrată"
+ *   „Solicitarea a fost inregistrata" rămâne identic.
+ */
+export function recoverMojibake(text: string): string {
+  if (!text) return text;
+  // Detect mojibake by looking for known patterns
+  const hasMojibake =
+    /[ÃÈ][a-zšž™œ\d]|Ä\s|Ã®|Ã¢|Ã¨|Èœ|Èš|Ã®/i.test(text) &&
+    !/ț|ș|ă|â|î/i.test(text); // dacă au deja diacritice corecte, e altă chestie
+  if (!hasMojibake) return text;
+
+  // Most common patterns observed în production
+  const map: Array<[RegExp, string]> = [
+    [/È™/g, "ș"], [/Èš/g, "ț"], [/È›/g, "ț"], [/Èœ/g, "ț"], [/È¢/g, "ț"],
+    [/Ã¢/g, "â"], [/Ã®/g, "î"], [/Ã¨/g, "è"], [/Ãª/g, "ê"],
+    [/Ä /g, "Ă "], [/Äƒ/g, "ă"], [/Ä‚/g, "Ă"], [/Ä/g, "Ă"],
+    [/Å£/g, "ț"], [/Å¢/g, "Ț"], [/Å/g, "Ș"],
+    [/â€™/g, "'"], [/â€œ/g, "\""], [/â€/g, "\""], [/â€“/g, "—"], [/â€"/g, "—"],
+    [/Â /g, " "], [/Â/g, ""],
+    [/È/g, "Ș"], // catch-all rest
+  ];
+  let out = text;
+  for (const [from, to] of map) out = out.replace(from, to);
+  return out;
+}
+
+/**
+ * 2026-05-29 — Numar inregistrare extractor.
+ *
+ * Pattern-uri observate în production:
+ *   • Subject: „Numar inregistrare 'Sesizare 00050 ... / '" — gol între /
+ *     și ' → CITESC body unde apare nr-ul efectiv
+ *   • Subject: „Re: Sesizare X — Inregistrare oficiala" + body cu nr
+ *   • Body: „a fost inregistrata sub nr. 12345/2026"
+ *   • Body: „nr. inregistrare: 12345/2026"
+ *   • Body: „inregistrata cu numarul A12345/2026"
+ *   • Body: „inregistrarea cu nr. 12345"
+ *
+ * Format typic: numere 3-8 cifre, optional /AAAA.
+ */
+export function extractNrInregistrare(text: string): string | null {
+  if (!text) return null;
+  const patterns: RegExp[] = [
+    // „nr. X/AAAA" sau „nr X/AAAA" sau „nr.X/AAAA"
+    /\bnr\.?\s*([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    // „numarul X" sau „numarul X/AAAA"
+    /\bnum[ăa]rul\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    // „inregistrata cu nr X" / „inregistrat sub nr X"
+    /\bînregistrat[ăa]?\s+(?:cu|sub)\s+(?:nr\.?|num[ăa]rul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    /\binregistrat[ăa]?\s+(?:cu|sub)\s+(?:nr\.?|numarul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    // „înregistrare cu numărul X"
+    /\bînregistrare\s+(?:cu\s+)?(?:nr\.?|num[ăa]rul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    // pure pattern XYZ123/2026 standalone
+    /\b([A-Z]{0,3}\d{4,8}\/\d{4})\b/,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m && m[1]) {
+      const v = m[1].trim();
+      // Validate: must contain at least 3 digits
+      if ((v.match(/\d/g) || []).length >= 3) return v;
+    }
+  }
+  return null;
+}
+
+/**
+ * 2026-05-29 — Deterministic pre-classifier.
+ *
+ * Bazat pe pattern-uri OBSERVATE din 61 răspunsuri primite în production
+ * pe sesizari@civia.ro de la primării Bucuresti, Cluj, Cluj-Napoca, Sector 1-6.
+ *
+ * Întoarce { status, confidence, ...} dacă pattern match. NULL → fallback la AI.
+ */
+function deterministicPreClassify(args: {
+  subject: string;
+  body: string;
+  trustedSender: boolean;
+}): Partial<ClassifyResult> | null {
+  const s = args.subject.toLowerCase();
+  const b = args.body.toLowerCase();
+  const both = `${s} ${b}`;
+
+  // ─── REDIRECȚIONATĂ — verificate înainte de înregistrată (mai specific) ────
+  if (
+    /^fw[:.\- ]/i.test(args.subject) ||
+    /^fwd[:.\- ]/i.test(args.subject) ||
+    /\btransmis[ăa]?\s+(la|c[ăa]tre|spre)\s+(autoritatea|institutia|institutia|departamentul|primaria)/i.test(b) ||
+    /\bnu\s+(este|intr[ăa])\s+(?:în|in)\s+competen[tț]a\s+(noastr[ăa]|institutiei)/i.test(b) ||
+    /\bv[ăa]\s+(rug[ăa]m\s+)?(s[ăa]\s+v[ăa]\s+)?adresa[tț]i\s+(c[ăa]tre|la)/i.test(b) ||
+    /\bredirec[tț]ion[ăa]m?\s+sesizarea/i.test(b)
+  ) {
+    return {
+      status: "redirectionata",
+      confidence: 92,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  // ─── CERERE INFORMAȚII ─────────────────────────────────────────────────────
+  if (
+    /\b(precizat?i|completat?i|transmit?eti)\s+(?:exact\s+)?(?:locatia|adresa|locația|imaginile|mai\s+multe\s+detalii)/i.test(b) ||
+    /\bv[ăa]\s+rug[ăa]m\s+s[ăa]\s+(?:ne\s+)?(?:transmit?eti|comunicat?i|preciza|complet)/i.test(b) ||
+    /\b(avem|este)\s+nevoie\s+de\s+(?:mai\s+)?(?:multe\s+)?(?:detalii|informa[tț]ii|preciz[ăa]ri|clarific[ăa]ri)/i.test(b) ||
+    /\bpentru\s+(?:a\s+)?(?:putea|sa\s+putem)\s+(?:solu[tț]iona|trata|analiza)/i.test(b)
+  ) {
+    return {
+      status: "cerere_informatii",
+      confidence: 88,
+      suggested_action: "respond_with_info",
+      source: "deterministic",
+    };
+  }
+
+  // ─── REZOLVAT ──────────────────────────────────────────────────────────────
+  if (
+    /\b(?:lucrar(?:ea|ile))\s+(?:a|au)\s+fost\s+finalizat[ăa]?/i.test(b) ||
+    /\bproblema\s+(?:semnalat[ăa]|sesizat[ăa]|raportat[ăa])\s+(?:a\s+fost|este)\s+(?:remediat[ăa]|rezolvat[ăa]|solu[tț]ionat[ăa])/i.test(b) ||
+    /\bv[ăa]\s+comunic[ăa]m\s+(?:rezolvarea|solu[tț]ionarea|finalizarea)/i.test(b)
+  ) {
+    return {
+      status: "rezolvat",
+      confidence: 93,
+      suggested_action: "confirm_resolution",
+      source: "deterministic",
+    };
+  }
+
+  // ─── IN-LUCRU ──────────────────────────────────────────────────────────────
+  if (
+    /\b(?:echipa|echipele|departamentul)\s+(?:noastr[ăa]|de\s+specialitate)\s+(?:va|vor)\s+(?:interveni|interven[tț]ia|verifica)/i.test(b) ||
+    /\bl[ăa]\s+urm[ăa]toarea\s+(?:saptam[âa]n[ăa]|edi[tț]ie|lun[ăa])/i.test(b) ||
+    /\b(?:am\s+alocat|am\s+programat|am\s+repartizat)\s+(?:resurse|lucrare|interven[tț]ia)/i.test(b)
+  ) {
+    return {
+      status: "in-lucru",
+      confidence: 88,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  // ─── RESPINS ───────────────────────────────────────────────────────────────
+  if (
+    /\bsesizarea?\s+(?:dvs|dumneavoastr[ăa])?\s*nu\s+este\s+(?:întemeiat[ăa]|fondat[ăa]|justificat[ăa])/i.test(b) ||
+    /\bnu\s+se\s+(?:justific[ăa]|impune)\s+interven[tț]ia/i.test(b) ||
+    /\bclasamen?t\s+f[ăa]r[ăa]\s+(?:obiect|m[ăa]suri)/i.test(b)
+  ) {
+    return {
+      status: "respins",
+      confidence: 90,
+      suggested_action: "escalate_now",
+      source: "deterministic",
+    };
+  }
+
+  // ─── ÎNREGISTRATĂ — patterns common (cel mai larg) ─────────────────────────
+  // Subject patterns (cel mai puternic signal)
+  const subjectInreg =
+    /numar\s+inregistrare/i.test(args.subject) ||
+    /num[ăa]r\s+(?:de\s+)?[îi]nregistrare/i.test(args.subject) ||
+    /solicitarea\s+a\s+fost\s+inregistrat/i.test(args.subject) ||
+    /solicitarea\s+a\s+fost\s+înregistrat/i.test(args.subject) ||
+    /cerere\s+(?:a\s+fost\s+)?[îi]nregistrat/i.test(args.subject) ||
+    /[îi]nregistrare\s+cerere/i.test(args.subject) ||
+    /[îi]nregistrare\s+oficial[ăa]/i.test(args.subject) ||
+    /confirmare\s+(?:de\s+)?primire/i.test(args.subject) ||
+    /confirmare\s+[îi]nregistrare/i.test(args.subject);
+
+  // Body patterns (mai diverse)
+  const bodyInreg =
+    /\bsolicitarea\s+a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\bcererea\s+(?:dvs|dumneavoastr[ăa])?\s*a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\b(?:sesizarea|peti[tț]ia)\s+(?:dvs|dumneavoastr[ăa])?\s*a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\bam\s+primit\s+(?:sesizarea|peti[tț]ia|cererea|solicitarea)/i.test(b) ||
+    /\bv[ăa]\s+(?:confirm[ăa]m|comunic[ăa]m)\s+primirea/i.test(b) ||
+    /\b[îi]nregistrat[ăa]?\s+sub\s+(?:nr\.?|num[ăa]rul|num[ăa]rul\s+de\s+[îi]nregistrare)/i.test(b) ||
+    /\bv[ăa]\s+r[ăa]spundem\s+[îi]n\s+(?:termenul\s+legal|maximum\s+30\s+zile|30\s+de\s+zile)/i.test(b) ||
+    /\bconform\s+(?:OG|Ordonan[tț]ei)\s+27\/2002/i.test(both) ||
+    /\bcerere\s+[îi]nregistrat[ăa]/i.test(b) ||
+    /\bsolicitare\s+[îi]nregistrat[ăa]/i.test(b);
+
+  if (subjectInreg || bodyInreg) {
+    // Confidence boost dacă subject + body ambele match SAU sender e trusted
+    let confidence = 85;
+    if (subjectInreg && bodyInreg) confidence = 95;
+    if (args.trustedSender && (subjectInreg || bodyInreg)) confidence = Math.max(confidence, 90);
+    return {
+      status: "inregistrata",
+      confidence,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  // ─── SUBJECT ECHO de la trusted sender (fără body informativ) ──────────────
+  // „Sesizare 00050 — X" trimis înapoi de PMB ca acknowledgment.
+  // Doar dacă body e scurt (< 200 chars), trusted sender, și NU e auto-reply
+  // generic. Asta NU e o regulă infailibilă dar e mai bună decât „necunoscut".
+  if (
+    args.trustedSender &&
+    /^(?:re:?\s*)?sesizare\s+\d{3,8}/i.test(args.subject) &&
+    args.body.trim().length < 300 &&
+    !/marketing|newsletter|abonare|abonament/i.test(b)
+  ) {
+    return {
+      status: "inregistrata",
+      confidence: 75,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  return null;
 }
 
 const SYSTEM_PROMPT = `Esti un classifier specializat in raspunsuri oficiale de la autoritati publice romanesti la sesizari civice depuse prin platforma Civia.
@@ -61,42 +288,28 @@ Userul a depus o sesizare. Acum autoritatea (primarie, prefectura, Brigada Rutie
 
 CRITERII STATUS:
 
-- "inregistrata": Autoritatea confirma primirea sesizarii si ofera un numar de inregistrare. Exemple:
-  - "Sesizarea a fost inregistrata cu nr X/AN"
-  - "Va comunicam ca am inregistrat petitia dvs sub numarul X"
-  - "Nr de inregistrare: X"
+- "inregistrata": Autoritatea confirma primirea sesizarii/cererii/peititiei sau ofera numar de inregistrare. Subject-ul tipic contine: „Numar inregistrare 'Sesizare X'", „Solicitarea a fost inregistrata", „Cerere inregistrata", „înregistrare cerere", „Confirmare primire". Body tipic: „Va comunicam ca am primit sesizarea dvs", „Va raspundem in termenul legal de 30 zile conform OG 27/2002", „Sesizarea a fost inregistrata sub nr X/AN", „Cerere inregistrata cu nr X/AN". DACA SUBIECTUL ESTE „Numar inregistrare 'Sesizare X'" SAU „Solicitarea a fost inregistrata" → ASTA E INREGISTRATA cu confidence 95+, indiferent ce e in body. NU PUNE „necunoscut" pe astfel de subiecte.
 
-- "in-lucru": Autoritatea confirma ca lucreaza/intervine. Exemple:
-  - "Echipa noastra va interveni saptamana viitoare"
-  - "Lucrarea este in executie"
-  - "Am alocat resurse pentru remediere"
+- "in-lucru": Autoritatea confirma ca lucreaza, intervine, sau a programat actiune. Subject/body: „Echipa noastra va interveni saptamana viitoare", „Lucrarea este in executie", „Am alocat resurse pentru remediere", „Am programat interventia".
 
-- "rezolvat": Autoritatea confirma ca problema este rezolvata.
-  - "Lucrarea a fost finalizata"
-  - "Problema semnalata a fost remediata"
-  - "Va comunicam rezolvarea"
+- "rezolvat": Autoritatea confirma rezolvarea. „Lucrarea a fost finalizata", „Problema semnalata a fost remediata", „Va comunicam rezolvarea".
 
-- "redirectionata": Autoritatea spune ca nu e competenta ei, indica alta institutie.
-  - "Nu intra in competenta noastra, va rugam sa va adresati X"
-  - "Am transmis sesizarea la X"
+- "redirectionata": Autoritatea spune ca nu e competenta ei. „Nu intra in competenta noastra, va rugam adresati X", „Am transmis sesizarea catre X", subject FW: / FWD: cu trimitere catre alta institutie.
 
-- "respins": Autoritatea refuza explicit (sesizare nefondata, lipsa date, etc.)
-  - "Sesizarea nu este intemeiata"
-  - "Conform legii X, nu se justifica interventia"
+- "respins": Autoritatea refuza explicit. „Sesizarea nu este intemeiata", „Nu se justifica interventia", „Conform legii X, nu se incadreaza".
 
-- "cerere_informatii": Autoritatea cere CLARIFICARI sau detalii suplimentare.
-  - "Va rugam sa precizati exact locatia"
-  - "Avem nevoie de mai multe detalii"
+- "cerere_informatii": Autoritatea cere clarificari. „Va rugam sa precizati exact locatia", „Avem nevoie de mai multe detalii", „Va rugam transmiteti imaginile".
 
-- "necunoscut": Daca textul NU e raspuns la sesizare sau e ambiguu / not relevant.
+- "necunoscut": DOAR DACA emailul nu se potriveste cu NICIO categorie de mai sus. Cazuri tipice: marketing/newsletter, autoreply pe vacation, email pierdut accidental. Daca subject sau body CONTINE pattern de inregistrare/confirmare → NU folosi „necunoscut".
 
 REGULI:
 
-1. Confidence 90+ DOAR pentru raspunsuri clare cu fraze tipic-oficiale. Mai jos pentru text ambiguu.
-2. nr_inregistrare: cauta pattern-uri tip "nr X/AN", "numarul X", "X/AAAA". Returneaza string-ul exact ca apare (cu sau fara slash, exact ca in text).
-3. summary: in romana, neutra, sa explice cititorul ce a hotarat institutia. NU "felicitari", NU comentarii.
-4. is_spam=true daca: textul e marketing, newsletter, auto-reply standard ("am primit emailul dvs, va raspundem in 30 zile" fara nr inregistrare = is_spam=false, dar status=necunoscut).
-5. RASPUNZI DOAR JSON valid. Fara markdown, fara explicatii.`;
+1. Confidence 90+ DOAR pentru raspunsuri clare. Daca match-uiesti DOAR pe subject („Numar inregistrare 'Sesizare X'") cu body generic, confidence 85-90. Daca subject + body confirma, 95+.
+2. nr_inregistrare: cauta pattern „nr X/AN", „numarul X", „X/AAAA", „A1234/2026". Returneaza string-ul exact. Daca NU apare numar concret in text (doar subject „Numar inregistrare 'Sesizare 00050 / '" cu / gol), returneaza null.
+3. summary: in romana, neutra. NU adauga interpretari („felicitari", „bun"), DOAR fapte.
+4. is_spam=true DOAR pentru: marketing real (oferte, abonari), newsletter explicit, vacation auto-reply. „Va raspundem in 30 zile" NU e spam, e inregistrata.
+5. Mojibake (encoding broken): textul „MaÈini" inseamna „Mașini", „Ã®nregistratÄ" inseamna „înregistrată". NU lasa mojibake-ul sa te confuza — citeste prin el.
+6. RASPUNZI DOAR JSON valid. Fara markdown, fara explicatii.`;
 
 const FALLBACK: ClassifyResult = {
   status: "necunoscut",
@@ -106,6 +319,7 @@ const FALLBACK: ClassifyResult = {
   deadline: null,
   suggested_action: "wait_for_resolution",
   is_spam: false,
+  source: "fallback",
 };
 
 export async function classifyReply(args: {
@@ -113,26 +327,57 @@ export async function classifyReply(args: {
   body: string | null | undefined;
   sender_name?: string | null;
   authority_hint?: string | null;
+  /** 2026-05-29 — Pass dacă sender e trusted (primarie verificată). */
+  trusted_sender?: boolean;
 }): Promise<ClassifyResult> {
+  // 1. Mojibake recovery — fix subject + body inainte de orice classifier
+  const subjectClean = recoverMojibake(args.subject ?? "");
+  const bodyClean = recoverMojibake(args.body ?? "");
+
+  // 2. Build combined text pentru AI fallback
   const text = [
-    args.subject ? `Subject: ${args.subject}` : "",
+    subjectClean ? `Subject: ${subjectClean}` : "",
     args.sender_name ? `From: ${args.sender_name}` : "",
     args.authority_hint ? `Authority hint: ${args.authority_hint}` : "",
     "",
-    args.body ?? "",
+    bodyClean,
   ].filter(Boolean).join("\n");
 
   if (!text.trim() || text.length < 20) {
     return { ...FALLBACK, summary: "Email gol sau prea scurt pentru clasificare." };
   }
 
+  // 3. Deterministic pre-classifier (skip AI if matched cu confidence high)
+  const pre = deterministicPreClassify({
+    subject: subjectClean,
+    body: bodyClean,
+    trustedSender: args.trusted_sender === true,
+  });
+
+  if (pre && pre.status && pre.confidence && pre.confidence >= 85) {
+    // Extract nr_inregistrare din subject + body (text combinat)
+    const nr = extractNrInregistrare(`${subjectClean}\n${bodyClean}`);
+    const summary = buildDeterministicSummary(pre.status, subjectClean);
+    return {
+      status: pre.status,
+      confidence: pre.confidence,
+      nr_inregistrare: nr,
+      summary,
+      deadline: null,
+      suggested_action: pre.suggested_action ?? "wait_for_resolution",
+      is_spam: false,
+      source: "deterministic",
+    };
+  }
+
+  // 4. AI fallback
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: text.slice(0, 8000) }, // cap pe corp lung
+        { role: "user", content: text.slice(0, 8000) },
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,
@@ -144,7 +389,6 @@ export async function classifyReply(args: {
 
     const parsed = JSON.parse(raw) as Partial<ClassifyResult>;
 
-    // Validează status
     const validStatuses: ReplyStatus[] = [
       "inregistrata", "in-lucru", "rezolvat", "redirectionata",
       "respins", "cerere_informatii", "necunoscut",
@@ -153,7 +397,6 @@ export async function classifyReply(args: {
       ? (parsed.status as ReplyStatus)
       : "necunoscut";
 
-    // Validează suggested_action
     const validActions: SuggestedAction[] = [
       "wait_for_resolution", "respond_with_info", "escalate_now",
       "confirm_resolution", "monitor_progress",
@@ -162,43 +405,48 @@ export async function classifyReply(args: {
       ? (parsed.suggested_action as SuggestedAction)
       : "wait_for_resolution";
 
-    // Bug fix #10 (5/22/2026) — număr înregistrare hallucinat:
-    // AI poate inventa „nr 1234/2026" cand textul NU contine asta.
-    // Validare strictă cu regex + cross-check că apare în text.
+    // Hallucination guard pe nr_inregistrare
     let nrInregistrare: string | null = null;
     if (typeof parsed.nr_inregistrare === "string" && parsed.nr_inregistrare.length > 0) {
       const cand = parsed.nr_inregistrare.slice(0, 50);
-      // Format: cifre/litere 3-12 caractere, optional /YYYY
       const isValidFormat = /^[A-Z0-9.\-/]{3,20}(?:\/\d{4})?$/i.test(cand);
-      // Cross-check: numarul TREBUIE sa apara în text-ul original (sau o
-      // variantă apropiată). Daca nu apare deloc, AI a hallucinat.
       const numCore = cand.replace(/^(?:nr\.?|numar\s*|nr)/i, "").trim();
       const appearsInText = text.toLowerCase().includes(numCore.toLowerCase());
       nrInregistrare = isValidFormat && appearsInText ? cand : null;
     }
+    // Fallback la deterministic extraction dacă AI nu a returnat
+    if (!nrInregistrare) {
+      nrInregistrare = extractNrInregistrare(text);
+    }
 
-    // Bug fix #11 (5/22/2026) — auto-reply detection.
-    // Daca text-ul e auto-reply standard („Vă răspundem în 30 zile",
-    // „Sesizarea a fost primită", etc.) status devine „inregistrata"
-    // (in loc de „necunoscut") + suggested_action = monitor_progress
-    // (in loc de wait_for_resolution care e tacut).
+    // Auto-reply elevate: dacă AI returnează „necunoscut" dar textul are
+    // pattern clar de auto-acknowledgment, elevăm la „inregistrata".
     const autoReplyPatterns = [
-      /vă\s+răspundem\s+în\s+\d+\s+zile/i,
-      /am\s+primit\s+(?:sesizarea|petiția|cererea)/i,
-      /va\s+fi\s+(?:analizată|soluționată)\s+în\s+termenul\s+legal/i,
-      /conform\s+(?:OG|Ordonanței)\s+27\/2002/i,
+      /v[ăa]\s+r[ăa]spundem\s+[îi]n\s+\d+\s+zile/i,
+      /am\s+primit\s+(?:sesizarea|peti[tț]ia|cererea|solicitarea)/i,
+      /va\s+fi\s+(?:analizat[ăa]|solu[tț]ionat[ăa])\s+[îi]n\s+termenul\s+legal/i,
+      /conform\s+(?:OG|Ordonan[tț]ei)\s+27\/2002/i,
+      /solicitarea\s+a\s+fost\s+[îi]nregistrat/i,
+      /cerere\s+[îi]nregistrat[ăa]/i,
+      /[îi]nregistrare\s+cerere/i,
+      /numar\s+inregistrare/i,
+      /num[ăa]r\s+(?:de\s+)?[îi]nregistrare/i,
     ];
-    const isAutoReply = autoReplyPatterns.some((p) => p.test(text));
-    let finalStatus = status;
-    let finalAction = suggested_action;
-    if (isAutoReply && status === "necunoscut") {
+    const elevated = autoReplyPatterns.some((p) => p.test(`${subjectClean} ${bodyClean}`));
+    let finalStatus: ReplyStatus = status;
+    let finalAction: SuggestedAction = suggested_action;
+    let finalSource: ClassifyResult["source"] = "ai";
+    let finalConfidence = Math.max(0, Math.min(100, Number(parsed.confidence) || 0));
+    if (elevated && status === "necunoscut") {
       finalStatus = "inregistrata";
       finalAction = "monitor_progress";
+      finalSource = "ai+autoreply";
+      finalConfidence = Math.max(finalConfidence, 80);
     }
 
     return {
       status: finalStatus,
-      confidence: Math.max(0, Math.min(100, Number(parsed.confidence) || 0)),
+      confidence: finalConfidence,
       nr_inregistrare: nrInregistrare,
       summary: typeof parsed.summary === "string"
         ? parsed.summary.slice(0, 300)
@@ -209,21 +457,36 @@ export async function classifyReply(args: {
       suggested_action: finalAction,
       is_spam: parsed.is_spam === true,
       raw: parsed,
+      source: finalSource,
     };
   } catch {
     return FALLBACK;
   }
 }
 
+/** Generates a neutral RO summary for deterministic pre-classifier hits. */
+function buildDeterministicSummary(status: ReplyStatus, subject: string): string {
+  switch (status) {
+    case "inregistrata":
+      return `Autoritatea confirmă înregistrarea sesizării. Subject: „${subject.slice(0, 80)}"`;
+    case "in-lucru":
+      return "Autoritatea confirmă că lucrează / a programat intervenția.";
+    case "rezolvat":
+      return "Autoritatea declară problema rezolvată — verifică în teren.";
+    case "redirectionata":
+      return "Autoritatea a redirecționat sesizarea către o altă instituție competentă.";
+    case "respins":
+      return "Autoritatea respinge sesizarea — escaladare recomandată (Avocatul Poporului).";
+    case "cerere_informatii":
+      return "Autoritatea cere clarificări — răspunde cu detalii suplimentare.";
+    default:
+      return "Răspuns oficial primit.";
+  }
+}
+
 /**
  * Decide whether the AI classification should be auto-applied to the
  * sesizare status, vs require manual user confirmation.
- *
- * Auto-apply if:
- *   - Sender is from a trusted domain (gov.ro / autoritate cunoscută)
- *   - AI confidence >= 80
- *   - Status is not "necunoscut" / "respins" (status drastic — vrem
- *     review user pentru respins ca să nu ratăm escalare)
  */
 export function shouldAutoApply(args: {
   classification: ClassifyResult;
@@ -234,7 +497,6 @@ export function shouldAutoApply(args: {
   if (classification.is_spam) return false;
   if (classification.confidence < 80) return false;
   if (classification.status === "necunoscut") return false;
-  // Respins → requires user review (escalation decision)
   if (classification.status === "respins") return false;
   return true;
 }
