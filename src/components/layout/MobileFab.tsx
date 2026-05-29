@@ -45,31 +45,13 @@ export function MobileFab() {
     setOpen(false);
   }, [pathname]);
 
-  // Scroll threshold for visibility — rAF throttled, no setState spam.
-  // 2026-05-29 — Inainte, setVisible rula pe FIECARE scroll event (60+/s)
-  // chiar daca valoarea era aceeasi → React rerender thrash. Acum diff
-  // local + rAF coalesce.
+  // Scroll threshold for visibility
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let raf = 0;
-    let last = window.scrollY > 120;
-    setVisible(last);
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        const next = window.scrollY > 120;
-        if (next !== last) {
-          last = next;
-          setVisible(next);
-        }
-        raf = 0;
-      });
-    };
+    const onScroll = () => setVisible(window.scrollY > 120);
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Close on outside click / tap

@@ -55,22 +55,10 @@ export function Navbar() {
   };
 
   useEffect(() => {
-    // 2026-05-29 — passive: true (era default false → bloca scroll thread).
-    // Plus rAF throttle: state updates pe scroll dispari peste 60fps cap.
-    let raf = 0;
-    const handleScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 20);
-        raf = 0;
-      });
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Close mobile menu on route change — sync pathname change cu open=false.
