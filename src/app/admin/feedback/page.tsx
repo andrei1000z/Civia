@@ -62,7 +62,7 @@ export default async function AdminFeedbackPage() {
   // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
   // sau API outage NU trebuie să crash-eze toată pagina /admin/feedback
   // (SQL list încă util fără Redis entries).
-  let redisEntries: RedisFeedbackEntry[] = [];
+  const redisEntries: RedisFeedbackEntry[] = [];
   if (analyticsRedis) {
     try {
       const raw = await analyticsRedis.lrange("civia:feedback:messages", 0, 199);

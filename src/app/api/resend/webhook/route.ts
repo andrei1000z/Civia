@@ -141,7 +141,7 @@ export async function POST(req: Request) {
 
   // Map event.type → delivery_status enum
   let deliveryStatus: string | null = null;
-  let extraFields: Record<string, string | null> = {};
+  const extraFields: Record<string, string | null> = {};
 
   switch (event.type) {
     case "email.sent":

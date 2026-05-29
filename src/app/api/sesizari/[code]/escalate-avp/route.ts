@@ -104,7 +104,7 @@ export async function POST(
     text: plangere.body,
     html,
     replyTo: plangere.replyTo,
-    from: `${sesizare.author_name} <sesizari@civia.ro>`,
+    from: (await import("@/lib/email/sanitize-headers")).buildFromHeader(sesizare.author_name, "sesizari@civia.ro"),
   });
 
   if (!result.ok || !result.id) {

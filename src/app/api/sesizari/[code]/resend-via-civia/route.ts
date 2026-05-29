@@ -197,7 +197,8 @@ export async function POST(
   const subject = `[RETRIMITERE] Sesizare ${sesizare.code} — ${sesizare.titlu}`;
   // 2026-05-27 — plus-addressing pentru match 99% (audit Cloudflare 2026-05-27)
   const replyTo = `sesizari+${sesizare.code}@civia.ro`;
-  const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
+  const { buildFromHeader } = await import("@/lib/email/sanitize-headers");
+  const fromHeader = buildFromHeader(sesizare.author_name, "sesizari@civia.ro");
 
   const result = await sendEmail({
     to: primaryEmails,
