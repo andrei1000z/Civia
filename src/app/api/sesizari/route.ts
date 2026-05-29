@@ -38,8 +38,13 @@ const createSchema = z.object({
   sector: z.enum(["S1", "S2", "S3", "S4", "S5", "S6"]).optional().nullable().default(null),
   county: z.string().max(3).optional().nullable(),       // "CJ", "B", etc.
   locality: z.string().max(100).optional().nullable(),    // "Cluj-Napoca", etc.
-  lat: z.number().min(43.5).max(48.3),  // Romania lat range (actual)
-  lng: z.number().min(20.2).max(29.7),  // Romania lng range (actual)
+  // 2026-05-29 — lat/lng OPTIONAL + nullable. Inainte erau obligatorii ->
+  // userii fara geolocation primeau Zod 400 cu „Unexpected token 'A'..." in
+  // browser cand JSON parse esua. Acum: daca lipsesc, forward-geocode din
+  // locatie text (acelasi flow ca finalLat/finalLng logic mai jos). Doar
+  // daca AND geocode esueaza, returnam 400 friendly.
+  lat: z.number().min(43.5).max(48.3).optional().nullable(),
+  lng: z.number().min(20.2).max(29.7).optional().nullable(),
   descriere: z.string().min(10, "Descrierea trebuie să aibă minim 10 caractere").max(2000),
   formal_text: z.string().max(5000).optional().nullable(),
   // AI auto-generated category cand tip="altele". Admin vede grupari.
@@ -217,25 +222,44 @@ export async function POST(req: Request) {
     // don't trust browser-reported coords when the text is specific".
     // A street-level geocode hit is usually < 50 m off; anything past
     // 1.5 km is noise.
-    let finalLat = parsed.lat;
-    let finalLng = parsed.lng;
+    // 2026-05-29 — lat/lng pot fi null acum (geolocation refuzat / no map pick).
+    // Tratam in 2 cazuri: (a) avem coords → poate inlocuim cu geocode result
+    // daca textul difera; (b) nu avem → forward geocode obligatoriu.
+    let finalLat: number | null = parsed.lat ?? null;
+    let finalLng: number | null = parsed.lng ?? null;
     try {
-      // County code → name so the geocode extractor's fallback queries
-      // land in the right city.
       const { getCountyById } = await import("@/data/counties");
       const countyName = parsed.county ? (getCountyById(parsed.county)?.name ?? null) : null;
       const hit = await forwardGeocode(polished.locatie, countyName, parsed.county ?? null);
       // Ignorăm match-uri city-only (streetLevel=false) — astea aterizează
-      // pe Piața Constituției / centroidul orașului și NU sunt utile ca pin
-      // (bug 2026-05-24: 3 sesizări aveau acelaşi pin Piața Constituției).
+      // pe Piața Constituției / centroidul orașului și NU sunt utile ca pin.
       if (hit && hit.streetLevel) {
-        const distKm = haversineKm(parsed.lat, parsed.lng, hit.lat, hit.lng);
-        if (distKm > 1.5) {
+        if (finalLat == null || finalLng == null) {
+          // Caz (b): nu aveam coords deloc → forward geocode setează valorile.
           finalLat = hit.lat;
           finalLng = hit.lng;
+        } else {
+          // Caz (a): aveam coords → înlocuim doar dacă textul diferă mult.
+          const distKm = haversineKm(finalLat, finalLng, hit.lat, hit.lng);
+          if (distKm > 1.5) {
+            finalLat = hit.lat;
+            finalLng = hit.lng;
+          }
         }
       }
-    } catch { /* silent — keep original coords */ }
+    } catch { /* silent — keep what we have */ }
+
+    // Daca dupa geocode tot nu avem coords, return 400 friendly (NU Zod raw).
+    // Sesizarea fara coords nu poate fi afisata pe harta sau folosita pt
+    // proximity routing (apropiere de strada specifica).
+    if (finalLat == null || finalLng == null) {
+      return NextResponse.json(
+        {
+          error: "Nu am putut localiza adresa. Te rugam scrie o adresa mai precisa (ex: Strada Mihai Bravu 122, Sector 2, Bucuresti) sau alege locatia pe harta.",
+        },
+        { status: 400 },
+      );
+    }
 
     // Defense-in-depth: sanitize formal_text de claims subjective inainte
     // de save (cazul cand AI improve dintr-o sesiune veche n-a aplicat
