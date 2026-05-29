@@ -110,12 +110,18 @@ export const NAV_MORE: Array<{
    */
   countySuffix?: boolean;
 }> = [
+  // ─── Tools/Resurse civice (vechi) ───────────────────────────────────────
   { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
   { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
-  // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
-  // eliminat (duplicat al /clasament — single source of truth).
   { href: "/clasament", label: "Clasament primării", icon: "🏆", nationalOnly: true },
   { href: "/civic-quiz", label: "Civic Quiz", icon: "🎓", nationalOnly: true },
+  // ─── NOI 2026-05-29 — mega features push ────────────────────────────────
+  { href: "/calendar", label: "Calendar civic", icon: "📅", nationalOnly: true },
+  { href: "/decizii-deschise", label: "Decizii Deschise", icon: "🏛️", nationalOnly: true },
+  { href: "/initiative", label: "Inițiative cetățenești", icon: "🎯", nationalOnly: true },
+  { href: "/buget/personal", label: "Buget pe banii MEI", icon: "💰", nationalOnly: true },
+  { href: "/compass-ue", label: "Compass UE — Finanțări", icon: "💸", nationalOnly: true },
+  { href: "/verificare-avere", label: "Verificare avere demnitari", icon: "🔍", nationalOnly: true },
 ];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];
 
