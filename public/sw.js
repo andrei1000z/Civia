@@ -21,7 +21,12 @@
 // v10 bump: forteaza drop pe cache-urile vechi cand /cont layout fix +
 // prefs sync release intra in productie. User-ii cu PWA installed vor
 // vedea noul UI imediat dupa primul page-load (activate trigger).
-const CACHE_VERSION = "v10";
+// v11 bump (2026-05-29): force drop cache pentru ca user-ii cu HTML
+// vechi cached vedeau JS vechi care arunca „Unexpected token 'A'..." la
+// submit /api/sesizari. Fix-ul JSON parse defensiv (commit 9a4e921) era
+// live pe server, dar SW servea HTML stale → JS chunks vechi. Bump +
+// forced reload garanteaza ca toti userii primesc noul bundle imediat.
+const CACHE_VERSION = "v11";
 const STATIC_CACHE = `civia-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `civia-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `civia-images-${CACHE_VERSION}`;
@@ -97,10 +102,17 @@ self.addEventListener("activate", (event) => {
       // Notify all open clients that a new SW is in charge — they can
       // optionally show a "you're on the latest" toast. Most apps just
       // show this on the install path; both are valid.
+      // 2026-05-29 — v11 contine fix CRITIC (JSON parse + lat/lng) →
+      // trimitem si CIVIA_SW_HARD_RELOAD ca client-ul sa reia automat
+      // fara UI prompt. Userii care vad „Unexpected token 'A'..." la
+      // submit primesc instant bundle-ul nou.
       const allClients = await self.clients.matchAll();
-      allClients.forEach((client) =>
-        client.postMessage({ type: "CIVIA_SW_ACTIVATED", version: CACHE_VERSION }),
-      );
+      allClients.forEach((client) => {
+        client.postMessage({ type: "CIVIA_SW_ACTIVATED", version: CACHE_VERSION });
+        if (CACHE_VERSION === "v11") {
+          client.postMessage({ type: "CIVIA_SW_HARD_RELOAD", version: CACHE_VERSION });
+        }
+      });
     })(),
   );
 });

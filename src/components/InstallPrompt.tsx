@@ -105,8 +105,20 @@ export function InstallPrompt() {
     };
     navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
+    // 2026-05-29 — Ascultam CIVIA_SW_HARD_RELOAD trimis cand SW v11+ se
+    // activeaza (contine fix critic JSON parse). Reload automat fara UI
+    // prompt pentru a evita ca userii sa ramana pe bundle vechi.
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === "CIVIA_SW_HARD_RELOAD" && !reloaded) {
+        reloaded = true;
+        window.location.reload();
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      navigator.serviceWorker.removeEventListener("message", onMessage);
     };
   }, []);
 
