@@ -183,14 +183,19 @@ function deterministicPreClassify(args: {
   body: string;
   trustedSender: boolean;
 }): Partial<ClassifyResult> | null {
-  const s = args.subject.toLowerCase();
-  const b = args.body.toLowerCase();
+  // 2026-05-29 — Defensive trim. Emailurile Outlook/Exchange uneori
+  // adauga whitespace leading la subject („ Re: Sesizare X") care strica
+  // regex `^sesizare`. Trim-uim TOT input-ul aici, o singura data.
+  const subjectTrim = args.subject.trim();
+  const bodyTrim = args.body.trim();
+  const s = subjectTrim.toLowerCase();
+  const b = bodyTrim.toLowerCase();
   const both = `${s} ${b}`;
 
   // ─── REDIRECȚIONATĂ — verificate înainte de înregistrată (mai specific) ────
   if (
-    /^fw[:.\- ]/i.test(args.subject) ||
-    /^fwd[:.\- ]/i.test(args.subject) ||
+    /^fw[:.\- ]/i.test(subjectTrim) ||
+    /^fwd[:.\- ]/i.test(subjectTrim) ||
     /\btransmis[ăa]?\s+(la|c[ăa]tre|spre)\s+(autoritatea|institutia|institutia|departamentul|primaria)/i.test(b) ||
     /\bnu\s+(este|intr[ăa])\s+(?:în|in)\s+competen[tț]a\s+(noastr[ăa]|institutiei)/i.test(b) ||
     /\bv[ăa]\s+(rug[ăa]m\s+)?(s[ăa]\s+v[ăa]\s+)?adresa[tț]i\s+(c[ăa]tre|la)/i.test(b) ||
@@ -262,17 +267,17 @@ function deterministicPreClassify(args: {
   }
 
   // ─── ÎNREGISTRATĂ — patterns common (cel mai larg) ─────────────────────────
-  // Subject patterns (cel mai puternic signal)
+  // Subject patterns (cel mai puternic signal). Folosim subjectTrim.
   const subjectInreg =
-    /numar\s+inregistrare/i.test(args.subject) ||
-    /num[ăa]r\s+(?:de\s+)?[îi]nregistrare/i.test(args.subject) ||
-    /solicitarea\s+a\s+fost\s+inregistrat/i.test(args.subject) ||
-    /solicitarea\s+a\s+fost\s+înregistrat/i.test(args.subject) ||
-    /cerere\s+(?:a\s+fost\s+)?[îi]nregistrat/i.test(args.subject) ||
-    /[îi]nregistrare\s+cerere/i.test(args.subject) ||
-    /[îi]nregistrare\s+oficial[ăa]/i.test(args.subject) ||
-    /confirmare\s+(?:de\s+)?primire/i.test(args.subject) ||
-    /confirmare\s+[îi]nregistrare/i.test(args.subject);
+    /numar\s+inregistrare/i.test(subjectTrim) ||
+    /num[ăa]r\s+(?:de\s+)?[îi]nregistrare/i.test(subjectTrim) ||
+    /solicitarea\s+a\s+fost\s+inregistrat/i.test(subjectTrim) ||
+    /solicitarea\s+a\s+fost\s+înregistrat/i.test(subjectTrim) ||
+    /cerere\s+(?:a\s+fost\s+)?[îi]nregistrat/i.test(subjectTrim) ||
+    /[îi]nregistrare\s+cerere/i.test(subjectTrim) ||
+    /[îi]nregistrare\s+oficial[ăa]/i.test(subjectTrim) ||
+    /confirmare\s+(?:de\s+)?primire/i.test(subjectTrim) ||
+    /confirmare\s+[îi]nregistrare/i.test(subjectTrim);
 
   // Body patterns (mai diverse, observate in production)
   const bodyInreg =
@@ -305,18 +310,20 @@ function deterministicPreClassify(args: {
   }
 
   // ─── SUBJECT ECHO de la trusted sender (fără body informativ) ──────────────
-  // „Sesizare 00050 — X" trimis înapoi de PMB ca acknowledgment.
-  // Doar dacă body e scurt (< 200 chars), trusted sender, și NU e auto-reply
-  // generic. Asta NU e o regulă infailibilă dar e mai bună decât „necunoscut".
+  // „Sesizare 00050 — X" sau „Re: Sesizare 00006 — X" trimis înapoi de
+  // PMB/sector ca acknowledgment. Pe sector5 (dezvoltareurbana@) am observat
+  // si cazul cand emailul are 0 body + atașamente cu pozele originale +
+  // logo-uri institutionale → „Re: Sesizare X" + trusted sender = clear
+  // acknowledgment chiar fara body. Bump confidence la 80.
   if (
     args.trustedSender &&
-    /^(?:re:?\s*)?sesizare\s+\d{3,8}/i.test(args.subject) &&
-    args.body.trim().length < 300 &&
+    /^(?:re|fw|fwd)?:?\s*sesizare\s+\d{3,8}/i.test(subjectTrim) &&
+    bodyTrim.length < 500 &&
     !/marketing|newsletter|abonare|abonament/i.test(b)
   ) {
     return {
       status: "inregistrata",
-      confidence: 75,
+      confidence: 85,
       suggested_action: "monitor_progress",
       source: "deterministic",
     };
