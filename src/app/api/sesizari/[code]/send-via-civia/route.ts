@@ -267,8 +267,7 @@ export async function POST(
 
   // From: doar numele user-ului + adresa sesizari@civia.ro (fără +CODE,
   // ca să rămână clean în signature către primărie).
-  const { buildFromHeader } = await import("@/lib/email/sanitize-headers");
-  const fromHeader = buildFromHeader(sesizare.author_name, "sesizari@civia.ro");
+  const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
 
   // Trimite email-ul.
   const result = await sendEmail({

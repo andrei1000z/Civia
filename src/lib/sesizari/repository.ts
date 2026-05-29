@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getHiddenUserIds, getHiddenEmails } from "@/lib/privacy/hidden-users";
@@ -196,29 +195,24 @@ export async function listSesizari(filters: ListFilters = {}): Promise<SesizareF
   return anonymized.map(truncateForFeed);
 }
 
-/**
- * 2026-05-29 — Wrapped in React cache() ca să dedup per-request.
- * Page server render apelează getSesizareByCode pentru: page content,
- * generateMetadata, JSON-LD, share preview → 3-4x DB roundtrips.
- * Cu cache(), apel identical într-un request server returnează aceeași
- * referință fără DB hit suplimentar.
- */
-export const getSesizareByCode = cache(
-  async (code: string): Promise<SesizareFeedRow | null> => {
-    const supabase = await createSupabaseServer();
-    const { data, error } = await supabase
-      .from("sesizari_feed")
-      .select("*")
-      .eq("code", code)
-      .maybeSingle();
-    if (error) throw error;
-    const row = (data as SesizareFeedRow | null) ?? null;
-    if (!row) return null;
-    const stripped = { ...row, nr_inregistrare: null };
-    const [anonymized] = await anonymizeHiddenAuthors([stripped]);
-    return anonymized ?? stripped;
-  },
-);
+export async function getSesizareByCode(code: string): Promise<SesizareFeedRow | null> {
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("sesizari_feed")
+    .select("*")
+    .eq("code", code)
+    .maybeSingle();
+  if (error) throw error;
+  const row = (data as SesizareFeedRow | null) ?? null;
+  if (!row) return null;
+  // 5/23/2026 — strip nr_inregistrare la boundary repository.
+  // Câmpul e privat (unic per sesizare → permite tracking 1:1 al cetățeanului
+  // care a depus dacă e expus public). Apelantul care e SIGUR că user e autor
+  // folosește getNrInregistrareForAuthor() ca să-l aducă explicit.
+  const stripped = { ...row, nr_inregistrare: null };
+  const [anonymized] = await anonymizeHiddenAuthors([stripped]);
+  return anonymized ?? stripped;
+}
 
 /**
  * Aduce nr_inregistrare DOAR dacă userId match-uie user_id-ul autorului.

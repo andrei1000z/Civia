@@ -7,7 +7,6 @@ import { QuickCameraCTA } from "@/components/sesizari/QuickCameraCTA";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
 import { StiriWidget } from "@/components/home/StiriWidget";
-import { TodayCounter } from "@/components/TodayCounter";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { FaqJsonLd } from "@/components/FaqJsonLd";
 
@@ -173,14 +172,6 @@ export default async function HomePage() {
 
       {/* LIVE STATS BAR */}
       <LiveStatsBar />
-
-      {/* 2026-05-29 — Counter „Azi pe Civia" cu metrici live */}
-      <section className="container-narrow py-6">
-        <h2 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-          Azi pe Civia
-        </h2>
-        <TodayCounter />
-      </section>
 
       {/* F6 Mobile Camera Quick CTA — vizibil DOAR pe mobile, sub stats */}
       <div className="container-narrow py-4 md:hidden">

@@ -3,7 +3,6 @@ import Image from "next/image";
 import { CookiePreferencesButton } from "./FooterClientLinks";
 import { FooterFeedback } from "./FooterFeedback";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 const linkCls =
   "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors";
@@ -25,7 +24,6 @@ export function Footer() {
               Despre Civia
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/actualizari" className={linkCls}>Actualizări</Link></li>
               <li><Link href="/legal/confidentialitate" className={linkCls}>Confidențialitate și GDPR</Link></li>
               <li><Link href="/legal/termeni" className={linkCls}>Termenii de utilizare</Link></li>
               <li><Link href="/legal/cookie-policy" className={linkCls}>Politica de cookies</Link></li>
@@ -102,10 +100,7 @@ export function Footer() {
             user-ului: redundant pe un site dedicat exclusiv Romaniei.
             2026-05-26 — adăugat ThemeToggle (compact pill) sub copyright. */}
         <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex flex-col items-center gap-4">
-          <div className="flex items-center gap-3 flex-wrap justify-center">
-            <ThemeToggle variant="compact" />
-            <LocaleSwitcher />
-          </div>
+          <ThemeToggle variant="compact" />
           <p className="text-xs text-[var(--color-text-muted)] text-center" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Civia.ro · Toate drepturile rezervate
           </p>
