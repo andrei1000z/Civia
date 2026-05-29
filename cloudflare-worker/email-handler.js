@@ -478,7 +478,44 @@ function parseEmail(raw) {
     else text = decoded;
   }
 
+  // 2026-05-29 — Fallback: daca text gol dar HTML prezent, derivam text
+  // brut din HTML (strip tags). Pentru cazul sector5 unde emailul are
+  // multipart/related cu text/html + inline images (logo-uri institutionale)
+  // si text/plain lipseste sau e gol. Acum backend-ul primeste body_text
+  // garantat ne-gol cand sender a trimis HTML reply (orice primarie).
+  if (!text && html) {
+    text = stripHtmlBasic(html);
+  }
+
   return { subject, from, to, text, html, headers, attachments };
+}
+
+/**
+ * Basic HTML→text fallback in Worker (lightweight, no DOM available).
+ * Strip tags, decode common entities, normalize whitespace.
+ * Used cand text/plain lipseste in multipart/related (cazul sector5).
+ */
+function stripHtmlBasic(html) {
+  if (!html) return "";
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+/g, " ")
+    .trim();
 }
 
 function splitMultipart(body, boundary) {

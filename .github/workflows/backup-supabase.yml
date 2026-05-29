@@ -1,0 +1,89 @@
+name: Backup Supabase
+
+on:
+  schedule:
+    # Daily at 03:00 UTC (06:00 Romania)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # manual trigger din UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Install pg_dump
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Dump Supabase
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          DATE=$(date -u +%Y-%m-%d)
+          mkdir -p backup
+          # Dump full schema + data (no Supabase internal schemas)
+          pg_dump --no-owner --no-acl \
+            --exclude-schema=auth \
+            --exclude-schema=storage \
+            --exclude-schema=supabase_functions \
+            --exclude-schema=pgsodium \
+            --exclude-schema=vault \
+            --exclude-schema=net \
+            --exclude-schema=cron \
+            "$SUPABASE_DB_URL" \
+            | gzip -9 > "backup/civia-${DATE}.sql.gz"
+          ls -lh backup/
+
+      - name: Upload to Cloudflare R2
+        env:
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: civia-backups
+        run: |
+          set -e
+          DATE=$(date -u +%Y-%m-%d)
+          # Install awscli (R2 is S3-compatible)
+          pip install --quiet awscli
+          # Upload
+          aws s3 cp "backup/civia-${DATE}.sql.gz" \
+            "s3://${R2_BUCKET}/daily/civia-${DATE}.sql.gz" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --no-progress
+          echo "Backup uploaded: s3://${R2_BUCKET}/daily/civia-${DATE}.sql.gz"
+
+      - name: Cleanup old backups (>30 days)
+        if: success()
+        env:
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: civia-backups
+        run: |
+          # Listează backup-uri > 30 zile vechime și șterge
+          # Note: pentru retention 30 zile, configurează direct R2 lifecycle policy
+          # Acest step e doar audit log; lifecycle policy auto-deletează
+          aws s3 ls "s3://${R2_BUCKET}/daily/" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            | head -50
+
+      - name: Notify Sentry on success
+        if: success()
+        run: |
+          curl -sS -X POST "${{ secrets.SENTRY_BACKUP_HEARTBEAT_URL }}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"status\":\"ok\",\"date\":\"$(date -u +%Y-%m-%d)\"}" \
+            || true
+
+      - name: Notify Sentry on failure
+        if: failure()
+        run: |
+          curl -sS -X POST "${{ secrets.SENTRY_BACKUP_HEARTBEAT_URL }}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"status\":\"fail\",\"date\":\"$(date -u +%Y-%m-%d)\"}" \
+            || true
