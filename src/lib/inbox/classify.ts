@@ -60,21 +60,69 @@ export interface ClassifyResult {
  */
 export function recoverMojibake(text: string): string {
   if (!text) return text;
-  // Detect mojibake by looking for known patterns
+  // 2026-05-29 — Textele PMB sunt 2-byte Unicode mojibake (UTF-8 bytes
+  // interpretate ca CP1252 → re-encodate). Exemplu real din DB:
+  //   `Ä` (Ä + control U+0083) = corespunde `ă` original.
+  //   `Ã®` (Ã + ®) = `î`
+  //   `È` (È + control U+0099) = `ș`
+  //   `â` (â + € + ") = `—` (em-dash)
+  // Detecția prinde aceste 2-byte secvențe + patterns vechi single-char.
   const hasMojibake =
-    /[ÃÈ][a-zšž™œ\d]|Ä\s|Ã®|Ã¢|Ã¨|Èœ|Èš|Ã®/i.test(text) &&
-    !/ț|ș|ă|â|î/i.test(text); // dacă au deja diacritice corecte, e altă chestie
+    /Ä[-¿]|Ã[-¿]|È[-¿]|â[-¿]|Ä[a-zA-Z\s.,;:!?]|Ã[®¢¨]|È[a-zș™œ›¢]/i.test(text);
   if (!hasMojibake) return text;
 
-  // Most common patterns observed în production
+  // 2026-05-29 — Patterns folosesc \uXXXX escapes pentru exact bytes
+  // observate in producție. PMB+ multe primării trimit emailuri cu UTF-8
+  // bytes interpretate ca CP1252 → ajung in DB ca Unicode pairs.
+  // Ordine: 2-byte specific patterns ÎNAINTE de single-char fallbacks.
   const map: Array<[RegExp, string]> = [
+    // ─── 2-byte real-world mojibake (din PMB body samples) ────────────────
+    // ă: "Ä" (Ä + NO BREAK HERE)
+    [/Ä/g, "ă"],
+    // Ă: "Ä"
+    [/Ä/g, "Ă"],
+    // â: "Ã¢"
+    [/Ã¢/g, "â"],
+    // Â: "Ã"
+    [/Ã/g, "Â"],
+    // î: "Ã®"
+    [/Ã®/g, "î"],
+    // Î: "Ã"
+    [/Ã/g, "Î"],
+    // ș (Latin Small Letter S with Comma Below): "È"
+    [/È/g, "ș"],
+    // Ș: "È"
+    [/È/g, "Ș"],
+    // ț (Latin Small Letter T with Comma Below): "È"
+    [/È/g, "ț"],
+    // Ț: "È"
+    [/È/g, "Ț"],
+    // — (em-dash): "â"
+    [/â/g, "—"],
+    // – (en-dash): "â"
+    [/â/g, "–"],
+    // ' (right single quote): "â"
+    [/â/g, "'"],
+    // " (left double quote): "â"
+    [/â/g, "\""],
+    // " (right double quote): "â"
+    [/â/g, "\""],
+    // non-breaking space: "Â " or "Â "
+    [/Â /g, " "],
+    [/Â /g, " "],
+
+    // ─── Fallback single-char patterns (legacy compat) ────────────────────
     [/È™/g, "ș"], [/Èš/g, "ț"], [/È›/g, "ț"], [/Èœ/g, "ț"], [/È¢/g, "ț"],
-    [/Ã¢/g, "â"], [/Ã®/g, "î"], [/Ã¨/g, "è"], [/Ãª/g, "ê"],
-    [/Ä /g, "Ă "], [/Äƒ/g, "ă"], [/Ä‚/g, "Ă"], [/Ä/g, "Ă"],
+    [/Ã¢/g, "â"], [/Ã®/g, "î"], [/Ã¨/g, "è"], [/Ãª/g, "ê"], [/Ã„/g, "Ă"],
+    [/Äƒ/g, "ă"], [/Ä‚/g, "Ă"],
+    [/Â /g, " "], [/Â/g, ""],
+    [/Ä(?=[\s.,;:!?]|$)/g, "ă"],
+    [/Ä(?=[a-z])/g, "ă"],
+    [/Ä/g, "ă"],
     [/Å£/g, "ț"], [/Å¢/g, "Ț"], [/Å/g, "Ș"],
     [/â€™/g, "'"], [/â€œ/g, "\""], [/â€/g, "\""], [/â€“/g, "—"], [/â€"/g, "—"],
-    [/Â /g, " "], [/Â/g, ""],
-    [/È/g, "Ș"], // catch-all rest
+    [/È(?=[a-z])/g, "ș"],
+    [/È/g, "Ș"],
   ];
   let out = text;
   for (const [from, to] of map) out = out.replace(from, to);
@@ -98,15 +146,16 @@ export function recoverMojibake(text: string): string {
 export function extractNrInregistrare(text: string): string | null {
   if (!text) return null;
   const patterns: RegExp[] = [
-    // „nr. X/AAAA" sau „nr X/AAAA" sau „nr.X/AAAA"
-    /\bnr\.?\s*([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
-    // „numarul X" sau „numarul X/AAAA"
-    /\bnum[ăa]rul\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
-    // „inregistrata cu nr X" / „inregistrat sub nr X"
-    /\bînregistrat[ăa]?\s+(?:cu|sub)\s+(?:nr\.?|num[ăa]rul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
-    /\binregistrat[ăa]?\s+(?:cu|sub)\s+(?:nr\.?|numarul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    // „cu numărul PMB 89420 / DATE" — PMB specific pattern observed in prod
+    /\bcu\s+num[ăa]rul\s+([A-Z]{2,5}\s+\d{3,8}(?:\s*\/\s*\d{2}\.\d{2}\.\d{4})?)/i,
+    // „inregistrata cu numarul X" / „înregistrat sub nr X"
+    /\b[îi]nregistrat[ăa]?\s+(?:cu|sub)\s+(?:nr\.?|num[ăa]rul)\s+([A-Z]{0,5}\s?\d{3,8}\/?\d{0,4})\b/i,
     // „înregistrare cu numărul X"
-    /\bînregistrare\s+(?:cu\s+)?(?:nr\.?|num[ăa]rul)\s+([A-Z]?\d{3,8}\/?\d{0,4})\b/i,
+    /\b[îi]nregistrare\s+(?:cu\s+)?(?:nr\.?|num[ăa]rul)\s+([A-Z]{0,5}\s?\d{3,8}\/?\d{0,4})\b/i,
+    // „numarul X" sau „numarul X/AAAA" — generic, after specific ones
+    /\bnum[ăa]rul\s+([A-Z]{0,3}\d{3,8}\/?\d{0,4})\b/i,
+    // „nr. X/AAAA" sau „nr X/AAAA"
+    /\bnr\.?\s*([A-Z]{0,3}\d{3,8}\/?\d{0,4})\b/i,
     // pure pattern XYZ123/2026 standalone
     /\b([A-Z]{0,3}\d{4,8}\/\d{4})\b/,
   ];
@@ -225,18 +274,22 @@ function deterministicPreClassify(args: {
     /confirmare\s+(?:de\s+)?primire/i.test(args.subject) ||
     /confirmare\s+[îi]nregistrare/i.test(args.subject);
 
-  // Body patterns (mai diverse)
+  // Body patterns (mai diverse, observate in production)
   const bodyInreg =
-    /\bsolicitarea\s+a\s+fost\s+[îi]nregistrat/i.test(b) ||
-    /\bcererea\s+(?:dvs|dumneavoastr[ăa])?\s*a\s+fost\s+[îi]nregistrat/i.test(b) ||
-    /\b(?:sesizarea|peti[tț]ia)\s+(?:dvs|dumneavoastr[ăa])?\s*a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\bsolicitarea\s+(?:dvs|dumneavoastr[ăa]?\s+)?a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\bcererea\s+(?:dvs|dumneavoastr[ăa]?\s+)?a\s+fost\s+[îi]nregistrat/i.test(b) ||
+    /\b(?:sesizarea|peti[tț]ia)\s+(?:dvs|dumneavoastr[ăa]?\s+)?a\s+fost\s+[îi]nregistrat/i.test(b) ||
     /\bam\s+primit\s+(?:sesizarea|peti[tț]ia|cererea|solicitarea)/i.test(b) ||
     /\bv[ăa]\s+(?:confirm[ăa]m|comunic[ăa]m)\s+primirea/i.test(b) ||
-    /\b[îi]nregistrat[ăa]?\s+sub\s+(?:nr\.?|num[ăa]rul|num[ăa]rul\s+de\s+[îi]nregistrare)/i.test(b) ||
+    /\b[îi]nregistrat[ăa]?\s+(?:sub|cu)\s+(?:nr\.?|num[ăa]rul|num[ăa]rul\s+de\s+[îi]nregistrare|num[ăa]rul\s+PMB|num[ăa]rul\s+[A-Z]{2,4})/i.test(b) ||
     /\bv[ăa]\s+r[ăa]spundem\s+[îi]n\s+(?:termenul\s+legal|maximum\s+30\s+zile|30\s+de\s+zile)/i.test(b) ||
     /\bconform\s+(?:OG|Ordonan[tț]ei)\s+27\/2002/i.test(both) ||
     /\bcerere\s+[îi]nregistrat[ăa]/i.test(b) ||
-    /\bsolicitare\s+[îi]nregistrat[ăa]/i.test(b);
+    /\bsolicitare\s+[îi]nregistrat[ăa]/i.test(b) ||
+    // PMB pattern „cu numărul PMB 89420 / DATA"
+    /\bcu\s+num[ăa]rul\s+[A-Z]{2,5}\s+\d+/i.test(b) ||
+    // „Confirm[ăa]m primirea" / „Confirm[ăa]m primirea e-mailului"
+    /\bconfirm[ăa]m\s+primirea/i.test(b);
 
   if (subjectInreg || bodyInreg) {
     // Confidence boost dacă subject + body ambele match SAU sender e trusted
