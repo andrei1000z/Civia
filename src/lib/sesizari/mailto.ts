@@ -213,6 +213,7 @@ export function buildFormalText(input: MailtoInput): string {
       null,
       input.locatie,
       { jurisdiction: input.parking.jurisdiction },
+      input.descriere,
     );
     const authorityName = recipients.primary[0]?.name ?? "Autoritatea competentă";
 
@@ -341,6 +342,7 @@ export function buildEmailPayload(input: MailtoInput): EmailPayload {
     null,
     input.locatie,
     input.parking ? { jurisdiction: input.parking.jurisdiction ?? null } : undefined,
+    input.descriere,
   );
   const tipLabel = SESIZARE_TIPURI.find((t) => t.value === input.tip)?.label ?? "";
   // Cetățenii tastează adresele fără diacritice ("strada Vasile Lascar
@@ -534,6 +536,7 @@ export function getRecipientsLabel(
   locationText?: string | null,
   parking?: { jurisdiction?: ParkingJurisdiction | null },
   countyCode?: string | null,
+  descriere?: string | null,
 ): string {
   // 2026-05-26 — Bug fix: countyCode era hardcoded null aici, deci
   // toate sesizările (Cluj, Iași, etc.) erau preview-uite cu autoritățile
@@ -552,5 +555,6 @@ export function getRecipientsLabel(
     effectiveCounty,
     locationText ?? null,
     parking ? { jurisdiction: parking.jurisdiction ?? null } : undefined,
+    descriere,
   ).label;
 }

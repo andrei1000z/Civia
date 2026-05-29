@@ -140,12 +140,14 @@ export async function POST(
     }
   }
 
-  // Build text + recipients
+  // Build text + recipients (cu descriere pentru auto-escalation politie)
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
     effectiveCounty,
     sesizare.locatie,
+    undefined,
+    sesizare.descriere,
   );
   if (!recipients.primary || recipients.primary.length === 0) {
     return NextResponse.json(

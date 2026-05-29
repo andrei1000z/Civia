@@ -1306,10 +1306,31 @@ export function SesizareForm() {
           _honey: honey,
         }),
       });
-      const json = await res.json();
+      // 2026-05-29 — Defensive JSON parse. Daca serverul returneaza 500 cu
+      // text/html (Vercel fallback page) sau 502/504 cu plain text, .json()
+      // arunca „Unexpected token 'A'..." care era propagat in UI ca eroare
+      // criptica. Acum verificam Content-Type si parsam safely.
+      const ct = res.headers.get("content-type") || "";
+      let json: { data?: { code: string }; error?: string } = {};
+      if (ct.includes("application/json")) {
+        json = await res.json().catch(() => ({}));
+      } else {
+        // Server-side error fara JSON. Citim textul ca sa il logam la Sentry
+        // (via tracker) si afisam un mesaj user-friendly.
+        const text = await res.text().catch(() => "");
+        json = { error: text.slice(0, 200) || `Serverul a raspuns ${res.status}` };
+      }
       if (!res.ok) {
         trackFunnelStep("sesizare-create", "error");
-        throw new Error(json.error || "Eroare trimitere");
+        throw new Error(
+          json.error ||
+            (res.status >= 500
+              ? "Serverul intampina o problema temporara. Te rugam reincearca in cateva secunde."
+              : "Eroare trimitere"),
+        );
+      }
+      if (!json.data?.code) {
+        throw new Error("Raspuns invalid de la server. Te rugam reincearca.");
       }
       // Save user data for anonymous users (so next submission auto-fills)
       if (!user && typeof window !== "undefined") {
@@ -1365,7 +1386,7 @@ export function SesizareForm() {
   const effectiveCounty =
     detectedCounty ?? (data.locatie ? detectCountyFromLocatie(data.locatie) : null);
   const recipients = data.tip && hasLocationSignal
-    ? getAuthoritiesFor(data.tip, data.sector, effectiveCounty, data.locatie, parkingCtx)
+    ? getAuthoritiesFor(data.tip, data.sector, effectiveCounty, data.locatie, parkingCtx, data.descriere)
     : null;
 
   const LUNI_RO = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];

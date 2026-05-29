@@ -155,12 +155,14 @@ export async function POST(
     }
   }
 
-  // Resolve authorities
+  // Resolve authorities (cu descriere pentru auto-escalation politie)
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
     effectiveCounty,
     sesizare.locatie,
+    undefined,
+    sesizare.descriere,
   );
   if (!recipients.primary || recipients.primary.length === 0) {
     return NextResponse.json(

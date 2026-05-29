@@ -187,12 +187,16 @@ export async function POST(
     }
   }
 
-  // Rezolva destinatarii — primary + cc.
+  // Rezolva destinatarii — primary + cc. 2026-05-29: pasam si descriere
+  // pentru auto-escalation politie cand contextul este rutier (vehicul
+  // pe trotuar, inactiune politie, plate raportata, etc.).
   const recipients = getAuthoritiesFor(
     sesizare.tip,
     sesizare.sector,
     effectiveCounty,
     sesizare.locatie,
+    undefined,
+    sesizare.descriere,
   );
 
   if (!recipients.primary || recipients.primary.length === 0) {

@@ -162,7 +162,7 @@ export default async function SesizareDetailPage({
         descriere={sesizare.descriere ?? undefined}
         url={`${SITE_URL}/sesizari/${sesizare.code}`}
         providerName={
-          getAuthoritiesFor(sesizare.tip, sesizare.sector, sesizare.county, sesizare.locatie)
+          getAuthoritiesFor(sesizare.tip, sesizare.sector, sesizare.county, sesizare.locatie, undefined, sesizare.descriere ?? undefined)
             .primary[0]?.name ?? "Primăria locală"
         }
         createdAt={sesizare.created_at}

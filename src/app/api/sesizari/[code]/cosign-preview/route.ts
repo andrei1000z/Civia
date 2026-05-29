@@ -80,12 +80,14 @@ export async function GET(
     effectiveCounty = detectCountyFromLocatie(sez.locatie);
   }
 
-  // Resolve recipients
+  // Resolve recipients (cu descriere pentru auto-escalation politie)
   const recipients = getAuthoritiesFor(
     sez.tip,
     sez.sector,
     effectiveCounty,
     sez.locatie,
+    undefined,
+    sez.descriere,
   );
 
   // Build formal text cu identitatea co-semnatarului

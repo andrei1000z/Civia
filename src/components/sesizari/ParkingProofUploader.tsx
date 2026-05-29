@@ -371,11 +371,16 @@ function Slot({
             <span>Încarcă poza</span>
           </div>
         )}
+        {/* 2026-05-29 — Eliminat `capture="environment"` (raportat pe
+            Reddit: „voiam sa fac sesizare dar nu ma lasa sa uploadez
+            poze, doar sa le fac pe loc"). Capture fortat = cetatenii
+            care au pozele deja in galerie nu pot incarca. Browser-ul
+            mobile arata oricum picker nativ cu Camera + Galerie +
+            Fisiere — userul decide. */}
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];

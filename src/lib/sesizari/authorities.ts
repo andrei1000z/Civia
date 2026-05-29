@@ -82,6 +82,75 @@ export interface ParkingRoutingContext {
 }
 
 /**
+ * 2026-05-29 — Detecteaza daca descrierea + locatia indica un context de
+ * politie (vehicul pe trotuar, soferi periculosi, politie care nu intervine,
+ * incalcari rutiere, numere de inmatriculare raportate, etc.). Daca DA,
+ * dispatcher-ul adauga Brigada Rutiera + Politia Locala chiar daca tip-ul
+ * este "altele" sau "trotuar" (nu doar "parcare").
+ *
+ * Trigger din feedback Reddit (2026-05-29): user raporteaza masina pe trotuar
+ * + politie care nu reactioneaza. Sesizarea „altele" routeaza doar la PMB +
+ * sector — politia ramane in afara fluxului. Acum o detectam si o adaugam.
+ */
+export function detectsPoliceContext(
+  descriere?: string | null,
+  locationText?: string | null,
+): { needsTraffic: boolean; needsLocal: boolean; reasons: string[] } {
+  const text = `${descriere || ""} ${locationText || ""}`.toLowerCase();
+  if (!text.trim()) return { needsTraffic: false, needsLocal: false, reasons: [] };
+
+  const reasons: string[] = [];
+  let needsTraffic = false; // Brigada Rutiera
+  let needsLocal = false;   // Politia Locala
+
+  // 1) Vehicul pe trotuar / pe pista bicicleta / pe carosabil unde nu trebuie
+  const vehicleOnSidewalk =
+    /(masin|auto|sofer|vehicul|camion|duba|tir|sw|suv)/i.test(text) &&
+    /(pe trotuar|pe pieton|pe pista|pe carosabil|pe spatiu verde|pe zebra|pe trecere)/i.test(text);
+  if (vehicleOnSidewalk) {
+    needsLocal = true;
+    needsTraffic = true;
+    reasons.push("vehicul pe trotuar/pista/zebra");
+  }
+
+  // 2) Politie inactiune / ignora / trece prin fata / refuza interventie
+  const policeInaction =
+    /politi/i.test(text) &&
+    /(ignor|salut|trecut prin fata|nu a reactionat|nu au reactionat|nu a facut nimic|nu au facut nimic|s-au intors|refuza|nepasator|nu a vrut|nu au vrut|degeaba)/i.test(text);
+  if (policeInaction) {
+    needsTraffic = true;
+    needsLocal = true;
+    reasons.push("inactiune politie raportata");
+  }
+
+  // 3) Numar de inmatriculare raportat (pattern românesc B-XXX-XXX sau B 38 BZD)
+  const platePattern = /\b[a-z]{1,2}[\s-]?\d{1,3}[\s-]?[a-z]{3}\b/i;
+  if (platePattern.test(text) && /(sofer|condus|masin|auto|viteza|incalca|trotuar|zebra|rosu|sens|interzis)/i.test(text)) {
+    needsTraffic = true;
+    reasons.push("numar inmatriculare raportat");
+  }
+
+  // 4) Incalcari rutiere explicite
+  const trafficViolation =
+    /(viteza|depasit|trec pe rosu|sens interzis|sens unic|interzis|stop ignor|stop nu a oprit|priorit|alcoo|drogu|fara permis|fara centura)/i.test(text);
+  if (trafficViolation) {
+    needsTraffic = true;
+    reasons.push("incalcare rutiera");
+  }
+
+  // 5) Conduita periculoasa generala
+  const dangerousConduct =
+    /(periculos|teribilism|drifturi|cascadorii|ambala|tunat ilegal|zgomot esapament)/i.test(text) &&
+    /(masin|auto|vehicul|moto)/i.test(text);
+  if (dangerousConduct) {
+    needsTraffic = true;
+    reasons.push("conduita periculoasa");
+  }
+
+  return { needsTraffic, needsLocal, reasons };
+}
+
+/**
  * Returns the list of real authorities to contact based on problem type + sector + county.
  * For București: uses sector-specific authorities.
  * For other counties: uses county contacts from autoritati-contact.ts.
@@ -92,10 +161,11 @@ export function getAuthoritiesFor(
   countyCode?: string | null,
   locationText?: string | null,
   parking?: ParkingRoutingContext,
+  descriere?: string | null,
 ): ResolvedRecipients {
   // If not București, route to county authorities
   if (countyCode && countyCode !== "B") {
-    return getCountyAuthorities(tip, countyCode, locationText);
+    return getCountyAuthorities(tip, countyCode, locationText, descriere);
   }
   const primary: Authority[] = [];
   const cc: Authority[] = [];
@@ -267,6 +337,21 @@ export function getAuthoritiesFor(
       break;
   }
 
+  // 2026-05-29 — Auto-escalation politie. Daca descrierea/locatia indica
+  // un context de politie (vehicul pe trotuar, politie inactiva, plate
+  // raportata, incalcare rutiera, conduita periculoasa), adaugam Brigada
+  // Rutiera + Politia Locala chiar daca tip-ul nu este parcare/trafic.
+  // Trigger din feedback Reddit 2026-05-29.
+  const police = detectsPoliceContext(descriere, locationText);
+  if (police.needsTraffic) addTo(AUTH.brigadaRutiera);
+  if (police.needsLocal) {
+    if (sectorPolitie) addTo(sectorPolitie);
+    addTo(AUTH.politiaLocalaBuc);
+  }
+  if (police.needsTraffic || police.needsLocal) {
+    addCc(AUTH.prefectura); // oversight
+  }
+
   // Build human-readable label
   const names = primary.map((a) => {
     // Shorten names for display
@@ -295,6 +380,7 @@ function getCountyAuthorities(
   tip: string,
   countyCode: string,
   locationText?: string | null,
+  descriere?: string | null,
 ): ResolvedRecipients {
   const PRIMARII = COUNTY_PRIMARII;
   const PREFECTURI = COUNTY_PREFECTURI;
@@ -367,6 +453,30 @@ function getCountyAuthorities(
   const prefectura = PREFECTURI[countyCode];
   if (prefectura?.email) {
     cc.push({ id: `prefectura-${countyCode}`, name: `Prefectura ${countyCode}`, email: prefectura.email });
+  }
+
+  // 2026-05-29 — Auto-escalation politie (county-side). Daca descrierea
+  // indica un context rutier, adauga IPJ + Politia Locala judet chiar
+  // daca tip-ul nu este parcare/zgomot.
+  const police = detectsPoliceContext(descriere, locationText);
+  if (police.needsTraffic || police.needsLocal) {
+    const politiaLocala = POLITIA_LOCALA_JUDET[countyCode];
+    const politie = POLITIE[countyCode];
+    if (police.needsLocal && politiaLocala?.email && !primary.find((x) => x.email === politiaLocala.email)) {
+      primary.push({
+        id: `pl-${countyCode}-auto`,
+        name: `Poliția Locală ${countyCode}`,
+        email: politiaLocala.email,
+        ...(politiaLocala.phone ? { phone: politiaLocala.phone } : {}),
+      });
+    }
+    if (police.needsTraffic && politie?.email && !primary.find((x) => x.email === politie.email) && !cc.find((x) => x.email === politie.email)) {
+      primary.push({
+        id: `politie-${countyCode}-auto`,
+        name: `IPJ ${countyCode}`,
+        email: politie.email,
+      });
+    }
   }
 
   // Fallback: if no specific contacts, generic
