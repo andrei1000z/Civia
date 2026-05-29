@@ -53,9 +53,9 @@ END$$;
 
 -- ─── (b) Perf indexes ─────────────────────────────────────────────────────
 
--- sesizari_replies(authority_id) — query frecvent in admin/inbox
-CREATE INDEX IF NOT EXISTS idx_sesizari_replies_authority_id
-  ON sesizari_replies(authority_id);
+-- sesizare_replies(authority_id) — query frecvent in admin/inbox
+CREATE INDEX IF NOT EXISTS idx_sesizare_replies_authority_id
+  ON sesizare_replies(authority_id);
 
 -- sesizari(status, sent_at) — pentru cron sesizari-mark-overdue
 CREATE INDEX IF NOT EXISTS idx_sesizari_status_sent_at
@@ -69,9 +69,12 @@ CREATE INDEX IF NOT EXISTS idx_sesizari_moderation_status_created
 CREATE INDEX IF NOT EXISTS idx_sesizare_votes_user_id
   ON sesizare_votes(user_id);
 
--- Notifications partial index pentru unread count
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
-  ON notifications(user_id) WHERE read_at IS NULL;
+-- Notifications partial index pentru unread count (skip dacă tabela lipseşte)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='notifications') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE read_at IS NULL';
+  END IF;
+END$$;
 
 -- sesizari(delivery_status, retry_count) pentru cron auto-retry
 CREATE INDEX IF NOT EXISTS idx_sesizari_partial_bounced_retry

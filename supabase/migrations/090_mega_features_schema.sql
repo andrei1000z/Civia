@@ -20,30 +20,28 @@
 -- Idempotent. Safe to run multiple times.
 
 -- ─── PGVECTOR EXTENSION (medium #1 Search semantic) ──────────────────────────
+-- pgvector necesita superuser pentru CREATE EXTENSION. Daca lipseste,
+-- skip silent — semantic search va folosi ILIKE fallback grace.
+-- User poate enable manual: Supabase Dashboard → Database → Extensions → vector.
 
-CREATE EXTENSION IF NOT EXISTS vector;
-
-ALTER TABLE sesizari
-  ADD COLUMN IF NOT EXISTS embedding vector(384);
-
-ALTER TABLE petitii
-  ADD COLUMN IF NOT EXISTS embedding vector(384);
-
-ALTER TABLE stiri
-  ADD COLUMN IF NOT EXISTS embedding vector(384);
-
--- HNSW indexes pentru ANN search rapid
-CREATE INDEX IF NOT EXISTS idx_sesizari_embedding
-  ON sesizari USING hnsw (embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
-
-CREATE INDEX IF NOT EXISTS idx_petitii_embedding
-  ON petitii USING hnsw (embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
-
-CREATE INDEX IF NOT EXISTS idx_stiri_embedding
-  ON stiri USING hnsw (embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'vector') THEN
+    BEGIN
+      CREATE EXTENSION IF NOT EXISTS vector;
+      EXECUTE 'ALTER TABLE sesizari ADD COLUMN IF NOT EXISTS embedding vector(384)';
+      EXECUTE 'ALTER TABLE petitii ADD COLUMN IF NOT EXISTS embedding vector(384)';
+      EXECUTE 'ALTER TABLE stiri ADD COLUMN IF NOT EXISTS embedding vector(384)';
+      EXECUTE 'CREATE INDEX IF NOT EXISTS idx_sesizari_embedding ON sesizari USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)';
+      EXECUTE 'CREATE INDEX IF NOT EXISTS idx_petitii_embedding ON petitii USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)';
+      EXECUTE 'CREATE INDEX IF NOT EXISTS idx_stiri_embedding ON stiri USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)';
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'pgvector skip — needs superuser. Enable manual via Supabase Dashboard.';
+    END;
+  ELSE
+    RAISE NOTICE 'pgvector not available in this Postgres.';
+  END IF;
+END$$;
 
 -- ─── PROFIL PUBLIC OPT-IN (medium #6) ────────────────────────────────────────
 
@@ -216,7 +214,6 @@ CREATE TABLE IF NOT EXISTS ue_programs (
   deadline DATE,
   county_restrictions TEXT[],
   topics TEXT[],
-  embedding vector(384),
   ai_summary TEXT,
   status TEXT DEFAULT 'open' NOT NULL CHECK (status IN ('open', 'closed', 'upcoming')),
   scraped_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -226,8 +223,13 @@ CREATE TABLE IF NOT EXISTS ue_programs (
 CREATE INDEX IF NOT EXISTS idx_ue_programs_status_deadline
   ON ue_programs(status, deadline) WHERE status = 'open';
 
-CREATE INDEX IF NOT EXISTS idx_ue_programs_embedding
-  ON ue_programs USING hnsw (embedding vector_cosine_ops);
+-- pgvector embedding column added separately if vector extension available
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    EXECUTE 'ALTER TABLE ue_programs ADD COLUMN IF NOT EXISTS embedding vector(384)';
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_ue_programs_embedding ON ue_programs USING hnsw (embedding vector_cosine_ops)';
+  END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS ue_program_subscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -315,16 +317,25 @@ CREATE TABLE IF NOT EXISTS consiliu_propuneri (
   votes_abtinere INTEGER DEFAULT 0,
   vote_details JSONB,
   source_url TEXT,
-  embedding vector(384),
   scraped_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   UNIQUE (consiliu, external_id)
 );
 
+-- Embedding column added separately if pgvector available
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    EXECUTE 'ALTER TABLE consiliu_propuneri ADD COLUMN IF NOT EXISTS embedding vector(384)';
+  END IF;
+END$$;
+
 CREATE INDEX IF NOT EXISTS idx_consiliu_propuneri_recent
   ON consiliu_propuneri(consiliu, date_published DESC);
 
-CREATE INDEX IF NOT EXISTS idx_consiliu_propuneri_embedding
-  ON consiliu_propuneri USING hnsw (embedding vector_cosine_ops);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_consiliu_propuneri_embedding ON consiliu_propuneri USING hnsw (embedding vector_cosine_ops)';
+  END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS consiliu_propunere_comments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -429,32 +440,37 @@ SELECT
 
 -- ─── REFRESH RECOMANDARI (RPC pentru search semantic) ────────────────────────
 
--- Function: similar_sesizari prin embedding cosine distance
-CREATE OR REPLACE FUNCTION similar_sesizari(
-  query_embedding vector(384),
-  match_threshold float DEFAULT 0.75,
-  match_count int DEFAULT 10
-)
-RETURNS TABLE (
-  id uuid,
-  code text,
-  titlu text,
-  similarity float
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT s.id, s.code, s.titlu,
-    1 - (s.embedding <=> query_embedding) AS similarity
-  FROM sesizari s
-  WHERE s.embedding IS NOT NULL
-    AND s.publica = TRUE
-    AND 1 - (s.embedding <=> query_embedding) > match_threshold
-  ORDER BY s.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
-
-COMMENT ON FUNCTION similar_sesizari IS
-  'Semantic search pe sesizari publice via pgvector cosine. Returneaza top N matches cu similarity > threshold.';
+-- Function similar_sesizari created only if pgvector extension available
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    EXECUTE $func$
+      CREATE OR REPLACE FUNCTION similar_sesizari(
+        query_embedding vector(384),
+        match_threshold float DEFAULT 0.75,
+        match_count int DEFAULT 10
+      )
+      RETURNS TABLE (
+        id uuid,
+        code text,
+        titlu text,
+        similarity float
+      )
+      LANGUAGE plpgsql
+      AS $body$
+      BEGIN
+        RETURN QUERY
+        SELECT s.id, s.code, s.titlu,
+          1 - (s.embedding <=> query_embedding) AS similarity
+        FROM sesizari s
+        WHERE s.embedding IS NOT NULL
+          AND s.publica = TRUE
+          AND 1 - (s.embedding <=> query_embedding) > match_threshold
+        ORDER BY s.embedding <=> query_embedding
+        LIMIT match_count;
+      END;
+      $body$;
+    $func$;
+  ELSE
+    RAISE NOTICE 'similar_sesizari skip — pgvector lipseste';
+  END IF;
+END$$;

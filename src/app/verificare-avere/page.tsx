@@ -82,10 +82,43 @@ export default async function VerificareAverePage() {
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-16 text-sm text-[var(--color-text-muted)]">
-          <TrendingUp size={32} className="mx-auto mb-3 opacity-40" aria-hidden="true" />
-          <p>Niciun demnitar în baza de date.</p>
-          <p className="text-xs mt-2">Scrapers ANI încep să ruleze post-deploy mig 090.</p>
+        <div className="py-12">
+          <div className="text-center mb-8">
+            <TrendingUp size={36} className="mx-auto mb-3 text-[var(--color-primary)] opacity-60" aria-hidden="true" />
+            <h2 className="text-lg font-bold mb-2">Modulul e în pregătire</h2>
+            <p className="text-sm text-[var(--color-text-muted)] max-w-md mx-auto">
+              Scraper-ul ANI este în curs de dezvoltare cu review legal. Între timp,
+              poți căuta orice demnitar direct pe portalul oficial:
+            </p>
+          </div>
+          <div className="max-w-md mx-auto p-6 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] border border-[var(--color-border)]">
+            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
+              Sursă oficială
+            </p>
+            <a
+              href="https://integritate.eu/cauta-declaratie"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] hover:underline"
+            >
+              integritate.eu
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+            <p className="text-xs text-[var(--color-text-muted)] mt-2">
+              Toate declarațiile de avere publice — peste 10.000 demnitari.
+              Caută după nume, instituție sau localitate.
+            </p>
+          </div>
+
+          <div className="mt-12 max-w-2xl mx-auto">
+            <h3 className="text-sm font-bold mb-3">📋 De ce e important</h3>
+            <ul className="space-y-2 text-sm text-[var(--color-text-muted)]">
+              <li>• Toți demnitarii publici au obligația de a declara averea anual (Legea 176/2010).</li>
+              <li>• Declarațiile sunt publice pe portalul ANI.</li>
+              <li>• Discrepanțele neexplicate între ani pot indica corupție.</li>
+              <li>• Civia plănuiește un sistem AI care detectează automat astfel de pattern-uri.</li>
+            </ul>
+          </div>
         </div>
       ) : (
         <ul className="space-y-3">
