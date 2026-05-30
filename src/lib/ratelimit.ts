@@ -1,31 +1,47 @@
-// Rate limiter — uses Upstash Redis in production, in-memory fallback for dev.
-// Upstash free tier: 10k commands/day — more than enough for current scale.
+// Rate limiter — 2026-05-31 MIGRATED Upstash → D1 + in-memory.
+//
+// Upstash a fost suspendat billing failure → folosim:
+//   1. D1 pentru persistent cross-instance (kv table cu counter + TTL)
+//   2. In-memory fallback per-instance (rapid, dar leaky pe cold starts)
+//
+// Pentru analytics tracker + sesizari submission ambele OK. Pentru abuse
+// real-time defense (login bruteforce), D1 path e preferat.
 
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { analyticsD1 } from "./analytics/d1-client";
 
-// Check if Upstash is configured
-const hasUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
-
-// Upstash Redis rate limiter (production)
-const upstashLimiters = new Map<string, Ratelimit>();
-
-function getUpstashLimiter(windowMs: number, limit: number): Ratelimit {
-  const key = `${windowMs}:${limit}`;
-  let rl = upstashLimiters.get(key);
-  if (!rl) {
-    rl = new Ratelimit({
-      redis: Redis.fromEnv(),
-      limiter: Ratelimit.slidingWindow(limit, `${windowMs}ms`),
-      analytics: false,
-      prefix: "civia",
-    });
-    upstashLimiters.set(key, rl);
+// D1 path — persistent + cross-instance. Uses kv table cu key = ratelimit
+// prefix + identity. Counter stored ca incrementing INTEGER cu expires_at.
+async function d1Limit(
+  key: string,
+  limit: number,
+  windowMs: number,
+): Promise<{ success: boolean; remaining: number; resetIn: number }> {
+  if (!analyticsD1) return memoryLimit(key, limit, windowMs);
+  try {
+    const fullKey = `rl:${key}`;
+    const now = Date.now();
+    const windowEnd = now + windowMs;
+    // Get current count (cu TTL check inclus in get)
+    const current = await analyticsD1.get<string>(fullKey);
+    if (current === null) {
+      // Set initial cu TTL
+      await analyticsD1.set(fullKey, "1", { ex: Math.ceil(windowMs / 1000) });
+      return { success: true, remaining: limit - 1, resetIn: windowMs };
+    }
+    const count = parseInt(current, 10) || 0;
+    if (count >= limit) {
+      return { success: false, remaining: 0, resetIn: windowMs };
+    }
+    // Increment via hincrby (treat as hash counter — simpler than UPDATE SET v = v+1)
+    // Fallback la SET cu new value
+    await analyticsD1.set(fullKey, String(count + 1), { ex: Math.ceil(windowMs / 1000) });
+    return { success: true, remaining: limit - count - 1, resetIn: windowEnd - now };
+  } catch {
+    return memoryLimit(key, limit, windowMs);
   }
-  return rl;
 }
 
-// In-memory fallback (dev / missing Upstash config)
+// In-memory fallback (dev / D1 outage / cold start)
 interface Bucket { count: number; resetAt: number; }
 const BUCKETS = new Map<string, Bucket>();
 
@@ -70,22 +86,9 @@ export async function rateLimitAsync(
   key: string,
   { limit, windowMs }: { limit: number; windowMs: number }
 ): Promise<RateLimitResult> {
-  if (hasUpstash) {
-    try {
-      const rl = getUpstashLimiter(windowMs, limit);
-      const result = await rl.limit(key);
-      return {
-        success: result.success,
-        remaining: result.remaining,
-        resetIn: result.reset - Date.now(),
-      };
-    } catch {
-      // 2026-05-27 — Upstash poate fi rate-limited (10k/day free tier) sau
-      // outage. NU blocăm cereri când Redis pică — fallback la in-memory
-      // ratelimit (mai laxe în serverless dar previne 500 cascade).
-      const result = memoryLimit(key, limit, windowMs);
-      return { ...result, resetIn: windowMs };
-    }
+  // 2026-05-31: prefer D1 (persistent cross-instance) → fallback in-memory.
+  if (analyticsD1) {
+    return d1Limit(key, limit, windowMs);
   }
   const result = memoryLimit(key, limit, windowMs);
   return { ...result, resetIn: windowMs };

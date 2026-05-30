@@ -1,9 +1,16 @@
-import { Redis } from "@upstash/redis";
+// 2026-05-31 — MIGRATED Upstash Redis → Cloudflare D1
+// (Upstash suspendat billing failure $22. D1 free tier 5M reads + 100k writes/zi
+//  permanent — fit confortabil cu volume Civia 73k/zi post-sampling.)
+//
+// `analyticsRedis` re-exportat din d1-client cu API compatibil → ZERO modificari
+// in 30+ fisiere care folosesc {hgetall, hincrby, sadd, scard, lpush, ltrim,
+// zadd, zrange, set, get, expire, pipeline}.
+//
+// Falls back la null daca CLOUDFLARE_API_TOKEN lipseste → graceful no-op
+// (rate limit cade pe in-memory, analytics tracker silent skip).
+import { analyticsD1 } from "./d1-client";
 
-export const analyticsRedis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? Redis.fromEnv()
-    : null;
+export const analyticsRedis = analyticsD1;
 
 export const KEY = {
   total: "civia:analytics:total",
