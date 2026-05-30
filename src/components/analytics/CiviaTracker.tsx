@@ -189,7 +189,29 @@ async function flushBatch(opts: { onUnload?: boolean } = {}): Promise<void> {
   }
 }
 
+/**
+ * 2026-05-29 — VOLUME REDUCTION pentru Upstash Free tier (10k req/zi).
+ * Skip non-essential events 80% din timp pentru a rămâne sub quota.
+ * Critical events (auth, sesizare-create, js-error) NU sunt sampled.
+ */
+const VOLUME_REDUCE_EVENT_TYPES = new Set([
+  "scroll-depth",
+  "click",
+  "outbound",
+  "rage-click",
+  "copy",
+  "time-on-page",
+  "web-vital",
+]);
+
+function shouldSampleOut(payload: TrackPayload): boolean {
+  if (!VOLUME_REDUCE_EVENT_TYPES.has(payload.eventType)) return false;
+  // 20% retention — keep 1 in 5 events of these types
+  return Math.random() > 0.2;
+}
+
 async function send(payload: TrackPayload): Promise<void> {
+  if (shouldSampleOut(payload)) return;
   batchBuffer.push(payload);
   // Flush early dacă ne apropiem de limita batch-ului
   if (batchBuffer.length >= BATCH_MAX_SIZE) {

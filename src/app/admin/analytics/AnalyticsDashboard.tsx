@@ -20,6 +20,9 @@ interface Vitals {
 
 interface Summary {
   ok: boolean;
+  /** 2026-05-29 — Redis fail (rate-limit or outage). UI shows banner. */
+  degraded?: boolean;
+  error?: string;
   total: Record<string, string | number>;
   routes: Record<string, string | number>;
   referrers: Record<string, string | number>;
@@ -386,12 +389,46 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* 2026-05-29 — Degraded mode banner (Redis rate-limit / outage).
+          Toate cifrele sunt 0 cand degraded=true. User-ul trebuie să știe
+          ca NU e bug în cod, ci quota Upstash depasita. */}
+      {data.degraded && (
+        <div className="p-4 rounded-[var(--radius-md)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Redis indisponibil — analytics în degraded mode
+              </p>
+              <p className="text-xs text-amber-900 dark:text-amber-300 mt-1">
+                Toate cifrele afișate sunt 0. Cauză probabilă: <strong>quota Upstash Free tier depășită</strong> (10k req/zi).
+                {data.error && <span className="block mt-1 font-mono opacity-75">Eroare: {data.error}</span>}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                <a
+                  href="https://console.upstash.com/redis"
+                  target="_blank"
+                  rel="noopener"
+                  className="font-medium text-amber-900 dark:text-amber-200 underline"
+                >
+                  → Verifică quota Upstash
+                </a>
+                <span className="text-amber-700 dark:text-amber-400">
+                  • Upgrade la Pro ($10/mo, 100k req/zi) pentru fix permanent
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold">📊 Analytics</h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Actualizare la 5 sec · ultima: {lastFetch ? new Date(lastFetch).toLocaleTimeString() : "-"}
+            Actualizare la 30 sec · ultima: {lastFetch ? new Date(lastFetch).toLocaleTimeString() : "-"}
+            {data.degraded && <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-[10px] font-semibold uppercase">degraded</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
