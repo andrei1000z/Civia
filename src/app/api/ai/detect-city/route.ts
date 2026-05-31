@@ -78,12 +78,9 @@ export async function POST(req: Request) {
   const cacheKey = `detect-city:${locatie.toLowerCase().replace(/\s+/g, " ")}`;
   if (analyticsRedis) {
     try {
-      const cached = await analyticsRedis.get<{
-        county: string | null;
-        city: string | null;
-        sector: string | null;
-      }>(cacheKey);
-      if (cached) {
+      const raw = await analyticsRedis.get<string>(cacheKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as { county: string | null; city: string | null; sector: string | null };
         return NextResponse.json({ data: cached, cached: true });
       }
     } catch {
@@ -124,7 +121,7 @@ export async function POST(req: Request) {
     // Cache 60s
     if (analyticsRedis) {
       try {
-        await analyticsRedis.set(cacheKey, result, { ex: 60 });
+        await analyticsRedis.set(cacheKey, JSON.stringify(result), { ex: 60 });
       } catch {
         // ignore cache errors
       }

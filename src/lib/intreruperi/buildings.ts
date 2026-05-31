@@ -292,8 +292,11 @@ export async function getCachedBuildings(
 ): Promise<BuildingPolygon[] | null> {
   if (!analyticsRedis) return null;
   try {
-    const cached = await analyticsRedis.get<BuildingPolygon[]>(buildingKey(outageId));
-    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+    const raw = await analyticsRedis.get<string>(buildingKey(outageId));
+    if (raw) {
+      const cached = JSON.parse(raw) as BuildingPolygon[];
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    }
   } catch {
     // Redis hiccup — treat as miss.
   }
@@ -317,7 +320,7 @@ export async function getBuildingsForOutage(
   const fresh = await queryOverpass(lat, lng, radiusM);
   if (analyticsRedis && fresh.length > 0) {
     try {
-      await analyticsRedis.set(buildingKey(outageId), fresh, { ex: 24 * 60 * 60 });
+      await analyticsRedis.set(buildingKey(outageId), JSON.stringify(fresh), { ex: 24 * 60 * 60 });
     } catch {
       // Cache write failure is silent — result still returned to caller.
     }
@@ -366,7 +369,7 @@ export async function warmBuildingsBackground(
     try {
       const fresh = await queryOverpass(t.lat, t.lng, t.radiusM);
       if (fresh.length > 0) {
-        await analyticsRedis.set(buildingKey(t.id), fresh, { ex: 24 * 60 * 60 });
+        await analyticsRedis.set(buildingKey(t.id), JSON.stringify(fresh), { ex: 24 * 60 * 60 });
       }
     } catch {
       // Silent — next viewer retries after lock expires.
@@ -408,7 +411,7 @@ export async function warmBuildingsForOutages(
     const fresh = await queryOverpass(t.lat, t.lng, t.radiusM);
     if (fresh.length > 0 && analyticsRedis) {
       try {
-        await analyticsRedis.set(buildingKey(t.id), fresh, { ex: 24 * 60 * 60 });
+        await analyticsRedis.set(buildingKey(t.id), JSON.stringify(fresh), { ex: 24 * 60 * 60 });
         warmed++;
       } catch {
         // Silent — next viewer will retry.

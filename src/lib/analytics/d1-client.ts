@@ -367,6 +367,16 @@ export class CiviaD1Client {
     return rows[0]?.cnt ?? 0;
   }
 
+  async zrem(key: string, ...members: Array<string | number>): Promise<number> {
+    if (members.length === 0) return 0;
+    const placeholders = members.map(() => "?").join(",");
+    const rows = await d1Query<{ ok: number }>(
+      `DELETE FROM zset_kv WHERE k = ? AND m IN (${placeholders}) RETURNING 1 AS ok`,
+      [key, ...members.map(String)],
+    );
+    return rows.length;
+  }
+
   async zremrangebyrank(key: string, start: number, end: number): Promise<number> {
     // Delete members in rank range [start..end] (0 = lowest score, -1 = highest).
     const limit = end - start + 1;
@@ -435,6 +445,18 @@ export class D1Pipeline {
   }
   zincrby(k: string, n: number, m: string | number): this {
     this.ops.push(() => this.client.zincrby(k, n, m));
+    return this;
+  }
+  del(k: string): this {
+    this.ops.push(() => this.client.del(k));
+    return this;
+  }
+  zrem(k: string, ...m: Array<string | number>): this {
+    this.ops.push(() => this.client.zrem(k, ...m));
+    return this;
+  }
+  srem(k: string, ...m: Array<string | number>): this {
+    this.ops.push(() => this.client.srem(k, ...m));
     return this;
   }
 

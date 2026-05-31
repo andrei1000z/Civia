@@ -57,7 +57,7 @@ function sweepExpiredBuckets(now: number) {
   }
 }
 
-function memoryLimit(key: string, limit: number, windowMs: number): { success: boolean; remaining: number } {
+function memoryLimit(key: string, limit: number, windowMs: number): { success: boolean; remaining: number; resetIn: number } {
   const now = Date.now();
   sweepExpiredBuckets(now);
   const bucket = BUCKETS.get(key);
@@ -69,11 +69,11 @@ function memoryLimit(key: string, limit: number, windowMs: number): { success: b
         if (BUCKETS.size <= 2500) break;
       }
     }
-    return { success: true, remaining: limit - 1 };
+    return { success: true, remaining: limit - 1, resetIn: windowMs };
   }
-  if (bucket.count >= limit) return { success: false, remaining: 0 };
+  if (bucket.count >= limit) return { success: false, remaining: 0, resetIn: bucket.resetAt - now };
   bucket.count++;
-  return { success: true, remaining: limit - bucket.count };
+  return { success: true, remaining: limit - bucket.count, resetIn: bucket.resetAt - now };
 }
 
 export interface RateLimitResult {
