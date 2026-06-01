@@ -185,6 +185,20 @@ export default async function SesizariPage() {
         </div>
       </div>
 
+      {/* Cross-link: propuneri legislative */}
+      <div className="mt-6 p-4 rounded-md bg-surface-2 border border-border flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold mb-0.5">Vrei să schimbi legea, nu doar să raportezi?</p>
+          <p className="text-xs text-text-muted">Propunerile legislative ajung la MAI, IGPR, Parlament prin Legea 52/2003.</p>
+        </div>
+        <a
+          href="/propuneri-legislative"
+          className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline whitespace-nowrap"
+        >
+          ⚖️ Propune →
+        </a>
+      </div>
+
       {/* FAQ section removed (5/8/2026 user request — minimalist).
           Răspunsurile la cele mai comune întrebări sunt deja în
           /ghiduri/ghid-sesizari + în PageHero-ul de mai sus. */}
