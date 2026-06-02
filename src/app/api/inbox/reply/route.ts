@@ -526,7 +526,7 @@ export async function POST(req: Request) {
 
   // ─── 8. Auto-apply status if eligible ───────────────────────────
   if (autoApply && sesizareId) {
-    // "inregistrata" DOAR cu nr_inregistrare real — altfel rămâne "trimis"
+    // "inregistrata" DOAR cu nr_inregistrare real de la autoritate
     const newStatus = classification.status === "inregistrata" && classification.nr_inregistrare ? "inregistrata"
       : classification.status === "in-lucru" ? "in-lucru"
       : classification.status === "rezolvat" ? "rezolvat"
