@@ -71,22 +71,13 @@ async function d1Exec(sql: string, params: Array<string | number | null> = []): 
 
 async function d1Batch(stmts: Array<{ sql: string; params?: Array<string | number | null> }>): Promise<void> {
   if (stmts.length === 0) return;
-  if (!CF_API_TOKEN) throw new Error("CLOUDFLARE_API_TOKEN missing");
-  // D1 supports POST /raw cu array de statement-uri sau folosim batch via Worker only.
-  // Via REST API: batch endpoint accepta array of {sql, params}.
-  const res = await fetch(`${D1_API_URL}/query`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${CF_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(stmts),
-  });
-  const json = (await res.json()) as D1Response;
-  if (!json.success) {
-    const msg = json.errors?.map((e) => e.message).join("; ") || "D1 batch failed";
-    throw new Error(`D1 batch: ${msg}`);
-  }
+  // 2026-06-02 — BUG FIX: D1 REST /query acceptă DOAR `{sql, params}` (obiect),
+  // NU un array de statement-uri. Trimiterea unui array întorcea
+  // `success:false` „Expected object, received array" → sadd/lpush/hset/expire
+  // scriau SILENȚIOS nimic (set_kv + list_kv aveau 0 rânduri → DAU/WAU/MAU=0).
+  // Rulăm fiecare statement individual; sunt INSERT ON CONFLICT idempotente,
+  // deci paralel e safe. Volume mic (1-5 statements per apel).
+  await Promise.all(stmts.map((s) => d1Query(s.sql, s.params ?? [])));
 }
 
 const TTL_FILTER = "AND (expires_at IS NULL OR expires_at > ?)";
