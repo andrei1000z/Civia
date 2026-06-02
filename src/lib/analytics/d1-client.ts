@@ -111,7 +111,14 @@ export class CiviaD1Client {
     const expires = opts?.ex ? NOW() + opts.ex * 1000 : null;
     const v = typeof value === "number" ? String(value) : value;
     if (opts?.nx) {
-      // INSERT ... ON CONFLICT DO NOTHING — return null daca exista deja
+      // NX cu TTL corect: șterge mai întâi cheia dacă e expirată, apoi insert.
+      // Fără acest pas, o cheie expirată fizic bloca NX pe termen nelimitat
+      // (ON CONFLICT DO NOTHING nu verifică expires_at — bug stiri:fetch:lock).
+      const now = NOW();
+      await d1Exec(
+        `DELETE FROM kv WHERE k = ? AND expires_at IS NOT NULL AND expires_at <= ?`,
+        [key, now],
+      );
       const result = await d1Query<{ inserted: number }>(
         `INSERT INTO kv (k, v, expires_at) VALUES (?, ?, ?) ON CONFLICT(k) DO NOTHING RETURNING 1 AS inserted`,
         [key, v, expires],
