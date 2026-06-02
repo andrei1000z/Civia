@@ -30,7 +30,7 @@ async function rehostImage(srcUrl: string): Promise<string | null> {
     const res = await fetch(srcUrl, {
       signal: ctrl.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; CiviaBot/1.0; +https://civia.ro)",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Accept: "image/jpeg,image/png,image/webp,image/gif,*/*;q=0.8",
       },
       redirect: "follow",
@@ -200,15 +200,20 @@ export async function POST(req: Request) {
     const tid = setTimeout(() => controller.abort(), 12_000);
     let html: string;
     try {
+      // 2026-06-02 — Multe site-uri de petiții (facem.declic.ro pe
+      // controlshift.app) blochează User-Agent-uri „bot" cu 403. Folosim
+      // header-e de browser real Chrome → request-ul trece. Headers ASCII-only.
       const res = await fetch(url, {
         signal: controller.signal,
-        // HTTP headers must be ASCII-only — never use em-dash, smart quotes,
-        // or non-breaking spaces here, or fetch() throws ByteString errors.
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (compatible; CiviaBot/1.0; +https://civia.ro) civic-petition-scraper",
-          "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "ro-RO,ro;q=0.9,en;q=0.8",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Cache-Control": "no-cache",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Upgrade-Insecure-Requests": "1",
         },
         redirect: "follow",
       });
