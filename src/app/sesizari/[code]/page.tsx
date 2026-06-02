@@ -637,22 +637,19 @@ export default async function SesizareDetailPage({
                           {step.description}
                         </p>
                       )}
-                      <p className="text-[11px] text-[var(--color-text-muted)] mt-2 inline-flex items-center gap-1 tabular-nums">
-                        <Clock size={10} aria-hidden="true" />
-                        <time dateTime={step.created_at}>{formatDateTime(step.created_at)}</time>
-                      </p>
-                      {/* 2026-05-28 — Sub „Sesizare depusă pe platformă"
-                          afișăm câți cetățeni au trimis sesizarea în total
-                          (autor + co-semnatari prin sesizari@civia.ro).
-                          Schimbat per user request: „Co-trimisă de alți X"
-                          → „Trimisă de X cetățeni" (inclusiv autor în count). */}
-                      {step.event_type === "depusa" && (
-                        <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-2 inline-flex items-center gap-1.5 font-medium">
-                          <UserPlus size={11} aria-hidden="true" />
-                          Trimisă de {cosignersCount + 1}{" "}
-                          {cosignersCount + 1 === 1 ? "cetățean" : "cetățeni"}
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        <p className="text-[11px] text-text-muted flex items-center gap-1 tabular-nums">
+                          <Clock size={10} aria-hidden="true" />
+                          <time dateTime={step.created_at}>{formatDateTime(step.created_at)}</time>
                         </p>
-                      )}
+                        {step.event_type === "depusa" && (
+                          <p className="text-xs text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5 font-medium">
+                            <UserPlus size={11} aria-hidden="true" />
+                            Trimisă de {cosignersCount + 1}{" "}
+                            {cosignersCount + 1 === 1 ? "cetățean" : "cetățeni"}
+                          </p>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
