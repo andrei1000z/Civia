@@ -108,35 +108,42 @@ ALTER TABLE propuneri_votes       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE propuneri_comentarii  ENABLE ROW LEVEL SECURITY;
 
 -- Oricine poate citi propunerile active
-CREATE POLICY IF NOT EXISTS "propuneri_public_read"
+DROP POLICY IF EXISTS "propuneri_public_read" ON propuneri_legislative;
+CREATE POLICY "propuneri_public_read"
   ON propuneri_legislative FOR SELECT
   USING (status IN ('active', 'sent'));
 
 -- User autentificat poate crea propuneri
-CREATE POLICY IF NOT EXISTS "propuneri_auth_insert"
+DROP POLICY IF EXISTS "propuneri_auth_insert" ON propuneri_legislative;
+CREATE POLICY "propuneri_auth_insert"
   ON propuneri_legislative FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
 -- User poate edita propria propunere (cât timp e draft)
-CREATE POLICY IF NOT EXISTS "propuneri_owner_update"
+DROP POLICY IF EXISTS "propuneri_owner_update" ON propuneri_legislative;
+CREATE POLICY "propuneri_owner_update"
   ON propuneri_legislative FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id AND status = 'draft');
 
 -- Voturi: oricine poate vedea numărul (agregat), insert cu dedup
-CREATE POLICY IF NOT EXISTS "votes_public_read"
+DROP POLICY IF EXISTS "votes_public_read" ON propuneri_votes;
+CREATE POLICY "votes_public_read"
   ON propuneri_votes FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "votes_insert"
+DROP POLICY IF EXISTS "votes_insert" ON propuneri_votes;
+CREATE POLICY "votes_insert"
   ON propuneri_votes FOR INSERT
-  WITH CHECK (true);  -- service role verifica dedup
+  WITH CHECK (true);
 
 -- Comentarii: public read, auth insert
-CREATE POLICY IF NOT EXISTS "comentarii_public_read"
+DROP POLICY IF EXISTS "comentarii_public_read" ON propuneri_comentarii;
+CREATE POLICY "comentarii_public_read"
   ON propuneri_comentarii FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "comentarii_auth_insert"
+DROP POLICY IF EXISTS "comentarii_auth_insert" ON propuneri_comentarii;
+CREATE POLICY "comentarii_auth_insert"
   ON propuneri_comentarii FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
