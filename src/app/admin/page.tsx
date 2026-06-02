@@ -69,11 +69,11 @@ export default async function AdminDashboard() {
       value: totalUsers.count ?? 0,
       delta: todayUsers.count ?? 0,
       icon: Users,
-      href: null,
+      href: "/admin/utilizatori",
       color: "#8B5CF6",
       tint: "from-violet-500/10 to-transparent",
     },
-  ] as const;
+  ];
 
   const pendingCount = pendingTickets.count ?? 0;
 

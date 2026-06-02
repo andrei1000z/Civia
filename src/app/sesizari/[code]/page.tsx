@@ -183,20 +183,20 @@ export default async function SesizareDetailPage({
         const statusLabel = STATUS_LABELS[sesizare.status] ?? sesizare.status;
         return (
           <header
-            className="relative mb-6 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-2)] p-5 md:p-6"
+            className="relative mb-6 overflow-x-clip rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-2)] p-5 md:p-6"
             style={{
               backgroundImage: `linear-gradient(135deg, ${statusColor}1f, transparent 55%)`,
             }}
           >
-            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-start justify-between gap-2 flex-wrap mb-3 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <Badge variant="neutral" className="inline-flex items-center gap-1">
                   <span aria-hidden="true">{tipIcon}</span>
                   {tipLabel}
                 </Badge>
                 <Badge variant="neutral">{sesizare.sector}</Badge>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
                   style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}
@@ -222,13 +222,13 @@ export default async function SesizareDetailPage({
                 />
               </div>
             </div>
-            <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight mb-3">
+            <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight mb-3 w-full min-w-0 [overflow-wrap:break-word] [word-break:break-word]">
               {sesizare.titlu}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--color-text-muted)] mb-5">
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin size={12} aria-hidden="true" />
-                {sesizare.locatie}
+              <span className="inline-flex items-center gap-1.5 min-w-0">
+                <MapPin size={12} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">{sesizare.locatie}</span>
               </span>
               {/* 2026-05-28 — Author name ASCUNS complet per user request.
                   Nu mai afișăm nici numele complet, nici prenumele, nici
