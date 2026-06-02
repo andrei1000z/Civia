@@ -103,7 +103,7 @@ async function main() {
       resend_message_id: result.data.id,
       sent_at: now,
       sent_to_emails: [...recipients.to, ...recipients.cc],
-      status: "inregistrata",
+      status: "trimis",
       bounced_at: null,
       bounce_reason: null,
     }).eq("id", ses.id);
@@ -113,7 +113,7 @@ async function main() {
       event_type: "trimis_via_civia",
       description: `Email trimis${isResend ? " (retrimitere după bounce/fix adrese)" : ""} la ${recipients.to.join(", ")}. message_id: ${result.data.id}`,
     });
-    console.log(`   💾 status=inregistrata, delivery_status=sent`);
+    console.log(`   💾 status=trimis, delivery_status=sent`);
     await new Promise(r => setTimeout(r, 4000));
   }
   console.log("\n✅ Done");
