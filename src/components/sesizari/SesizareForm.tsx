@@ -1753,27 +1753,55 @@ ${today}`;
                   htmlFor="county-override"
                   className="text-[10px] text-blue-800 dark:text-blue-300 font-medium"
                 >
-                  Județ:
+                  Județ / Sector:
                 </label>
                 <select
                   id="county-override"
-                  value={detectedCounty ?? ""}
+                  value={
+                    // Dacă e București cu sector ales, afișăm "B-S1" etc.
+                    detectedCounty === "B" && data.sector
+                      ? `B-${data.sector}`
+                      : (detectedCounty ?? "")
+                  }
                   onChange={(e) => {
                     const val = e.target.value || null;
-                    setDetectedCounty(val);
-                    if (val) {
+                    if (!val) {
+                      setDetectedCounty(null);
+                      setDetectedCountyName(null);
+                      return;
+                    }
+                    // Format special pentru sectoare: "B-S1" .. "B-S6"
+                    if (val.startsWith("B-S")) {
+                      const sector = val.slice(2); // "S1".."S6"
+                      const sectorNum = sector.slice(1); // "1".."6"
+                      setDetectedCounty("B");
+                      setDetectedCountyName(`Sector ${sectorNum}, București`);
+                      setData((d) => ({ ...d, sector }));
+                    } else {
                       const co = ALL_COUNTIES.find((c) => c.id === val);
-                      if (co) setDetectedCountyName(co.name);
+                      setDetectedCounty(val);
+                      setDetectedCountyName(co?.name ?? val);
+                      // Resetăm sectorul dacă userul a ales alt județ
+                      if (val !== "B") setData((d) => ({ ...d, sector: "" }));
                     }
                   }}
                   className="h-8 px-2 rounded-[var(--radius-xs)] bg-white dark:bg-blue-950 border border-blue-300 dark:border-blue-800 text-[11px] text-blue-900 dark:text-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <option value="">— Selectează —</option>
-                  {ALL_COUNTIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.id === "B" ? "București" : c.name} ({c.id})
-                    </option>
-                  ))}
+                  <optgroup label="București — Sectoare">
+                    {[1,2,3,4,5,6].map((n) => (
+                      <option key={`B-S${n}`} value={`B-S${n}`}>
+                        Sector {n}, București
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Județe">
+                    {ALL_COUNTIES.filter((c) => c.id !== "B").map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.id})
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
                 {detectedCounty && (
                   <span className="text-[10px] text-blue-700 dark:text-blue-400">
