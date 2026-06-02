@@ -37,12 +37,7 @@ export function SimilarSesizari({ sesizari }: Props) {
                   </p>
                   <div className="flex items-center gap-2 mt-1 text-xs text-[var(--color-text-muted)] min-w-0">
                     <MapPin size={11} className="shrink-0" aria-hidden="true" />
-                    <span className="truncate flex-1 min-w-0">
-                      {publicAuthorName({
-                        display_name: s.author_display_name,
-                        author_name: s.author_name,
-                      })}
-                    </span>
+                    <span className="truncate flex-1 min-w-0">{s.locatie ?? ""}</span>
                     <span className="shrink-0" aria-hidden="true">·</span>
                     <TimeAgo
                       date={s.created_at}
