@@ -22,9 +22,25 @@ import { ALL_COUNTIES } from "@/data/counties";
  * apar frecvent în sesizari (Cluj-Napoca pentru CJ etc.).
  */
 const CITY_TO_COUNTY: Record<string, string> = {
-  // Capitala
+  // Capitala — includ și referințe la sectoare care implică București
   "bucuresti": "B",
   "bucurești": "B",
+  "sector 1": "B", "sector 2": "B", "sector 3": "B",
+  "sector 4": "B", "sector 5": "B", "sector 6": "B",
+  // Bulevarde/șosele distinctive București (nu apar în alte județe)
+  "bulevardul primaverii": "B", "bulevardul primăverii": "B",
+  "soseaua pantelimon": "B", "șoseaua pantelimon": "B",
+  "bulevardul chisinau": "B", "bulevardul chișinău": "B",
+  "bulevardul unirii": "B",
+  "calea victoriei": "B",
+  "bulevardul magheru": "B",
+  "bulevardul balcescu": "B", "bulevardul bălcescu": "B",
+  "bulevardul decebal": "B",
+  "bulevardul iuliu maniu": "B",
+  "soseaua colentina": "B", "șoseaua colentina": "B",
+  "soseaua mihai bravu": "B", "șoseaua mihai bravu": "B",
+  "calea mosilor": "B", "calea moșilor": "B",
+  "calea dudesti": "B", "calea dudești": "B",
 
   // Reședințe județe (alfabetic după county code)
   "alba iulia": "AB",
