@@ -797,12 +797,27 @@ h1, h2, h3, h4, [id] {
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
+  /* 2026-06-02 — Mobile overflow guard. body e display:flex flex-col, iar
+     conținut cu min-content mare (ex: harta Leaflet cu scrollWidth 626px)
+     forța flex item-ul (acest container) să crească peste viewport prin
+     min-width:auto → tot conținutul ieșea tăiat pe dreapta pe telefon.
+     min-width:0 dezactivează podeaua min-content; max-width:100% îl prinde
+     la lățimea viewport-ului indiferent de conținut. */
+  min-width: 0;
+  max-width: min(1200px, 100%);
 }
 @media (min-width: 768px) {
   .container-narrow {
     padding-left: 2rem;
     padding-right: 2rem;
   }
+}
+
+/* Defensive: harta Leaflet nu trebuie să-și propage scrollWidth-ul (tiles
+   se întind dincolo de viewport în timpul render-ului) ca min-content în
+   lanțul flex. Prinde lățimea la container. */
+.leaflet-container {
+  max-width: 100%;
 }
 
 /* No scrollbar utility */
