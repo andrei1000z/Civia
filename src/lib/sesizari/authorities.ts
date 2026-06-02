@@ -19,7 +19,8 @@ export interface Authority {
 
 // Central authorities
 export const AUTH = {
-  pmb: { id: "pmb", name: "Primăria Municipiului București", email: "relatiipublice@pmb.ro" },
+  // 2026-06-02: relatiipublice@pmb.ro bounce persistent → sesizari@pmb.ro
+  pmb: { id: "pmb", name: "Primăria Municipiului București", email: "sesizari@pmb.ro" },
   pmbDispecerat: { id: "pmb-dispecerat", name: "Dispecerat PMB", email: "dispecerat@pmb.ro" },
   pmbSesizari: { id: "pmb-sesizari", name: "Sesizări PMB", email: "sesizari@pmb.ro" },
   adminStrazi: { id: "admin-strazi", name: "Administrația Străzilor București", email: "office@aspmb.ro", phone: "021 315 1219" },
@@ -35,7 +36,7 @@ export const AUTH = {
 
 // Primării de sector
 export const PRIMARII_SECTOR: Record<string, Authority> = {
-  S1: { id: "primarie-s1", name: "Primăria Sector 1", email: "registratura@primarias1.ro" },
+  S1: { id: "primarie-s1", name: "Primăria Sector 1", email: "registratura@primariasector1.ro" },
   S2: { id: "primarie-s2", name: "Primăria Sector 2", email: "infopublice@ps2.ro" },
   S3: { id: "primarie-s3", name: "Primăria Sector 3", email: "relatiipublice@primarie3.ro" },
   S4: { id: "primarie-s4", name: "Primăria Sector 4", email: "contact@ps4.ro" },
@@ -49,7 +50,7 @@ export const PRIMARII_SECTOR: Record<string, Authority> = {
 
 // Poliția Locală per sector
 export const POLITIA_LOCALA_SECTOR: Record<string, Authority> = {
-  S1: { id: "pl-s1", name: "Poliția Locală Sector 1", email: "registratura@primarias1.ro", phone: "021 9540" },
+  S1: { id: "pl-s1", name: "Poliția Locală Sector 1", email: "registratura@primariasector1.ro", phone: "021 9540" },
   // Sector 2 routes both Primăria + Poliția Locală pe aceeași adresă —
   // `infopublice@ps2.ro` e singura inbox publică PS2 confirmată; restul
   // (office@politialocalas2.ro, contact@…) bounce sau sunt simboluri.
