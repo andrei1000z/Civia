@@ -324,10 +324,31 @@ export async function POST(req: Request) {
     // county (county-context national/anonim), derivăm din `locatie` text
     // ÎNAINTE de insert. Previne bug 00049 (Cluj sesizare → routing București).
     let resolvedCounty = parsed.county;
+    let resolvedSector: "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | null = parsed.sector;
     if (!resolvedCounty) {
       const { detectCountyFromLocatie } = await import("@/lib/sesizari/county-from-locatie");
       const detected = detectCountyFromLocatie(polished.locatie);
       if (detected) resolvedCounty = detected;
+    }
+
+    // 2026-06-03 — FALLBACK AUTORITAR din lat/lng. Bug sistemic 00050-00058:
+    // text-detection eșua pentru străzi necunoscute (ex: „Șoseaua Dobroești")
+    // → county=null + sector=null → routing greșit + status blocat pe „nou".
+    // Avem finalLat/finalLng GARANTAT non-null aici (line ~255 face return 400
+    // altfel). Reverse-geocode-ul Nominatim e sursa de adevăr pentru județ +
+    // sector București. Rulează DOAR pe calea de fallback (county lipsă SAU
+    // București fără sector), deci fără cost pe submisiile normale.
+    if (!resolvedCounty || (resolvedCounty === "B" && !resolvedSector)) {
+      try {
+        const { reverseGeocode } = await import("@/lib/geo/reverse-geocode");
+        const geo = await reverseGeocode(finalLat, finalLng);
+        if (!resolvedCounty && geo.countyCode) resolvedCounty = geo.countyCode;
+        if (resolvedCounty === "B" && !resolvedSector && geo.sector && /^S[1-6]$/.test(geo.sector)) {
+          resolvedSector = geo.sector as "S1" | "S2" | "S3" | "S4" | "S5" | "S6";
+        }
+      } catch {
+        // Best-effort — dacă geocode-ul pică, continuăm cu ce avem.
+      }
     }
 
     // 2026-05-26 — Identity fallback. Standard Civia.ro: textul formal
@@ -383,6 +404,7 @@ export async function POST(req: Request) {
         user_id: resolvedUserId,
         ...parsed,
         county: resolvedCounty,
+        sector: resolvedSector,
         author_address: resolvedAuthorAddress,
         formal_text: identityHardenedFormalText,
         author_name: sanitizeText(parsed.author_name, 120),

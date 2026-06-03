@@ -54,6 +54,8 @@ interface SesizareRow {
   descriere: string;
   formal_text: string | null;
   imagini: string[] | null;
+  status: string;
+  sent_via_civia: boolean | null;
 }
 
 export async function POST(
@@ -123,7 +125,7 @@ export async function POST(
   const admin = createSupabaseAdmin();
   const { data, error } = await admin
     .from("sesizari")
-    .select("id, code, titlu, tip, locatie, sector, county, descriere, formal_text, imagini")
+    .select("id, code, titlu, tip, locatie, sector, county, descriere, formal_text, imagini, status, sent_via_civia")
     .eq("code", code)
     .eq("publica", true)
     .eq("moderation_status", "approved")
@@ -243,6 +245,49 @@ export async function POST(
       { error: "Email-ul nu a putut fi trimis. Reîncearcă în câteva minute." },
       { status: 502 },
     );
+  }
+
+  // 2026-06-03 — FIX: bump status "nou" → "trimis" când cosign-ul e
+  // PRIMA trimitere reală către autoritate. Înainte cosign-send trimitea
+  // emailul dar NU actualiza statusul → sesizarea rămânea „NOU" deși emailul
+  // ajunsese la primărie (caz 00058: autorul n-a trimis via Civia, doar
+  // co-semnatarul → status blocat pe „nou", confuz pentru cetățean).
+  //
+  // Logica: dacă sesizarea nu a fost încă trimisă via Civia (sent_via_civia
+  // false/null) marcăm trimiterea — sent_via_civia, sent_at, resend_message_id
+  // (ca webhook-ul de delivery să poată face match), sent_to_emails, și
+  // bump status „nou" → „trimis". Nu suprascriem dacă autorul a trimis deja.
+  const wasUntracked = !sesizare.sent_via_civia;
+  if (wasUntracked) {
+    const now = new Date().toISOString();
+    try {
+      await admin
+        .from("sesizari")
+        .update({
+          sent_via_civia: true,
+          sent_at: now,
+          resend_message_id: result.id,
+          sent_to_emails: [...primaryEmails, ...ccEmails],
+          delivery_status: "sent",
+          ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
+        })
+        .eq("id", sesizare.id);
+    } catch {
+      // best-effort — emailul a plecat deja, statusul se poate corecta ulterior
+    }
+    // Timeline event vizibil „trimisă către autorități" (cosign_send e filtrat
+    // din timeline-ul public; acesta apare ca etapă reală de trimitere).
+    if (sesizare.status === "nou") {
+      try {
+        await admin.from("sesizare_timeline").insert({
+          sesizare_id: sesizare.id,
+          event_type: "trimis_via_civia",
+          description: `Email trimis către ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"} prin Civia.`,
+        });
+      } catch {
+        // best-effort
+      }
+    }
   }
 
   // Salvează cosignul în DB (best-effort — failure aici nu blochează succes,
