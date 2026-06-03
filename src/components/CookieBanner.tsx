@@ -132,6 +132,15 @@ export function CookieBanner() {
     };
   }, []);
 
+  // Marchează pe <html> când banner-ul e deschis → globals.css ascunde FAB-ul
+  // mobil ca să nu se suprapună peste banner. Cleanup la unmount.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (visible) document.documentElement.dataset.cookieOpen = "1";
+    else delete document.documentElement.dataset.cookieOpen;
+    return () => { delete document.documentElement.dataset.cookieOpen; };
+  }, [visible]);
+
   const acceptAll = () => {
     saveConsent("accepted-all", { preferences: true, analytics: true });
     setVisible(false);
@@ -156,8 +165,13 @@ export function CookieBanner() {
       aria-labelledby="cookie-banner-title"
       aria-describedby="cookie-banner-desc"
       aria-modal="false"
-      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+      // 2026-06-03 — Pe mobil, banner-ul stătea la bottom 0.5rem și se
+      // SUPRAPUNEA peste BottomNav (h-14=3.5rem) + butonul „+" (FAB) → tab-urile
+      // și „Personalizează" deveneau netappable. Acum: pe mobil/tabletă (sub lg)
+      // se ridică deasupra BottomNav-ului; pe desktop (lg, nav ascuns) revine jos.
+      // FAB-ul se ascunde cât timp banner-ul e deschis (vezi data-cookie-open în
+      // useEffect + regula din globals.css) ca să nu se ciocnească.
+      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up bottom-[calc(env(safe-area-inset-bottom,0px)+4.25rem)] lg:bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]"
     >
       <div className="flex items-start gap-2 md:gap-3">
         <Cookie size={18} className="text-[var(--color-primary)] mt-0.5 shrink-0" aria-hidden="true" />

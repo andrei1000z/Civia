@@ -820,6 +820,13 @@ h1, h2, h3, h4, [id] {
   max-width: 100%;
 }
 
+/* 2026-06-03 — Cât timp cookie banner-ul e deschis pe mobil, ascundem FAB-ul
+   („+") ca să nu se suprapună peste banner (care s-a ridicat deasupra
+   BottomNav-ului). Decizia cookie e one-time; FAB-ul reapare imediat după. */
+html[data-cookie-open="1"] [data-civia-fab] {
+  display: none !important;
+}
+
 /* No scrollbar utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
