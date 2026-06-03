@@ -19,11 +19,14 @@ export interface Authority {
 
 // Central authorities
 export const AUTH = {
-  // 2026-06-02: relatiipublice@pmb.ro + sesizari@pmb.ro → suprimat Resend.
-  // dispecerat@pmb.ro = singurul inbox PMB confirmat livrat.
-  pmb: { id: "pmb", name: "Primăria Municipiului București", email: "dispecerat@pmb.ro" },
+  // 2026-06-03 — Corectat pe baza DATELOR (analiza inbox: relatiipublice@pmb.ro
+  // răspunde 54× → demonstrabil PRIMEȘTE emailurile noastre). Schimbarea
+  // defensivă anterioară la dispecerat-everything strica rutarea pe sector.
+  // Acum: relatiipublice@pmb.ro (inbox principal, responder activ) + dispecerat
+  // rămâne ca CC/backup în flux (pmbDispecerat) → dublă livrare garantată.
+  pmb: { id: "pmb", name: "Primăria Municipiului București", email: "relatiipublice@pmb.ro" },
   pmbDispecerat: { id: "pmb-dispecerat", name: "Dispecerat PMB", email: "dispecerat@pmb.ro" },
-  pmbSesizari: { id: "pmb-sesizari", name: "Sesizări PMB", email: "dispecerat@pmb.ro" },
+  pmbSesizari: { id: "pmb-sesizari", name: "Sesizări PMB", email: "sesizari@pmb.ro" },
   adminStrazi: { id: "admin-strazi", name: "Administrația Străzilor București", email: "office@aspmb.ro", phone: "021 315 1219" },
   brigadaRutiera: { id: "brigada-rutiera", name: "Brigada Rutieră București", email: "bpr@b.politiaromana.ro", phone: "021 9544" },
   politiaLocalaBuc: { id: "pl-bucuresti", name: "Poliția Locală București", email: "office@plmb.ro", phone: "021 9752" },
@@ -37,9 +40,10 @@ export const AUTH = {
 
 // Primării de sector
 export const PRIMARII_SECTOR: Record<string, Authority> = {
-  // 2026-06-02: registratura@primariasector1.ro suprimat Resend (bounce anterior).
-  // dispecerat@pmb.ro e confirmat livrat. Revenim la registratura când Resend îl unsuprimă.
-  S1: { id: "primarie-s1", name: "Primăria Sector 1", email: "dispecerat@pmb.ro" },
+  // 2026-06-03 — registratura@primarias1.ro RĂSPUNDE 7× în inbox → primește
+  // emailurile noastre. Revenit de la dispecerat-fallback la adresa reală S1.
+  // dispecerat@pmb.ro rămâne ca backup prin AUTH.pmb în flux.
+  S1: { id: "primarie-s1", name: "Primăria Sector 1", email: "registratura@primarias1.ro" },
   S2: { id: "primarie-s2", name: "Primăria Sector 2", email: "infopublice@ps2.ro" },
   S3: { id: "primarie-s3", name: "Primăria Sector 3", email: "relatiipublice@primarie3.ro" },
   S4: { id: "primarie-s4", name: "Primăria Sector 4", email: "contact@ps4.ro" },
@@ -53,7 +57,7 @@ export const PRIMARII_SECTOR: Record<string, Authority> = {
 
 // Poliția Locală per sector
 export const POLITIA_LOCALA_SECTOR: Record<string, Authority> = {
-  S1: { id: "pl-s1", name: "Poliția Locală Sector 1", email: "dispecerat@pmb.ro", phone: "021 9540" },
+  S1: { id: "pl-s1", name: "Poliția Locală Sector 1", email: "registratura@primarias1.ro", phone: "021 9540" },
   // Sector 2 routes both Primăria + Poliția Locală pe aceeași adresă —
   // `infopublice@ps2.ro` e singura inbox publică PS2 confirmată; restul
   // (office@politialocalas2.ro, contact@…) bounce sau sunt simboluri.
