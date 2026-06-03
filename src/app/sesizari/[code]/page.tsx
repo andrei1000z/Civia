@@ -280,19 +280,27 @@ export default async function SesizareDetailPage({
                 pentru sesizări trimise prin flow vechi care nu populau
                 resend_message_id). Status-uri non-trimis (inregistrata,
                 in-lucru, rezolvat) implicit dovedesc delivery. */}
-            {isAuthor && (
-              <ResendButton
-                code={sesizare.code}
-                deliveryStatus={(sesizare as unknown as { delivery_status?: string | null }).delivery_status ?? null}
-                isGhostSend={
-                  sesizare.sent_via_civia === true &&
-                  !(sesizare as unknown as { resend_message_id?: string | null }).resend_message_id &&
-                  // Suprimă dacă autoritatea a răspuns/înregistrat deja (status
-                  // advanced > "trimis" dovedește că emailul a ajuns).
-                  !["inregistrata", "in-lucru", "rezolvat", "actiune-autoritate", "interventie", "redirectionata"].includes(sesizare.status)
-                }
-              />
-            )}
+            {isAuthor && (() => {
+              // Un status „advanced" (autoritatea a răspuns/înregistrat/rezolvat)
+              // DOVEDEȘTE că emailul a ajuns — orice flag de livrare problematic
+              // (bounced pe un CC, ghost-send fără resend_message_id) e atunci
+              // STALE. Suprimăm banner-ul „Email respins / Livrare neconfirmată"
+              // ca să nu contrazică un status care arată clar că a ajuns
+              // (caz 00051/00053: bounced pe dispecerat@pmb dar înregistrate).
+              const arrivalProven = ["inregistrata", "in-lucru", "rezolvat", "actiune-autoritate", "interventie", "redirectionata"].includes(sesizare.status);
+              const deliveryStatus = (sesizare as unknown as { delivery_status?: string | null }).delivery_status ?? null;
+              return (
+                <ResendButton
+                  code={sesizare.code}
+                  deliveryStatus={arrivalProven ? null : deliveryStatus}
+                  isGhostSend={
+                    sesizare.sent_via_civia === true &&
+                    !(sesizare as unknown as { resend_message_id?: string | null }).resend_message_id &&
+                    !arrivalProven
+                  }
+                />
+              );
+            })()}
             {/* Action row: butoane standardizate (h-10 cu wrap) in ordine
                 de prioritate vizuala:
                   1. „Trimite si tu" (primary highlight) - h-11

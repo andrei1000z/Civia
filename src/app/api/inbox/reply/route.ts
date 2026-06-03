@@ -538,6 +538,17 @@ export async function POST(req: Request) {
       if (classification.nr_inregistrare) {
         updates.nr_inregistrare = classification.nr_inregistrare;
       }
+      // 2026-06-03 — Surfacing răspuns autoritate pe pagina publică.
+      // GAP descoperit: 110 răspunsuri în inbox dar doar 2 ajungeau în
+      // official_response → cetățeanul nu vedea ce a zis primăria. Auto-ack-urile
+      // pure („Solicitarea a fost înregistrată" + număr) NU se afișează — numărul
+      // apare deja în banner. Răspunsurile SUBSTANȚIALE (în lucru / rezolvat /
+      // redirecționat) cu rezumat real → official_response, vizibil public.
+      const substantive = ["in-lucru", "rezolvat", "redirectionata"].includes(newStatus);
+      if (substantive && classification.summary && classification.summary.trim().length > 20) {
+        updates.official_response = classification.summary.trim();
+        updates.official_response_at = new Date().toISOString();
+      }
       const { error: updateErr } = await admin
         .from("sesizari")
         .update(updates)
