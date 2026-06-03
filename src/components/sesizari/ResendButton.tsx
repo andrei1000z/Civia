@@ -32,11 +32,19 @@ export function ResendButton({ code, deliveryStatus, isGhostSend }: Props) {
 
   if (!user) return null;
 
-  // Show DOAR dacă există problemă reală
+  // Show DOAR dacă există problemă reală.
+  // 2026-06-03 — FIX contradicție (caz 00044): „Livrare neconfirmată" apărea
+  // pe ghost-send (resend_message_id=null) CHIAR DACĂ delivery_status era
+  // „delivered" → banner spunea „probabil n-a ajuns" lângă „deja livrat cu
+  // succes". O livrare confirmată anulează euristica ghost-send: dacă serverul
+  // a confirmat „delivered" (sau a venit reply de la primărie), emailul A ajuns,
+  // indiferent că ID-ul Resend lipsește (trimiteri vechi / backfill).
+  const confirmedDelivered = deliveryStatus === "delivered";
   const hasProblem =
-    isGhostSend === true ||
-    deliveryStatus === "bounced" ||
-    deliveryStatus === "complained";
+    !confirmedDelivered &&
+    (isGhostSend === true ||
+      deliveryStatus === "bounced" ||
+      deliveryStatus === "complained");
   if (!hasProblem) return null;
 
   const problemLabel = isGhostSend
