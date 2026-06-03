@@ -351,6 +351,15 @@ export async function POST(req: Request) {
       }
     }
 
+    // 2026-06-03 — Cazuri de graniță București/Ilfov (ex: 00053, intersecție
+    // Bd. Chișinău × Pantelimon): lat/lng cad pe partea Ilfov → reverse-geocode
+    // nu detectează sector, deși textul locației spune explicit „Sector N,
+    // București". Extragem sectorul din textul polished ca ultim fallback.
+    if (resolvedCounty === "B" && !resolvedSector) {
+      const sm = polished.locatie.match(/sector\s*([1-6])/i);
+      if (sm) resolvedSector = `S${sm[1]}` as "S1" | "S2" | "S3" | "S4" | "S5" | "S6";
+    }
+
     // 2026-05-26 — Identity fallback. Standard Civia.ro: textul formal
     // arată ÎNTOTDEAUNA „Mă numesc X, locuiesc în Y" (cu redactare pe
     // pagina publică). Dacă form-ul a omis author_address dar avem nume +
