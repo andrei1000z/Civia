@@ -4,7 +4,6 @@ import { evenimente } from "./evenimente";
 import { evenimenteDetails } from "./evenimente-detail";
 import { bilete, linii } from "./bilete";
 import { ghiduri } from "./ghiduri";
-import { QUIZ } from "./quiz-civic";
 import { DIRECTII, COMPANII, GLOSAR } from "./pmb-structura";
 import { SURSE } from "./surse-statistici";
 
@@ -97,24 +96,6 @@ describe("Data integrity", () => {
     it("all have unique slugs", () => {
       const slugs = new Set(ghiduri.map((g) => g.slug));
       expect(slugs.size).toBe(ghiduri.length);
-    });
-  });
-
-  describe("quiz civic", () => {
-    it("has at least 10 questions", () => {
-      expect(QUIZ.length).toBeGreaterThanOrEqual(10);
-    });
-    it("all have unique ids", () => {
-      const ids = new Set(QUIZ.map((q) => q.id));
-      expect(ids.size).toBe(QUIZ.length);
-    });
-    it("each has 4 options and correct index", () => {
-      for (const q of QUIZ) {
-        expect(q.options.length).toBe(4);
-        expect(q.correct).toBeGreaterThanOrEqual(0);
-        expect(q.correct).toBeLessThan(4);
-        expect(q.explanation.length).toBeGreaterThan(10);
-      }
     });
   });
 

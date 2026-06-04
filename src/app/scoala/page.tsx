@@ -79,9 +79,6 @@ export default function ScoalaPage() {
           <ul className="list-disc list-inside space-y-1">
             <li>5 prezentări <strong>PowerPoint editabile</strong> (în pregătire — lansare 2026 Q4)</li>
             <li>Fișe de lucru elevi (PDF)</li>
-            <li>Quiz interactiv (5 lecții × 5 întrebări) — disponibil la{" "}
-              <Link href="/civic-quiz" className="text-[var(--color-primary)] hover:underline">/civic-quiz</Link>
-            </li>
             <li>Manual profesor cu sugestii adaptive (răspunsuri elevi tipice + cum reacționezi)</li>
             <li>Acces gratuit la Civia API pentru proiecte de clasă</li>
             <li>Posibilitate workshop online cu echipa Civia (1× pe semestru)</li>

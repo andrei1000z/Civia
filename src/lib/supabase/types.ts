@@ -64,6 +64,8 @@ export interface SesizareFeedRow extends SesizareRow {
   nr_comentarii: number;
   verif_da: number;
   verif_nu: number;
+  /** Câți cetățeni au „trimis și ei" (co-semnat) sesizarea — afișat pe card. */
+  nr_cosigners: number;
 }
 
 export interface SesizareVerificationRow {

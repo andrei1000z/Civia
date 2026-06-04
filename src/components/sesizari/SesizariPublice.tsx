@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
+import { MessageSquare, Users, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
 // 2026-05-26 — NearbyMeButton scos la cererea user-ului (UX clutter).
 // Filtrarea spațială rămâne via /sesizari-publice/harta + filtre județ.
 import dynamic from "next/dynamic";
@@ -551,6 +551,16 @@ export function SesizariPublice() {
                     <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
+                    {(s.nr_cosigners ?? 0) > 0 && (
+                      <span
+                        className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
+                        aria-label={`${s.nr_cosigners} ${s.nr_cosigners === 1 ? "cetățean a trimis și el" : "cetățeni au trimis și ei"}`}
+                        title="Cetățeni care au trimis și ei această sesizare"
+                      >
+                        <Users size={13} aria-hidden="true" />
+                        <span className="font-medium tabular-nums">{s.nr_cosigners}</span>
+                      </span>
+                    )}
                     <span
                       className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
                       aria-label={`${s.nr_comentarii} ${s.nr_comentarii === 1 ? "comentariu" : "comentarii"}`}

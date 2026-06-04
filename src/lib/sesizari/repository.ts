@@ -152,7 +152,7 @@ export interface ListFilters {
 // pagina /sesizari-publice?view=map cade in error boundary. Cost: 16
 // bytes per row.
 const FEED_LIST_COLUMNS =
-  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,custom_category,status,formal_text,descriere,imagini,resolved_photo_url,created_at,nr_comentarii,publica,moderation_status";
+  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,custom_category,status,formal_text,descriere,imagini,resolved_photo_url,created_at,nr_comentarii,nr_cosigners,publica,moderation_status";
 
 // Card preview is line-clamp-2 (~150 visible chars). 320 is a safe
 // over-provision that still slashes the average row from ~3 KB to
