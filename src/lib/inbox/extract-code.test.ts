@@ -54,6 +54,16 @@ describe("extractSesizareCode", () => {
     expect(r.source).toBe("body");
   });
 
+  it("extrage din auto-ack care citează 'Sesizare 00058' în body (ps2/primarie3)", () => {
+    const r = extractSesizareCode({
+      to: "sesizari@civia.ro",
+      subject: "Solicitarea a fost inregistrata",
+      body: "Bună ziua, Solicitarea a fost înregistrată de către Primăria Sectorului 2 cu numărul 101312 din data de 04.06.2026, cu urmatorul continut: Sesizare 00058 — Mașini parcate pe trotuar",
+    });
+    expect(r.code).toBe("00058");
+    expect(r.source).toBe("body");
+  });
+
   it("respinge ani (2026) ca fiind cod", () => {
     const r = extractSesizareCode({
       to: "x@x.ro",

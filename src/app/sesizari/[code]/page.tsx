@@ -15,6 +15,7 @@ import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
+import { LiveSesizareRefresh } from "@/components/sesizari/LiveSesizareRefresh";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
 import { publicAuthorName } from "@/lib/sesizari/display-name";
@@ -138,6 +139,8 @@ export default async function SesizareDetailPage({
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      {/* Update LIVE al statusului când autoritatea răspunde (realtime). */}
+      <LiveSesizareRefresh sesizareId={sesizare.id} />
       <BreadcrumbJsonLd items={[
         { name: "Civia", url: SITE_URL },
         { name: "Sesizări", url: `${SITE_URL}/sesizari` },

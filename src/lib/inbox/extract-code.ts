@@ -60,6 +60,10 @@ const BODY_PATTERNS: RegExp[] = [
   /\bsesizare\s+(?:nr\.?\s*|num[ăa]rul\s+|cu\s+codul\s+)([A-Z0-9]{4,8})\b/i,
   /\bcivia\.ro\/sesizari\/([A-Z0-9]{4,8})\b/i,
   /\bcod\s+([A-Z0-9]{4,8})\b/i,
+  // 2026-06-05 — Răspunsurile auto („Solicitarea a fost înregistrată ... cu
+  // urmatorul continut: Sesizare 00058 — ...") CITEAZĂ subiectul nostru
+  // original „Sesizare 00058". Prindem codul de acolo. 5 cifre = format actual.
+  /\bsesizare\s*[:#—–-]?\s*(\d{5})\b/i,
 ];
 
 export interface ExtractCodeInput {

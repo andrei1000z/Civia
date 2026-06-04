@@ -11,6 +11,7 @@
     "fetch-stiri": "tsx scripts/fetch-stiri.ts",
     "migrate": "tsx scripts/migrate.ts",
     "backfill:reformulate": "tsx scripts/backfill-reformulate.ts",
+    "backfill:inbox": "tsx scripts/backfill-inbox.ts",
     "scrape:intreruperi": "node scripts/scrape-intreruperi.mjs",
     "test": "vitest run || vitest run",
     "test:watch": "vitest",

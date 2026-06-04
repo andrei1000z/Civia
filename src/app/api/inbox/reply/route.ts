@@ -3,6 +3,8 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { extractSesizareCode } from "@/lib/inbox/extract-code";
+import { decodeEmailSubject, repairMojibake } from "@/lib/inbox/decode-mime";
+import { computeStatusUpdate } from "@/lib/inbox/status-from-reply";
 import { identifySender } from "@/lib/inbox/sender-identity";
 import { classifyReply } from "@/lib/inbox/classify";
 import { scoreAuthenticity, shouldAutoApplyEnhanced } from "@/lib/inbox/authenticity";
@@ -196,7 +198,14 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ error: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
   }
-  const { from, to, subject, body_text, body_html, headers, attachments } = parsed.data;
+  const { from, to, headers, attachments } = parsed.data;
+  // 2026-06-05 — Decodare CORECTĂ inbound (bug raportat: subiecte + body
+  // corupte de la autorități). Subiectul: RFC 2047 din raw header (recuperabil
+  // 100%). Body: reparare mojibake „UTF-8 citit ca Latin-1". Tot ce urmează
+  // (extract-code, classify, store) folosește versiunile curate.
+  const subject = decodeEmailSubject(parsed.data.subject, headers);
+  const body_text = repairMojibake(parsed.data.body_text);
+  const body_html = repairMojibake(parsed.data.body_html);
 
   // 2026-05-27 v3 — Extract Message-ID din payload OR headers fallback
   const messageId = normalizeMessageId(parsed.data.message_id || headers["message-id"]);
@@ -526,29 +535,21 @@ export async function POST(req: Request) {
 
   // ─── 8. Auto-apply status if eligible ───────────────────────────
   if (autoApply && sesizareId) {
-    // "inregistrata" DOAR cu nr_inregistrare real de la autoritate
-    const newStatus = classification.status === "inregistrata" && classification.nr_inregistrare ? "inregistrata"
-      : classification.status === "in-lucru" ? "in-lucru"
-      : classification.status === "rezolvat" ? "rezolvat"
-      : classification.status === "redirectionata" ? "redirectionata"
-      : null;
+    // Citim statusul curent pentru guard-ul forward-only.
+    const { data: cur } = await admin
+      .from("sesizari")
+      .select("status")
+      .eq("id", sesizareId)
+      .maybeSingle();
+    const updates = computeStatusUpdate({
+      currentStatus: (cur?.status as string | undefined) ?? "nou",
+      aiStatus: classification.status,
+      nrInregistrare: classification.nr_inregistrare,
+      summary: classification.summary,
+      at: new Date().toISOString(),
+    });
 
-    if (newStatus) {
-      const updates: Record<string, string | null> = { status: newStatus };
-      if (classification.nr_inregistrare) {
-        updates.nr_inregistrare = classification.nr_inregistrare;
-      }
-      // 2026-06-03 — Surfacing răspuns autoritate pe pagina publică.
-      // GAP descoperit: 110 răspunsuri în inbox dar doar 2 ajungeau în
-      // official_response → cetățeanul nu vedea ce a zis primăria. Auto-ack-urile
-      // pure („Solicitarea a fost înregistrată" + număr) NU se afișează — numărul
-      // apare deja în banner. Răspunsurile SUBSTANȚIALE (în lucru / rezolvat /
-      // redirecționat) cu rezumat real → official_response, vizibil public.
-      const substantive = ["in-lucru", "rezolvat", "redirectionata"].includes(newStatus);
-      if (substantive && classification.summary && classification.summary.trim().length > 20) {
-        updates.official_response = classification.summary.trim();
-        updates.official_response_at = new Date().toISOString();
-      }
+    if (updates) {
       const { error: updateErr } = await admin
         .from("sesizari")
         .update(updates)
@@ -556,7 +557,7 @@ export async function POST(req: Request) {
       if (updateErr) {
         Sentry.captureMessage("inbox/reply: status auto-apply failed", {
           level: "warning",
-          extra: { error: updateErr.message, sesizare_id: sesizareId, newStatus },
+          extra: { error: updateErr.message, sesizare_id: sesizareId, newStatus: updates.status },
         });
       }
       // NU mai inseram un timeline event aditional aici. Trigger-ul DB
