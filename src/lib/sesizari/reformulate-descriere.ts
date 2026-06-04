@@ -22,7 +22,7 @@
  * (comportamentul anterior). Sesizarea pleacă oricum.
  */
 
-import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
 
 const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc.
@@ -115,13 +115,15 @@ export async function reformulateDescriere(raw: string): Promise<string> {
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL_FAST,
+      // 2026-06-04 — model TEXT (70B) nu cel de classify (8B): 8B lăsa
+      // diacritice incomplete („cosurile/stalpii") → text „scris urât".
+      model: GROQ_MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: input },
       ],
       temperature: 0.2,
-      max_tokens: 200,
+      max_tokens: 220,
     });
     const out = completion.choices[0]?.message?.content?.trim() ?? "";
     if (!out || out.length < 10) return fallback(input);
@@ -306,7 +308,7 @@ export async function generateContextualActions(args: {
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL_FAST,
+      model: GROQ_MODEL, // acțiunile (cu referințe legale) merg la autorități — calitate
       messages: [
         { role: "system", content: CONTEXTUAL_ACTIONS_PROMPT },
         {
@@ -441,7 +443,7 @@ export async function generateTitlu(args: {
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL_FAST,
+      model: GROQ_MODEL, // titlul e public + în subiect email — calitate
       messages: [
         { role: "system", content: TITLU_PROMPT },
         {

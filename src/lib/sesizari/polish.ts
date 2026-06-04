@@ -1,4 +1,4 @@
-import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
 import * as Sentry from "@sentry/nextjs";
 
 export interface PolishInput {
@@ -66,7 +66,7 @@ export async function polishSesizare(input: PolishInput): Promise<PolishResult> 
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL_FAST,
+      model: GROQ_MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
