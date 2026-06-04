@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { SESIZARE_TIPURI } from "@/lib/constants";
+import { safeTitlu } from "@/lib/sesizari/titlu";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -49,7 +50,7 @@ export async function GET(req: Request) {
 
   const { data: candidates, error } = await admin
     .from("sesizari")
-    .select("id, code, titlu, tip, locatie, sector, created_at, author_email, author_name, status, moderation_status")
+    .select("id, code, titlu, descriere, tip, locatie, sector, created_at, author_email, author_name, status, moderation_status")
     .in("status", ["nou", "trimis", "raspuns_partial"])
     .eq("moderation_status", "approved")
     .gte("created_at", cutoffOldest)
@@ -91,25 +92,26 @@ export async function GET(req: Request) {
     const tipMeta = SESIZARE_TIPURI.find((t) => t.value === sez.tip);
     const tipLabel = tipMeta?.label ?? sez.tip;
     const link = `${SITE_URL}/sesizari/${sez.code}`;
+    const titluSafe = safeTitlu(sez.titlu, { descriere: sez.descriere });
 
     let bodyHtml = "";
     let subject = "";
 
     if (step === "d7") {
-      subject = `Sesizarea ta — "${sez.titlu}" — 7 zile fara raspuns`;
+      subject = `Sesizarea ta — "${titluSafe}" — 7 zile fara raspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>7 zile</strong> de cand ai depus sesizarea <strong>"${sez.titlu}"</strong> (${tipLabel}, ${sez.locatie}).</p>
+        <p>Au trecut <strong>7 zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong> (${tipLabel}, ${sez.locatie}).</p>
         <p>E inca devreme — primaria are <strong>30 de zile legale</strong> sa raspunda (OG 27/2002 art. 14). Daca primesti un raspuns intre timp, raporteaza-l pe Civia ca sa-l vada toata lumea.</p>
         <p style="margin:24px 0;text-align:center;">
           <a href="${link}" style="background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Vezi sesizarea</a>
         </p>
       `;
     } else if (step === "d14") {
-      subject = `Sesizare "${sez.titlu}" — la jumate din termen, niciun raspuns`;
+      subject = `Sesizare "${titluSafe}" — la jumate din termen, niciun raspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>14 zile</strong> (jumate din termenul legal) si autoritatea inca nu a raspuns la sesizarea <strong>"${sez.titlu}"</strong>.</p>
+        <p>Au trecut <strong>14 zile</strong> (jumate din termenul legal) si autoritatea inca nu a raspuns la sesizarea <strong>"${titluSafe}"</strong>.</p>
         <p>Ce poti face acum:</p>
         <ul>
           <li>Daca cunosti un consilier local, forwardeaza-i sesizarea (link de mai jos)</li>
@@ -121,10 +123,10 @@ export async function GET(req: Request) {
         </p>
       `;
     } else if (step === "d30") {
-      subject = `Sesizare "${sez.titlu}" — termen legal expirat, escaladeaza`;
+      subject = `Sesizare "${titluSafe}" — termen legal expirat, escaladeaza`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${sez.titlu}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>. Daca autoritatea nu a raspuns, ai dreptul sa escaladezi:</p>
+        <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>. Daca autoritatea nu a raspuns, ai dreptul sa escaladezi:</p>
         <ul>
           <li><strong>Avocatul Poporului</strong> — petitie online <a href="https://avp.ro">avp.ro</a></li>
           <li><strong>Sesizare in instanta</strong> — Legea contenciosului administrativ 554/2004</li>
@@ -136,10 +138,10 @@ export async function GET(req: Request) {
         </p>
       `;
     } else {
-      subject = `Sesizare "${sez.titlu}" — 60 zile fara raspuns`;
+      subject = `Sesizare "${titluSafe}" — 60 zile fara raspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${sez.titlu}"</strong> si nicio reactie de la autoritate. Asta inseamna ca:</p>
+        <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${titluSafe}"</strong> si nicio reactie de la autoritate. Asta inseamna ca:</p>
         <ul>
           <li>Termenul legal e dublu depasit</li>
           <li>Daca decizi sa actionezi in instanta, ai dovada de pasivitate</li>
@@ -229,7 +231,7 @@ async function sendClosedLoopFollowups(
   const t13 = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString();
   const { data: candidates } = await admin
     .from("sesizari")
-    .select("id, code, titlu, author_email, author_name, resolved_at")
+    .select("id, code, titlu, descriere, author_email, author_name, resolved_at")
     .eq("status", "rezolvat")
     .eq("moderation_status", "approved")
     .gte("resolved_at", t15)
@@ -262,15 +264,16 @@ async function sendClosedLoopFollowups(
     const token = createHash("sha256").update(tokenSrc).digest("hex").slice(0, 12);
     const yesLink = `${SITE_URL}/api/sesizari/${sez.code}/loop-confirm?outcome=yes&t=${token}`;
     const noLink = `${SITE_URL}/api/sesizari/${sez.code}/loop-confirm?outcome=no&t=${token}`;
+    const titluSafe = safeTitlu(sez.titlu, { descriere: sez.descriere });
 
-    const subject = `Confirmi că s-a rezolvat? — "${sez.titlu}"`;
+    const subject = `Confirmi că s-a rezolvat? — "${titluSafe}"`;
     const html = emailTemplate({
       title: "Confirmi că problema s-a rezolvat?",
       kicker: "CIVIA · 14 ZILE DE LA REZOLVARE",
       preheader: `Sesizare ${sez.code} — confirmă cu 1 click`,
       body: `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Acum 14 zile sesizarea ta <strong>"${sez.titlu}"</strong> a fost marcată ca rezolvată. Confirmi că problema este într-adevăr rezolvată?</p>
+        <p>Acum 14 zile sesizarea ta <strong>"${titluSafe}"</strong> a fost marcată ca rezolvată. Confirmi că problema este într-adevăr rezolvată?</p>
         <p style="margin:24px 0;text-align:center;">
           <a href="${yesLink}" style="background:#059669;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-right:8px;">✓ DA, e rezolvată</a>
           <a href="${noLink}" style="background:#DC2626;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">✗ NU, nu chiar</a>

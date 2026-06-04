@@ -19,6 +19,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { safeTitlu } from "@/lib/sesizari/titlu";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -214,7 +215,7 @@ export async function POST(
   // Subject — IDENTIC cu send-via-civia (sesizarea originală). User cere
   // explicit: fără prefix „Co-semnătură", emailul să arate ca o sesizare
   // nouă obișnuită, doar cu identitatea persoanei care trimite acum.
-  const subject = `Sesizare ${sesizare.code} — ${sesizare.titlu}`;
+  const subject = `Sesizare ${sesizare.code} — ${safeTitlu(sesizare.titlu, { descriere: sesizare.descriere })}`;
 
   // 2026-05-27 — plus-addressing Reply-To pentru match 99% (Subaddressing
   // toggle ON în Cloudflare Email Routing — vezi audit 2026-05-27).

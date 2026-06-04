@@ -2,6 +2,7 @@ import { SESIZARE_TIPURI } from "@/lib/constants";
 import { getAuthoritiesFor, type ResolvedRecipients } from "./authorities";
 import { normalizeRoLocation } from "./format-helpers";
 import { buildParkingLegalText, type ParkingJurisdiction } from "./parking";
+import { safeTitlu } from "./titlu";
 
 export interface MailtoInput {
   tip: string;
@@ -355,13 +356,16 @@ export function buildEmailPayload(input: MailtoInput): EmailPayload {
   // („Sesizare Altele — Strada X") care arată prefacut, pre-completat —
   // primăria îl ignoră ca template automat. Folosim AI-polished titlu
   // care descrie problema concret (raportat user 5/9/2026).
+  // Defense-in-depth: niciodată placeholder „Altele (categoria se creează...)"
+  // în subiectul către primărie (rândurile vechi din DB + edge cases).
+  const cleanTitlu = safeTitlu(input.titlu, { descriere: input.descriere });
   let subject: string;
-  if (input.tip === "altele" && input.titlu && input.titlu.length > 5) {
+  if (input.tip === "altele" && cleanTitlu.length > 5) {
     // Truncate titlu lung — subject-urile lungi sunt clipped de mail
     // clients la afișare în inbox listing. 100 char max e standardul.
-    const titluTrim = input.titlu.length > 80
-      ? input.titlu.slice(0, 77).trimEnd() + "..."
-      : input.titlu;
+    const titluTrim = cleanTitlu.length > 80
+      ? cleanTitlu.slice(0, 77).trimEnd() + "..."
+      : cleanTitlu;
     subject = `Sesizare: ${titluTrim} — ${locatieFormatted}`;
   } else {
     subject = `Sesizare ${tipLabel} — ${locatieFormatted}`;

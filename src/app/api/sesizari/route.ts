@@ -11,6 +11,8 @@ import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { buildSalutation, formatRecipientName } from "@/lib/email/format";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import { polishSesizare } from "@/lib/sesizari/polish";
+import { isPlaceholderTitlu, deriveTitluFromDescriere } from "@/lib/sesizari/titlu";
+import { generateTitlu } from "@/lib/sesizari/reformulate-descriere";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
@@ -207,6 +209,24 @@ export async function POST(req: Request) {
     } catch (polishErr) {
       Sentry.captureException(polishErr, { tags: { kind: "polish_failed" }, extra: { code } });
       // polished e deja inițializat cu textul sanitizat raw — sesizarea pleacă
+    }
+
+    // GARANȚIE TITLU (bug 2026-06-04): titlul nu trebuie să fie niciodată un
+    // placeholder/etichetă de tip (ex: „Altele (categoria se creează automat
+    // din descriere)"). Asta se scurgea și în subiectul emailului către
+    // autorități. Dacă titlul polish-uit e un placeholder, generăm unul real
+    // din descriere (AI, cu fallback determinist). Sursă unică de adevăr pentru
+    // TOATE căile (form, cosign, API, share import) — server authoritative.
+    if (isPlaceholderTitlu(polished.titlu)) {
+      const descForTitle = polished.descriere || safeDescriere;
+      try {
+        polished.titlu = await generateTitlu({
+          descriere: descForTitle,
+          locatie: polished.locatie || safeLocatie,
+        });
+      } catch {
+        polished.titlu = deriveTitluFromDescriere(descForTitle);
+      }
     }
 
     // If the submitted lat/lng doesn't match the polished location text,
@@ -459,7 +479,10 @@ export async function POST(req: Request) {
         const salutation = cleanFirstName
           ? `Salut, ${cleanFirstName} 👋`
           : buildSalutation({ withEmoji: true });
-        const cleanTitle = sanitizeText(parsed.titlu, 120);
+        // polished.titlu e deja garantat curat (vezi guard-ul de titlu mai sus)
+        // — NU folosim parsed.titlu (raw) ca să nu ajungă placeholder în
+        // emailul de confirmare către cetățean.
+        const cleanTitle = sanitizeText(polished.titlu, 120);
         const cleanLocation = sanitizeText(parsed.locatie, 120);
         sendEmail({
           to: authorEmail,

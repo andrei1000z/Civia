@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
-import { SESIZARE_TIPURI } from "@/lib/constants";
+import { resolveTipLabel } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const alt = "Sesizare Civia";
@@ -41,7 +41,10 @@ export default async function SesizareOG({
   const locatie = truncate(sesizare?.locatie ?? "", 80);
   const statusColor = STATUS_COLORS[status] ?? "#64748b";
   const statusLabel = STATUS_LABELS[status] ?? status;
-  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === tip)?.label ?? "Sesizare civică";
+  const tipLabel = resolveTipLabel(
+    tip,
+    (sesizare as unknown as { custom_category?: string | null } | null)?.custom_category,
+  ).label;
 
   // Foloseste prima imagine a sesizarii ca background — face share card-ul
   // sa para o stire reala, nu un template generic. Daca lipseste, fallback

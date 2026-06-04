@@ -5,7 +5,7 @@ import { ChevronLeft, MapPin, Calendar, User } from "lucide-react";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { getCountyBySlug } from "@/data/counties";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, SITE_URL } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, resolveTipLabel, SITE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
@@ -47,8 +47,10 @@ export default async function CountySesizareDetail({
 
   const comments = await getComments(sesizare.id);
 
-  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.label ?? sesizare.tip;
-  const tipIcon = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.icon ?? "📝";
+  const { label: tipLabel, icon: tipIcon } = resolveTipLabel(
+    sesizare.tip,
+    (sesizare as unknown as { custom_category?: string | null }).custom_category,
+  );
 
   return (
     <div className="container-narrow py-8 md:py-12">

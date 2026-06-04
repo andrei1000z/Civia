@@ -14,6 +14,7 @@
 
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { safeTitlu } from "@/lib/sesizari/titlu";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -107,7 +108,7 @@ export async function GET(
 
   // 2026-05-27 — fără prefix „Co-semnătură" (user request): emailul să arate
   // ca o sesizare regulată către primărie. Match cu subject din cosign-send.
-  const subject = `Sesizare ${sez.code} — ${sez.titlu}`;
+  const subject = `Sesizare ${sez.code} — ${safeTitlu(sez.titlu, { descriere: sez.descriere })}`;
   const recipientsLine = [...recipients.primary, ...recipients.cc]
     .map((r) => `${r.name} <${r.email}>`)
     .join(", ");

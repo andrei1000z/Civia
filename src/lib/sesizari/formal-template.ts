@@ -26,6 +26,7 @@
 
 import type { TipTemplate } from "@/lib/groq/templates";
 import { TEMPLATES } from "@/lib/groq/templates";
+import { descriereContainsLocatie } from "@/lib/sesizari/titlu";
 
 /** Date suplimentare per tip — adăugate pentru template-ul determinist.
  *  Separate de TEMPLATES (care e folosit ca AI hint legacy) ca să rămână
@@ -328,8 +329,15 @@ export function generateFormalText(args: GenerateFormalTextArgs): string {
   // Bug fix 2026-05-25 — folosim descrierea cetățeanului dacă există.
   // Înainte hardcodam tipData.affects + tipData.problem indiferent dacă
   // se potrivea cu ce a scris user-ul → halucinații (tram fence → stâlpișori).
+  // 2026-06-04 — Dacă descrierea menționează deja locația, NU o repetăm în
+  // intro. Înainte: „...următoarea problemă constatată pe Strada Zori de Zi:
+  // Pe strada Zori de Zi sunt parcate..." (redundant). User: „fa direct
+  // «următoarea problemă:»". Includem „constatată pe {locatie}" DOAR când
+  // descrierea n-o conține (ca să nu pierdem contextul de loc).
   const introBody = hasRealDescription
-    ? `doresc să vă aduc la cunoștință următoarea problemă constatată pe ${locatie}:\n\n${descriereCetatean}`
+    ? descriereContainsLocatie(descriereCetatean, locatie)
+      ? `doresc să vă aduc la cunoștință următoarea problemă:\n\n${descriereCetatean}`
+      : `doresc să vă aduc la cunoștință următoarea problemă constatată pe ${locatie}:\n\n${descriereCetatean}`
     : `doresc să vă aduc la cunoștință o problemă care afectează ${tipData.affects} pe ${locatie}. În prezent, ${tipData.problem}.`;
   let intro: string;
   if (nume.length > 0 && adresa.length > 0) {

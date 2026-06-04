@@ -19,6 +19,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
 import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
+import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
 // Gender-detection helpers are no longer needed — the new email template uses
 // the neutral "Mă numesc X, locuiesc în Y" opening instead of Subsemnatul(a).
 import { cn } from "@/lib/utils";
@@ -205,7 +206,7 @@ export function SesizareForm() {
 
     setData((d) => {
       const next = { ...d };
-      if (sharedTitle && !d.titlu) next.titlu = sharedTitle;
+      if (sharedTitle && !isPlaceholderTitlu(sharedTitle) && !d.titlu) next.titlu = sharedTitle;
       // Build the description from text + link if both came in. The
       // link by itself is rarely useful; combined with a description
       // it's context for the AI classifier.
@@ -789,32 +790,22 @@ export function SesizareForm() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Generarea textului a eșuat");
       const formalText = json.data.formal_text as string;
-      const descriereRafinata = (json.data.descriere_rafinata as string | undefined) || undefined;
-      // Extract title: take the "Vă sesizez cu privire la..." part, or first sentence
-      let aiTitle = "";
-      const sesizezMatch = formalText.match(/Vă sesizez cu privire la ([^,.]+)/i);
-      if (sesizezMatch && sesizezMatch[1]) {
-        aiTitle = sesizezMatch[1].trim();
-        aiTitle = aiTitle.charAt(0).toUpperCase() + aiTitle.slice(1);
-        if (aiTitle.length > 80) aiTitle = aiTitle.slice(0, 77) + "...";
-      }
+      // 2026-06-04 — Înainte extrageam titlul cu regex pe „Vă sesizez cu
+      // privire la..." — frază INTERZISĂ de prompt, deci regex-ul nu prindea
+      // niciodată și titlul rămânea gol → cădea pe placeholder. Acum, dacă
+      // userul n-a tastat un titlu, derivăm unul curat din descriere. Serverul
+      // regenerează oricum un titlu AI mai bun la submit (sursă de adevăr).
       setData((d) => ({
         ...d,
         formal_text: formalText,
-        titlu: aiTitle || d.titlu,
-        // Keep user's original raw descriere but log what AI saw in photos
-        // as a small hint field. We don't overwrite descriere to avoid
-        // surprising the user; the refined version lives in formal_text.
-        descriere: descriereRafinata && !d.descriere.toLowerCase().includes(descriereRafinata.slice(0, 20).toLowerCase())
-          ? d.descriere
-          : d.descriere,
+        titlu: d.titlu || deriveTitluFromDescriere(d.descriere),
       }));
       // 2026-05-25 #7 — explicit funnel step după AI improve success
       // (separat de „ai-improve" care fires la click; asta fires la
       // text efectiv generat ⇒ measures success rate).
       trackFunnelStep("sesizare-create", "formal-text-generated", {
         textLength: formalText.length,
-        hasTitle: aiTitle ? 1 : 0,
+        hasTitle: (data.titlu || data.descriere) ? 1 : 0,
       });
     } catch (e) {
       if (!silent) setError(e instanceof Error ? e.message : "Serviciul de generare a textului e temporar indisponibil");
@@ -1040,13 +1031,15 @@ export function SesizareForm() {
     };
   }, []);
 
-  // Auto-generate titlu daca lipseste. Inainte fallback-ul era descriere.slice(80)
-  // care era textul INFORMAL al user-ului ("sa elibereze masinile..."). Pe share
-  // (Bluesky/Twitter) iesea oribil intre ghilimele. Acum fallback-ul e label-ul
-  // formal al tipului ("Parcare ilegala", "Montare stalpisori anti-parcare") —
-  // mereu curat, mereu in romana corecta cu diacritice.
-  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === data.tip)?.label;
-  const effectiveTitlu = data.titlu || tipLabel || "Sesizare civică";
+  // Auto-generate titlu daca lipseste. Istoric: fallback la descriere.slice(80)
+  // (text informal urat pe share), apoi la label-ul tipului — DAR pentru
+  // „altele" label-ul e placeholderul „Altele (categoria se creează automat
+  // din descriere)" care se scurgea ca titlu + in subiectul emailului
+  // (bug 2026-06-04). Acum derivam un titlu curat DIN DESCRIERE (prima clauza).
+  // Serverul regenereaza oricum un titlu AI mai bun la submit — asta e doar
+  // pentru preview/share inainte de submit.
+  const effectiveTitlu =
+    data.titlu || deriveTitluFromDescriere(data.descriere);
 
   // Parking flow has extra hard requirements: both mandatory photo
   // slots filled + a plate number + a jurisdiction. Relaxing any of

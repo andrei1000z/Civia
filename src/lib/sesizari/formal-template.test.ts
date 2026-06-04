@@ -96,6 +96,39 @@ describe("generateFormalText — structură obligatorie", () => {
   });
 });
 
+describe("generateFormalText — intro fără redundanță de locație (bug 2026-06-04)", () => {
+  const base = {
+    tip: "parcare",
+    nume: "Ion Popescu",
+    adresa: "Strada Florilor 12, Sector 5, București",
+    hasPhotos: false,
+    date: new Date("2026-06-04"),
+  };
+
+  it(`NU repetă strada când descrierea o conține deja`, () => {
+    const text = generateFormalText({
+      ...base,
+      locatie: "Strada Zori de Zi, Sector 6, București",
+      descriere: "Pe strada Zori de Zi sunt parcate mai multe mașini pe trotuar",
+    });
+    // intro-ul curat „următoarea problemă:" — fără „constatată pe Strada Zori"
+    expect(text).toContain("următoarea problemă:");
+    expect(text).not.toContain("constatată pe Strada Zori de Zi");
+    // strada apare o singură dată (în descriere), nu de două ori în intro
+    const occurrences = (text.match(/Zori de Zi/gi) ?? []).length;
+    expect(occurrences).toBe(1);
+  });
+
+  it(`include „constatată pe {locatie}" când descrierea NU menționează strada`, () => {
+    const text = generateFormalText({
+      ...base,
+      locatie: "Bulevardul Unirii nr. 5, Sector 3",
+      descriere: "Este o groapă foarte mare în carosabil, periculoasă pentru mașini",
+    });
+    expect(text).toContain("constatată pe Bulevardul Unirii nr. 5, Sector 3:");
+  });
+});
+
 describe("generateFormalText — toate tipurile au date valide", () => {
   const tipuri = getSupportedTipuri();
 

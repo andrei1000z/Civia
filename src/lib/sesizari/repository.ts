@@ -2,6 +2,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getHiddenUserIds, getHiddenEmails } from "@/lib/privacy/hidden-users";
 import { scrubFormalTextForPublic } from "./scrub-public";
+import { safeTitlu } from "./titlu";
 import type {
   SesizareFeedRow,
   SesizareRow,
@@ -158,6 +159,18 @@ const FEED_LIST_COLUMNS =
 // ~600 B while preserving punctuation/diacritics around the cut.
 const PREVIEW_CHARS = 320;
 
+/**
+ * 2026-06-04 — Defense-in-depth la boundary-ul de citire: rândurile VECHI din
+ * DB pot avea titlul placeholder „Altele (categoria se creează automat din
+ * descriere)" (create înainte de garanția de titlu din create route). Curățăm
+ * titlul la fiecare citire ca să nu se scurgă în pagina publică, OG, PDF,
+ * subiectul emailului către autorități, etc. Pentru rândurile noi (titlu deja
+ * curat) `safeTitlu` întoarce titlul neschimbat.
+ */
+function sanitizeRowTitlu<T extends { titlu?: string | null; descriere?: string | null }>(row: T): T {
+  return { ...row, titlu: safeTitlu(row.titlu, { descriere: row.descriere }) };
+}
+
 function truncateForFeed<T extends { formal_text?: string | null; descriere?: string | null }>(row: T): T {
   const next = { ...row };
   if (next.formal_text && next.formal_text.length > PREVIEW_CHARS) {
@@ -187,7 +200,7 @@ export async function listSesizari(filters: ListFilters = {}): Promise<SesizareF
   const { data, error } = await query;
   if (error) throw error;
   const anonymized = await anonymizeHiddenAuthors((data ?? []) as SesizareFeedRow[]);
-  return anonymized.map(truncateForFeed);
+  return anonymized.map(truncateForFeed).map(sanitizeRowTitlu);
 }
 
 export async function getSesizareByCode(code: string): Promise<SesizareFeedRow | null> {
@@ -206,7 +219,7 @@ export async function getSesizareByCode(code: string): Promise<SesizareFeedRow |
   // folosește getNrInregistrareForAuthor() ca să-l aducă explicit.
   const stripped = { ...row, nr_inregistrare: null };
   const [anonymized] = await anonymizeHiddenAuthors([stripped]);
-  return anonymized ?? stripped;
+  return sanitizeRowTitlu(anonymized ?? stripped);
 }
 
 /**
@@ -241,7 +254,7 @@ export async function getSesizareById(id: string): Promise<SesizareFeedRow | nul
   const row = (data as SesizareFeedRow | null) ?? null;
   if (!row) return null;
   const [anonymized] = await anonymizeHiddenAuthors([row]);
-  return anonymized ?? row;
+  return sanitizeRowTitlu(anonymized ?? row);
 }
 
 export async function getTimeline(sesizareId: string): Promise<SesizareTimelineRow[]> {

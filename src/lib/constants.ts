@@ -179,7 +179,11 @@ export const SESIZARE_TIPURI = [
   { value: "animale", label: "Câini periculoși/animale", short: "Animale", icon: "🐕", active: false },
   // FALLBACK — cand niciunul nu se potriveste. AI auto-genereaza
   // custom_category dinăuntru.
-  { value: "altele", label: "Altele (categoria se creează automat din descriere)", short: "Altele", icon: "📝", active: true },
+  // 2026-06-04 — label scurtat de la „Altele (categoria se creează automat din
+  // descriere)" la „Altele". Parantetica era un HINT de picker care se scurgea
+  // ca TITLU al sesizării + în subiectul emailului către autorități. Hint-ul
+  // trăiește acum în label-ul câmpului din form („opțional — completăm noi").
+  { value: "altele", label: "Altele", short: "Altele", icon: "📝", active: true },
 ] as const;
 
 /** Tipuri vizibile in form picker. */

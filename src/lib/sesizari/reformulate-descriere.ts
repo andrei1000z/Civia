@@ -23,6 +23,7 @@
  */
 
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
 
 const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc.
 
@@ -384,6 +385,92 @@ function fallbackAddress(raw: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^./, (c) => c.toUpperCase());
+}
+
+// ─── TITLU — AI generează un titlu scurt descriptiv din descriere ──────
+
+/**
+ * 2026-06-04 — Generează TITLUL sesizării din descrierea cetățeanului.
+ *
+ * Înainte, titlul era extras printr-un regex pe textul formal („Vă sesizez cu
+ * privire la...") — frază INTERZISĂ de prompt, deci regex-ul nu prindea
+ * niciodată → titlul cădea pe eticheta tip-picker-ului („Altele (categoria se
+ * creează automat din descriere)"). Acum AI-ul produce un titlu real,
+ * descriptiv, pentru ORICE sesizare. Fallback determinist (prima clauză din
+ * descriere) dacă AI eșuează — niciodată placeholder.
+ *
+ * Constraint: NU INVENTA. Doar din ce e în descriere.
+ */
+const TITLU_PROMPT = `Ești editor pentru o platformă civică. Creezi TITLUL scurt al unei sesizări către primărie, pornind STRICT de la descrierea cetățeanului.
+
+REGULI:
+1. DESCRIPTIV, nu imperativ. „Mașini parcate pe trotuar pe Strada Zori de Zi" — NU „Luați măsuri!".
+2. Concis: 4-9 cuvinte, MAXIM 70 de caractere.
+3. Sentence case (doar prima literă mare + nume proprii), diacritice complete (ă, â, î, ș, ț).
+4. Spune PROBLEMA + (dacă încape) locația scurtă. NU copia toată descrierea.
+5. NU INVENTA fapte. Doar din descriere.
+6. Fără ghilimele, fără punct final, fără markdown, fără emoji.
+7. INTERZIS cuvinte goale ca titlu: „Altele", „Sesizare", „Problemă", „Diverse".
+
+EXEMPLE:
+Descriere: "sunt masini parcate pe trotuar pe zori de zi nu se poate trece"
+Titlu: Mașini parcate pe trotuar pe Strada Zori de Zi
+
+Descriere: "cosuri de gunoi pe stalpii de iluminat pe cetatea de balta sector 6 direct pe carosabil periculos"
+Titlu: Coșuri de gunoi montate pe carosabil pe Strada Cetatea de Baltă
+
+Descriere: "groapa mare pe lipscani langa muzeu masinile aproape se rastoarna"
+Titlu: Groapă periculoasă în carosabil pe Strada Lipscani
+
+Descriere: "iluminatu stradal nu merge de o saptamana pe vasile lascar e periculos noaptea"
+Titlu: Iluminat public defect pe Strada Vasile Lascăr
+
+OUTPUT: STRICT titlul, o singură linie, fără preambul.`;
+
+/**
+ * Generează un titlu descriptiv din descriere via Groq. Fallback determinist
+ * (prima clauză) dacă AI eșuează sau întoarce un titlu invalid/placeholder.
+ */
+export async function generateTitlu(args: {
+  descriere: string;
+  locatie?: string | null;
+}): Promise<string> {
+  const desc = (args.descriere ?? "").trim();
+  if (desc.length < 10) return deriveTitluFromDescriere(desc);
+
+  try {
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL_FAST,
+      messages: [
+        { role: "system", content: TITLU_PROMPT },
+        {
+          role: "user",
+          content: `descriere="${desc}"${args.locatie ? `\nlocatie="${args.locatie}"` : ""}`,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 40,
+    });
+    let out = (completion.choices[0]?.message?.content ?? "").trim();
+    // strip ghilimele / punct final / markdown accidental
+    out = out
+      .replace(/^["'„«»\s]+|["'„«»\s]+$/g, "")
+      .replace(/[.]+$/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (out.length < 5 || isPlaceholderTitlu(out)) {
+      return deriveTitluFromDescriere(desc);
+    }
+    if (out.length > 80) {
+      const cut = out.slice(0, 78);
+      const sp = cut.lastIndexOf(" ");
+      out = (sp > 40 ? cut.slice(0, sp) : cut).trim();
+    }
+    return out;
+  } catch {
+    return deriveTitluFromDescriere(desc);
+  }
 }
 
 /**

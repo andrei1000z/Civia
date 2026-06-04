@@ -15,6 +15,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { safeTitlu } from "@/lib/sesizari/titlu";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -194,7 +195,7 @@ export async function POST(
   const ccEmails = (recipients.cc ?? []).map((a) => a.email).filter(Boolean);
 
   // Subject prefix [RETRIMITERE] ca primăria să nu creadă că e duplicate spam
-  const subject = `[RETRIMITERE] Sesizare ${sesizare.code} — ${sesizare.titlu}`;
+  const subject = `[RETRIMITERE] Sesizare ${sesizare.code} — ${safeTitlu(sesizare.titlu, { descriere: sesizare.descriere })}`;
   // 2026-05-27 — plus-addressing pentru match 99% (audit Cloudflare 2026-05-27)
   const replyTo = `sesizari+${sesizare.code}@civia.ro`;
   const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;

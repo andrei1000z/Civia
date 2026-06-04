@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { safeTitlu } from "@/lib/sesizari/titlu";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
       ? `<geo:lat>${sesizare.lat}</geo:lat><geo:long>${sesizare.lng}</geo:long>`
       : "";
     return `<item>
-      <title>${xmlEscape(sesizare.titlu)}</title>
+      <title>${xmlEscape(safeTitlu(sesizare.titlu, { descriere: sesizare.descriere }))}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
       <description>${xmlEscape(description)}</description>
