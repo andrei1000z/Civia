@@ -159,4 +159,27 @@ describe("removeMinimization", () => {
     expect(text).toContain("mașinile ocupă trotuarul");
     expect(text).toContain("circulația pietonilor este împiedicată");
   });
+
+  it(`1-metru myth — „lăsând un metru liber pentru pietoni" e neutralizat`, () => {
+    const input =
+      "Mașinile sunt parcate pe trotuar, lăsând un metru liber pentru pietoni.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(true);
+    expect(text).not.toMatch(/un metru liber/i);
+    expect(text).toContain("spațiul destinat pietonilor este restricționat");
+  });
+
+  it(`1-metru myth — „rămâne cel puțin 1 metru de trecere" e neutralizat`, () => {
+    const input = "Deși ocupă trotuarul, rămâne cel puțin 1 metru de trecere.";
+    const { text } = removeMinimization(input);
+    expect(text).not.toMatch(/1 metru de trecere/i);
+    expect(text).toContain("spațiul destinat pietonilor este restricționat");
+  });
+
+  it(`1-metru — NU prinde context neutru („groapă de un metru adâncime")`, () => {
+    const input = "Există o groapă de un metru adâncime în carosabil.";
+    const { text, changed } = removeMinimization(input);
+    expect(changed).toBe(false);
+    expect(text).toBe(input);
+  });
 });

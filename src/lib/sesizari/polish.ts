@@ -1,4 +1,5 @@
 import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import * as Sentry from "@sentry/nextjs";
 
 export interface PolishInput {
   titlu: string;
@@ -43,13 +44,25 @@ Nu adăuga text înainte/după. Nu folosi markdown. Păstrează toate informați
  * unchanged.
  */
 export async function polishSesizare(input: PolishInput): Promise<PolishResult> {
-  const fallback = (error: string): PolishResult => ({
-    titlu: input.titlu,
-    descriere: input.descriere,
-    locatie: input.locatie,
-    aiSucceeded: false,
-    error,
-  });
+  const fallback = (error: string): PolishResult => {
+    // 2026-06-04 — Vizibilitate: până acum eșecul AI cădea TĂCUT pe textul brut
+    // (descriere fără diacritice ajungea public — bug raportat de user). Acum
+    // semnalăm fiecare fallback ca să detectăm probleme de cotă/cheie Groq în
+    // producție. (polishSesizare nu aruncă — deci catch-ul din create route
+    // nu prindea aceste eșecuri.)
+    Sentry.captureMessage("polishSesizare fallback — text brut (AI indisponibil)", {
+      level: "warning",
+      tags: { kind: "polish_ai_fallback" },
+      extra: { error, tip: input.tip },
+    });
+    return {
+      titlu: input.titlu,
+      descriere: input.descriere,
+      locatie: input.locatie,
+      aiSucceeded: false,
+      error,
+    };
+  };
   try {
     const groq = getGroqClient();
     const completion = await groq.chat.completions.create({

@@ -119,9 +119,25 @@ export async function POST(req: Request) {
   const { generateUniqueCode } = await import("@/lib/sesizari/codes");
   const code = await generateUniqueCode();
 
-  // Default location — placeholder, user va edita după
-  const titlu = subject;
-  const descriere = body;
+  // 2026-06-04 — Înainte stocam subject + body BRUT (fără diacritice, registru
+  // colocvial), sărind complet peste pipeline-ul AI al form-ului. Acum
+  // reformulăm descrierea (registru oficial) + garantăm un titlu real (nu
+  // subiect gol/placeholder). Ambele au fallback intern dacă Groq pică.
+  const { reformulateDescriere, generateTitlu } = await import(
+    "@/lib/sesizari/reformulate-descriere"
+  );
+  const { isPlaceholderTitlu, deriveTitluFromDescriere } = await import(
+    "@/lib/sesizari/titlu"
+  );
+  const descriere = await reformulateDescriere(body);
+  let titlu = subject;
+  if (isPlaceholderTitlu(titlu)) {
+    try {
+      titlu = await generateTitlu({ descriere });
+    } catch {
+      titlu = deriveTitluFromDescriere(descriere);
+    }
+  }
 
   // Insert sesizare ca pending review (moderation_status = pending)
   const { error: insErr } = await admin.from("sesizari").insert({

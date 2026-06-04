@@ -104,6 +104,16 @@ const MINIMIZATION_RULES: ReplaceRule[] = [
     pattern: /nu\s+este\s+o\s+problem[ăa]\s+(?:acut[ăa]|urgent[ăa])/gi,
     replacement: "necesită intervenție",
   },
+  // „1-metru myth" (2026-06-04) — „rămâne/lasă (cel puțin) un metru liber
+  // pentru pietoni". JURIDIC GREȘIT: a lăsa 1 m liber NU legalizează parcarea
+  // pe un trotuar neamenajat (Tribunalul Cluj dec. 248/2012; trotuarul trebuie
+  // oficial amenajat+marcat). AI-ul nu trebuie să adauge această nuanță — ea
+  // minimizează sesizarea. Cerem context (liber/trecere/pietoni) ca să NU
+  // prindem „groapă de un metru".
+  {
+    pattern: /(?:r[ăa]m[âa]n[âa]?(?:nd|e)|l[ăa]s[âa](?:nd|[ăa]))\s+(?:(?:[îi]nc[ăa]|cel\s+pu[țt]in|aproximativ|circa|doar)\s+)*(?:un|1|doi|2|\d+(?:[.,]\d+)?)\s*m(?:etri|etru)?\b\.?\s*(?:liber[ăai]?\s*)?(?:de\s+trecere|pentru\s+(?:pietoni|trecere|circula[țt]ie)|liber[ăai]?)/gi,
+    replacement: "spațiul destinat pietonilor este restricționat",
+  },
 ];
 
 export interface AntiMinimizationResult {
