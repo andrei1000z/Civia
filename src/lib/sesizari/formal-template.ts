@@ -27,6 +27,7 @@
 import type { TipTemplate } from "@/lib/groq/templates";
 import { TEMPLATES } from "@/lib/groq/templates";
 import { descriereContainsLocatie } from "@/lib/sesizari/titlu";
+import { restoreDiacritics } from "@/lib/sesizari/diacritice";
 
 /** Date suplimentare per tip — adăugate pentru template-ul determinist.
  *  Separate de TEMPLATES (care e folosit ca AI hint legacy) ca să rămână
@@ -304,6 +305,8 @@ function formalizeDescription(raw: string): string {
   } while (cleaned !== prev && cleaned.length > 0); // scoate saluturi repetate
   if (cleaned.length === 0) return "";
 
+  // 2026-06-04 — diacritice deterministe (când e apelat direct cu text brut).
+  cleaned = restoreDiacritics(cleaned);
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
 }

@@ -48,11 +48,12 @@ describe("isPlaceholderTitlu", () => {
 });
 
 describe("deriveTitluFromDescriere", () => {
-  it(`ia prima propoziție, capitalizată`, () => {
+  it(`ia prima propoziție, capitalizată, cu diacritice restaurate`, () => {
     const t = deriveTitluFromDescriere(
       "sunt masini parcate pe trotuar. nu se poate trece deloc",
     );
-    expect(t).toBe("Sunt masini parcate pe trotuar");
+    // „masini" → „mașini" (restaurare diacritice deterministă)
+    expect(t).toBe("Sunt mașini parcate pe trotuar");
   });
 
   it(`taie la graniță de cuvânt sub 70 caractere`, () => {

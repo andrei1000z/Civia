@@ -13,6 +13,7 @@
  */
 
 import { SESIZARE_TIPURI } from "@/lib/constants";
+import { restoreDiacritics } from "@/lib/sesizari/diacritice";
 
 const norm = (s: string): string =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
@@ -97,7 +98,7 @@ export function deriveTitluFromDescriere(descriere: string | null | undefined): 
     const lastSpace = cut.lastIndexOf(" ");
     title = (lastSpace > 30 ? cut.slice(0, lastSpace) : cut).trim();
   }
-  title = title.replace(/[.,;:!?\s]+$/, "").trim();
+  title = restoreDiacritics(title.replace(/[.,;:!?\s]+$/, "").trim());
   if (title.length < 3) return "Sesizare civică";
   return title.charAt(0).toUpperCase() + title.slice(1);
 }

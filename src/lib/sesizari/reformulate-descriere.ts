@@ -22,8 +22,9 @@
  * (comportamentul anterior). Sesizarea pleacă oricum.
  */
 
-import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { groqText, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
+import { restoreDiacritics } from "@/lib/sesizari/diacritice";
 
 const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc.
 
@@ -70,9 +71,9 @@ OUTPUT: STRICT textul reformulat, fără preambul, fără markdown, fără ghili
 
 const FALLBACK_MAX_LEN = 500;
 
-/** Capitalize + final punctuation fallback. */
+/** Capitalize + diacritice deterministe + final punctuation fallback. */
 function fallback(raw: string): string {
-  const cleaned = raw.replace(/\s+/g, " ").trim().slice(0, FALLBACK_MAX_LEN);
+  const cleaned = restoreDiacritics(raw.replace(/\s+/g, " ").trim().slice(0, FALLBACK_MAX_LEN));
   if (cleaned.length === 0) return "";
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
@@ -113,19 +114,20 @@ export async function reformulateDescriere(raw: string): Promise<string> {
   if (input.length < 10) return fallback(input);
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      // 2026-06-04 — model TEXT (70B) nu cel de classify (8B): 8B lăsa
-      // diacritice incomplete („cosurile/stalpii") → text „scris urât".
-      model: GROQ_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: input },
-      ],
-      temperature: 0.2,
-      max_tokens: 220,
-    });
-    const out = completion.choices[0]?.message?.content?.trim() ?? "";
+    // 2026-06-04 — model TEXT (70B) pentru diacritice corecte, CU cascadă la 8B
+    // dacă 70B e rate-limited (limită zilnică mică) → nu cădem direct pe raw.
+    const out = await groqText(
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: input },
+        ],
+        temperature: 0.2,
+        max_tokens: 220,
+      },
+      { fallbackModel: GROQ_MODEL_FAST },
+    );
     if (!out || out.length < 10) return fallback(input);
     // Strip cazuri în care AI ignoră regulile și începe cu „Bună ziua" / etc.
     let stripped = out
@@ -139,7 +141,9 @@ export async function reformulateDescriere(raw: string): Promise<string> {
       .trim();
     if (stripped.length < 10) return fallback(input);
     if (hasSolicitation(stripped)) return fallback(input);
-    return stripped;
+    // Post-pass diacritice: prinde cuvintele pe care modelul le-a lăsat fără
+    // diacritice („cosuri/stalpii") — text public corect gramatical.
+    return restoreDiacritics(stripped);
   } catch {
     return fallback(input);
   }
@@ -198,8 +202,7 @@ export async function reorderActions(args: {
   if (desc.length < 10) return args.prefabActions;
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
+    const out = await groqText({
       model: GROQ_MODEL_FAST,
       messages: [
         { role: "system", content: ACTIONS_REORDER_PROMPT },
@@ -211,7 +214,6 @@ export async function reorderActions(args: {
       temperature: 0.1,
       max_tokens: 700,
     });
-    const out = completion.choices[0]?.message?.content?.trim() ?? "";
     if (!out) return args.prefabActions;
 
     const lines = out
@@ -306,20 +308,22 @@ export async function generateContextualActions(args: {
   if (desc.length < 20) return args.prefabFallback;
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL, // acțiunile (cu referințe legale) merg la autorități — calitate
-      messages: [
-        { role: "system", content: CONTEXTUAL_ACTIONS_PROMPT },
-        {
-          role: "user",
-          content: `tip=${args.tip}\nlocatie=${args.locatie || "N/A"}\ndescriere="${desc}"`,
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 600,
-    });
-    const out = completion.choices[0]?.message?.content?.trim() ?? "";
+    // acțiunile (cu referințe legale) merg la autorități → 70B, cascadă la 8B.
+    const out = await groqText(
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: CONTEXTUAL_ACTIONS_PROMPT },
+          {
+            role: "user",
+            content: `tip=${args.tip}\nlocatie=${args.locatie || "N/A"}\ndescriere="${desc}"`,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 600,
+      },
+      { fallbackModel: GROQ_MODEL_FAST },
+    );
     if (!out) return args.prefabFallback;
 
     // Parse: split pe linii, scoate numerotare daca AI a inclus, filtru length.
@@ -441,20 +445,22 @@ export async function generateTitlu(args: {
   if (desc.length < 10) return deriveTitluFromDescriere(desc);
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL, // titlul e public + în subiect email — calitate
-      messages: [
-        { role: "system", content: TITLU_PROMPT },
-        {
-          role: "user",
-          content: `descriere="${desc}"${args.locatie ? `\nlocatie="${args.locatie}"` : ""}`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 40,
-    });
-    let out = (completion.choices[0]?.message?.content ?? "").trim();
+    // titlul e public + în subiect email → 70B pentru calitate, cascadă la 8B.
+    let out = (await groqText(
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: TITLU_PROMPT },
+          {
+            role: "user",
+            content: `descriere="${desc}"${args.locatie ? `\nlocatie="${args.locatie}"` : ""}`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 40,
+      },
+      { fallbackModel: GROQ_MODEL_FAST },
+    )).trim();
     // strip ghilimele / punct final / markdown accidental
     out = out
       .replace(/^["'„«»\s]+|["'„«»\s]+$/g, "")
@@ -469,7 +475,7 @@ export async function generateTitlu(args: {
       const sp = cut.lastIndexOf(" ");
       out = (sp > 40 ? cut.slice(0, sp) : cut).trim();
     }
-    return out;
+    return restoreDiacritics(out);
   } catch {
     return deriveTitluFromDescriere(desc);
   }
@@ -484,8 +490,7 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
   if (input.length < 3) return input;
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
+    const out = await groqText({
       model: GROQ_MODEL_FAST,
       messages: [
         { role: "system", content: ADDRESS_NORMALIZE_PROMPT },
@@ -494,7 +499,6 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
       temperature: 0.1,
       max_tokens: 150,
     });
-    const out = completion.choices[0]?.message?.content?.trim() ?? "";
     if (!out || out.length < 3) return fallbackAddress(input);
     // Strip ghilimele dacă AI le-a pus accidental.
     const cleaned = out.replace(/^["'„«]+|["'»"]+$/g, "").trim();

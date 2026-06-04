@@ -1,4 +1,5 @@
-import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
+import { groqText, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { restoreDiacritics } from "@/lib/sesizari/diacritice";
 import * as Sentry from "@sentry/nextjs";
 
 export interface PolishInput {
@@ -55,43 +56,48 @@ export async function polishSesizare(input: PolishInput): Promise<PolishResult> 
       tags: { kind: "polish_ai_fallback" },
       extra: { error, tip: input.tip },
     });
+    // Chiar și pe fallback aplicăm diacriticele deterministe — textul brut
+    // („masinile/siguranta") nu trebuie să ajungă public fără diacritice.
     return {
-      titlu: input.titlu,
-      descriere: input.descriere,
-      locatie: input.locatie,
+      titlu: restoreDiacritics(input.titlu),
+      descriere: restoreDiacritics(input.descriere),
+      locatie: restoreDiacritics(input.locatie),
       aiSucceeded: false,
       error,
     };
   };
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            input.tip ? `Tip problemă: ${input.tip}` : "",
-            `TITLU BRUT: ${input.titlu}`,
-            `DESCRIERE BRUTĂ: ${input.descriere}`,
-            `LOCAȚIE BRUTĂ: ${input.locatie}`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 500,
-      response_format: { type: "json_object" },
-    });
-    const content = completion.choices[0]?.message?.content;
+    // 70B pentru diacritice/titlu de calitate, cascadă la 8B dacă 70B e
+    // rate-limited (limită zilnică mică) — ca să nu cădem pe text brut.
+    const content = await groqText(
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: [
+              input.tip ? `Tip problemă: ${input.tip}` : "",
+              `TITLU BRUT: ${input.titlu}`,
+              `DESCRIERE BRUTĂ: ${input.descriere}`,
+              `LOCAȚIE BRUTĂ: ${input.locatie}`,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 500,
+        response_format: { type: "json_object" },
+      },
+      { fallbackModel: GROQ_MODEL_FAST },
+    );
     if (!content) return fallback("AI a returnat răspuns gol");
     const parsed = JSON.parse(content) as Partial<PolishResult>;
     return {
-      titlu: (parsed.titlu || input.titlu).trim().slice(0, 200),
-      descriere: (parsed.descriere || input.descriere).trim().slice(0, 2000),
-      locatie: (parsed.locatie || input.locatie).trim().slice(0, 300),
+      titlu: restoreDiacritics((parsed.titlu || input.titlu).trim().slice(0, 200)),
+      descriere: restoreDiacritics((parsed.descriere || input.descriere).trim().slice(0, 2000)),
+      locatie: restoreDiacritics((parsed.locatie || input.locatie).trim().slice(0, 300)),
       aiSucceeded: true,
     };
   } catch (e) {
