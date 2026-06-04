@@ -13,7 +13,6 @@ interface MarkerData {
   locatie: string;
   status: string;
   data: string;
-  voturi: number;
   comentarii: number;
   coords: [number, number];
 }
@@ -41,7 +40,7 @@ export default function SesizariMarkersLayer({ data }: { data: MarkerData[] }) {
               <p className="font-semibold text-sm mb-1">{s.titlu}</p>
               <p className="text-xs text-[var(--color-text-muted)]">{s.locatie}</p>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                {s.voturi} voturi · {s.comentarii} comentarii
+                {s.comentarii} {s.comentarii === 1 ? "comentariu" : "comentarii"}
               </p>
               <Link
                 href={`/sesizari/${s.code}`}

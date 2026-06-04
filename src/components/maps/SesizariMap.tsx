@@ -32,7 +32,6 @@ interface MarkerData {
   locatie: string;
   status: string;
   data: string;
-  voturi: number;
   comentarii: number;
   coords: [number, number];
 }
@@ -66,7 +65,6 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
               locatie: r.locatie,
               status: r.status,
               data: r.created_at,
-              voturi: r.voturi_net,
               comentarii: r.nr_comentarii,
               coords: [r.lat, r.lng] as [number, number],
             })),
@@ -102,7 +100,6 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
                   locatie: r.locatie,
                   status: r.status,
                   data: r.created_at,
-                  voturi: 0,
                   comentarii: 0,
                   coords: [r.lat, r.lng],
                 };

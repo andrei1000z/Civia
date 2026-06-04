@@ -6,9 +6,7 @@ import {
   getSesizareByCode,
   getTimeline,
   getComments,
-  getUserVote,
   getSimilarSesizari,
-  isFollowing,
   getNrInregistrareForAuthor,
   getCosignersCount,
 } from "@/lib/sesizari/repository";
@@ -16,7 +14,6 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
-import { VoteButtons } from "@/components/sesizari/VoteButtons";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
@@ -25,7 +22,6 @@ import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
 import { SimilarSesizari } from "@/components/sesizari/SimilarSesizari";
-import { FollowButton } from "@/components/sesizari/FollowButton";
 import { ResendButton } from "@/components/sesizari/ResendButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
@@ -112,15 +108,8 @@ export default async function SesizareDetailPage({
     allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type)),
   );
 
-  // Check if current user has voted / followed
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  let userVote: -1 | 1 | null = null;
-  let userFollowing = false;
-  if (user) {
-    userVote = await getUserVote({ sesizareId: sesizare.id, userId: user.id });
-    userFollowing = await isFollowing({ sesizareId: sesizare.id, userId: user.id });
-  }
 
   const isAuthor = user
     ? sesizare.user_id === user.id || sesizare.author_email === user.email
@@ -314,25 +303,18 @@ export default async function SesizareDetailPage({
                   sesizare deja închisă. Distribuie + Status ticket rămân
                   (impact retroactiv: cetățeanul poate raporta revenire). */}
               {!isResolved && (
-                <>
-                  <SignSesizareButton
-                    tip={sesizare.tip}
-                    titlu={sesizare.titlu}
-                    locatie={sesizare.locatie}
-                    sector={sesizare.sector}
-                    county={sesizare.county}
-                    descriere={sesizare.descriere}
-                    formal_text={sesizare.formal_text}
-                    imagini={sesizare.imagini}
-                    code={sesizare.code}
-                    variant="primary"
-                  />
-                  <FollowButton
-                    code={sesizare.code}
-                    initialFollowing={userFollowing}
-                    initialCount={sesizare.nr_followers ?? 0}
-                  />
-                </>
+                <SignSesizareButton
+                  tip={sesizare.tip}
+                  titlu={sesizare.titlu}
+                  locatie={sesizare.locatie}
+                  sector={sesizare.sector}
+                  county={sesizare.county}
+                  descriere={sesizare.descriere}
+                  formal_text={sesizare.formal_text}
+                  imagini={sesizare.imagini}
+                  code={sesizare.code}
+                  variant="primary"
+                />
               )}
               {/* 2026-05-26 — „Ai văzut progres? Raportează" ascuns pe
                   rezolvat. Pentru impact retroactiv (problema revine),
@@ -351,7 +333,7 @@ export default async function SesizareDetailPage({
               <ShareMenu
                 url={`${SITE_URL}/sesizari/${sesizare.code}`}
                 title={sesizare.titlu}
-                size="md"
+                size="lg"
               />
             </div>
             {/* Secondary actions: author-only utility row, mai jos pentru
@@ -537,22 +519,6 @@ export default async function SesizareDetailPage({
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          {/* Vote */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5">
-            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-3">
-              Sprijină sesizarea
-            </p>
-            <VoteButtons
-              code={sesizare.code}
-              initialUpvotes={sesizare.upvotes}
-              initialDownvotes={sesizare.downvotes}
-              initialUserVote={userVote}
-            />
-            <p className="text-xs text-[var(--color-text-muted)] mt-3">
-              {sesizare.voturi_net > 0 ? "+" : ""}
-              {sesizare.voturi_net} scor net · {sesizare.nr_comentarii} comentarii
-            </p>
-          </div>
 
           {/* 2026-05-26 — VerifyPanel scos la cererea user-ului. Confirmarea
               rezolvării se face acum prin email loop-followup la T+14

@@ -39,7 +39,6 @@ export async function GET() {
   // Check tables exist
   const tables = [
     "sesizare_verifications",
-    "sesizare_follows",
     "newsletter_subscribers",
     "stiri_cache",
   ];

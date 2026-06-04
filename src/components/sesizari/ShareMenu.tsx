@@ -9,7 +9,7 @@ import { QR_API_BASE_URL } from "@/lib/constants";
 interface Props {
   url: string;
   title: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }
 
 export function ShareMenu({ url, title, size = "sm" }: Props) {
@@ -75,7 +75,9 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   const qrUrl = `${QR_API_BASE_URL}?size=300x300&data=${encodeURIComponent(url)}`;
 
   const iconSize = size === "sm" ? 13 : 15;
-  const px = size === "sm" ? "px-2 py-1" : "px-3 py-1.5";
+  // „lg" = h-11 px-4 — la fel ca butoanele de acțiune (SignSesizare, Status etc.)
+  const px = size === "sm" ? "px-2 py-1" : size === "lg" ? "h-11 px-4" : "px-3 py-1.5";
+  const textSize = size === "lg" ? "text-sm" : "text-xs";
 
   // Prefer the native Web Share API when available (mobile browsers,
   // Chrome desktop 89+). Falls through to the menu if the user cancels
@@ -117,8 +119,9 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             setOpen(!open);
           }}
           className={cn(
-            "inline-flex items-center gap-1 rounded-[var(--radius-xs)] text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
+            "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-xs)] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
             px,
+            textSize,
             "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
           )}
           aria-label="Distribuie"

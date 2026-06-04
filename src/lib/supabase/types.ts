@@ -61,13 +61,9 @@ export interface SesizareRow {
 }
 
 export interface SesizareFeedRow extends SesizareRow {
-  upvotes: number;
-  downvotes: number;
-  voturi_net: number;
   nr_comentarii: number;
   verif_da: number;
   verif_nu: number;
-  nr_followers: number;
 }
 
 export interface SesizareVerificationRow {

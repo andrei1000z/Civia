@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ThumbsUp, MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
+import { MessageSquare, MapPin, Filter, Image as ImgIcon, Loader2, Map as MapIconLucide, List, ChevronDown, X } from "lucide-react";
 // 2026-05-26 — NearbyMeButton scos la cererea user-ului (UX clutter).
 // Filtrarea spațială rămâne via /sesizari-publice/harta + filtre județ.
 import dynamic from "next/dynamic";
@@ -21,7 +21,7 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { SesizareFeedRow } from "@/lib/supabase/types";
 import { useCountyOptional } from "@/lib/county-context";
 
-type SortKey = "recent" | "votate";
+type SortKey = "recent";
 type ViewMode = "list" | "map";
 
 const PAGE_SIZE = 20;
@@ -45,9 +45,9 @@ export function SesizariPublice() {
   const [filterCounty, setFilterCounty] = useState<string>(
     () => searchParams.get("judet") || "toate",
   );
-  const [sort, setSort] = useState<SortKey>(
-    () => (searchParams.get("sort") === "votate" ? "votate" : "recent"),
-  );
+  // 2026-06-03 — Votarea eliminată → singura ordine e „recent". Păstrat ca
+  // const pentru compat cu param-ul API + fetchKey (mereu „recent").
+  const sort: SortKey = "recent";
   const [view, setView] = useState<ViewMode>(
     () => (searchParams.get("view") === "map" ? "map" : "list"),
   );
@@ -309,10 +309,6 @@ export function SesizariPublice() {
                     ))}
                   </select>
                 )}
-                <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectClass}>
-                  <option value="recent">Cele mai recente</option>
-                  <option value="votate">Cele mai votate</option>
-                </select>
               </div>
               {activeFilterCount > 0 && (
                 <button
@@ -321,7 +317,6 @@ export function SesizariPublice() {
                     setFilterTip("toate");
                     setFilterStatus("toate");
                     setFilterCounty("toate");
-                    setSort("recent");
                   }}
                   className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
                 >
@@ -402,7 +397,6 @@ export function SesizariPublice() {
                       setFilterTip("toate");
                       setFilterStatus("toate");
                       setFilterCounty("toate");
-                      setSort("recent");
                     }}
                     className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   >
@@ -447,7 +441,7 @@ export function SesizariPublice() {
                 key={s.id}
                 href={`/sesizari/${s.code}`}
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all overflow-hidden min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 flex flex-col h-full"
-                aria-label={`${s.titlu} — ${STATUS_LABELS[s.status]}, ${s.upvotes} ${s.upvotes === 1 ? "vot" : "voturi"}`}
+                aria-label={`${s.titlu} — ${STATUS_LABELS[s.status]}`}
               >
                 {/* TOP ROW: status + tip + acum X timp (dreapta) */}
                 <div className="flex items-start justify-between mb-3 gap-2 min-w-0">
@@ -557,13 +551,6 @@ export function SesizariPublice() {
                     <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
-                      aria-label={`${s.upvotes} ${s.upvotes === 1 ? "vot" : "voturi"}`}
-                    >
-                      <ThumbsUp size={13} aria-hidden="true" />
-                      <span className="font-medium tabular-nums">{s.upvotes}</span>
-                    </span>
                     <span
                       className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
                       aria-label={`${s.nr_comentarii} ${s.nr_comentarii === 1 ? "comentariu" : "comentarii"}`}

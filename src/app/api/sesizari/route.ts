@@ -80,7 +80,6 @@ export async function GET(req: Request) {
       status: searchParams.get("status") ?? undefined,
       sector: searchParams.get("sector") ?? undefined,
       county: searchParams.get("county") ?? undefined,
-      sort: (searchParams.get("sort") as "recent" | "votate") ?? "recent",
       limit: Number(searchParams.get("limit") ?? 50),
       offset: Number(searchParams.get("offset") ?? 0),
     });
@@ -377,34 +376,41 @@ export async function POST(req: Request) {
       }
     }
 
-    // Dacă formal_text a fost generat fără identitate (author_address era
-    // null la apel /api/ai/improve), regenerăm acum că avem fallback.
-    // Heuristic: text fără „Mă numesc" sau „Subsemnat" → no identity.
+    // 2026-06-04 — FIX CRITIC (caz 00060): textul formal copia VERBATIM
+    // descrierea RAW a cetățeanului („Bună ziua, ... va rog sa instalați...")
+    // → salut dublat + limbaj informal + diacritice lipsă, băgate în mijlocul
+    // frazei „...constatată pe X: <RAW>". Cauza: foloseam formal_text-ul din
+    // formular (generat din descrierea RAW) când avea deja identitate.
+    //
+    // SOLUȚIE: regenerăm ÎNTOTDEAUNA textul formal server-side din
+    // `polished.descriere` (descrierea AI-curățată, fără salut/informal) +
+    // template-ul determinist. Garantează text formal curat, consistent, care
+    // NU mai oglindește 1:1 ce a tastat user-ul. Pipeline de siguranță aplicat.
     let identityHardenedFormalText = safeFormalText;
-    if (
-      safeFormalText &&
-      !/M[ăa]\s+numesc/i.test(safeFormalText) &&
-      !/Subsemnat/i.test(safeFormalText) &&
-      resolvedAuthorAddress
-    ) {
-      try {
-        const { generateFormalText } = await import("@/lib/sesizari/formal-template");
-        identityHardenedFormalText = generateFormalText({
-          tip: parsed.tip,
-          locatie: polished.locatie,
-          descriere: polished.descriere,
-          nume: sanitizeText(parsed.author_name, 120),
-          adresa: resolvedAuthorAddress,
-          hasPhotos: (parsed.imagini ?? []).length > 0,
-        });
-      } catch (regenErr) {
-        Sentry.captureException(regenErr, {
-          tags: { kind: "formal_text_identity_regen_failed" },
-          extra: { code },
-        });
-        // Păstrăm safeFormalText original — mai bine fără identitate decât
-        // să blocăm submisia.
-      }
+    try {
+      const { generateFormalText } = await import("@/lib/sesizari/formal-template");
+      const regenerated = generateFormalText({
+        tip: parsed.tip,
+        locatie: polished.locatie,
+        descriere: polished.descriere,
+        nume: sanitizeText(parsed.author_name, 120),
+        adresa: resolvedAuthorAddress ?? null,
+        hasPhotos: (parsed.imagini ?? []).length > 0,
+      });
+      identityHardenedFormalText = reformatFormalText(
+        removeMinimization(
+          objectifyFormalText(regenerated, {
+            locatie: polished.locatie,
+            adresaCetatean: null,
+          }).text,
+        ).text,
+      );
+    } catch (regenErr) {
+      Sentry.captureException(regenErr, {
+        tags: { kind: "formal_text_regen_failed" },
+        extra: { code },
+      });
+      // Fallback: safeFormalText (formular) — mai bine ceva decât să blocăm.
     }
 
     try {

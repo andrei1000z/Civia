@@ -287,8 +287,22 @@ export interface GenerateFormalTextArgs {
  * teste, edge cases).
  */
 function formalizeDescription(raw: string): string {
-  const cleaned = raw.replace(/\s+/g, " ").trim();
+  let cleaned = raw.replace(/\s+/g, " ").trim();
   if (cleaned.length === 0) return "";
+
+  // 2026-06-04 — Defense-in-depth: scoate salutul de la început dacă a scăpat
+  // (ex: user a tastat „Bună ziua, Pe strada X..." direct în descriere). Fără
+  // asta, textul formal avea salut DUBLAT („Bună ziua," + intro cu „Bună ziua,
+  // ... constatată pe X: Bună ziua, ..."). Normal polishSesizare curăță deja,
+  // dar acoperim cazul când AI-ul pică / backfill scripts / edge cases.
+  const GREETING_RE = /^(bun[ăa]\s+ziua|bun[ăa]\s+seara|bun[ăa]|salut(?:are)?|stimate?\s+(?:domn|doamn[ăa]|domni|doamne)|stimați?\s+\w+|c[ăa]tre\s+\w+|salutare)\b[\s,.:;!-]*/i;
+  let prev: string;
+  do {
+    prev = cleaned;
+    cleaned = cleaned.replace(GREETING_RE, "").trim();
+  } while (cleaned !== prev && cleaned.length > 0); // scoate saluturi repetate
+  if (cleaned.length === 0) return "";
+
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
 }

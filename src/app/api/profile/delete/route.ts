@@ -59,9 +59,6 @@ export async function DELETE() {
       .update({ user_id: null, author_email: null, author_name: "Utilizator anonim" })
       .eq("user_id", user.id);
 
-    // Delete votes
-    await admin.from("sesizare_votes").delete().eq("user_id", user.id);
-
     // Anonymize comments
     await admin
       .from("sesizare_comments")

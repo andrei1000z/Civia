@@ -93,6 +93,8 @@ export const NAV_LINKS = [
   { href: "/petitii", label: "Petiții", national: true },
   { href: "/stiri", label: "Știri", national: true },
   { href: "/proteste", label: "Proteste", national: true },
+  // 2026-06-03 — Întreruperi promovat din „Explorează" în navbar top (cerere user).
+  { href: "/intreruperi", label: "Întreruperi", national: true },
 ] as const;
 
 // „Explorează" dropdown: items care nu se incarca in top-level, dar
@@ -111,7 +113,6 @@ export const NAV_MORE: Array<{
   countySuffix?: boolean;
 }> = [
   { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
-  { href: "/intreruperi", label: "Întreruperi planificate", icon: "⚡", countySuffix: true },
   { href: "/propuneri-legislative", label: "Propuneri legislative", icon: "⚖️", nationalOnly: true },
   // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
   // eliminat (duplicat al /clasament — single source of truth).

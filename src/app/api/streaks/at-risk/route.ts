@@ -45,13 +45,12 @@ export async function GET(req: Request) {
   // Pulling sesizari + votes + comments timestamps for the window.
   const since = new Date(Date.now() - 14 * 86_400_000).toISOString();
 
-  const [sesizariRes, votesRes, commentsRes] = await Promise.all([
+  const [sesizariRes, commentsRes] = await Promise.all([
     admin.from("sesizari").select("user_id, created_at").gte("created_at", since).not("user_id", "is", null),
-    admin.from("sesizare_votes").select("user_id, created_at").gte("created_at", since),
     admin.from("sesizare_comments").select("user_id, created_at").gte("created_at", since),
   ]);
 
-  if (sesizariRes.error || votesRes.error || commentsRes.error) {
+  if (sesizariRes.error || commentsRes.error) {
     return NextResponse.json(
       { error: "Failed to fetch activity" },
       { status: 500 },
@@ -70,7 +69,6 @@ export async function GET(req: Request) {
     }
   };
   add(sesizariRes.data as { user_id: string | null; created_at: string }[]);
-  add(votesRes.data as { user_id: string | null; created_at: string }[]);
   add(commentsRes.data as { user_id: string | null; created_at: string }[]);
 
   // Filter: streak ≥ 3, no action today.

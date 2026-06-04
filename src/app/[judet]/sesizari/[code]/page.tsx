@@ -8,13 +8,11 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, SITE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
-import { VoteButtons } from "@/components/sesizari/VoteButtons";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
-import { FollowButton } from "@/components/sesizari/FollowButton";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { stripPrivateAddress } from "@/lib/privacy";
-import { getUserVote, isFollowing, getComments } from "@/lib/sesizari/repository";
+import { getComments } from "@/lib/sesizari/repository";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
 export const dynamic = "force-dynamic";
@@ -47,11 +45,7 @@ export default async function CountySesizareDetail({
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [comments, userVote, userFollowing] = await Promise.all([
-    getComments(sesizare.id),
-    user ? getUserVote({ sesizareId: sesizare.id, userId: user.id }) : null,
-    user ? isFollowing({ sesizareId: sesizare.id, userId: user.id }) : false,
-  ]);
+  const comments = await getComments(sesizare.id);
 
   const tipLabel = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.label ?? sesizare.tip;
   const tipIcon = SESIZARE_TIPURI.find((t) => t.value === sesizare.tip)?.icon ?? "📝";
@@ -102,15 +96,10 @@ export default async function CountySesizareDetail({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <FollowButton
-            code={sesizare.code}
-            initialFollowing={userFollowing}
-            initialCount={sesizare.nr_followers ?? 0}
-          />
           <ShareMenu
             url={`${SITE_URL}/${judet}/sesizari/${sesizare.code}`}
             title={sesizare.titlu}
-            size="md"
+            size="lg"
           />
         </div>
       </div>
@@ -151,18 +140,6 @@ export default async function CountySesizareDetail({
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
-            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-3">
-              Sprijină sesizarea
-            </p>
-            <VoteButtons
-              code={sesizare.code}
-              initialUpvotes={sesizare.upvotes}
-              initialDownvotes={sesizare.downvotes}
-              initialUserVote={userVote}
-            />
-          </div>
-
           <Link
             href={`/sesizari/${code}`}
             className="block text-center text-sm text-[var(--color-primary)] hover:underline"

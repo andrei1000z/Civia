@@ -162,22 +162,14 @@ export async function POST(
 
   invalidateSesizariCache();
 
-  // ─── Push notifications to followers (fire-and-forget) ───────
-  // Schimbarea de status e cea mai importantă notificare push — userii
-  // care urmăresc sesizarea sau autorul vor să afle imediat. Best-effort,
-  // nu blocăm response-ul admin-ului.
+  // ─── Push notification to author (fire-and-forget) ───────
+  // 2026-06-04 — „Urmărește" eliminat → notificăm doar autorul sesizării.
+  // Best-effort, nu blocăm response-ul admin-ului.
   if (statusChanged) {
     void (async () => {
       try {
-        const { data: followers } = await admin
-          .from("sesizare_follows")
-          .select("user_id")
-          .eq("sesizare_id", sesizare.id);
-        const userIds = (followers ?? []).map((f) => f.user_id).filter(Boolean);
-        // Adaugă și autorul, dacă nu e deja în lista de followers
-        if (sesizare.user_id && !userIds.includes(sesizare.user_id)) {
-          userIds.push(sesizare.user_id);
-        }
+        const userIds: string[] = [];
+        if (sesizare.user_id) userIds.push(sesizare.user_id);
         if (userIds.length === 0) return;
         const meta = SESIZARE_STATUS_META[newStatus];
         await sendPushToUsers(userIds, {

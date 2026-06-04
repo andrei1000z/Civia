@@ -19,7 +19,6 @@ import { DeferredClientMount } from "@/components/DeferredClientMount";
 import { ToastProvider } from "@/components/Toast";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MobileFab } from "@/components/layout/MobileFab";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
 // AuroraBackground removed 5/22/2026 v5 — vezi globals.css `html` block.
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
@@ -237,7 +236,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="min-h-full flex flex-col pt-16 pb-16 lg:pb-0"
+        className="min-h-full flex flex-col pt-16"
         // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
         // injectează clase/atribute la body în timpul hydratation. Plus
         // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)
@@ -282,7 +281,6 @@ export default function RootLayout({
                 <CookieBanner />
                 <InstallPrompt />
                 <MobileFab />
-                <BottomNav />
                 <NewsletterNudge />
                 {/* F1 Civia Assistant — AI civic chat (desktop floating button) */}
                 <CiviaAssistant />

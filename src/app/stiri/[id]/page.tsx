@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, Calendar, User, Tag, Building2, Info, Sparkles } from "lucide-react";
-import { StireFeedbackCard } from "@/components/stiri/StireFeedbackCard";
 import { ArticleReadingTracker } from "@/components/stiri/ArticleReadingTracker";
 import { createSupabaseAnon } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/Badge";
@@ -431,11 +430,6 @@ export default async function StireDetailPage({
             </p>
           </div>
 
-          {/* 5/23/2026 — Feedback card sub DESPRE: like/dislike + comment box.
-              Likes incrementează counter Redis (stats), dislikes cu comentariu
-              se duc în feedback_submissions cu topic=stire-dislike, vizibile
-              în /admin/feedback. UI sound pe like via Web Audio API. */}
-          <StireFeedbackCard stireId={stire.id} />
         </aside>
       </div>
 

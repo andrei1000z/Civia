@@ -128,19 +128,17 @@ export function NotificationBell() {
     const supabase = createSupabaseBrowser();
 
     async function init() {
-      // 2026-05-25 — cosigners (cei care au „trimis și ei" sesizarea) primesc
-      // și ei notificările de status change. Triplu fetch în paralel.
-      const [followsRes, ownedRes, cosignsRes] = await Promise.all([
-        supabase.from("sesizare_follows").select("sesizare_id").eq("user_id", user!.id),
+      // 2026-06-04 — „Urmărește" eliminat. Notificările de status change merg
+      // acum doar pe sesizările proprii (owner) + co-semnate (cosigner).
+      const [ownedRes, cosignsRes] = await Promise.all([
         supabase.from("sesizari").select("id").eq("user_id", user!.id).limit(200),
         supabase.from("sesizare_cosigners").select("sesizare_id").eq("user_id", user!.id).limit(200),
       ]);
-      const followedIds = (followsRes.data ?? []).map((f: { sesizare_id: string }) => f.sesizare_id);
       const ownedIds = (ownedRes.data ?? []).map((s: { id: string }) => s.id);
       const cosignedIds = (cosignsRes.data ?? []).map((c: { sesizare_id: string }) => c.sesizare_id);
 
-      // Union: status updates pe toate trei (owner + followed + cosigner).
-      const timelineIds = Array.from(new Set([...followedIds, ...ownedIds, ...cosignedIds]));
+      // Union: status updates pe owner + cosigner.
+      const timelineIds = Array.from(new Set([...ownedIds, ...cosignedIds]));
       if (timelineIds.length === 0) return () => {};
 
       async function lookupSesizare(id: string) {

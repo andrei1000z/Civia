@@ -135,7 +135,6 @@ export interface ListFilters {
   status?: string;
   sector?: string;
   county?: string;
-  sort?: "recent" | "votate";
   limit?: number;
   offset?: number;
 }
@@ -152,7 +151,7 @@ export interface ListFilters {
 // pagina /sesizari-publice?view=map cade in error boundary. Cost: 16
 // bytes per row.
 const FEED_LIST_COLUMNS =
-  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,custom_category,status,formal_text,descriere,imagini,resolved_photo_url,created_at,upvotes,nr_comentarii,voturi_net,publica,moderation_status";
+  "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,custom_category,status,formal_text,descriere,imagini,resolved_photo_url,created_at,nr_comentarii,publica,moderation_status";
 
 // Card preview is line-clamp-2 (~150 visible chars). 320 is a safe
 // over-provision that still slashes the average row from ~3 KB to
@@ -179,11 +178,7 @@ export async function listSesizari(filters: ListFilters = {}): Promise<SesizareF
   if (filters.sector && filters.sector !== "toate") query = query.eq("sector", filters.sector);
   if (filters.county) query = query.eq("county", filters.county.toUpperCase());
 
-  if (filters.sort === "votate") {
-    query = query.order("voturi_net", { ascending: false });
-  } else {
-    query = query.order("created_at", { ascending: false });
-  }
+  query = query.order("created_at", { ascending: false });
 
   const limit = filters.limit ?? 50;
   const offset = filters.offset ?? 0;
@@ -401,52 +396,6 @@ export async function addComment(params: {
   return data as SesizareCommentRow;
 }
 
-export async function upsertVote(params: {
-  sesizareId: string;
-  userId: string;
-  value: -1 | 1;
-}): Promise<void> {
-  const supabase = await createSupabaseServer();
-  const { error } = await supabase
-    .from("sesizare_votes")
-    .upsert(
-      {
-        sesizare_id: params.sesizareId,
-        user_id: params.userId,
-        value: params.value,
-      },
-      { onConflict: "sesizare_id,user_id" }
-    );
-  if (error) throw error;
-}
-
-export async function removeVote(params: {
-  sesizareId: string;
-  userId: string;
-}): Promise<void> {
-  const supabase = await createSupabaseServer();
-  const { error } = await supabase
-    .from("sesizare_votes")
-    .delete()
-    .eq("sesizare_id", params.sesizareId)
-    .eq("user_id", params.userId);
-  if (error) throw error;
-}
-
-export async function getUserVote(params: {
-  sesizareId: string;
-  userId: string;
-}): Promise<-1 | 1 | null> {
-  const supabase = await createSupabaseServer();
-  const { data } = await supabase
-    .from("sesizare_votes")
-    .select("value")
-    .eq("sesizare_id", params.sesizareId)
-    .eq("user_id", params.userId)
-    .maybeSingle();
-  return ((data as { value: -1 | 1 } | null)?.value ?? null);
-}
-
 // ========== VERIFICĂRI REZOLVARE ==========
 
 export async function getVerifications(
@@ -496,20 +445,6 @@ export async function upsertVerification(params: {
 }
 
 // ========== SESIZĂRI SIMILARE ==========
-
-export async function isFollowing(params: {
-  sesizareId: string;
-  userId: string;
-}): Promise<boolean> {
-  const supabase = await createSupabaseServer();
-  const { data } = await supabase
-    .from("sesizare_follows")
-    .select("sesizare_id")
-    .eq("sesizare_id", params.sesizareId)
-    .eq("user_id", params.userId)
-    .maybeSingle();
-  return !!data;
-}
 
 export async function getSimilarSesizari(
   sesizareId: string,

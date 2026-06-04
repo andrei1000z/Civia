@@ -57,22 +57,6 @@ export const getSesizariStatsCached = unstable_cache(
   { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
-/** Top voted sesizari — home widget + /impact */
-export const getTopVotedCached = unstable_cache(
-  async (limit = 6) => {
-    const admin = createSupabaseAdmin();
-    const { data } = await admin
-      .from("sesizari_feed")
-      .select("code, titlu, locatie, sector, voturi_net, status, tip, nr_comentarii")
-      .eq("publica", true)
-      .order("voturi_net", { ascending: false })
-      .limit(limit);
-    return data ?? [];
-  },
-  ["sesizari-top-voted"],
-  { revalidate: 1800, tags: ["sesizari-stats"] }
-);
-
 /** County-level sesizari counts (sum per county) — used on /impact + county pages */
 export const getSesizariByCountyCached = unstable_cache(
   async () => {
@@ -138,9 +122,9 @@ export const getImpactDataCached = unstable_cache(
         withCounty(
           admin
             .from("sesizari_feed")
-            .select("code, titlu, locatie, sector, voturi_net, status, tip, nr_comentarii")
+            .select("code, titlu, locatie, sector, status, tip, nr_comentarii, created_at")
             .eq("publica", true)
-            .order("voturi_net", { ascending: false })
+            .order("created_at", { ascending: false })
             .limit(6)
         ),
         withCounty(
@@ -200,11 +184,10 @@ export const getImpactDataCached = unstable_cache(
       byType,
       byCounty,
       avgResolutionDays,
-      topVoted: (topRes.data ?? []) as Array<{
+      topRecent: (topRes.data ?? []) as Array<{
         code: string;
         titlu: string;
         locatie: string;
-        voturi_net: number;
         status: string;
       }>,
       latestResolved: (latestRes.data ?? []) as Array<{

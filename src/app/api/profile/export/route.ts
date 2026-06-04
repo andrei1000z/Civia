@@ -31,13 +31,12 @@ export async function GET() {
 
   // Split into two queries instead of .or() to avoid PostgREST filter injection
   // via email addresses containing commas/parens/dots.
-  const [profile, byUserId, byEmail, votes, comments] = await Promise.all([
+  const [profile, byUserId, byEmail, comments] = await Promise.all([
     admin.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     admin.from("sesizari").select("*").eq("user_id", user.id),
     user.email
       ? admin.from("sesizari").select("*").eq("author_email", user.email)
       : Promise.resolve({ data: [] as Array<{ id: string }> }),
-    admin.from("sesizare_votes").select("*").eq("user_id", user.id),
     admin.from("sesizare_comments").select("*").eq("user_id", user.id),
   ]);
   // De-dup by id
@@ -58,7 +57,6 @@ export async function GET() {
     },
     profile: profile.data,
     sesizari: sesizariAll,
-    votes: votes.data ?? [],
     comments: comments.data ?? [],
   };
 
