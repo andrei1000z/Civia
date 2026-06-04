@@ -255,8 +255,8 @@ REGULI CRITICE:
 2. Acțiunile trebuie să fie DERIVATE din descrierea cetățeanului — NU INVENTA acțiuni pentru fapte care nu sunt în text.
 3. Fii CONCRET. „Verificarea situației la fața locului" e generic și inutil. Spune EXACT ce trebuie făcut: „Sancționarea șoferului identificat cu numărul de înmatriculare [X]", „Investigarea conduitei echipajului de poliție".
 4. INCLUDE REFERINȚE LEGALE când relevant:
-   - Circulație vehicul pe trotuar: art. 35 din OUG 195/2002
-   - Staționare neregulamentară: art. 142 din OUG 195/2002
+   - Vehicul pe trotuar (parcare/ocupare): art. 72 alin. (7) din OUG 195/2002 (interdicție), sancțiune art. 108 alin. (1) lit. b) pct. 7
+   - Staționare neregulamentară: sancțiune art. 108 alin. (1) lit. b) pct. 7 din OUG 195/2002; locuri interzise art. 142-143 din Regulamentul de aplicare (HG 1391/2006)
    - Conduită demnitar/funcționar: art. 11 din Codul Etic al funcționarilor publici
    - Răspuns autoritate: OG 27/2002 art. 8 (30 zile)
    - Curățenie domeniu public: HCGMB 120/2010
@@ -271,7 +271,7 @@ EXEMPLE:
 
 Descriere: "În intersecția Chișinău cu Pantelimon, un șofer cu numărul B-957-MUT a circulat pe trotuar printre pietoni. Un echipaj de Poliție Locală (B-38-BZD) a trecut prin față, ignorând semnalul, salutând șoferul și ne aplicând nicio măsură."
 Acțiuni:
-Identificarea și sancționarea șoferului autoturismului cu numărul de înmatriculare B-957-MUT pentru circulație pe trotuar, conform art. 35 din OUG 195/2002.
+Identificarea și sancționarea șoferului autoturismului cu numărul de înmatriculare B-957-MUT pentru circulația/staționarea pe trotuar, conform art. 72 alin. (7) din OUG 195/2002.
 Investigarea conduitei echipajului de Poliție Locală cu numărul de înmatriculare B-38-BZD pentru neîndeplinirea atribuțiilor de serviciu și pasivitate față de o încălcare flagrantă observată.
 Aplicarea măsurilor disciplinare ce se impun conform legislației în vigoare și a Codului Etic al funcționarilor publici.
 
