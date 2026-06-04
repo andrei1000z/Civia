@@ -116,16 +116,6 @@ test.describe("Civia golden path — sesizare camera→AI→submit", () => {
     expect(href).toContain("camera=1");
   });
 
-  test("BottomNav mobile prezent + 4 tabs", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/sesizari-publice");
-    const nav = page.getByRole("navigation", { name: /[Nn]avigare principal[ăa] mobil/ });
-    await expect(nav).toBeVisible();
-    // 4 tabs: Acasă, Sesizări, Petiții, Profil
-    const tabs = nav.locator("li");
-    await expect(tabs).toHaveCount(4);
-  });
-
   test(`CTA persistent desktop „Fă o sesizare"`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");

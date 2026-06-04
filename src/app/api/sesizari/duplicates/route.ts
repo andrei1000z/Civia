@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   // client-side (Postgres function would be more accurate but adds setup).
   let query = admin
     .from("sesizari_feed")
-    .select("code, titlu, locatie, sector, status, tip, lat, lng, created_at, upvotes, voturi_net")
+    .select("code, titlu, locatie, sector, status, tip, lat, lng, created_at")
     .eq("moderation_status", "approved")
     .eq("publica", true)
     .eq("tip", tip)
@@ -77,10 +77,8 @@ export async function POST(req: Request) {
       .filter((s) => s.distance_m <= radius)
       .sort((a, b) => a.distance_m - b.distance_m);
   } else {
-    // Fără coords: sortăm după votes desc (cele mai populare in zonă)
-    candidates = candidates
-      .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
-      .slice(0, 5);
+    // Fără coords: păstrăm ordinea recentă (query e deja order created_at desc).
+    candidates = candidates.slice(0, 5);
   }
 
   return NextResponse.json({

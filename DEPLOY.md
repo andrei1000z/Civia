@@ -77,6 +77,11 @@ Run these in the Supabase Dashboard → SQL Editor, in order:
 22. `supabase/migrations/022_profile_avatar_newsletter_optin.sql`
 23. `supabase/migrations/023_petitii_ai_summary.sql`
 
+> Migrările `024`–`092` se aplică în ordine numerică după cele de mai sus.
+> Notabilă: `092_drop_votes_follows.sql` (2026-06-04) elimină tabelele
+> `sesizare_votes` + `sesizare_follows` și agregatele de voturi/urmăriri din
+> view-ul `sesizari_feed`.
+
 ### Make yourself admin
 
 After migration 006:

@@ -282,7 +282,7 @@ Audit complet pe infrastructure (Vercel + Supabase + Cloudflare + Sentry + GitHu
 - **[P2]** Tighten inbox_filter_log + admin_audit_log policies — auth.role() is unreliable; use TO service_role clause + RESTRICTIVE. Files: `supabase/migrations/072_admin_audit_log.sql`, `supabase/migrations/075_inbox_hardening.sql`.
 - **[P2]** Migrate to Supabase 2025 publishable + scoped secret keys — replace shared service_role with per-surface scoped keys. Files: `src/lib/supabase/admin.ts`, `src/lib/env.ts`.
 - **[P3]** idx_sesizari_code duplicate with UNIQUE constraint — DROP redundant indexes. Files: `supabase/schema.sql`.
-- **[P3]** No index FK on sesizare_votes(user_id), sesizare_verifications(user_id) — JOINs scan; add for /cont profile page hot path. Files: `supabase/schema.sql`.
+- **[P3]** No index FK on sesizare_verifications(user_id) — JOINs scan; add for /cont profile page hot path. Files: `supabase/schema.sql`. (Notă: `sesizare_votes` eliminat în migrarea 092.)
 - **[P3]** Indexes notify_* on profiles probably unused — drop unless idx_scan > 0 after 30 days. Files: `supabase/migrations/064_notify_petitii_proteste.sql`.
 - **[P3]** Indexes idx_sesizari_delivery_status and idx_sesizari_bounced created twice (060 + 075) — consolidate migration history. Files: `supabase/migrations/060_delivery_tracking.sql`, `supabase/migrations/075_inbox_hardening.sql`.
 

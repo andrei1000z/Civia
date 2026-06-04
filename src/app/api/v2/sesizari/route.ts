@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
  *       "status": "rezolvat",
  *       "created_at": "2026-...",
  *       "resolved_at": "2026-...",
- *       "upvotes": 42,
+ *       "cosigners": 5,
  *       "url": "https://civia.ro/sesizari/ABC123"
  *     }
  *   ],
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
   let query = admin
     .from("sesizari_feed")
     .select(
-      "id, code, tip, titlu, locatie, county, sector, lat, lng, status, created_at, resolved_at, upvotes, nr_cosigners",
+      "id, code, tip, titlu, locatie, county, sector, lat, lng, status, created_at, resolved_at, nr_cosigners",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -103,7 +103,6 @@ export async function GET(req: Request) {
     status: s.status,
     created_at: s.created_at,
     resolved_at: s.resolved_at,
-    upvotes: s.upvotes ?? 0,
     cosigners: s.nr_cosigners ?? 0,
     url: `${SITE_URL}/sesizari/${s.code}`,
   }));

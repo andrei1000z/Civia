@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     let query = supabase
       .from("sesizari_feed")
       .select(
-        "code,created_at,status,tip,sector,county,titlu,locatie,descriere,author_name,voturi_net,nr_comentarii"
+        "code,created_at,status,tip,sector,county,titlu,locatie,descriere,author_name,nr_comentarii"
       )
       .limit(limit)
       .order("created_at", { ascending: false });
@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     const rows = (data ?? []) as Record<string, unknown>[];
     const header = [
       "cod", "data", "status", "tip", "sector", "titlu", "locatie",
-      "descriere", "autor", "voturi_net", "comentarii",
+      "descriere", "autor", "comentarii",
     ];
     const csv = [
       header.join(","),
@@ -66,7 +66,6 @@ export async function GET(req: Request) {
         escapeCsv(r.locatie as string),
         escapeCsv(r.descriere as string),
         escapeCsv(r.author_name as string),
-        escapeCsv(r.voturi_net as number),
         escapeCsv(r.nr_comentarii as number),
       ].join(",")),
     ].join("\n");

@@ -11,7 +11,6 @@ interface Candidate {
   sector?: string | null;
   status?: string;
   distance_m?: number;
-  upvotes?: number;
 }
 
 interface Props {

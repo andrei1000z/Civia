@@ -18,10 +18,6 @@ export const BADGES = {
     { id: "civic-leader", name: "Civic Leader", icon: "🌳", description: "20 sesizări depuse", threshold: 20 },
     { id: "hero-bucharest", name: "Hero București", icon: "🏆", description: "50 sesizări depuse", threshold: 50 },
   ],
-  votes: [
-    { id: "first-vote", name: "Prima voce", icon: "👍", description: "Ai votat prima sesizare", threshold: 1 },
-    { id: "regular-voter", name: "Votant fidel", icon: "🗳️", description: "50 voturi date", threshold: 50 },
-  ],
   comments: [
     { id: "first-comment", name: "Primul comentariu", icon: "💬", description: "Ai lăsat un comentariu", threshold: 1 },
     { id: "active-commenter", name: "Vocea comunității", icon: "📢", description: "20 comentarii", threshold: 20 },
@@ -51,7 +47,6 @@ export interface UserBadges {
 
 export function computeBadges(counts: {
   sesizari: number;
-  votes: number;
   comments: number;
   verifications: number;
   resolved: number;
@@ -72,7 +67,6 @@ export function computeBadges(counts: {
   };
 
   checkCategory(BADGES.sesizari, counts.sesizari);
-  checkCategory(BADGES.votes, counts.votes);
   checkCategory(BADGES.comments, counts.comments);
   checkCategory(BADGES.verifications, counts.verifications);
   checkCategory(BADGES.resolved, counts.resolved);

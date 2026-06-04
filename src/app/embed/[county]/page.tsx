@@ -45,7 +45,6 @@ interface SesizareRow {
   locatie: string;
   status: string;
   created_at: string;
-  upvotes: number;
 }
 
 async function getCountySesizari(countyId: string): Promise<{ rows: SesizareRow[]; total: number }> {
@@ -54,7 +53,7 @@ async function getCountySesizari(countyId: string): Promise<{ rows: SesizareRow[
     const [list, count] = await Promise.all([
       admin
         .from("sesizari_feed")
-        .select("code, titlu, tip, locatie, status, created_at, upvotes")
+        .select("code, titlu, tip, locatie, status, created_at")
         .eq("county", countyId)
         .eq("publica", true)
         .eq("moderation_status", "approved")
@@ -151,11 +150,6 @@ export default async function EmbedCountyPage({ params }: PageProps) {
                         {s.locatie} · {timeAgo(s.created_at)}
                       </p>
                     </div>
-                    {s.upvotes > 0 && (
-                      <span className="text-[10px] text-[var(--color-primary)] font-semibold tabular-nums shrink-0">
-                        ↑ {s.upvotes}
-                      </span>
-                    )}
                   </div>
                 </a>
               </li>

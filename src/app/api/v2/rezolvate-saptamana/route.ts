@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const { data, error } = await admin
     .from("sesizari_feed")
     .select(
-      "code, titlu, locatie, sector, county, tip, created_at, resolved_at, upvotes, nr_comentarii, imagini, resolved_photo_url",
+      "code, titlu, locatie, sector, county, tip, created_at, resolved_at, nr_comentarii, imagini, resolved_photo_url",
     )
     .eq("moderation_status", "approved")
     .eq("publica", true)
@@ -63,7 +63,6 @@ export async function GET(req: Request) {
         county: s.county,
         tip: s.tip,
         resolved_at: s.resolved_at,
-        upvotes: s.upvotes,
         comments: s.nr_comentarii,
         before_photo: s.imagini?.[0] ?? null,
         after_photo: s.resolved_photo_url ?? null,

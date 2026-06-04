@@ -55,15 +55,6 @@ create table if not exists public.sesizari (
   updated_at timestamptz default now()
 );
 
--- votes (1 vote per user per sesizare)
-create table if not exists public.sesizare_votes (
-  sesizare_id uuid references public.sesizari(id) on delete cascade,
-  user_id uuid references public.profiles(id) on delete cascade,
-  value smallint not null check (value in (-1, 1)),
-  created_at timestamptz default now(),
-  primary key (sesizare_id, user_id)
-);
-
 -- comments
 create table if not exists public.sesizare_comments (
   id uuid primary key default gen_random_uuid(),
@@ -88,14 +79,6 @@ create table if not exists public.sesizare_verifications (
   sesizare_id uuid references public.sesizari(id) on delete cascade,
   user_id uuid references public.profiles(id) on delete cascade,
   agrees boolean not null,
-  created_at timestamptz default now(),
-  primary key (sesizare_id, user_id)
-);
-
--- sesizare follows (subscribe to status updates)
-create table if not exists public.sesizare_follows (
-  sesizare_id uuid references public.sesizari(id) on delete cascade,
-  user_id uuid references public.profiles(id) on delete cascade,
   created_at timestamptz default now(),
   primary key (sesizare_id, user_id)
 );
@@ -154,12 +137,9 @@ create index if not exists idx_sesizari_publica_data on public.sesizari(publica,
 create index if not exists idx_sesizari_sector on public.sesizari(sector);
 create index if not exists idx_sesizari_status on public.sesizari(status);
 create index if not exists idx_sesizari_code on public.sesizari(code);
-create index if not exists idx_votes_sesizare on public.sesizare_votes(sesizare_id);
 create index if not exists idx_comments_sesizare on public.sesizare_comments(sesizare_id, created_at);
 create index if not exists idx_timeline_sesizare on public.sesizare_timeline(sesizare_id, created_at);
 create index if not exists idx_verifications_sesizare on public.sesizare_verifications(sesizare_id);
-create index if not exists idx_follows_user on public.sesizare_follows(user_id, created_at desc);
-create index if not exists idx_follows_sesizare on public.sesizare_follows(sesizare_id);
 create index if not exists idx_status_tickets_pending
   on public.sesizare_status_tickets(decision, created_at desc)
   where decision = 'pending';
@@ -171,19 +151,17 @@ create index if not exists idx_stiri_published on public.stiri_cache(published_a
 -- ============================================================
 -- 4. VIEWS
 -- ============================================================
+-- 2026-06-04: voturile (upvotes/downvotes/voturi_net) și urmăririle
+-- (nr_followers) au fost eliminate. Migrarea 092 recreează acest view +
+-- adaugă nr_cosigners (din migrarea 042). Aici păstrăm doar agregatele de
+-- bază — restul vine din migrări.
 create or replace view public.sesizari_feed as
   select s.*,
-    coalesce(sum(case when v.value = 1 then 1 else 0 end), 0)::int as upvotes,
-    coalesce(sum(case when v.value = -1 then 1 else 0 end), 0)::int as downvotes,
-    coalesce(sum(v.value), 0)::int as voturi_net,
     (select count(*) from public.sesizare_comments c where c.sesizare_id = s.id)::int as nr_comentarii,
     (select count(*) from public.sesizare_verifications ver where ver.sesizare_id = s.id and ver.agrees = true)::int as verif_da,
-    (select count(*) from public.sesizare_verifications ver where ver.sesizare_id = s.id and ver.agrees = false)::int as verif_nu,
-    (select count(*) from public.sesizare_follows f where f.sesizare_id = s.id)::int as nr_followers
+    (select count(*) from public.sesizare_verifications ver where ver.sesizare_id = s.id and ver.agrees = false)::int as verif_nu
   from public.sesizari s
-  left join public.sesizare_votes v on v.sesizare_id = s.id
-  where s.moderation_status = 'approved' and s.publica = true
-  group by s.id;
+  where s.moderation_status = 'approved' and s.publica = true;
 
 -- ============================================================
 -- 5. TRIGGER: auto-create profile on user signup
@@ -252,11 +230,9 @@ create trigger touch_sesizari_updated_at
 -- ============================================================
 alter table public.profiles enable row level security;
 alter table public.sesizari enable row level security;
-alter table public.sesizare_votes enable row level security;
 alter table public.sesizare_comments enable row level security;
 alter table public.sesizare_timeline enable row level security;
 alter table public.sesizare_verifications enable row level security;
-alter table public.sesizare_follows enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.stiri_cache enable row level security;
 
@@ -290,19 +266,6 @@ drop policy if exists "sesizari_update_own" on public.sesizari;
 create policy "sesizari_update_own" on public.sesizari for update
   using (auth.uid() = user_id and created_at > now() - interval '1 hour');
 
--- votes: anyone reads, authenticated insert/update/delete own
-drop policy if exists "votes_read_all" on public.sesizare_votes;
-create policy "votes_read_all" on public.sesizare_votes for select using (true);
-
-drop policy if exists "votes_insert_auth" on public.sesizare_votes;
-create policy "votes_insert_auth" on public.sesizare_votes for insert with check (auth.uid() = user_id);
-
-drop policy if exists "votes_update_own" on public.sesizare_votes;
-create policy "votes_update_own" on public.sesizare_votes for update using (auth.uid() = user_id);
-
-drop policy if exists "votes_delete_own" on public.sesizare_votes;
-create policy "votes_delete_own" on public.sesizare_votes for delete using (auth.uid() = user_id);
-
 -- comments: anyone reads, authenticated write
 drop policy if exists "comments_read_all" on public.sesizare_comments;
 create policy "comments_read_all" on public.sesizare_comments for select using (true);
@@ -324,14 +287,6 @@ drop policy if exists "verifications_insert_auth" on public.sesizare_verificatio
 create policy "verifications_insert_auth" on public.sesizare_verifications for insert with check (auth.uid() = user_id);
 drop policy if exists "verifications_delete_own" on public.sesizare_verifications;
 create policy "verifications_delete_own" on public.sesizare_verifications for delete using (auth.uid() = user_id);
-
--- follows: own reads, auth insert/delete
-drop policy if exists "follows_read_own" on public.sesizare_follows;
-create policy "follows_read_own" on public.sesizare_follows for select using (auth.uid() = user_id);
-drop policy if exists "follows_insert_auth" on public.sesizare_follows;
-create policy "follows_insert_auth" on public.sesizare_follows for insert with check (auth.uid() = user_id);
-drop policy if exists "follows_delete_own" on public.sesizare_follows;
-create policy "follows_delete_own" on public.sesizare_follows for delete using (auth.uid() = user_id);
 
 -- newsletter: anyone can subscribe, only admin reads
 drop policy if exists "newsletter_insert_anyone" on public.newsletter_subscribers;
@@ -399,9 +354,6 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table public.sesizare_timeline;
-exception when duplicate_object then null; end $$;
-do $$ begin
-  alter publication supabase_realtime add table public.sesizare_votes;
 exception when duplicate_object then null; end $$;
 
 -- ============================================================

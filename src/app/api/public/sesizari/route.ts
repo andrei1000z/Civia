@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     const supabase = await createSupabaseServer();
     let query = supabase
       .from("sesizari_feed")
-      .select("code, titlu, descriere, locatie, sector, lat, lng, tip, status, created_at, voturi_net, nr_comentarii")
+      .select("code, titlu, descriere, locatie, sector, lat, lng, tip, status, created_at, nr_comentarii")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 

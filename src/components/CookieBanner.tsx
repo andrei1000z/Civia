@@ -165,13 +165,12 @@ export function CookieBanner() {
       aria-labelledby="cookie-banner-title"
       aria-describedby="cookie-banner-desc"
       aria-modal="false"
-      // 2026-06-03 — Pe mobil, banner-ul stătea la bottom 0.5rem și se
-      // SUPRAPUNEA peste BottomNav (h-14=3.5rem) + butonul „+" (FAB) → tab-urile
-      // și „Personalizează" deveneau netappable. Acum: pe mobil/tabletă (sub lg)
-      // se ridică deasupra BottomNav-ului; pe desktop (lg, nav ascuns) revine jos.
-      // FAB-ul se ascunde cât timp banner-ul e deschis (vezi data-cookie-open în
-      // useEffect + regula din globals.css) ca să nu se ciocnească.
-      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up bottom-[calc(env(safe-area-inset-bottom,0px)+4.25rem)] lg:bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]"
+      // 2026-06-04 — BottomNav-ul mobil a fost eliminat; banner-ul revine la
+      // bottom 0.5rem pe toate breakpoint-urile (înainte se ridica 4.25rem ca
+      // să-l evite). FAB-ul (butonul „+") se ascunde cât timp banner-ul e
+      // deschis (vezi data-cookie-open în useEffect + regula din globals.css)
+      // ca să nu se ciocnească.
+      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]"
     >
       <div className="flex items-start gap-2 md:gap-3">
         <Cookie size={18} className="text-[var(--color-primary)] mt-0.5 shrink-0" aria-hidden="true" />

@@ -28,7 +28,6 @@ export async function GET() {
     checks["view:has_resolved_photo_url"] = { ok: "resolved_photo_url" in row };
     checks["view:has_verif_da"] = { ok: "verif_da" in row };
     checks["view:has_verif_nu"] = { ok: "verif_nu" in row };
-    checks["view:has_nr_followers"] = { ok: "nr_followers" in row };
   } catch (e) {
     checks["view:sesizari_feed"] = {
       ok: false,

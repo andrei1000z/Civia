@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { computeBadges, BADGES, computeStreak } from "./badges";
 
-const ZERO = { sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0 };
+const ZERO = { sesizari: 0, comments: 0, verifications: 0, resolved: 0 };
 
 describe("computeBadges", () => {
   it("zero activity → no earned badges, but each category shows the first as next", () => {
     const r = computeBadges(ZERO);
     expect(r.earned).toEqual([]);
-    expect(r.next).toHaveLength(5); // one per category
+    expect(r.next).toHaveLength(4); // one per category
     expect(r.next.every((n) => n.current === 0)).toBe(true);
     expect(r.next.map((n) => n.badge.id)).toContain("first-sesizare");
   });
@@ -37,17 +37,15 @@ describe("computeBadges", () => {
     expect(r.earned.filter((e) => BADGES.sesizari.some((b) => b.id === e.badge.id))).toHaveLength(4);
   });
 
-  it("computes across all 5 categories independently", () => {
+  it("computes across all 4 categories independently", () => {
     const r = computeBadges({
       sesizari: 5,
-      votes: 50,
       comments: 1,
       verifications: 0,
       resolved: 5,
     });
     const earnedIds = r.earned.map((e) => e.badge.id);
     expect(earnedIds).toContain("active-citizen");      // sesizari ≥5
-    expect(earnedIds).toContain("regular-voter");       // votes ≥50
     expect(earnedIds).toContain("first-comment");       // comments ≥1
     expect(earnedIds).toContain("impact-maker");        // resolved ≥5
     expect(earnedIds).not.toContain("first-verify");    // verifications 0
@@ -77,7 +75,7 @@ describe("computeBadges", () => {
 
 describe("BADGES data integrity", () => {
   it("all categories have at least one badge", () => {
-    const categories = ["sesizari", "votes", "comments", "verifications", "resolved"] as const;
+    const categories = ["sesizari", "comments", "verifications", "resolved"] as const;
     for (const cat of categories) {
       expect(BADGES[cat].length).toBeGreaterThan(0);
     }
@@ -148,7 +146,7 @@ describe("computeStreak", () => {
 describe("computeBadges cu streak", () => {
   it("acorda streak-7 cand streak >= 7", () => {
     const result = computeBadges({
-      sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0,
+      sesizari: 0, comments: 0, verifications: 0, resolved: 0,
       streak: 7,
     });
     const ids = result.earned.map((e) => e.badge.id);
@@ -159,7 +157,7 @@ describe("computeBadges cu streak", () => {
 
   it("nu acorda streak-uri daca streak nu e furnizat (backward compat)", () => {
     const result = computeBadges({
-      sesizari: 0, votes: 0, comments: 0, verifications: 0, resolved: 0,
+      sesizari: 0, comments: 0, verifications: 0, resolved: 0,
     });
     const ids = result.earned.map((e) => e.badge.id);
     expect(ids.filter((id) => id.startsWith("streak"))).toHaveLength(0);

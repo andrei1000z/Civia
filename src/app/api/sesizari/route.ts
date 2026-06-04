@@ -441,9 +441,9 @@ export async function POST(req: Request) {
         void bumpCivicStreak(resolvedUserId);
       }
 
-      // 2026-05-18: scos „adopt-a-street" feature complet. Notificarile
-      // catre followeri pe sesizare/judet raman prin sesizare_follows
-      // (urmariri explicite pe sesizare specifica).
+      // 2026-05-18: scos „adopt-a-street" feature complet.
+      // 2026-06-04: scoasă și urmărirea (sesizare_follows) — fără notificări
+      // către followeri pe sesizare/judeţ.
 
       // Send confirmation email (non-blocking — don't delay response)
       const authorEmail = parsed.author_email;

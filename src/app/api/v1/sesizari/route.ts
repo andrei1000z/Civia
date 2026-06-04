@@ -43,7 +43,6 @@ const PUBLIC_FIELDS = [
   "resolved_at",
   "created_at",
   "updated_at",
-  "voturi_net",
   "nr_comentarii",
 ].join(", ");
 

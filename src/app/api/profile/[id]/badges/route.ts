@@ -11,12 +11,12 @@ export const revalidate = 1800;
  * GET /api/profile/[id]/badges
  *
  * Public read — afișăm chip-uri de badge pe profil + pe sesizările publice.
- * Calculat dinamic din count-uri (sesizari, voturi, comentarii, verificări,
+ * Calculat dinamic din count-uri (sesizari, comentarii, verificări,
  * sesizări rezolvate ale autorului). Niciun storage stocat pentru badges
  * (vezi badges.ts).
  *
  * Folosim service-role pentru count-uri agregate ca RLS sa nu ascunda
- * sesizările/voturile celorlalți useri. Datele returnate sunt strict counts
+ * sesizările celorlalți useri. Datele returnate sunt strict counts
  * + badge metadata (nicio PII).
  */
 export async function GET(
@@ -31,20 +31,16 @@ export async function GET(
   const admin = createSupabaseAdmin();
 
   // Pentru streak: ne uitam la timestamps din ultimele 120 zile pe
-  // sesizari + voturi + comentarii + verificari. Limitam la 120 ca sa
+  // sesizari + comentarii + verificari. Limitam la 120 ca sa
   // nu pull-am o cantitate mare de date inutil.
   const since = new Date(Date.now() - 120 * 86_400_000).toISOString();
 
-  const [sesizariRes, votesRes, commentsRes, verifsRes, resolvedRes,
-    sesizariTsRes, votesTsRes, commentsTsRes, verifsTsRes] =
+  const [sesizariRes, commentsRes, verifsRes, resolvedRes,
+    sesizariTsRes, commentsTsRes, verifsTsRes] =
     await Promise.all([
       admin
         .from("sesizari")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", userId),
-      admin
-        .from("sesizare_votes")
-        .select("sesizare_id", { count: "exact", head: true })
         .eq("user_id", userId),
       admin
         .from("sesizare_comments")
@@ -66,11 +62,6 @@ export async function GET(
         .eq("user_id", userId)
         .gte("created_at", since),
       admin
-        .from("sesizare_votes")
-        .select("created_at")
-        .eq("user_id", userId)
-        .gte("created_at", since),
-      admin
         .from("sesizare_comments")
         .select("created_at")
         .eq("user_id", userId)
@@ -84,7 +75,6 @@ export async function GET(
 
   const allTimestamps: string[] = [
     ...(sesizariTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
-    ...(votesTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
     ...(commentsTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
     ...(verifsTsRes.data ?? []).map((r) => (r as { created_at: string }).created_at),
   ];
@@ -92,7 +82,6 @@ export async function GET(
 
   const counts = {
     sesizari: sesizariRes.count ?? 0,
-    votes: votesRes.count ?? 0,
     comments: commentsRes.count ?? 0,
     verifications: verifsRes.count ?? 0,
     resolved: resolvedRes.count ?? 0,

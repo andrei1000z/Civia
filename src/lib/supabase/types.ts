@@ -73,13 +73,6 @@ export interface SesizareVerificationRow {
   created_at: string;
 }
 
-export interface SesizareVoteRow {
-  sesizare_id: string;
-  user_id: string;
-  value: -1 | 1;
-  created_at: string;
-}
-
 export interface SesizareCommentRow {
   id: string;
   sesizare_id: string;
@@ -160,12 +153,6 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<SesizareRow>;
-        Relationships: [];
-      };
-      sesizare_votes: {
-        Row: SesizareVoteRow;
-        Insert: Omit<SesizareVoteRow, "created_at"> & { created_at?: string };
-        Update: Partial<SesizareVoteRow>;
         Relationships: [];
       };
       sesizare_comments: {
