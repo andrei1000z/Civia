@@ -323,10 +323,47 @@ export async function POST(req: Request) {
           ?? e.response?.data?.error?.failed_generation
           ?? null;
       }
-      const repairCandidate = failedRaw ?? raw;
+      let repairCandidate = failedRaw ?? raw;
+      // 2026-06-05 — Groq a eșuat COMPLET (tipic: 429 pe ambele modele / cota
+      // zilnică epuizată — exact ce a pățit user-ul). Rescue cu GEMINI (quota
+      // separată, generoasă) înainte de a renunța.
+      if (!repairCandidate) {
+        try {
+          const { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI_MODEL_BACKUPS } =
+            await import("@/lib/ai/gemini");
+          if (isGeminiConfigured()) {
+            for (const gm of [GEMINI_MODEL, GEMINI_MODEL_FAST, ...GEMINI_MODEL_BACKUPS]) {
+              try {
+                const out = await callGemini({
+                  messages: [
+                    {
+                      role: "system",
+                      content:
+                        "Esti un asistent care extrage metadata structurata din petitii civice romanesti. Raspunzi DOAR cu JSON valid — fara markdown, fara text aditional.",
+                    },
+                    { role: "user", content: EXTRACT_PROMPT(url, rawTitle, ogDescription, mainText) },
+                  ],
+                  model: gm,
+                  temperature: 0.2,
+                  max_tokens: 2500,
+                  response_format: { type: "json_object" },
+                });
+                if (out && out.trim()) {
+                  repairCandidate = out.trim();
+                  break;
+                }
+              } catch {
+                // încearcă următorul model Gemini (quote separate per model)
+              }
+            }
+          }
+        } catch {
+          // Gemini indisponibil / neconfigurat — cădem pe eroarea de mai jos.
+        }
+      }
       if (!repairCandidate) {
         return NextResponse.json(
-          { error: "AI nu a putut genera JSON valid. Reincearca." },
+          { error: "AI indisponibil momentan (Groq + Gemini la limită). Reîncearcă în câteva minute." },
           { status: 502 },
         );
       }

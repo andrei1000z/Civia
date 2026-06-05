@@ -1,4 +1,11 @@
 import Groq from "groq-sdk";
+import {
+  callGemini,
+  isGeminiConfigured,
+  GEMINI_MODEL,
+  GEMINI_MODEL_FAST,
+  GEMINI_MODEL_BACKUPS,
+} from "@/lib/ai/gemini";
 
 let client: Groq | null = null;
 
@@ -68,6 +75,28 @@ export async function groqText(
       if (i < attempts - 1) {
         const backoff = 500 * (i + 1);
         await new Promise((r) => setTimeout(r, backoff));
+      }
+    }
+  }
+  // 2026-06-05 — Toate modelele Groq au eșuat (tipic: 429 — cota zilnică
+  // epuizată pe ÎNTREG contul, ambele modele simultan). Cădem pe GEMINI (quota
+  // separată + generoasă, 1500 req/zi). Reparat: reformulare, polish, titlu,
+  // detect-city — tot ce folosea groqText murea când Groq era rate-limited.
+  if (isGeminiConfigured()) {
+    const geminiModels = [GEMINI_MODEL, GEMINI_MODEL_FAST, ...GEMINI_MODEL_BACKUPS];
+    for (const gm of geminiModels) {
+      try {
+        const out = await callGemini({
+          messages: params.messages,
+          model: gm,
+          temperature: params.temperature,
+          max_tokens: params.max_tokens,
+          response_format:
+            params.response_format?.type === "json_object" ? { type: "json_object" } : undefined,
+        });
+        if (out && out.trim()) return out.trim();
+      } catch (e) {
+        lastErr = e;
       }
     }
   }

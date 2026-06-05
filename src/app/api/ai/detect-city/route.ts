@@ -19,7 +19,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { groqText, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { analyticsRedis } from "@/lib/analytics/redis";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -90,8 +90,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
+    // groqText cade pe Gemini dacă Groq e rate-limited (429) → detecția de
+    // județ/sector merge și când cota Groq e epuizată.
+    const raw = (await groqText({
       model: GROQ_MODEL_FAST,
       temperature: 0,
       max_tokens: 100,
@@ -100,8 +101,7 @@ export async function POST(req: Request) {
         { role: "user", content: locatie },
       ],
       response_format: { type: "json_object" },
-    });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    })) || "{}";
     let parsedJson: { county?: unknown; city?: unknown; sector?: unknown };
     try {
       parsedJson = JSON.parse(raw);
