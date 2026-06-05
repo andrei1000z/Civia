@@ -50,7 +50,7 @@ const TIP_DATA: Record<string, TipData> = {
     problem: "mai multe autovehicule sunt parcate ilegal, restricționând spațiul destinat pietonilor și punând în pericol siguranța acestora",
     actions: [
       "Intervenția Poliției Locale pentru sancționarea șoferilor — ocuparea trotuarului cu vehicule imobilizate este interzisă de art. 72 alin. (7) din OUG 195/2002 și se sancționează conform art. 108 alin. (1) lit. b) pct. 7 (amendă clasa a II-a, 4-5 puncte-amendă) — precum și ridicarea vehiculelor parcate pe trotuar.",
-      "Verificarea periodică a zonei pentru prevenirea parcării ilegale, conform art. 144 din HG 1391/2006.",
+      "Verificarea periodică a zonei pentru prevenirea parcării ilegale, conform art. 143-144 din HG 1391/2006.",
     ],
     evidence: "prezența mașinilor parcate ilegal",
   },
@@ -68,14 +68,14 @@ const TIP_DATA: Record<string, TipData> = {
     affects: "siguranța rutieră",
     problem: "există o groapă în carosabil care reprezintă pericol pentru șoferi, bicicliști și pietoni",
     actions: [
-      "Plombarea gropii cu mixtură asfaltică la cald și nivelarea suprafeței.",
+      "Plombarea gropii cu mixtură asfaltică la cald și nivelarea suprafeței — administratorul drumului are obligația legală de a întreține carosabilul în stare tehnică corespunzătoare, conform OG 43/1997 privind regimul drumurilor.",
       "Verificarea integrității carosabilului în zonă și remedierea altor degradări vizibile.",
     ],
     evidence: "groapa din carosabil",
   },
   trotuar: {
     affects: "siguranța pietonilor",
-    problem: "trotuarul este degradat sau ocupat de autoturisme parcate ilegal, punând în pericol trecătorii — situație contrară art. 144 din HG 1391/2006 (Regulamentul de aplicare a Codului Rutier)",
+    problem: "trotuarul este degradat sau ocupat de autoturisme parcate ilegal, punând în pericol trecătorii — situație contrară art. 143-144 din HG 1391/2006 (Regulamentul de aplicare a Codului Rutier)",
     actions: [
       "Reabilitarea pavajului trotuarului în zona afectată (plăci sparte, borduri lipsă, denivelări).",
       "Intervenția Poliției Locale pentru sancționarea șoferilor care parchează ilegal pe trotuar, conform art. 72 alin. (7) și art. 108 alin. (1) lit. b) pct. 7 din OUG 195/2002 (amendă clasa a II-a, 4-5 puncte-amendă + ridicare).",
