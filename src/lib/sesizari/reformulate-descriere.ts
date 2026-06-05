@@ -399,6 +399,7 @@ REGULI CRITICE:
 5. Format final cu virgule între componente: „Strada Panduri nr. 33, Sector 1, București" sau „Bulevardul Magheru, Cluj-Napoca".
 6. Păstrează exact numerele (nr. 33 rămâne nr. 33, NU devine nr. 30 sau nr. 33A).
 7. Numele de străzi rămân ca în input (doar capitalizate + diacritice). NU schimbi „Petru Rares" → „Petru Rareș" decât dacă e clar nume istoric standard.
+8. ⚠️ PĂSTREAZĂ INTEGRAL TOATE detaliile de localizare: tronsonul („pe tronsonul cuprins între X și Y"), reperele, „pe ambele trotuare", „colț cu", „în fața blocului". NU SCURTA, NU REZUMA, NU ELIMINA — doar normalizezi diacritice + abrevieri. „Strada Știrbei Vodă, pe tronsonul cuprins între Strada Berzei și Calea Plevnei, pe ambele trotuare" NU devine „Strada Știrbei" — rămâne COMPLET.
 
 OUTPUT: STRICT adresa normalizată, fără preambul, fără ghilimele, fără markdown. Doar text.
 
@@ -409,8 +410,8 @@ Output: "Strada Panduri nr. 33, sc. A"
 Input: "soseaua panduri 33 bloc P1 sc A bucuresti"
 Output: "Șoseaua Panduri nr. 33, bloc P1, sc. A, București"
 
-Input: "bd basarabia sect 2"
-Output: "Bulevardul Basarabia, Sector 2"
+Input: "strada stirbei voda, pe tronsonul cuprins intre strada berzei si calea plevnei, pe ambele trotuare"
+Output: "Strada Știrbei Vodă, pe tronsonul cuprins între Strada Berzei și Calea Plevnei, pe ambele trotuare"
 
 Input: "intersectia Petru Rares si Ioan Bianu sector 1"
 Output: "Intersecția străzilor Petru Rareș și Ioan Bianu, Sector 1"
@@ -535,6 +536,13 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
     // Strip ghilimele dacă AI le-a pus accidental.
     const cleaned = out.replace(/^["'„«]+|["'»"]+$/g, "").trim();
     if (cleaned.length < 3) return fallbackAddress(input);
+    // 2026-06-05 — GUARD ANTI-TRUNCHIERE: dacă AI-ul (mai ales Gemini) a SCURTAT
+    // agresiv o adresă complexă („Strada Știrbei Vodă, pe tronsonul... între X și
+    // Y, pe ambele trotuare" → „Strada Știrbei"), respingem și păstrăm adresa
+    // COMPLETĂ (doar diacritice + capitalizare). User raportat 2026-06-05.
+    if (input.length > 30 && cleaned.length < input.length * 0.6) {
+      return restoreDiacritics(fallbackAddress(input));
+    }
     return cleaned;
   } catch {
     return fallbackAddress(input);

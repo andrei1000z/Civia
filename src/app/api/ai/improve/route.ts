@@ -36,6 +36,7 @@ const schema = z.object({
   locatie: z.string().optional(),
   nume: z.string().optional(),
   adresa: z.string().optional(),
+  sector: z.string().optional(),
   imagini: z.array(z.string().url()).max(5).optional(),
 });
 
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { descriere, tip, locatie, nume, adresa, imagini } = schema.parse(body);
+    const { descriere, tip, locatie, nume, adresa, sector, imagini } = schema.parse(body);
 
     // 2026-05-27/28 — 4 apeluri AI în PARALEL pentru latency optim:
     //   1. reformulateDescriere: scrieri colocviale → registru oficial
@@ -90,9 +91,16 @@ export async function POST(req: Request) {
       reformulateAdresa(locatie),
     ]);
 
+    // 2026-06-05 — Adaugă sectorul detectat (+ București) în locația din text,
+    // dacă lipsește. User: adresa „refăcută corect" trebuie să includă „Sector 1".
+    let locatieFinal = locatieNorm ?? locatie ?? "";
+    if (sector && /^S[1-6]$/.test(sector) && !/sector/i.test(locatieFinal)) {
+      locatieFinal = `${locatieFinal.replace(/[,\s]+$/, "")}, Sector ${sector.slice(1)}, București`;
+    }
+
     const formal_text = generateFormalText({
       tip: tipFinal,
-      locatie: locatieNorm ?? locatie ?? "",
+      locatie: locatieFinal,
       descriere: descriereReformulata,
       nume: nume ?? null,
       adresa: adresaNorm || (adresa ?? null),

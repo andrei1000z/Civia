@@ -784,6 +784,7 @@ export function SesizareForm() {
           locatie: data.locatie,
           nume: data.nume,
           adresa: data.adresa,
+          sector: data.sector || undefined,
           imagini: opts?.withPhotos ? imagini : undefined,
         }),
       });
