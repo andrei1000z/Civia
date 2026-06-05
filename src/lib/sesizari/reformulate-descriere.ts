@@ -25,6 +25,7 @@
 import { groqText, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
 import { restoreDiacritics } from "@/lib/sesizari/diacritice";
+import { getTipProblem } from "@/lib/sesizari/formal-template";
 
 const SYSTEM_PROMPT = `Ești un asistent care reformulează descrierea unei probleme civice în limbaj formal românesc.
 
@@ -105,12 +106,43 @@ function hasSolicitation(text: string): boolean {
   return SOLICITATION_PATTERNS.some((re) => re.test(text));
 }
 
+// Verbe de început care indică o SOLUȚIE/CERERE, nu o descriere de problemă.
+const SOLICITATION_START = /^(solicit|cer\b|cerem|v[ăa]\s+(rog|rug[ăa]m)|montare|monta[țt]i|montarea|instalare|instalarea|instala[țt]i|reparare|repararea|repara[țt]i|amenajare|amenajarea|amenaja[țt]i|punere|pune[țt]i|doresc\s+(montarea|instalarea|repararea|amenajarea|punerea|amplasarea))\b/i;
+
+/** True dacă textul e PRIMORDIAL o cerere/soluție (ex: „solicit stâlpișori"),
+ *  nu o descriere de problemă. */
+function isPrimarilySolicitation(text: string): boolean {
+  const t = text.trim();
+  if (SOLICITATION_START.test(t)) return true;
+  if (t.length < 90 && hasSolicitation(t)) return true;
+  return false;
+}
+
+/** Problema CURATĂ a tipului (scrisă de om), capitalizată + diacritice. */
+function tipProblemStatement(tip: string): string {
+  const p = getTipProblem(tip).trim();
+  const capped = p.charAt(0).toUpperCase() + p.slice(1);
+  return restoreDiacritics(/[.!?]$/.test(capped) ? capped : `${capped}.`);
+}
+
 /**
  * Reformulează descrierea cetățeanului. Returnează input fallback dacă AI
  * eșuează — nu blocăm niciodată generarea formal_text.
  */
-export async function reformulateDescriere(raw: string): Promise<string> {
+export async function reformulateDescriere(
+  raw: string,
+  opts?: { tip?: string | null },
+): Promise<string> {
   const input = raw.trim();
+  const tip = opts?.tip ?? null;
+  // 2026-06-05 — Dacă cetățeanul a scris doar o SOLUȚIE/CERERE („solicit
+  // stâlpișori antiparcare") în loc de o problemă, descriem PROBLEMA curată a
+  // tipului (scrisă de om, zero halucinație) în loc să-i repetăm cererea după
+  // „:". User: „fa să refacă, cu argumente că n-au loc pietonii". (Doar pt.
+  // tipuri specifice — nu „altele", unde problema e generică/inutilă.)
+  if (tip && tip !== "altele" && isPrimarilySolicitation(input)) {
+    return tipProblemStatement(tip);
+  }
   if (input.length < 10) return fallback(input);
 
   try {

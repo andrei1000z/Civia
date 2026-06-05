@@ -412,6 +412,13 @@ export function getPrefabActions(tip: string): string[] {
   return [...(TIP_DATA[tip] ?? TIP_DATA["altele"]!).actions];
 }
 
+/** Problema CURATĂ (scrisă de om) pentru un tip — folosită când cetățeanul a
+ *  scris doar o SOLUȚIE/CERERE (ex: „solicit stâlpișori") în loc de o problemă.
+ *  Zero halucinație: text fix, validat manual per tip. */
+export function getTipProblem(tip: string): string {
+  return (TIP_DATA[tip] ?? TIP_DATA["altele"]!).problem;
+}
+
 /** Backwards-compat helper — TEMPLATES (vechi) e încă referit în câteva
  *  locuri pentru compatibilitate (AI fallback). Re-export ca să avem o
  *  singură import-line în consumeri. */

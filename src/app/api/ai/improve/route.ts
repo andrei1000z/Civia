@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       : reorderActions({ tip: tipFinal, descriere, prefabActions: prefab });
 
     const [descriereReformulata, customActions, adresaNorm, locatieNorm] = await Promise.all([
-      reformulateDescriere(descriere),
+      reformulateDescriere(descriere, { tip: tipFinal }),
       actionsPromise,
       reformulateAdresa(adresa),
       reformulateAdresa(locatie),
