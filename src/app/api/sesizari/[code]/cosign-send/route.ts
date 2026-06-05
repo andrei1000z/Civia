@@ -24,6 +24,7 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
+import { buildFromHeader } from "@/lib/email/format";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -221,7 +222,7 @@ export async function POST(
   // toggle ON în Cloudflare Email Routing — vezi audit 2026-05-27).
   const replyTo = `sesizari+${sesizare.code}@civia.ro`;
   // From = numele co-semnatarului <sesizari@civia.ro>
-  const fromHeader = `${nume} <sesizari@civia.ro>`;
+  const fromHeader = buildFromHeader(nume, "sesizari@civia.ro");
 
   // Trimite real
   const result = await sendEmail({

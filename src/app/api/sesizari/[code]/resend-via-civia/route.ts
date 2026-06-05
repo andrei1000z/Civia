@@ -20,6 +20,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
+import { buildFromHeader } from "@/lib/email/format";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
@@ -198,7 +199,7 @@ export async function POST(
   const subject = `[RETRIMITERE] Sesizare ${sesizare.code} — ${safeTitlu(sesizare.titlu, { descriere: sesizare.descriere })}`;
   // 2026-05-27 — plus-addressing pentru match 99% (audit Cloudflare 2026-05-27)
   const replyTo = `sesizari+${sesizare.code}@civia.ro`;
-  const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
+  const fromHeader = buildFromHeader(sesizare.author_name, "sesizari@civia.ro");
 
   const result = await sendEmail({
     to: primaryEmails,

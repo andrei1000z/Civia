@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildSalutation, formatRecipientName } from "./format";
+import { buildSalutation, formatRecipientName, sanitizeEmailDisplayName, buildFromHeader } from "./format";
 
 describe("formatRecipientName", () => {
   test("returns first capitalized name when fullName is a real human name", () => {
@@ -91,5 +91,31 @@ describe("buildSalutation", () => {
     });
     expect(out).not.toContain("user1000z");
     expect(out).toBe("Bună!");
+  });
+});
+
+describe("sanitizeEmailDisplayName (RFC 5322 / RFC 2047)", () => {
+  test("nume ASCII simplu — neschimbat", () => {
+    expect(sanitizeEmailDisplayName("Ion Popescu")).toBe("Ion Popescu");
+  });
+
+  test("diacritice → RFC 2047 encoded-word", () => {
+    const out = sanitizeEmailDisplayName("Ștefan Mușat");
+    expect(out).toMatch(/^=\?UTF-8\?B\?.+\?=$/);
+    expect(Buffer.from(out.replace(/^=\?UTF-8\?B\?|\?=$/g, ""), "base64").toString("utf8")).toBe("Ștefan Mușat");
+  });
+
+  test("anti header-injection: scoate CR/LF", () => {
+    const out = sanitizeEmailDisplayName("Ion\r\nBcc: evil@x.com");
+    expect(out).not.toMatch(/[\r\n]/);
+  });
+
+  test("specials RFC 5322 → quoted-string", () => {
+    expect(sanitizeEmailDisplayName("Popescu, Ion")).toBe('"Popescu, Ion"');
+  });
+
+  test("buildFromHeader: nume gol → doar email", () => {
+    expect(buildFromHeader("", "sesizari@civia.ro")).toBe("sesizari@civia.ro");
+    expect(buildFromHeader("Ion", "sesizari@civia.ro")).toBe("Ion <sesizari@civia.ro>");
   });
 });

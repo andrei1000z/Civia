@@ -88,3 +88,42 @@ export function buildSalutation(opts: {
   if (!name) return "Bună!";
   return opts.withEmoji ? `Salut, ${name} 👋` : `Salut, ${name},`;
 }
+
+/**
+ * 2026-06-05 — Sanitizează numele afișat (display name) dintr-un header
+ * `From: Name <email>` conform RFC 5322 + RFC 2047. Apărare împotriva
+ * email header injection (CR/LF din input user) + mojibake la diacritice.
+ *
+ *  - Elimină CR/LF/control chars (anti-injection).
+ *  - Diacritice / non-ASCII → encoded-word RFC 2047 (=?UTF-8?B?...?=) ca să
+ *    nu se corupă numele („Ștefan Mușat") în clientul autorității.
+ *  - Caractere RFC 5322 „specials" (ASCII) → quoted-string.
+ */
+export function sanitizeEmailDisplayName(name: string | null | undefined): string {
+  const cleaned = (name ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x1f\x7f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+  // Non-ASCII (diacritice) → RFC 2047 encoded-word UTF-8 base64.
+  if (/[^\x20-\x7e]/.test(cleaned)) {
+    return `=?UTF-8?B?${Buffer.from(cleaned, "utf8").toString("base64")}?=`;
+  }
+  // ASCII cu „specials" RFC 5322 → quoted-string (escape " și \).
+  if (/[()<>[\]:;@\\,."]/.test(cleaned)) {
+    return `"${cleaned.replace(/(["\\])/g, "\\$1")}"`;
+  }
+  return cleaned;
+}
+
+/**
+ * Construiește un header `From` sigur: `Display Name <email>` (sau doar
+ * `email` dacă numele e gol/invalid). Folosit la toate emailurile trimise
+ * în numele cetățeanului către autorități.
+ */
+export function buildFromHeader(name: string | null | undefined, email: string): string {
+  const dn = sanitizeEmailDisplayName(name);
+  return dn ? `${dn} <${email}>` : email;
+}

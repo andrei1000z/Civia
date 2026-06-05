@@ -98,7 +98,7 @@ export async function GET(req: Request) {
     let subject = "";
 
     if (step === "d7") {
-      subject = `Sesizarea ta — "${titluSafe}" — 7 zile fara raspuns`;
+      subject = `Sesizarea ta — „${titluSafe}" — 7 zile fără răspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
         <p>Au trecut <strong>7 zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong> (${tipLabel}, ${sez.locatie}).</p>
@@ -108,7 +108,7 @@ export async function GET(req: Request) {
         </p>
       `;
     } else if (step === "d14") {
-      subject = `Sesizare "${titluSafe}" — la jumate din termen, niciun raspuns`;
+      subject = `Sesizare „${titluSafe}" — la jumătate din termen, niciun răspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
         <p>Au trecut <strong>14 zile</strong> (jumate din termenul legal) si autoritatea inca nu a raspuns la sesizarea <strong>"${titluSafe}"</strong>.</p>
@@ -123,7 +123,7 @@ export async function GET(req: Request) {
         </p>
       `;
     } else if (step === "d30") {
-      subject = `Sesizare "${titluSafe}" — termen legal expirat, escaladeaza`;
+      subject = `Sesizare „${titluSafe}" — termen legal expirat, escaladează`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
         <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>. Daca autoritatea nu a raspuns, ai dreptul sa escaladezi:</p>
@@ -138,7 +138,7 @@ export async function GET(req: Request) {
         </p>
       `;
     } else {
-      subject = `Sesizare "${titluSafe}" — 60 zile fara raspuns`;
+      subject = `Sesizare „${titluSafe}" — 60 zile fără răspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
         <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${titluSafe}"</strong> si nicio reactie de la autoritate. Asta inseamna ca:</p>

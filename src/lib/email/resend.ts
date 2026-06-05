@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import * as Sentry from "@sentry/nextjs";
 import { ENV, isProd } from "@/lib/env";
 
 let client: Resend | null = null;
@@ -51,7 +52,15 @@ export async function sendEmail(params: {
 }): Promise<{ ok: boolean; id?: string }> {
   const resend = getResendClient();
   if (!resend) {
-    if (!isProd()) {
+    if (isProd()) {
+      // CRITIC: în prod, client null = RESEND_API_KEY lipsă → outage TOTAL de
+      // email (înainte: tăcut). Semnalăm ca să fie detectabil imediat.
+      Sentry.captureMessage("Resend client null in PROD — RESEND_API_KEY lipsă (email outage)", {
+        level: "error",
+        tags: { kind: "resend_no_client" },
+        extra: { subject: params.subject },
+      });
+    } else {
       console.log("[email] Resend not configured, skipping:", params.subject);
     }
     return { ok: false };
@@ -73,12 +82,24 @@ export async function sendEmail(params: {
       },
     });
     if (error) {
-      if (!isProd()) console.error("[email] Resend error:", error);
+      if (isProd()) {
+        Sentry.captureMessage("Resend send error în PROD", {
+          level: "error",
+          tags: { kind: "resend_send_error" },
+          extra: { subject: params.subject, error: typeof error === "object" ? JSON.stringify(error).slice(0, 500) : String(error) },
+        });
+      } else {
+        console.error("[email] Resend error:", error);
+      }
       return { ok: false };
     }
     return { ok: true, id: data?.id };
   } catch (e) {
-    if (!isProd()) console.error("[email] Send failed:", e);
+    if (isProd()) {
+      Sentry.captureException(e, { tags: { kind: "resend_send_exception" }, extra: { subject: params.subject } });
+    } else {
+      console.error("[email] Send failed:", e);
+    }
     return { ok: false };
   }
 }

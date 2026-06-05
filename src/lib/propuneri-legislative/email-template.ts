@@ -69,8 +69,9 @@ ${authorName ? `
 
 <p style="margin:20px 0 8px;font-size:13px;line-height:1.6;color:#64748b;border-top:1px solid #e2e8f0;padding-top:16px">
   Această propunere a fost transmisă automat de platforma civică <strong>Civia.ro</strong>
-  în baza Legii 52/2003 și OG 27/2002, după atingerea pragului de ${votesCount} susținători cetățeni.
-  Vă rugăm să răspundeți în termenul legal de 30 de zile lucrătoare.
+  în baza Legii 52/2003 privind transparența decizională, fiind susținută de ${votesCount} cetățeni.
+  Conform OG 27/2002, vă rugăm să comunicați un răspuns în termenul legal de 30 de zile
+  de la data înregistrării.
 </p>`;
 
   const html = emailTemplate({

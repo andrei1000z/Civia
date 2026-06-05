@@ -4,6 +4,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email/resend";
+import { buildFromHeader } from "@/lib/email/format";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -267,7 +268,7 @@ export async function POST(
 
   // From: doar numele user-ului + adresa sesizari@civia.ro (fără +CODE,
   // ca să rămână clean în signature către primărie).
-  const fromHeader = `${sesizare.author_name} <sesizari@civia.ro>`;
+  const fromHeader = buildFromHeader(sesizare.author_name, "sesizari@civia.ro");
 
   // Trimite email-ul.
   const result = await sendEmail({

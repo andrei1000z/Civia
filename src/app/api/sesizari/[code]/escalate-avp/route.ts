@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
+import { buildFromHeader } from "@/lib/email/format";
 import { buildAvpPlangere } from "@/lib/sesizari/avp-template";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import * as Sentry from "@sentry/nextjs";
@@ -104,7 +105,7 @@ export async function POST(
     text: plangere.body,
     html,
     replyTo: plangere.replyTo,
-    from: `${sesizare.author_name} <sesizari@civia.ro>`,
+    from: buildFromHeader(sesizare.author_name, "sesizari@civia.ro"),
   });
 
   if (!result.ok || !result.id) {

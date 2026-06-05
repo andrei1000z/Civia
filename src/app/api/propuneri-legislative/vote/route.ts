@@ -107,38 +107,59 @@ export async function POST(req: Request) {
     ai_formal_text: string | null; author_display_name: string | null; sent_at: string | null;
   };
 
-  if (newCount >= VOTE_THRESHOLD_SEND && !prop.sent_at) {
+  if (newCount >= VOTE_THRESHOLD_SEND) {
     const authority = AUTHORITIES[prop.destinatar_key];
     if (authority && prop.ai_formal_text) {
-      try {
-        const formal = JSON.parse(prop.ai_formal_text) as LegislativeFormalResult;
-        const { subject, html, text } = buildAuthorityEmail({
-          propunereId: prop.id,
-          authority,
-          titlu: prop.titlu,
-          formal,
-          votesCount: newCount,
-          authorName: prop.author_display_name ?? undefined,
-        });
+      // 2026-06-05 — CLAIM ATOMIC anti-duplicat: doar UN request (din voturi
+      // concurente) poate seta sent_at, printr-un UPDATE condiționat
+      // `WHERE sent_at IS NULL`. Înainte se verifica `prop.sent_at` din fetch-ul
+      // inițial (stale) → două voturi simultane trimiteau emailul de 2 ori la
+      // autoritate (race condition raportat de review).
+      const { data: claimed } = await admin
+        .from("propuneri_legislative")
+        .update({ sent_at: new Date().toISOString(), status: "sent" })
+        .eq("id", propunere_id)
+        .is("sent_at", null)
+        .select("id")
+        .maybeSingle();
 
-        const emailResult = await sendEmail({
-          to: authority.email,
-          ...(authority.emailCC ? { cc: authority.emailCC } : {}),
-          subject,
-          html,
-          text,
-          replyTo: "sesizari@civia.ro",
-        });
+      if (claimed) {
+        try {
+          const formal = JSON.parse(prop.ai_formal_text) as LegislativeFormalResult;
+          const { subject, html, text } = buildAuthorityEmail({
+            propunereId: prop.id,
+            authority,
+            titlu: prop.titlu,
+            formal,
+            votesCount: newCount,
+            authorName: prop.author_display_name ?? undefined,
+          });
 
-        if (emailResult.ok) {
+          const emailResult = await sendEmail({
+            to: authority.email,
+            ...(authority.emailCC ? { cc: authority.emailCC } : {}),
+            subject,
+            html,
+            text,
+            replyTo: "sesizari@civia.ro",
+          });
+
+          if (emailResult.ok) {
+            sent = true;
+          } else {
+            // Emailul n-a plecat → revenim claim-ul ca un vot ulterior să reîncerce.
+            await admin
+              .from("propuneri_legislative")
+              .update({ sent_at: null, status: "active" })
+              .eq("id", propunere_id);
+          }
+        } catch (e) {
+          console.error("[propuneri-legislative] Auto-send error:", e);
           await admin
             .from("propuneri_legislative")
-            .update({ sent_at: new Date().toISOString(), status: "sent" })
+            .update({ sent_at: null, status: "active" })
             .eq("id", propunere_id);
-          sent = true;
         }
-      } catch (e) {
-        console.error("[propuneri-legislative] Auto-send error:", e);
       }
     }
   }
