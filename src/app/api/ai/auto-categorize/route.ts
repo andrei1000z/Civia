@@ -4,6 +4,7 @@ import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { rateLimitAsync, getClientIp, identityKey } from "@/lib/ratelimit";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { repairAndParseJson } from "@/lib/groq/json-repair";
+import { restoreDiacritics } from "@/lib/sesizari/diacritice";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -95,8 +96,9 @@ export async function POST(req: Request) {
       });
     }
 
-    // Sanitize: max 50 chars, trim, fallback la „Necategorisat" daca gol.
-    const category = result.category.trim().slice(0, 50);
+    // Sanitize: diacritice deterministe + max 50 chars. AI-ul lăsa uneori
+    // categoria fără diacritice („Cosuri pe stalpii") → o reparăm aici.
+    const category = restoreDiacritics(result.category.trim()).slice(0, 50);
     const confidence = Math.max(0, Math.min(100, Number(result.confidence) || 50));
 
     return NextResponse.json({ category, confidence });

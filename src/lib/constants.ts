@@ -1,4 +1,5 @@
 import { SESIZARE_STATUS_META, SESIZARE_STATUS_VALUES } from "./sesizari/status";
+import { restoreDiacritics } from "./sesizari/diacritice";
 
 export const SITE_NAME = "Civia";
 export const SITE_TAGLINE = "Sesizări civice gratuite, cu AI";
@@ -204,7 +205,10 @@ export function resolveTipLabel(
   const meta = SESIZARE_TIPURI.find((t) => t.value === tip);
   // Cand tip="altele" si AI a generat o categorie custom → folosim asta.
   if (tip === "altele" && customCategory && customCategory.trim().length > 0) {
-    const cleaned = customCategory.trim();
+    // 2026-06-05 — restaurăm diacriticele deterministe pe categoria custom
+    // („Cosuri pe stalpii" → „Coșuri pe stâlpii") fiindcă AI-ul de auto-categorie
+    // le-a stocat fără diacritice. Fix la afișare, fără backfill.
+    const cleaned = restoreDiacritics(customCategory.trim());
     // Capitalize prima literă
     const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     return { label: capitalized, icon: meta?.icon ?? "📝" };

@@ -3,6 +3,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getHiddenUserIds, getHiddenEmails } from "@/lib/privacy/hidden-users";
 import { scrubFormalTextForPublic } from "./scrub-public";
 import { safeTitlu } from "./titlu";
+import { restoreDiacritics } from "./diacritice";
 import type {
   SesizareFeedRow,
   SesizareRow,
@@ -168,16 +169,28 @@ const PREVIEW_CHARS = 320;
  * curat) `safeTitlu` întoarce titlul neschimbat.
  */
 function sanitizeRowTitlu<T extends { titlu?: string | null; descriere?: string | null }>(row: T): T {
-  return { ...row, titlu: safeTitlu(row.titlu, { descriere: row.descriere }) };
+  // 2026-06-05 — pe lângă safeTitlu (placeholder), restaurăm diacriticele
+  // deterministe pe titlu („Cosuri de gunoi" → „Coșuri de gunoi") fiindcă unele
+  // titluri vechi au fost stocate fără diacritice. Fix la afișare, fără backfill.
+  return { ...row, titlu: restoreDiacritics(safeTitlu(row.titlu, { descriere: row.descriere })) };
+}
+
+/** Taie la GRANIȚĂ DE CUVÂNT sub `max` + „…" — fără cuvinte rupte la mijloc
+ *  („mașinil…"). 2026-06-05. */
+function clampAtWord(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > max - 50 ? cut.slice(0, lastSpace) : cut).replace(/[\s.,;:!?–-]+$/, "") + "…";
 }
 
 function truncateForFeed<T extends { formal_text?: string | null; descriere?: string | null }>(row: T): T {
   const next = { ...row };
   if (next.formal_text && next.formal_text.length > PREVIEW_CHARS) {
-    next.formal_text = next.formal_text.slice(0, PREVIEW_CHARS).trimEnd() + "…";
+    next.formal_text = clampAtWord(next.formal_text, PREVIEW_CHARS);
   }
   if (next.descriere && next.descriere.length > PREVIEW_CHARS) {
-    next.descriere = next.descriere.slice(0, PREVIEW_CHARS).trimEnd() + "…";
+    next.descriere = clampAtWord(next.descriere, PREVIEW_CHARS);
   }
   return next;
 }
