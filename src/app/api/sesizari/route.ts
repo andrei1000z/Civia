@@ -22,6 +22,11 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+// 2026-06-05 — 60s: ruta face polish AI (cu fallback Gemini, mai lent când Groq
+// e 429) + forward/reverse geocode (Nominatim). Fără maxDuration explicit,
+// default-ul mic ducea la TIMEOUT → Vercel întorcea „An error occurred" (non-JSON)
+// → clientul nu-l putea parsa („Unexpected token A").
+export const maxDuration = 60;
 
 // Single source of truth: SESIZARE_TIPURI din src/lib/constants.ts.
 type Tip = (typeof SESIZARE_TIPURI)[number]["value"];

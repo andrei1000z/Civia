@@ -787,9 +787,15 @@ export function SesizareForm() {
           imagini: opts?.withPhotos ? imagini : undefined,
         }),
       });
-      const json = await res.json();
+      // Defensive parse: la timeout/500, Vercel întoarce non-JSON („An error
+      // occurred") → res.json() arunca „Unexpected token A". Verificăm tipul.
+      const ct = res.headers.get("content-type") || "";
+      const json: { data?: { formal_text?: string }; error?: string } = ct.includes("application/json")
+        ? await res.json().catch(() => ({}))
+        : { error: (await res.text().catch(() => "")).slice(0, 160) || `Serverul a răspuns ${res.status}` };
       if (!res.ok) throw new Error(json.error || "Generarea textului a eșuat");
-      const formalText = json.data.formal_text as string;
+      const formalText = json.data?.formal_text;
+      if (!formalText) throw new Error("Serviciul de generare e temporar indisponibil. Reîncearcă în câteva secunde.");
       // 2026-06-04 — Înainte extrageam titlul cu regex pe „Vă sesizez cu
       // privire la..." — frază INTERZISĂ de prompt, deci regex-ul nu prindea
       // niciodată și titlul rămânea gol → cădea pe placeholder. Acum, dacă

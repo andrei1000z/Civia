@@ -25,7 +25,10 @@ import { detectsPoliceContext } from "@/lib/sesizari/authorities";
  * existent (formul cheamă POST /api/ai/improve la click „Generează").
  */
 export const dynamic = "force-dynamic";
-export const maxDuration = 10;
+// 2026-06-05 — 10s → 30s: 4 apeluri AI în paralel, fiecare cu fallback Gemini
+// (mai lent când Groq e 429). La 10s timeout-a → Vercel întorcea non-JSON →
+// clientul arăta „Unexpected token A".
+export const maxDuration = 30;
 
 const schema = z.object({
   descriere: z.string().min(5).max(2000),
