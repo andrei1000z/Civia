@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import {
   getInterruptionById,
-  INTRERUPERI,
   TYPE_COLORS,
   TYPE_ICONS,
   TYPE_LABELS,
@@ -11,8 +10,11 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Întrerupere programată — Civia";
 
+// 2026-06-05 — render OG on-demand (nu pre-randa sute de imagini la build →
+// build mai rapid + fără timeout). Crawler-ele social le cer la nevoie.
+export const dynamicParams = true;
 export async function generateStaticParams() {
-  return INTRERUPERI.map((i) => ({ id: i.id }));
+  return [];
 }
 
 export default async function OgImage({ params }: { params: Promise<{ id: string }> }) {

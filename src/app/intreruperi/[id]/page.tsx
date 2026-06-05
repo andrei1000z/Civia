@@ -13,7 +13,6 @@ import {
 import {
   getInterruptionById,
   getInterruptionsForCounty,
-  INTRERUPERI,
   TYPE_COLORS,
   TYPE_ICONS,
   TYPE_LABELS,
@@ -31,7 +30,7 @@ import {
 import { ShareButton } from "./ShareButton";
 import { MapClient } from "./MapClient";
 import { CalendarMenu } from "./CalendarMenu";
-import { getCountyBySlug } from "@/data/counties";
+import { getCountyBySlug, ALL_COUNTIES } from "@/data/counties";
 import { CountyIntreruperiContent } from "../_county-content";
 
 export async function generateMetadata({
@@ -95,8 +94,15 @@ export const revalidate = 21600;
 // got time to write the cache for the next viewer.
 export const maxDuration = 60;
 
+// 2026-06-05 — BUILD FIX: pre-randăm la build DOAR paginile de JUDEȚ (42,
+// stabile, importante SEO). Paginile de AVARIE individuale NU mai sunt
+// pre-randate la build: fiecare face un fetch Overpass (OSM) de până la ~45s pe
+// cache-miss, iar cu sute de pagini build-ul Vercel depășea 60s/pagină și PICA
+// (3 deploy-uri eșuate → producția blocată). Acum se randează on-demand cu ISR
+// (revalidate 6h) + warming via after(). dynamicParams=true le permite.
+export const dynamicParams = true;
 export async function generateStaticParams() {
-  return INTRERUPERI.map((i) => ({ id: i.id }));
+  return ALL_COUNTIES.map((c) => ({ id: c.slug }));
 }
 
 function formatDateTime(iso: string): string {
