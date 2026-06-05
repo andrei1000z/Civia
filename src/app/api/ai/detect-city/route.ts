@@ -25,7 +25,8 @@ import { analyticsRedis } from "@/lib/analytics/redis";
 import { ALL_COUNTIES } from "@/data/counties";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 8;
+// 12s: lăsăm loc geocodării (Nominatim) pentru sectorul determinist al Bucureștiului.
+export const maxDuration = 12;
 
 const schema = z.object({
   locatie: z.string().min(4, "Adresa prea scurtă").max(500),
@@ -113,8 +114,39 @@ export async function POST(req: Request) {
     const county = countyRaw && VALID_COUNTY_IDS.has(countyRaw) ? countyRaw : null;
     const city = typeof parsedJson.city === "string" ? parsedJson.city.slice(0, 80) : null;
     const sectorRaw = typeof parsedJson.sector === "string" ? parsedJson.sector.toUpperCase() : null;
-    const sector =
+    let sector =
       county === "B" && sectorRaw && /^S[1-6]$/.test(sectorRaw) ? sectorRaw : null;
+
+    // 2026-06-05 — Sector DETERMINIST pentru București: geocodăm adresa →
+    // coordonate → wedge-ul de sector (point-in-sector). Modelul 8B nu știe
+    // maparea stradă→sector (ex: „Strada Știrbei Vodă / Berzei / Plevnei" = S1,
+    // dar AI-ul returna null). Geocodarea + clasificarea pe coordonate e precisă
+    // pentru ORICE stradă. Suprascrie/completează sectorul AI; fallback la AI
+    // dacă geocodarea pică.
+    if (county === "B") {
+      try {
+        const [{ forwardGeocode }, { detectSectorFromCoords }] = await Promise.all([
+          import("@/lib/sesizari/geocoding"),
+          import("@/lib/geo/sector-from-coords"),
+        ]);
+        const hit = await forwardGeocode(locatie, "București", "B");
+        if (hit) {
+          // PRIMAR: sectorul din displayName-ul Nominatim — vine din limitele
+          // administrative OSM, deci e PRECIS (ex: „...Cișmigiu, Sector 1...").
+          const m = hit.displayName?.match(/Sector(?:ul)?\s*([1-6])/i);
+          if (m) {
+            sector = `S${m[1]}`;
+          } else if (hit.streetLevel) {
+            // FALLBACK: aproximare pe coordonate (wedge din centru) — mai puțin
+            // precisă, doar când Nominatim nu pune sectorul în nume.
+            const sec = detectSectorFromCoords(hit.lat, hit.lng);
+            if (sec) sector = sec;
+          }
+        }
+      } catch {
+        // fallback la sectorul AI (sector rămâne ce a dat modelul)
+      }
+    }
 
     const result = { county, city, sector };
 
