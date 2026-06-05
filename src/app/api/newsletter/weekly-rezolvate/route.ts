@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -63,11 +64,14 @@ export async function GET(req: Request) {
     .eq("moderation_status", "approved")
     .gte("created_at", weekAgo);
 
-  // Recipienti — newsletter_subscribers confirmed
+  // Recipienti — newsletter_subscribers confirmați ȘI NEdezabonați.
+  // 2026-06-05 FIX GDPR: înainte filtra doar `confirmed=true` și NU excludea
+  // `unsubscribed_at` → trimitea către cei dezabonați. Acum identic cu digestul.
   const { data: recipients } = await admin
     .from("newsletter_subscribers")
     .select("email")
-    .eq("confirmed", true)
+    .not("confirmed_at", "is", null)
+    .is("unsubscribed_at", null)
     .not("email", "is", null);
 
   if (!recipients || recipients.length === 0) {
@@ -90,10 +94,12 @@ export async function GET(req: Request) {
 
   for (const r of recipients as Array<{ email: string }>) {
     if (!r.email) continue;
+    const unsubUrl = newsletterUnsubscribeUrl(r.email, SITE_URL);
     try {
       await sendEmail({
         to: r.email,
         subject,
+        listUnsubscribe: unsubUrl,
         html: emailTemplate({
           title: "Săptămâna în Civia",
           kicker: "Rezolvate săptămâna asta",
@@ -110,8 +116,8 @@ export async function GET(req: Request) {
               <a href="${SITE_URL}/impact" style="color:#059669">Vezi toate cifrele →</a>
             </p>
             <p style="margin-top:24px;font-size:12px;color:#94a3b8">
-              Primești acest email pentru că ești abonat la digestul Civia.
-              <a href="${SITE_URL}/cont" style="color:#94a3b8">Dezabonează</a>.
+              Primești acest email pentru că ești abonat la newsletter-ul Civia.
+              <a href="${unsubUrl}" style="color:#94a3b8">Dezabonează-te</a>.
             </p>
           `,
           ctaText: "Vezi impactul săptămânal",

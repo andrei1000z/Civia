@@ -141,7 +141,10 @@ export async function POST(req: Request) {
             subject,
             html,
             text,
-            replyTo: "sesizari@civia.ro",
+            // 2026-06-05 — subadresă dedicată propunerilor (routează prin
+            // subaddressing-ul Cloudflare al sesizari@); inbox-ul le filtrează
+            // separat ca să nu polueze răspunsurile la sesizări.
+            replyTo: "sesizari+prop@civia.ro",
           });
 
           if (emailResult.ok) {

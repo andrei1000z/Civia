@@ -49,6 +49,9 @@ export async function sendEmail(params: {
   from?: string;
   /** Atașamente — array de URL-uri publice (Resend fetch-uieste automat). */
   attachments?: Array<{ filename: string; path?: string; content?: string }>;
+  /** URL one-click de dezabonare per-destinatar (newsletter) — header
+   *  List-Unsubscribe RFC 8058. Default: pagina globală /cont?unsubscribe=1. */
+  listUnsubscribe?: string;
 }): Promise<{ ok: boolean; id?: string }> {
   const resend = getResendClient();
   if (!resend) {
@@ -77,7 +80,9 @@ export async function sendEmail(params: {
       ...(params.replyTo ? { replyTo: params.replyTo } : {}),
       ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {
-        "List-Unsubscribe": `<${ENV.SITE_URL()}/cont?unsubscribe=1>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
+        "List-Unsubscribe": params.listUnsubscribe
+          ? `<${params.listUnsubscribe}>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`
+          : `<${ENV.SITE_URL()}/cont?unsubscribe=1>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
     });

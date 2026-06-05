@@ -244,6 +244,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, note: "self-forward-filtered" });
   }
 
+  // B2. 2026-06-05 — Răspuns la o PROPUNERE legislativă (sesizari+prop@) — nu e
+  // răspuns la o sesizare. Îl filtrăm ca să nu apară ca „necunoscut" în inbox-ul
+  // de sesizări.
+  if (/sesizari\+prop@/i.test(to)) {
+    try {
+      await admin.from("inbox_filter_log").insert({
+        from_email: from.toLowerCase().slice(0, 200),
+        subject: subject?.slice(0, 500) ?? null,
+        filter_reason: "propunere-reply",
+        worker_version: req.headers.get("user-agent") ?? null,
+      });
+    } catch { /* best-effort */ }
+    return NextResponse.json({ ok: true, note: "propunere-reply-filtered" });
+  }
+
   // C. Dedup pe Message-ID (RFC 5322 §3.6.4)
   if (messageId) {
     const { data: existing } = await admin

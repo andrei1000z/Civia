@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import { getUpcomingEvents } from "@/data/calendar-civic";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 
@@ -167,22 +168,25 @@ export async function GET(req: Request) {
     </p>
   `;
 
-  const html = emailTemplate({
-    title: "Săptămâna civică",
-    preheader: `${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta pe Civia`,
-    body,
-    ctaText: "Vezi sesizările publice",
-    ctaUrl: `${siteUrl}/sesizari-publice`,
-  });
-
   // Send to all subscribers (sequential with tiny gap — Resend rate limit ~10/s free tier)
+  // 2026-06-05 — html construit PER destinatar ca să includem link-ul de
+  // dezabonare individual (GDPR one-click) + header List-Unsubscribe.
   let sent = 0;
   let failed = 0;
   for (const sub of subscribers) {
+    const unsubUrl = newsletterUnsubscribeUrl(sub.email, siteUrl);
+    const html = emailTemplate({
+      title: "Săptămâna civică",
+      preheader: `${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta pe Civia`,
+      body: `${body}<p style="margin:28px 0 0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center">Primești acest email pentru că ești abonat la newsletter-ul Civia. <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline">Dezabonează-te</a>.</p>`,
+      ctaText: "Vezi sesizările publice",
+      ctaUrl: `${siteUrl}/sesizari-publice`,
+    });
     const result = await sendEmail({
       to: sub.email,
       subject: `Civia — ${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta`,
       html,
+      listUnsubscribe: unsubUrl,
     });
     if (result.ok) sent++;
     else failed++;
