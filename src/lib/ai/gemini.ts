@@ -37,7 +37,21 @@ export const GEMINI_MODEL_BACKUPS = [
 ] as const;
 
 export function isGeminiConfigured(): boolean {
-  return !!process.env.GEMINI_API_KEY;
+  return geminiKeys().length > 0;
+}
+
+/**
+ * Cheile Gemini disponibile. Cota Gemini e per-PROIECT Google Cloud, NU per
+ * cheie — deci o a 2-a/3-a cheie (din alt proiect) = counter SEPARAT, dublând/
+ * triplând efectiv cota gratuită. Cel mai ieftin multiplicator de cotă (research
+ * 2026). Setezi GEMINI_API_KEY_2 / _3 în env → se folosesc automat la 429.
+ */
+export function geminiKeys(): string[] {
+  return [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+  ].filter((k): k is string => !!k && k.length > 0);
 }
 
 interface ChatMessage {
@@ -77,8 +91,8 @@ export async function callGemini({
   response_format,
   signal,
 }: CallOptions): Promise<string | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const keys = geminiKeys();
+  if (keys.length === 0) {
     throw new Error("GEMINI_API_KEY is not set");
   }
 
@@ -95,28 +109,36 @@ export async function callGemini({
     reasoning_effort: "none",
   };
   if (response_format) body.response_format = response_format;
+  const payload = JSON.stringify(body);
 
-  const res = await fetch(`${GEMINI_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-    signal,
-  });
+  // Încearcă fiecare cheie (proiecte diferite = cote separate). 429/5xx pe o
+  // cheie → trecem la următoarea; 4xx „hard" (cheie/cerere invalidă) → oprim.
+  let lastErr: (Error & { status?: number }) | null = null;
+  for (const apiKey of keys) {
+    const res = await fetch(`${GEMINI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: payload,
+      signal,
+    });
 
-  if (!res.ok) {
+    if (res.ok) {
+      const json = (await res.json()) as OpenAICompletionResponse;
+      return json.choices?.[0]?.message?.content ?? null;
+    }
+
     const text = await res.text().catch(() => "");
-    // Mirror the shape Groq SDK errors take (status + message) so the
-    // upstream isRateLimited helper recognises 429 the same way.
-    const err = new Error(
-      `Gemini ${res.status}: ${text.slice(0, 300)}`,
-    ) as Error & { status?: number };
+    const err = new Error(`Gemini ${res.status}: ${text.slice(0, 300)}`) as Error & {
+      status?: number;
+    };
     err.status = res.status;
-    throw err;
+    lastErr = err;
+    // 429 (cotă) sau 5xx → mai încearcă altă cheie. Altele (400/401/403) → stop.
+    if (res.status !== 429 && res.status < 500) break;
   }
 
-  const json = (await res.json()) as OpenAICompletionResponse;
-  return json.choices?.[0]?.message?.content ?? null;
+  throw lastErr ?? new Error("Gemini: toate cheile au eșuat");
 }

@@ -85,10 +85,57 @@ function scrubProfanity(text: string): string {
     .trim();
 }
 
-/** Capitalize + scrub vulgarități + diacritice deterministe + punctuație. */
+// 2026-06-05 (audit) — colocvial/argou + engleză uzuală → registru formal.
+// Pe fallback determinist (AI rate-limited) nu vrem text argotic/englezit în
+// emailul oficial către autorități.
+const COLLOQUIAL_MAP: Array<[RegExp, string]> = [
+  [/\be praf\b/gi, "este nefuncțional"],
+  [/\bsemaforu\b/gi, "semaforul"],
+  [/\bbecu\b/gi, "becul"],
+  [/\bcanalu\b/gi, "canalul"],
+  [/\bgunoiu\b/gi, "gunoiul"],
+  [/\btrotuaru\b/gi, "trotuarul"],
+  [/\bautobuzu\b/gi, "autobuzul"],
+  [/\bo am[ăa]r[âa]t[ăa] de\b/gi, "o"],
+  [/\barhiplin[ăa]?\b/gi, "supraaglomerat"],
+  // engleză frecventă în sesizări mixte RO/EN
+  [/\bbus\b/gi, "autobuz"],
+  [/\bshelter\b/gi, "copertină"],
+  [/\brain\b/gi, "ploaie"],
+  [/\b(?:please|fix|asap|wtf|pls)\b/gi, ""],
+];
+
+// Umplutură / cerere non-faptică + încheieri politicoase de eliminat din corpul
+// descrierii-problemă.
+const FILLER_PHRASES =
+  /\b(?:face[țt]i ceva|v[ăa] (?:rog|rug[ăa]m)|rezolva[țt]i (?:odat[ăa]|v[ăa] rog)|(?:m[ăa] )?calc[ăa] pe nervi(?:\s+[a-zăâîșț]+)?|e revolt[ăa]tor|e o nebunie total[ăa]|chiar\b)/gi;
+const CLOSING_PHRASES =
+  /\b(?:v[ăa] mul[țt]umesc(?:\s+anticipat)?|mul[țt]umesc|cu stim[ăa]|cu respect|cu deosebit[ăa] considera[țt]ie)\b[.,!]*/gi;
+
+/** Formalizează DETERMINIST textul brut (fallback când AI e indisponibil):
+ *  ALL CAPS→normal, „!!!/???"→„.", argou/EN→formal, scoate umplutura/încheieri. */
+function formalizeFallback(raw: string): string {
+  let s = raw.replace(/\s+/g, " ").trim();
+  // ALL CAPS lung → lowercase (recapitalizăm la final)
+  if (s.replace(/[^A-Za-zĂÂÎȘȚ]/g, "").length > 8 && s === s.toUpperCase()) {
+    s = s.toLowerCase();
+  }
+  s = s.replace(/[!?]+/g, ".");
+  s = scrubProfanity(s);
+  for (const [re, rep] of COLLOQUIAL_MAP) s = s.replace(re, rep);
+  s = s.replace(FILLER_PHRASES, " ").replace(CLOSING_PHRASES, " ");
+  return s
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/([,.;:])\s*[,.;:]+/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[\s,.;:]+/, "")
+    .trim();
+}
+
+/** Fallback final: formalizare determinist + diacritice + capitalizare + punct. */
 function fallback(raw: string): string {
-  const scrubbed = scrubProfanity(raw.replace(/\s+/g, " ").trim());
-  const cleaned = restoreDiacritics(scrubbed.slice(0, FALLBACK_MAX_LEN));
+  const formalized = formalizeFallback(raw);
+  const cleaned = restoreDiacritics(formalized.slice(0, FALLBACK_MAX_LEN));
   if (cleaned.length === 0) return "";
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
@@ -121,9 +168,10 @@ function hasSolicitation(text: string): boolean {
 }
 
 // Verbe/structuri de început care indică o SOLUȚIE/CERERE, nu o descriere de
-// problemă. Acoperă și „să monteze", „vreau să puneți", „aș vrea să se repare".
+// problemă. Acoperă: „solicit/vă rog", „montați/reparați", „faceți ceva",
+// „să monteze", „vreau să puneți", „aș vrea o trecere de pietoni / un limitator".
 const SOLICITATION_START =
-  /^\s*(?:solicit|cer\b|cerem|v[ăa]\s+(?:rog|rug[ăa]m)|montare|montarea|monta[țt]i|instalare|instalarea|instala[țt]i|reparare|repararea|repara[țt]i|amenajare|amenajarea|amenaja[țt]i|amplasare|amplasarea|punere|pune[țt]i|(?:vreau|doresc|a[șs]\s+(?:vrea|dori))\s+(?:ca\s+)?(?:s[ăa]\s+)?(?:se\s+)?(?:monte|monta|instal|repar|amenaj|amplas|pun|fac)|s[ăa]\s+(?:se\s+)?(?:monteze|monta|instaleze|repare|amenajeze|amplaseze|pun[ăa]|fac[ăa]))\b/i;
+  /^\s*(?:solicit\w*|cer\b|cerem|v[ăa]\s+(?:rog|rug[ăa]m)|montar\w*|monta[țt]i|instalar\w*|instala[țt]i|reparar\w*|repara[țt]i|amenajar\w*|amenaja[țt]i|amplasar\w*|punere|pune[țt]i|face[țt]i\s+ceva|s[ăa]\s+(?:se\s+)?(?:monte\w*|monta\w*|instal\w*|repar\w*|amenaj\w*|amplas\w*|pun\w*|fac[ăa])|(?:vreau|doresc|a[șs]\s+(?:vrea|dori))\b[^.?!]{0,40}?\b(?:monte\w*|monta\w*|instal\w*|repar\w*|amenaj\w*|amplas\w*|pun\w*|(?:o|un|ni[șs]te)\s+(?:trecere|limitator|barier\w*|ramp\w*|st[âa]lpi[șs]\w*|semafor\w*|indicator\w*|co[șs]\w*|banc[ăa]|copertin\w*|parcare)))/i;
 
 /** True dacă textul e PRIMORDIAL o cerere/soluție (ex: „solicit stâlpișori"),
  *  nu o descriere de problemă. */
@@ -439,11 +487,42 @@ Output: "Intersecția străzilor Petru Rareș și Ioan Bianu, Sector 1"
 Input: "calea 13 septembrie cluj napoca"
 Output: "Calea 13 Septembrie, Cluj-Napoca"`;
 
+// Abrevieri uzuale de adresă → formă expandată (deterministic, fără AI).
+const ADDR_ABBREV: Array<[RegExp, string]> = [
+  [/\bstr\.?\b/gi, "Strada"],
+  [/\b(?:b-?dul|bdul|bd)\.?\b/gi, "Bulevardul"],
+  [/\b(?:sos|șos)\.?\b/gi, "Șoseaua"],
+  [/\bspl\.?\b/gi, "Splaiul"],
+  [/\bintr\.?\b/gi, "Intrarea"],
+  [/\bsect\.?\b/gi, "Sector"],
+  [/\bnr\.?\b/gi, "nr."],
+  [/\bbl\.?\b/gi, "bloc"],
+  [/\bsc\.?\b/gi, "sc."],
+  [/\bap\.?\b/gi, "ap."],
+  [/\bet\.?\b/gi, "et."],
+];
+// Cuvinte funcționale care rămân cu literă mică (nu sunt nume proprii).
+const ADDR_LOWER = new Set([
+  "de", "pe", "cu", "la", "în", "in", "și", "si", "între", "intre", "ambele",
+  "tronsonul", "tronson", "cuprins", "trotuare", "trotuarul", "trotuarele",
+  "colț", "colt", "fața", "fata", "spatele", "sensul", "zona", "spre", "dintre",
+  "nr", "bl", "sc", "ap", "et", "bis", "a", "al", "ale", "din",
+]);
+
+/** Normalizare DETERMINISTĂ a adresei (fallback când AI e indisponibil):
+ *  expandare abrevieri + capitalizare nume proprii + diacritice. */
 function fallbackAddress(raw: string): string {
-  return raw
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (c) => c.toUpperCase());
+  let s = raw.replace(/\s+/g, " ").trim();
+  for (const [re, rep] of ADDR_ABBREV) s = s.replace(re, rep);
+  s = restoreDiacritics(s);
+  let first = true;
+  s = s.replace(/[A-Za-zĂÂÎȘȚăâîșț]+/g, (w) => {
+    const lw = w.toLowerCase();
+    const keepLower = !first && ADDR_LOWER.has(lw);
+    first = false;
+    return keepLower ? lw : w.charAt(0).toUpperCase() + w.slice(1);
+  });
+  return s;
 }
 
 // ─── TITLU — AI generează un titlu scurt descriptiv din descriere ──────
@@ -564,7 +643,9 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
     if (cleaned.length < input.length * 0.85 || /[*#`{}[\]\n]/.test(cleaned)) {
       return restoreDiacritics(fallbackAddress(input));
     }
-    return cleaned;
+    // Post-pass diacritice + pe output-ul AI (modelul lasă uneori „Statia"
+    // în loc de „Stația") — dicționar univoc, nu atinge numele de străzi.
+    return restoreDiacritics(cleaned);
   } catch {
     return fallbackAddress(input);
   }
