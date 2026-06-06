@@ -22,7 +22,10 @@ export const revalidate = 21600;
 // `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,
 // adaugă slug-ul aici (altfel Google nu-l indexează automat).
 const COUNTY_PAGES = [
-  "", "/sesizari", "/stiri", "/ghiduri",
+  // 2026-06-06 (audit P1 #14) — scos „/ghiduri": e național-only (proxy.ts
+  // 308-redirectează /{judet}/ghiduri → /ghiduri), deci genera 42 URL-uri
+  // duplicate cu canonical conflictual → penalizare SEO. /ghiduri național rămâne mai jos.
+  "", "/sesizari", "/stiri",
   "/autoritati", "/evenimente", "/istoric",
   // 2026-05-19: /intreruperi mutat la /intreruperi/[county-slug]
   // (vezi countyIntreruperiRoutes mai jos). Vechiul /{slug}/intreruperi

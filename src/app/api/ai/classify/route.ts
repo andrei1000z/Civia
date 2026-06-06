@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getGroqClient, GROQ_MODEL_FAST } from "@/lib/groq/client";
+import { groqText, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { SYSTEM_PROMPT_CLASSIFIER } from "@/lib/groq/prompts";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { SESIZARE_TIPURI } from "@/lib/constants";
@@ -28,8 +28,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { text } = schema.parse(body);
 
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
+    // groqText = cascadă Groq→Gemini→Cloudflare + cache + fallback. Clasificarea
+    // e în fluxul de sesizare → la 429 pe Groq nu mai dăm 500 utilizatorului.
+    const content = await groqText({
       model: GROQ_MODEL_FAST,
       messages: [
         { role: "system", content: SYSTEM_PROMPT_CLASSIFIER },
@@ -39,8 +40,6 @@ export async function POST(req: Request) {
       max_tokens: 50,
       response_format: { type: "json_object" },
     });
-
-    const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Empty AI response");
 
     const parsed = JSON.parse(content) as { tip?: string };
