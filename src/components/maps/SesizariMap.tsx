@@ -41,7 +41,9 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
   const [markers, setMarkers] = useState<MarkerData[]>([]);
 
   useEffect(() => {
-    fetch(`/api/sesizari?limit=${limit}`)
+    // 2026-06-06 (audit #20) — fields=map → payload minim (doar lat/lng/code/
+    // titlu/tip/status), ~70% mai mic + server sare anonimizarea.
+    fetch(`/api/sesizari?fields=map&limit=${limit}`)
       .then((r) => r.json())
       .then((j) => {
         const rows = (j.data as SesizareFeedRow[]) ?? [];

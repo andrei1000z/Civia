@@ -98,7 +98,10 @@ export async function POST(
     sesizare_id: sesizare.id,
     user_id: user?.id ?? null,
     name: safeName,
-    email: email ?? null,
+    // 2026-06-06 (audit #23) — folosim emailul CONTULUI dacă userul e logat și
+    // nu a tastat unul, ca dedup-ul pe (sesizare_id, lower(email)) să prindă
+    // cazul „a co-semnat ca guest@email, apoi s-a logat" → fără rând duplicat.
+    email: email ?? user?.email ?? null,
     city: safeCity,
     message: message ? sanitizeText(message).slice(0, 500) : null,
     ip_hash: hashIp(ip),

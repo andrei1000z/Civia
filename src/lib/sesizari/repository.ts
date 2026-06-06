@@ -128,6 +128,8 @@ export interface ListFilters {
   county?: string;
   limit?: number;
   offset?: number;
+  /** „map" → coloane minime pentru pin-uri, fără anonimizare. */
+  fields?: "map";
 }
 
 // Columns the public list cards actually render (SesizariPublice.tsx).
@@ -143,6 +145,13 @@ export interface ListFilters {
 // bytes per row.
 const FEED_LIST_COLUMNS =
   "id,code,user_id,author_name,author_display_name,author_email,titlu,locatie,sector,county,lat,lng,tip,custom_category,status,formal_text,descriere,imagini,resolved_photo_url,created_at,nr_comentarii,nr_cosigners,publica,moderation_status";
+
+// 2026-06-06 (audit #20) — coloane MINIME pentru pin-urile de pe hartă
+// (SesizariMap folosește doar lat/lng/code/titlu/tip/status). Fără formal_text/
+// descriere/imagini/author_* → payload ~70% mai mic + sărim anonimizarea
+// (zero auth.getUser round-trip), că harta nu afișează autorul.
+const MAP_COLUMNS =
+  "id,code,titlu,tip,status,sector,county,lat,lng,created_at";
 
 // Card preview is line-clamp-2 (~150 visible chars). 320 is a safe
 // over-provision that still slashes the average row from ~3 KB to
@@ -186,7 +195,8 @@ function truncateForFeed<T extends { formal_text?: string | null; descriere?: st
 
 export async function listSesizari(filters: ListFilters = {}): Promise<SesizareFeedRow[]> {
   const supabase = await createSupabaseServer();
-  let query = supabase.from("sesizari_feed").select(FEED_LIST_COLUMNS);
+  const isMap = filters.fields === "map";
+  let query = supabase.from("sesizari_feed").select(isMap ? MAP_COLUMNS : FEED_LIST_COLUMNS);
 
   if (filters.tip && filters.tip !== "toate") query = query.eq("tip", filters.tip);
   if (filters.status && filters.status !== "toate") query = query.eq("status", filters.status);
@@ -201,7 +211,13 @@ export async function listSesizari(filters: ListFilters = {}): Promise<SesizareF
 
   const { data, error } = await query;
   if (error) throw error;
-  const anonymized = await anonymizeHiddenAuthors((data ?? []) as SesizareFeedRow[]);
+  // select() cu coloane dinamice (ternar) pierde inferența PostgREST → cast prin
+  // unknown. Rândurile MAP au un subset de câmpuri; restul sunt undefined (OK).
+  const rows = (data ?? []) as unknown as SesizareFeedRow[];
+  // Harta: coloane minime, fără author/formal_text → sărim anonimizarea +
+  // truncate (zero auth.getUser round-trip), doar curățăm titlul.
+  if (isMap) return rows.map(sanitizeRowTitlu);
+  const anonymized = await anonymizeHiddenAuthors(rows);
   return anonymized.map(truncateForFeed).map(sanitizeRowTitlu);
 }
 

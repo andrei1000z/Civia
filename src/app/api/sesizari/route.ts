@@ -89,6 +89,8 @@ export async function GET(req: Request) {
       county: searchParams.get("county") ?? undefined,
       limit: Number(searchParams.get("limit") ?? 50),
       offset: Number(searchParams.get("offset") ?? 0),
+      // ?fields=map → coloane minime pentru pin-urile de pe hartă (audit #20).
+      fields: searchParams.get("fields") === "map" ? "map" : undefined,
     });
     // 2026-05-25 OPTIMIZATION: s-maxage 30→120 (2 min). Feed-ul public
     // schimbă rar; CDN cache hits reduce edge requests cu ~50%.

@@ -353,6 +353,7 @@ export default async function StireDetailPage({
               initialSummary={aiSummary}
               fallbackText={stire.excerpt || stire.content || ""}
               synthesizeUrl={`/api/stiri/${stire.id}/synthesize`}
+              hideWhenNoAI
             />
           </div>
 

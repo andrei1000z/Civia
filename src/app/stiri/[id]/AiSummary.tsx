@@ -81,9 +81,13 @@ interface AiSummaryProps {
    *  `{ data: { summary } }`. If absent, the component just renders the
    *  fallback after the load step. */
   synthesizeUrl?: string;
+  /** 2026-06-06 (audit #17): când AI eșuează, NU afișa excerptul ca sinteză
+   *  (duplică „Textul original" pe pagina de știri). În schimb, arată un badge
+   *  transparent „revine în curând". Pentru petiții lăsăm false (fallback util). */
+  hideWhenNoAI?: boolean;
 }
 
-export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSummaryProps) {
+export function AiSummary({ initialSummary, fallbackText, synthesizeUrl, hideWhenNoAI = false }: AiSummaryProps) {
   const [summary, setSummary] = useState<string | null>(initialSummary);
   const [loading, setLoading] = useState(!initialSummary && !!synthesizeUrl);
 
@@ -92,8 +96,9 @@ export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSum
     if (!synthesizeUrl) {
       // setState in effect is intentional: we only fall back to the plain
       // excerpt after mount (so SSR/CSR markup matches the loading state).
+      // hideWhenNoAI (știri): nu duplica excerptul ca sinteză → rămâne null.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSummary(fallbackText);
+      if (!hideWhenNoAI) setSummary(fallbackText);
       setLoading(false);
       return;
     }
@@ -106,14 +111,14 @@ export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSum
         }
       })
       .catch(() => {
-        if (!cancelled) setSummary(fallbackText);
+        if (!cancelled && !hideWhenNoAI) setSummary(fallbackText);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
 
     return () => { cancelled = true; };
-  }, [synthesizeUrl, initialSummary, fallbackText]);
+  }, [synthesizeUrl, initialSummary, fallbackText, hideWhenNoAI]);
 
   if (loading) {
     return (
@@ -127,7 +132,18 @@ export function AiSummary({ initialSummary, fallbackText, synthesizeUrl }: AiSum
   }
 
   if (!summary) {
-    // Bug fix UX (5/22/2026) — fallback elegant cand AI fail:
+    // 2026-06-06 (audit #17) — pe ȘTIRI (hideWhenNoAI) NU repetăm excerptul ca
+    // sinteză (e deja afișat ca „Textul original" → duplicat). Badge transparent;
+    // sinteza se re-generează în fundal (self-healing pe trafic).
+    if (hideWhenNoAI) {
+      return (
+        <div className="rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3 text-sm text-[var(--color-text-muted)] flex items-center gap-2">
+          <span aria-hidden="true">⏳</span>
+          <span>Sinteza AI se generează — revino în câteva minute. Între timp, citește textul de mai jos.</span>
+        </div>
+      );
+    }
+    // Bug fix UX (5/22/2026) — fallback elegant cand AI fail (petiții):
     // afișează excerpt-ul original cu label clar „Sinteză indisponibilă"
     // in loc de italic muted text generic. Userul intelege ca AI a esuat,
     // dar tot are conținut util.
