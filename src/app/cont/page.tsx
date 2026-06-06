@@ -32,6 +32,7 @@ import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
+import { MfaSetup } from "@/components/cont/MfaSetup";
 
 interface Profile {
   id: string;
@@ -690,6 +691,9 @@ export default function ContPage() {
               <PushPermissionButton />
             </div>
           )}
+
+          {/* 2026-06-07 (audit #11) — securitate cont: 2FA opt-in (Supabase MFA nativ). */}
+          {user && <MfaSetup />}
         </aside>
 
         {/* ─── Sesizari column ────────────────────────────────────── */}
