@@ -15,7 +15,14 @@ const EMAIL_KEY = "civia:privacy:hidden-emails";
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? Redis.fromEnv()
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        // 2026-06-06 — Upstash SUSPENDAT (billing) → smismember retry-uia de 5×
+        // cu backoff = ~5s hang/request. Retry minim → fail RAPID (fallback gol).
+        // Feed-ul nu mai apelează asta deloc; rămâne doar pt. comentarii.
+        retry: { retries: 1, backoff: () => 0 },
+      })
     : null;
 
 // In-memory fallback (dev only) — persists for the process lifetime.

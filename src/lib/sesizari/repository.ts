@@ -1,6 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { getHiddenUserIds, getHiddenEmails } from "@/lib/privacy/hidden-users";
+import { getHiddenUserIds } from "@/lib/privacy/hidden-users";
 import { scrubFormalTextForPublic } from "./scrub-public";
 import { safeTitlu } from "./titlu";
 import { restoreDiacritics } from "./diacritice";
@@ -78,20 +78,11 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
   const { viewerId, viewerEmail, isAdmin } = await getViewerContext();
   if (isAdmin) return rows;
 
-  const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter((v): v is string => !!v)));
-  const emails = Array.from(
-    new Set(
-      rows
-        .map((r) => r.author_email?.toLowerCase().trim())
-        .filter((v): v is string => !!v),
-    ),
-  );
-
-  const [hiddenIds, hiddenEmails] = await Promise.all([
-    userIds.length > 0 ? getHiddenUserIds(userIds) : Promise.resolve(new Set<string>()),
-    emails.length > 0 ? getHiddenEmails(emails) : Promise.resolve(new Set<string>()),
-  ]);
-
+  // 2026-06-06 — PERF (cauza /sesizari-publice ~5-12s în Sentry): scos
+  // getHiddenUserIds/getHiddenEmails (Upstash). Upstash e SUSPENDAT (billing) →
+  // cele 2 `smismember` făceau TIMEOUT câteva secunde pe FIECARE request. Iar
+  // rezultatul era oricum NEFOLOSIT: scrub-ul de nume e ON by default pentru
+  // toți ne-ownerii (hideName=true). => zero Upstash în calea feed-ului, rapid.
   return rows.map((r) => {
     // Ownership: by user_id OR by email match (for legacy guest-then-
     // signed-up rows where user_id may be null but author_email matches
@@ -107,8 +98,6 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
     // sesizări co-semnate cu numele original al inițiatorului). Privacy
     // by default, nu privacy by opt-in. Owner-ul își vede tot numele
     // său (logged-in match pe user_id sau author_email).
-    void hiddenIds;
-    void hiddenEmails;
     const hideName = true;
 
     let scrubbedFormalText = r.formal_text ?? null;
