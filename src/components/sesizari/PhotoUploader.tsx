@@ -86,6 +86,10 @@ interface Pending {
 export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
   const [pending, setPending] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // 2026-06-06 (audit #43) — feedback când poze sunt ignorate (peste limită) sau
+  // s-a atins maximul. Înainte: slice silențios → userul credea că s-au adăugat
+  // toate, deși unele erau aruncate fără niciun semn.
+  const [notice, setNotice] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -140,7 +144,16 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
     async (files: File[]) => {
       const remaining = max - urls.length - pending.length;
       const toUpload = files.slice(0, Math.max(0, remaining));
-      if (toUpload.length === 0) return;
+      if (toUpload.length === 0) {
+        setNotice(`Ai deja ${max} poze (maximul). Șterge una ca să poți adăuga alta.`);
+        return;
+      }
+      // Dacă userul a ales mai multe decât încap, spunem clar câte am ignorat.
+      setNotice(
+        files.length > toUpload.length
+          ? `Maxim ${max} poze: am adăugat ${toUpload.length}, restul de ${files.length - toUpload.length} au fost ignorate.`
+          : null,
+      );
 
       setError(null);
 
@@ -300,6 +313,12 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
         </div>
       )}
 
+      {!canAdd && (
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Ai atins maximul de {max} poze. Șterge una ca să adaugi alta.
+        </p>
+      )}
+      {notice && <p role="status" className="text-xs text-amber-600 dark:text-amber-400 mt-2">{notice}</p>}
       {error && <p role="alert" className="text-xs text-red-500 mt-2">{error}</p>}
 
       {(urls.length > 0 || pending.length > 0) && (

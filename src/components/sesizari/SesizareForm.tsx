@@ -1768,6 +1768,38 @@ ${today}`;
           </div>
         )}
 
+        {/* 2026-06-06 (audit #41) — prompt VIZIBIL de sector pentru București.
+            Înainte picker-ul era îngropat într-un <details> colapsat → userul cu
+            adresă în București nu era promptat și pica abia la validare. Acum:
+            quick-pick S1-S6 amber, vizibil cât timp sectorul lipsește. */}
+        {sectorRequired && !sectorValid && (
+          <div className="rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+              <Locate size={13} aria-hidden="true" />
+              Adresă în București — alege sectorul
+            </p>
+            <p className="text-[11px] text-amber-800/90 dark:text-amber-400/90 mt-1 mb-2">
+              Fiecare sector are propria primărie. Alege-l ca sesizarea să ajungă la autoritatea corectă.
+            </p>
+            <div className="flex gap-1.5 flex-wrap">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <button
+                  type="button"
+                  key={`sect-${n}`}
+                  onClick={() => {
+                    setData((d) => ({ ...d, sector: `S${n}` }));
+                    setDetectedCountyName(`Sector ${n}, București`);
+                  }}
+                  className="h-9 min-w-9 px-3 rounded-[var(--radius-button)] text-sm font-semibold bg-white dark:bg-amber-950 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                  aria-label={`Sector ${n}`}
+                >
+                  S{n}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 5/23/2026 — Field „Titlu scurt (opțional)" scos. Se derivă oricum
             automat din tipLabel sau AI (vezi `effectiveTitlu` mai sus). User
             nu mai trebuie să-l completeze manual — era redundant. */}
