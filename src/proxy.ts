@@ -41,7 +41,8 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/harti": "/",
   "/aer": "/",
   "/buget": "/",
-  "/compara": "/",
+  // 2026-06-06 (audit P1 #8) — /compara RESTAURAT (comparație civică între
+  // județe = diferențiatorul platformei). Scos din redirect-uri legacy.
   "/dezvoltatori": "/",
   "/despre": "/",
   "/status": "/",

@@ -81,6 +81,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/sesizari`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/stiri`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/ghiduri`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    // 2026-06-06 (audit P1 #8) — /compara restaurat (comparație civică județe).
+    { url: `${base}/compara`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${base}/evenimente`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     // Plan AI #3 + #4 (5/22/2026) — hub pages high-SEO priority
     { url: `${base}/cum-functioneaza`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
