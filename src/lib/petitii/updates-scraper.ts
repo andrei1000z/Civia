@@ -94,37 +94,36 @@ export function canScrapeUpdates(url: string | null | undefined): boolean {
 }
 
 /**
- * Fetch + parse update-urile dintr-o petiție Declic. Returnează array gol
- * dacă pagina nu mai există (404), fetch eșuează, sau nu sunt update-uri.
- *
- * IMPORTANT: user-agent ca de browser pentru a evita 403/captcha. Timeout
- * 15s ca să nu blocăm cron-ul pe petițiile lente.
- */
-/**
- * 2026-06-06 (audit #5) — extrage nr. de semnături din HTML-ul sursei.
- * Best-effort: „12.345 semnături", „12.345 de oameni au semnat", „12,345
- * signatures". Numerele RO folosesc „." ca separator de mii → îl curățăm.
+ * 2026-06-06 (audit #5) — extrage numărul CURENT de semnături din HTML-ul
+ * sursei (ControlShift/Declic). Doar structuri SIGURE; null dacă nu e sigur.
  */
 export function extractSignatureCount(html: string): number | null {
-  const patterns = [
-    // Declic/ControlShift: „...signatures"> <span class="number">14.113"
-    /(?:signatures?|semn[ăa]turi|sus[țt]in[ăa]tori)["'\s>]*<span[^>]*class="number"[^>]*>\s*([\d][\d., ]*\d|\d)/i,
-    // număr ÎNAINTE de cuvânt: „14.113 (de) semnături / susținători"
-    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:semn[ăa]turi|sus[țt]in[ăa]tori)/i,
-    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:persoane|oameni)\s+au\s+semnat/i,
-    // număr DUPĂ cuvânt, generic: „signatures: 14.113"
-    /(?:semn[ăa]turi|signatures?|au\s+semnat|signed)[^\d<]{0,40}([\d][\d., ]*\d|\d)/i,
-  ];
-  for (const re of patterns) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      const n = parseInt(m[1].replace(/[., \s]/g, ""), 10);
-      if (Number.isFinite(n) && n > 100 && n < 100_000_000) return n;
-    }
+  // Doar 2 structuri SIGURE (ControlShift/Declic). Fără fallback-uri care
+  // ghicesc — un target sau o statistică afișate ca „semnături curente" ar fi
+  // mai rău decât nimic (vezi „mai bine zero decât greșit").
+  //
+  // 1. /petitions/ — JSON state, adesea entity-encoded (&quot;).
+  //    currentSignaturesCount = numărul CURENT (nu target/goal).
+  const json = html.match(/currentSignaturesCount(?:&quot;|["'])?\s*:\s*"?(\d+)/i);
+  if (json && json[1]) {
+    const n = parseInt(json[1], 10);
+    if (n > 0 && n < 100_000_000) return n;
+  }
+  // 2. /efforts/ — .petition-signatures → primul .number e CURENTUL
+  //    (target-ul e în .strong, DUPĂ). Ancoră pe „signatures" + .number la <80 chars.
+  const span = html.match(/signatures[\s\S]{0,80}?class="number"[^>]*>\s*([\d][\d., ]*\d|\d)/i);
+  if (span && span[1]) {
+    const n = parseInt(span[1].replace(/[., ]/g, ""), 10);
+    if (n > 0 && n < 100_000_000) return n;
   }
   return null;
 }
 
+/**
+ * Fetch + parse update-urile dintr-o petiție Declic + numărul de semnături.
+ * Array gol dacă pagina nu mai există (404)/fetch eșuează. UA de browser ca să
+ * evităm 403/captcha. Timeout 15s ca să nu blocăm cron-ul.
+ */
 export async function scrapeDeclicUpdates(
   externalUrl: string,
 ): Promise<{ updates: ScrapedUpdate[]; signatureCount: number | null; error: string | null }> {
