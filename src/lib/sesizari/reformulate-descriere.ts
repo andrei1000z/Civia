@@ -75,7 +75,9 @@ const FALLBACK_MAX_LEN = 500;
 // Vulgarități + umplutură colocvială — eliminate când AI-ul nu poate formaliza
 // și cădem pe textul BRUT al cetățeanului. Nu vrem „plm/dracu/futu/frate" în
 // emailul oficial către autorități.
-const PROFANITY_FILLER = /\b(?:[îi]n\s+)?(?:p+l+m+|pl[mn]|dracu'?|draq|fut[ue]?(?:-?i|-?l)?|pul[aă]|piz+d[aă]|muie|k+t|c[aă]cat|naiba|m[aă]\b|frate|bre|b[aă]h|b[aă]i+|fmm|wtf)\b/gi;
+// NB: NU includem „ma/mă" — ar șterge pronumele reflexiv „mă" (foarte frecvent)
+// din output-ul AI bun. Interjecția „ma" e minoră; riscul nu merită.
+const PROFANITY_FILLER = /\b(?:[îi]n\s+)?(?:p+l+m+|pl[mn]|dracu'?|draq|fut[ue]?(?:-?i|-?l)?|pul[aă]|piz+d[aă]|muie|k+t|c[aă]cat|naiba|frate|bre|b[aă]h|b[aă]i+|fmm|wtf)\b/gi;
 
 function scrubProfanity(text: string): string {
   return text
@@ -102,7 +104,8 @@ const COLLOQUIAL_MAP: Array<[RegExp, string]> = [
   [/\bbus\b/gi, "autobuz"],
   [/\bshelter\b/gi, "copertină"],
   [/\brain\b/gi, "ploaie"],
-  [/\b(?:please|fix|asap|wtf|pls)\b/gi, ""],
+  // „fix" e ambiguu (engleză „fix" vs română „fix/exact") → NU-l scoatem.
+  [/\b(?:please|asap|wtf|pls)\b/gi, ""],
 ];
 
 // Umplutură / cerere non-faptică + încheieri politicoase de eliminat din corpul
@@ -112,18 +115,29 @@ const FILLER_PHRASES =
 const CLOSING_PHRASES =
   /\b(?:v[ăa] mul[țt]umesc(?:\s+anticipat)?|mul[țt]umesc|cu stim[ăa]|cu respect|cu deosebit[ăa] considera[țt]ie)\b[.,!]*/gi;
 
-/** Formalizează DETERMINIST textul brut (fallback când AI e indisponibil):
- *  ALL CAPS→normal, „!!!/???"→„.", argou/EN→formal, scoate umplutura/încheieri. */
-function formalizeFallback(raw: string): string {
-  let s = raw.replace(/\s+/g, " ").trim();
-  // ALL CAPS lung → lowercase (recapitalizăm la final)
-  if (s.replace(/[^A-Za-zĂÂÎȘȚ]/g, "").length > 8 && s === s.toUpperCase()) {
-    s = s.toLowerCase();
+/** Curățare de REGISTRU sigură + IDEMPOTENTĂ pe text deja bun: ALL CAPS→normal,
+ *  „!!!/???"→„.", vulgarități eliminate, argou/EN→formal. Aplicată ȘI peste
+ *  output-ul AI (un model slab poate da un „echo" cu majuscule/engleză), ȘI în
+ *  fallback-ul determinist. NU scoate umplutura/încheierile (alea doar la raw). */
+function cleanRegister(s: string): string {
+  let t = s.replace(/\s+/g, " ").trim();
+  if (t.replace(/[^A-Za-zĂÂÎȘȚ]/g, "").length > 8 && t === t.toUpperCase()) {
+    t = t.toLowerCase();
   }
-  s = s.replace(/[!?]+/g, ".");
-  s = scrubProfanity(s);
-  for (const [re, rep] of COLLOQUIAL_MAP) s = s.replace(re, rep);
-  s = s.replace(FILLER_PHRASES, " ").replace(CLOSING_PHRASES, " ");
+  t = t.replace(/[!?]+/g, ".");
+  t = scrubProfanity(t);
+  for (const [re, rep] of COLLOQUIAL_MAP) t = t.replace(re, rep);
+  return t
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/([,.;:])\s*[,.;:]+/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Formalizează DETERMINIST textul brut (fallback când AI e indisponibil):
+ *  cleanRegister + scoate umplutura/cererile/încheierile politicoase. */
+function formalizeFallback(raw: string): string {
+  const s = cleanRegister(raw).replace(FILLER_PHRASES, " ").replace(CLOSING_PHRASES, " ");
   return s
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/([,.;:])\s*[,.;:]+/g, "$1")
@@ -241,9 +255,11 @@ export async function reformulateDescriere(
     // (.!?), e tăiat la mijloc (ex: Gemini cu „thinking" → „Autoturismele
     // parcate pe") → fallback determinist COMPLET în loc de fragment.
     if (!/[.!?]$/.test(stripped)) return fallback(input);
-    // Post-pass diacritice: prinde cuvintele pe care modelul le-a lăsat fără
-    // diacritice („cosuri/stalpii") — text public corect gramatical.
-    return restoreDiacritics(stripped);
+    // Curățare registru (idempotentă) + diacritice. cleanRegister prinde cazul
+    // în care un model slab a returnat un „echo" cu ALL CAPS / „!!!" / engleză /
+    // argou; pe output bun e no-op. restoreDiacritics repară diacriticele lăsate
+    // de model („cosuri/stalpii").
+    return restoreDiacritics(cleanRegister(stripped));
   } catch {
     return fallback(input);
   }
