@@ -14,6 +14,7 @@ import {
 } from "@/lib/email/resend";
 import { buildSalutation } from "@/lib/email/format";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { logAdminAction } from "@/lib/audit";
 import {
   SESIZARE_STATUS_META,
   SESIZARE_STATUS_VALUES,
@@ -116,6 +117,21 @@ export async function POST(
     })
     .eq("id", ticket.id);
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+  // audit #94 — log decizia de moderare a ticket-ului de status (aprobă/respinge).
+  await logAdminAction({
+    req,
+    actorId: user.id,
+    action: "status_ticket.decide",
+    targetType: "sesizare_status_ticket",
+    targetId: ticket.id,
+    before: { decision: "pending" },
+    after: { decision: parsed.data.decision },
+    metadata: {
+      sesizare_id: ticket.sesizare_id,
+      proposed_status: ticket.proposed_status,
+    },
+  });
 
   // Pre-fetch the sesizare for emails + status side-effect. Pull
   // `author_name` so the status-change email to the author has a
