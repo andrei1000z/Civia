@@ -107,15 +107,19 @@ export function canScrapeUpdates(url: string | null | undefined): boolean {
  */
 export function extractSignatureCount(html: string): number | null {
   const patterns = [
-    /([\d][\d., \s]*\d)\s*(?:de\s+)?semn[ăa]turi/i,
-    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:persoane|oameni)\s+au\s+semnat/i,
-    /([\d][\d., \s]*\d)\s*signatures?/i,
+    // Declic/ControlShift: „...signatures"> <span class="number">14.113"
+    /(?:signatures?|semn[ăa]turi|sus[țt]in[ăa]tori)["'\s>]*<span[^>]*class="number"[^>]*>\s*([\d][\d., ]*\d|\d)/i,
+    // număr ÎNAINTE de cuvânt: „14.113 (de) semnături / susținători"
+    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:semn[ăa]turi|sus[țt]in[ăa]tori)/i,
+    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:persoane|oameni)\s+au\s+semnat/i,
+    // număr DUPĂ cuvânt, generic: „signatures: 14.113"
+    /(?:semn[ăa]turi|signatures?|au\s+semnat|signed)[^\d<]{0,40}([\d][\d., ]*\d|\d)/i,
   ];
   for (const re of patterns) {
     const m = html.match(re);
     if (m && m[1]) {
       const n = parseInt(m[1].replace(/[., \s]/g, ""), 10);
-      if (Number.isFinite(n) && n > 0 && n < 100_000_000) return n;
+      if (Number.isFinite(n) && n > 100 && n < 100_000_000) return n;
     }
   }
   return null;
