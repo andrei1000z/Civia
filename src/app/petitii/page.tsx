@@ -246,6 +246,8 @@ function PetitieCard({
     external_url: string | null;
     target_signatures: number;
     signature_count: number;
+    external_signature_count?: number | null;
+    last_external_sync_at?: string | null;
   };
 }) {
   const cat = PETITIE_CATEGORII.find((c) => c.value === p.category);
@@ -303,10 +305,20 @@ function PetitieCard({
           {p.summary}
         </p>
 
-        {/* 2026-05-25 — Progress bar / nr semnături SCOS la cererea user-ului.
-            Petițiile sunt agregate de pe site-uri externe (Declic, Avaaz),
-            numărul de semnături din DB e desincronizat — afișa cifre vechi.
-            Mai bine zero număr decât număr greșit. */}
+        {/* 2026-06-06 (audit #5) — RESTAURAT nr. de semnături, dar acum cu
+            numărul REAL sincronizat din sursă (external_signature_count), nu cel
+            vechi/desincronizat din DB. Afișat doar când e sincronizat. */}
+        {typeof p.external_signature_count === "number" && p.external_signature_count > 0 && (
+          <div className="mb-4 flex items-center gap-1.5 text-sm">
+            <Megaphone size={14} className="text-purple-500 shrink-0" aria-hidden="true" />
+            <span className="font-bold text-[var(--color-text)]">
+              {p.external_signature_count.toLocaleString("ro-RO")}
+            </span>
+            <span className="text-[var(--color-text-muted)]">
+              semnături{externalHost ? ` pe ${externalHost}` : ""}
+            </span>
+          </div>
+        )}
 
         <div className="mt-auto flex items-center justify-between text-xs">
           {externalHost && (

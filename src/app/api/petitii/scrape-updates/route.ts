@@ -67,14 +67,19 @@ export async function POST(req: Request) {
     if (!canScrapeUpdates(p.external_url)) continue;
     scraped += 1;
 
-    const { updates, error } = await scrapeDeclicUpdates(p.external_url!);
+    const { updates, signatureCount, error } = await scrapeDeclicUpdates(p.external_url!);
 
     // Marchează ts indiferent de rezultat (pentru retry logic ulterior).
+    // 2026-06-06 (audit #5) — dacă am extras nr. de semnături din sursă, îl
+    // salvăm (transparență: afișăm momentum-ul real pe card/detaliu).
     await admin
       .from("petitii")
       .update({
         updates_last_scraped_at: new Date().toISOString(),
         updates_last_scrape_error: error,
+        ...(signatureCount !== null
+          ? { external_signature_count: signatureCount, last_external_sync_at: new Date().toISOString() }
+          : {}),
       })
       .eq("id", p.id);
 

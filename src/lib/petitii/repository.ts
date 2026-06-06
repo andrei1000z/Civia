@@ -29,6 +29,9 @@ export interface PetitieRow {
 
 export interface PetitieWithCount extends PetitieRow {
   signature_count: number;
+  /** Nr. de semnături raportat de sursă (Declic/Avaaz), sincronizat periodic. */
+  external_signature_count?: number | null;
+  last_external_sync_at?: string | null;
 }
 
 export interface PetitieSignatureRow {
@@ -44,7 +47,7 @@ export interface PetitieSignatureRow {
  *  (full petition text, can be 5–20 KB) and `ai_summary` (also large)
  *  — both are loaded only on the detail page via getPetitieBySlug. */
 const PETITIE_LIST_COLUMNS =
-  "id,slug,title,summary,image_url,external_url,target_signatures,category,county_code,starts_at,ends_at,status,created_at,signature_count,addressee";
+  "id,slug,title,summary,image_url,external_url,target_signatures,category,county_code,starts_at,ends_at,status,created_at,signature_count,external_signature_count,last_external_sync_at,addressee";
 
 /** Subset returned by listPetitii — body and ai_summary are stripped
  *  to keep the list payload small. */
@@ -71,7 +74,7 @@ export async function listPetitii(opts: {
     // Table missing (migration 020 nu e aplicată) — return empty.
     return [];
   }
-  return (data ?? []) as PetitieListItem[];
+  return (data ?? []) as unknown as PetitieListItem[];
 }
 
 /** Get single petitie by slug. Null if not found / archived. */

@@ -100,11 +100,32 @@ export function canScrapeUpdates(url: string | null | undefined): boolean {
  * IMPORTANT: user-agent ca de browser pentru a evita 403/captcha. Timeout
  * 15s ca să nu blocăm cron-ul pe petițiile lente.
  */
+/**
+ * 2026-06-06 (audit #5) — extrage nr. de semnături din HTML-ul sursei.
+ * Best-effort: „12.345 semnături", „12.345 de oameni au semnat", „12,345
+ * signatures". Numerele RO folosesc „." ca separator de mii → îl curățăm.
+ */
+export function extractSignatureCount(html: string): number | null {
+  const patterns = [
+    /([\d][\d., \s]*\d)\s*(?:de\s+)?semn[ăa]turi/i,
+    /([\d][\d., \s]*\d)\s*(?:de\s+)?(?:persoane|oameni)\s+au\s+semnat/i,
+    /([\d][\d., \s]*\d)\s*signatures?/i,
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m && m[1]) {
+      const n = parseInt(m[1].replace(/[., \s]/g, ""), 10);
+      if (Number.isFinite(n) && n > 0 && n < 100_000_000) return n;
+    }
+  }
+  return null;
+}
+
 export async function scrapeDeclicUpdates(
   externalUrl: string,
-): Promise<{ updates: ScrapedUpdate[]; error: string | null }> {
+): Promise<{ updates: ScrapedUpdate[]; signatureCount: number | null; error: string | null }> {
   if (!canScrapeUpdates(externalUrl)) {
-    return { updates: [], error: "not-declic" };
+    return { updates: [], signatureCount: null, error: "not-declic" };
   }
 
   let html: string;
@@ -120,12 +141,13 @@ export async function scrapeDeclicUpdates(
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {
-      return { updates: [], error: `http-${res.status}` };
+      return { updates: [], signatureCount: null, error: `http-${res.status}` };
     }
     html = await res.text();
   } catch (e) {
     return {
       updates: [],
+      signatureCount: null,
       error: `fetch-failed: ${e instanceof Error ? e.message : "unknown"}`,
     };
   }
@@ -165,5 +187,5 @@ export async function scrapeDeclicUpdates(
     });
   }
 
-  return { updates, error: null };
+  return { updates, signatureCount: extractSignatureCount(html), error: null };
 }
