@@ -83,7 +83,7 @@ const FALLBACK_MAX_LEN = 500;
 // din output-ul AI bun. Interjecția „ma" e minoră; riscul nu merită.
 const PROFANITY_FILLER = /\b(?:[îi]n\s+)?(?:p+l+m+|pl[mn]|dracu'?|draq|fut[ue]?(?:-?i|-?l)?|pul[aă]|piz+d[aă]|muie|k+t|c[aă]cat|naiba|frate|bre|b[aă]h|b[aă]i+|fmm|wtf)\b/gi;
 
-function scrubProfanity(text: string): string {
+export function scrubProfanity(text: string): string {
   return text
     .replace(PROFANITY_FILLER, " ")
     .replace(/\s+([,.!?;:])/g, "$1")
@@ -123,7 +123,7 @@ const CLOSING_PHRASES =
  *  „!!!/???"→„.", vulgarități eliminate, argou/EN→formal. Aplicată ȘI peste
  *  output-ul AI (un model slab poate da un „echo" cu majuscule/engleză), ȘI în
  *  fallback-ul determinist. NU scoate umplutura/încheierile (alea doar la raw). */
-function cleanRegister(s: string): string {
+export function cleanRegister(s: string): string {
   let t = s.replace(/\s+/g, " ").trim();
   if (t.replace(/[^A-Za-zĂÂÎȘȚ]/g, "").length > 8 && t === t.toUpperCase()) {
     t = t.toLowerCase();
@@ -142,7 +142,7 @@ function cleanRegister(s: string): string {
  *  necesară deoarece [PROBLEMĂ]..."), păstrează DOAR problema. Folosit în
  *  fallback (când AI e rate-limited) ca să NU ajungă „Solicit.../Solicitarea
  *  mea..." brut în emailul oficial — raportat de user. */
-function stripLeadingSolicitation(s: string): string {
+export function stripLeadingSolicitation(s: string): string {
   const t = s.trim();
   if (!/^(?:solicit|cer\b|cerem|v[ăa]\s+(?:rog|rug[ăa]m)|doresc|vreau|a[șs]\s+(?:vrea|dori))/i.test(t)) {
     return t;
@@ -165,7 +165,7 @@ function stripLeadingSolicitation(s: string): string {
 
 /** Formalizează DETERMINIST textul brut (fallback când AI e indisponibil):
  *  taie cererea din față + cleanRegister + scoate umplutura/încheierile. */
-function formalizeFallback(raw: string): string {
+export function formalizeFallback(raw: string): string {
   const s = cleanRegister(stripLeadingSolicitation(raw))
     .replace(FILLER_PHRASES, " ")
     .replace(CLOSING_PHRASES, " ");
@@ -178,7 +178,7 @@ function formalizeFallback(raw: string): string {
 }
 
 /** Fallback final: formalizare determinist + diacritice + capitalizare + punct. */
-function fallback(raw: string): string {
+export function fallback(raw: string): string {
   const formalized = formalizeFallback(raw);
   const cleaned = restoreDiacritics(formalized.slice(0, FALLBACK_MAX_LEN));
   if (cleaned.length === 0) return "";
@@ -208,7 +208,7 @@ const SOLICITATION_PATTERNS = [
   /\btrebuie\s+s[ăa]\s+(?:fie|se)\s+(montat|reparat|cur[ăa][țt]at|verificat)/i,
 ];
 
-function hasSolicitation(text: string): boolean {
+export function hasSolicitation(text: string): boolean {
   return SOLICITATION_PATTERNS.some((re) => re.test(text));
 }
 
@@ -220,7 +220,7 @@ const SOLICITATION_START =
 
 /** True dacă textul e PRIMORDIAL o cerere/soluție (ex: „solicit stâlpișori"),
  *  nu o descriere de problemă. */
-function isPrimarilySolicitation(text: string): boolean {
+export function isPrimarilySolicitation(text: string): boolean {
   const t = text.trim();
   // 2026-06-06 — DOAR cererile SCURTE & PURE folosesc problema-boilerplate a
   // tipului. O descriere lungă SAU cu detaliu de problemă (cauză/context:
@@ -575,7 +575,7 @@ const ADDR_LOWER = new Set([
 
 /** Normalizare DETERMINISTĂ a adresei (fallback când AI e indisponibil):
  *  expandare abrevieri + capitalizare nume proprii + diacritice. */
-function fallbackAddress(raw: string): string {
+export function fallbackAddress(raw: string): string {
   let s = raw.replace(/\s+/g, " ").trim();
   for (const [re, rep] of ADDR_ABBREV) s = s.replace(re, rep);
   s = restoreDiacritics(s);
