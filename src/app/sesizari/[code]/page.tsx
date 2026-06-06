@@ -550,7 +550,7 @@ export default async function SesizareDetailPage({
                 </p>
               </div>
             ) : (
-              <ol className="relative space-y-5">
+              <ol className="relative space-y-5" aria-label="Cronologia stării sesizării">
                 {timeline.map((step, i) => {
                   const isLast = i === timeline.length - 1;
                   const terminal = isTerminalEvent(step.event_type);
@@ -562,7 +562,11 @@ export default async function SesizareDetailPage({
                   const Icon = meta.icon;
                   const showDescription = !isRedundantEventDescription(step.event_type, step.description);
                   return (
-                    <li key={step.id} className="relative pl-11">
+                    <li
+                      key={step.id}
+                      className="relative pl-11"
+                      aria-current={isCurrent ? "step" : undefined}
+                    >
                       {/* Connector line to next step */}
                       {!isLast && (
                         <span
