@@ -10,6 +10,21 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+/**
+ * Curăță un subiect de email (audit #26): scoate CR/LF + alte control chars
+ * (anti header-injection — defense-in-depth, deși Resend e JSON API, nu SMTP
+ * raw), colapsează spațiile și taie la 200 caractere. Păstrează emoji +
+ * diacritice (sunt peste 0x7F). Aplicat central în sendEmail.
+ */
+export function sanitizeSubject(subject: string): string {
+  return (subject || "")
+    .replace(/[\r\n\t]+/g, " ") // line breaks/tab → spațiu (anti-injection + word boundary)
+    .replace(/[\x00-\x1F\x7F]/g, "") // restul control chars → scoase
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+}
+
 export function sanitizeText(input: string, maxLength = 2000): string {
   if (!input) return "";
   return input

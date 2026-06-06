@@ -15,6 +15,7 @@ import {
 } from "@/lib/email/resend";
 import { buildSalutation } from "@/lib/email/format";
 import { rateLimitAsync } from "@/lib/ratelimit";
+import { logAdminAction } from "@/lib/audit";
 import {
   SESIZARE_STATUS_META,
   SESIZARE_STATUS_VALUES,
@@ -158,6 +159,25 @@ export async function POST(
         sentryExtra: { code: sesizare.code, status: newStatus },
       });
     }
+  }
+
+  // ─── Audit log (audit #94) ──────────────────────────────────
+  // Schimbarea de status e cea mai frecventă acțiune admin sensibilă —
+  // o persistăm în admin_audit_log (forensics + GDPR). Fire-and-forget.
+  if (statusChanged) {
+    await logAdminAction({
+      req,
+      actorId: user.id,
+      action: "sesizare.status_change",
+      targetType: "sesizare",
+      targetId: sesizare.id,
+      before: { status: sesizare.status },
+      after: { status: newStatus },
+      metadata: {
+        code: sesizare.code,
+        official_response: !!parsed.data.official_response,
+      },
+    });
   }
 
   invalidateSesizariCache();

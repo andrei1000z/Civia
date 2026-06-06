@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import * as Sentry from "@sentry/nextjs";
 import { ENV, isProd } from "@/lib/env";
+import { sanitizeSubject } from "@/lib/sanitize";
 
 let client: Resend | null = null;
 
@@ -53,6 +54,8 @@ export async function sendEmail(params: {
    *  List-Unsubscribe RFC 8058. Default: pagina globală /cont?unsubscribe=1. */
   listUnsubscribe?: string;
 }): Promise<{ ok: boolean; id?: string }> {
+  // audit #26 — sanitizare centrală a subiectului (toate email-urile trec pe aici).
+  const subject = sanitizeSubject(params.subject);
   const resend = getResendClient();
   if (!resend) {
     if (isProd()) {
@@ -74,9 +77,9 @@ export async function sendEmail(params: {
       to: params.to,
       ...(params.cc ? { cc: params.cc } : {}),
       ...(params.bcc ? { bcc: params.bcc } : {}),
-      subject: params.subject,
+      subject,
       html: params.html,
-      text: params.text ?? `${params.subject}\n\n—\nVezi conținutul complet pe civia.ro`,
+      text: params.text ?? `${subject}\n\n—\nVezi conținutul complet pe civia.ro`,
       ...(params.replyTo ? { replyTo: params.replyTo } : {}),
       ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {

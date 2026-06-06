@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { escapeHtml, sanitizeText } from "./sanitize";
+import { escapeHtml, sanitizeText, sanitizeSubject } from "./sanitize";
 
 describe("escapeHtml", () => {
   it("escapes all HTML special characters", () => {
@@ -81,5 +81,27 @@ describe("sanitizeText", () => {
 
   it("preserves emoji and unicode", () => {
     expect(sanitizeText("Hello 👋 🇷🇴 ✓")).toBe("Hello 👋 🇷🇴 ✓");
+  });
+});
+
+describe("sanitizeSubject", () => {
+  it("scoate CR/LF (anti header-injection) și colapsează spațiile", () => {
+    expect(sanitizeSubject("Sesizare\r\nBcc: victima@x.ro")).toBe("Sesizare Bcc: victima@x.ro");
+    expect(sanitizeSubject("a\n\n\nb")).toBe("a b");
+  });
+
+  it("scoate control chars dar păstrează emoji + diacritice", () => {
+    expect(sanitizeSubject("✅ Sesizarea \x00ANR\x07-001 înregistrată")).toBe("✅ Sesizarea ANR-001 înregistrată");
+    expect(sanitizeSubject("📨 Răspuns oficial — Cod 123")).toBe("📨 Răspuns oficial — Cod 123");
+  });
+
+  it("trimează și taie la 200 de caractere", () => {
+    expect(sanitizeSubject("   spațiu   ")).toBe("spațiu");
+    expect(sanitizeSubject("x".repeat(300)).length).toBe(200);
+  });
+
+  it("tratează input gol/null", () => {
+    expect(sanitizeSubject("")).toBe("");
+    expect(sanitizeSubject(null as unknown as string)).toBe("");
   });
 });
