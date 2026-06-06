@@ -42,25 +42,29 @@ REGULI CRITICE:
 8. Output: 1-3 propoziții, max 300 caractere, concis, descriptiv.
 9. NU începe cu „Bună ziua" / „Mă numesc" / „Subsemnatul".
 10. NU termina cu „Vă mulțumesc" / „Cu stimă".
+11. NU folosi LOCATORI VAGI: „în zonă", „din zonă", „din această zonă", „din zona respectivă", „în zona afectată". Locația EXACTĂ e adăugată automat separat — tu descrii DOAR problema, gramatical și natural. Scrie „Pe trotuar staționează autoturisme" NU „Pe trotuarul din zonă staționează"; „afectează siguranța pietonilor" NU „...pietonilor din zonă". Termină propoziția curat, fără coadă vagă de loc.
 
 GÂNDIRE: descrii CE VEZI, nu CE CERI.
 
-EXEMPLE BUNE (doar descriere):
+EXEMPLE BUNE (doar descriere, FĂRĂ locatori vagi — gramatical impecabil):
 
 Input: "sunt masini parcate pana in intrarea din bloc sa le ia si sa monteze stalpisori anti parcare"
-Output: "Autoturisme parcate ilegal obstrucționează intrarea în imobil, situație care afectează accesul rezidenților și siguranța pietonilor în zonă."
+Output: "Autoturisme parcate ilegal obstrucționează intrarea în imobil, afectând accesul rezidenților și siguranța pietonilor."
 
 Input: "groapa mare pe strada lipscani aproape de muzeu, masinile aproape se rastoarna"
-Output: "În apropierea Muzeului, pe Strada Lipscani, există o groapă semnificativă în carosabil care afectează siguranța circulației auto."
+Output: "Pe carosabil există o groapă semnificativă, în apropierea Muzeului, care afectează siguranța circulației auto."
 
 Input: "iarba e mare in parc nu se mai vede nimic"
-Output: "Vegetația din parc nu a fost cosită de o perioadă îndelungată, depășind înălțimea normală și reducând vizibilitatea în zonă."
+Output: "Vegetația din parc nu a fost cosită de o perioadă îndelungată, depășind înălțimea normală și reducând vizibilitatea."
 
 Input: "gunoiul nu s a luat de o saptamana plin tomberonul"
-Output: "Tomberonul stradal nu a fost golit de aproximativ o săptămână, fiind supraîncărcat cu deșeuri și generând disconfort sanitar pentru locuitorii din zonă."
+Output: "Tomberonul stradal nu a fost golit de aproximativ o săptămână, fiind supraîncărcat cu deșeuri și generând disconfort sanitar pentru locuitori."
 
-Input: "iluminatu stradal nu merge de cateva zile pe strada vasile lascar"
-Output: "Pe Strada Vasile Lascăr, iluminatul public este nefuncțional de câteva zile, generând zone întunecate pe timp de noapte."
+Input: "iluminatu stradal nu merge de cateva zile"
+Output: "Iluminatul public este nefuncțional de câteva zile, generând întuneric pe timp de noapte și sentimentul de nesiguranță."
+
+Input: "solicit stalpisori antiparcare pentru ca masinile parcheaza pe trotuar si pietonii nu pot trece, desi e o parcare cu plata in apropiere care e goala"
+Output: "Autoturismele staționează neregulamentar pe trotuar, obstrucționând circulația pietonilor, deși în apropiere există o parcare cu plată frecvent neocupată."
 
 EXEMPLE GREȘITE (NU FACE ASTA):
 
@@ -127,14 +131,6 @@ function cleanRegister(s: string): string {
   t = t.replace(/[!?]+/g, ".");
   t = scrubProfanity(t);
   for (const [re, rep] of COLLOQUIAL_MAP) t = t.replace(re, rep);
-  // 2026-06-06 — scoate locatorii VAGI redundanți cu adresa din intro:
-  // „din/în (această/acea) zonă (respectivă/menționată/afectată)". User: nu vrem
-  // „pe trotuarul din zonă" când adresa e deja sus. PĂSTRĂM „zonă pietonală/
-  // verde/rezidențială/de protecție" (acolo „zonă" e parte din sens).
-  t = t.replace(
-    /\s+(?:din|[îi]n)\s+(?:aceast[ăa]\s+|acea\s+)?zon[ăa](?!\s+(?:de\s+(?:protec|agrement|siguran[țt]|joac|odihn|interes|risc|importan)|pietonal|reziden|verde|industrial|protec|comercial|istoric|agrement|[șs]colar|metropolitan|periurban))(?:\s+(?:respectiv[ăa]|men[țt]ionat[ăa]|afectat[ăa]))?/gi,
-    "",
-  );
   return t
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/([,.;:])\s*[,.;:]+/g, "$1")
