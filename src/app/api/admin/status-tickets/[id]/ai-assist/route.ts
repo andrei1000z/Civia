@@ -11,6 +11,7 @@ import {
   type SesizareStatus,
 } from "@/lib/sesizari/status";
 import { polishSynthesisLine } from "@/lib/ai/polish-synthesis";
+import { sanitizeText } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -165,8 +166,11 @@ export async function POST(
     ? parsed.suggested_status
     : fallbackStatus;
 
+  // 2026-06-06 (audit #25) — refined_note vine din JSON-ul AI și intră în
+  // timeline-ul PUBLIC + în emailuri. sanitizeText strip-uie HTML/control chars
+  // înainte de polish, ca un model compromis să nu poată injecta `<img onerror>`.
   const refined_note = polishSynthesisLine(
-    String(parsed.refined_note ?? ticket.note).slice(0, 280),
+    sanitizeText(String(parsed.refined_note ?? ticket.note), 280),
   );
   const suggested_decision_note =
     typeof parsed.suggested_decision_note === "string"

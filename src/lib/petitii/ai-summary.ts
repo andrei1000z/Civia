@@ -244,6 +244,21 @@ async function generate(
       });
       return petitie.summary || petitie.body || petitie.title || null;
     }
+    // 2026-06-06 (audit #16) — validează STRUCTURA: promptul cere secțiunile
+    // „Pe scurt / Ce cere petiția / De ce contează". Dacă modelul (mai ales pe
+    // fallback Gemini/Groq) a întors text neformatat (sub 2 secțiuni
+    // recunoscute), NU-l persista ca sinteză — cădem pe textul existent.
+    const nSections = (
+      raw.match(/(Pe scurt|Ce cere petiția|Cifre (?:&|și) date|De ce contează)/gi) ?? []
+    ).length;
+    if (nSections < 2) {
+      Sentry.captureMessage("petitii AI summary lacks structure", {
+        level: "warning",
+        tags: { kind: "petitii_ai_unstructured" },
+        extra: { petitieId: petitie.id, sections: nSections },
+      });
+      return petitie.summary || petitie.body || petitie.title || null;
+    }
     const summary = polishSynthesis(raw);
 
     try {
