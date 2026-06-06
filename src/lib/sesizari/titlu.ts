@@ -44,6 +44,11 @@ const ADDRESS_STOPWORDS = new Set([
   "scara", "sc", "sector", "ap", "apartamentul", "etaj", "et", "si", "de",
   "la", "din", "pe", "municipiul", "orasul", "comuna", "judetul", "bucuresti",
   "zona", "langa", "colt", "cu",
+  // conectori + descriptori de tronson — NU sunt nume de stradă (altfel
+  // „intre" din locație matchuia „pr-intre" din descriere → bug intro).
+  "intre", "tronson", "tronsonul", "cuprins", "cuprinsa", "ambele", "ambelor",
+  "trotuar", "trotuare", "trotuarul", "trotuarele", "segment", "segmentul",
+  "spre", "pana", "catre", "intrarea", "fata", "spatele", "sensul", "dintre",
 ]);
 
 /**
@@ -52,13 +57,15 @@ const ADDRESS_STOPWORDS = new Set([
  * textului formal („...problemă constatată pe Strada X: Pe Strada X ...").
  */
 export function descriereContainsLocatie(descriere: string, locatie: string): boolean {
-  const d = norm(descriere);
-  if (!d) return false;
+  // Potrivire pe CUVÂNT ÎNTREG (nu substring): altfel „intre" (din «între»)
+  // matchuia în «p-rintre», iar „voda" în «moldova» etc. → intro pierdea adresa.
+  const dWords = new Set(norm(descriere).split(/[\s,.\-/]+/).filter(Boolean));
+  if (dWords.size === 0) return false;
   const tokens = norm(locatie)
     .split(/[\s,.\-/]+/)
     .filter((w) => w.length >= 4 && !ADDRESS_STOPWORDS.has(w) && !/^\d+$/.test(w));
   if (tokens.length === 0) return false;
-  return tokens.some((t) => d.includes(t));
+  return tokens.some((t) => dWords.has(t));
 }
 
 /**
