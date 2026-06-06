@@ -574,9 +574,6 @@ export function SesizareForm() {
   // AI tip detection state
   const [tipDetecting, setTipDetecting] = useState(false);
   const [tipDetectedByAI, setTipDetectedByAI] = useState(false);
-  // Bug fix #8 (5/22/2026) — Vision confidence vizibil userului ca badge,
-  // ca să poată reviewa sugestia manual când AI nu e foarte sigur.
-  const [visionConfidence, setVisionConfidence] = useState<number | null>(null);
   // Sector auto-detect flag — afisam un mic indicator „Sector detectat
   // automat" cand l-am gasit din text (keyword-based) ca user-ul sa
   // poata corecta daca am gresit. Reset cand user schimba manual.
@@ -593,44 +590,10 @@ export function SesizareForm() {
   };
   const [nearbyDuplicates, setNearbyDuplicates] = useState<NearbyDuplicate[]>([]);
 
-  // 2026-05-19: AI vision auto-routing — la prima poza uploadata, daca
-  // userul nu a ales inca tipul, trimitem poza la /api/ai/vision-route
-  // pentru sugestie de tip + autoritate. Foloseste Llama 4 Scout 17B.
-  // Daca confidence >= 60, set automatic tip (cu badge „detectat din poza").
-  const visionTriedRef = useRef(false);
-  useEffect(() => {
-    if (imagini.length === 0) return;
-    if (visionTriedRef.current) return;
-    if (data.tip && !tipDetectedByAI) return; // userul a ales manual
-    visionTriedRef.current = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/ai/vision-route", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrl: imagini[0] }),
-          signal: AbortSignal.timeout(20_000),
-        });
-        if (!res.ok) return;
-        const j = await res.json();
-        if (j?.tip && typeof j.confidence === "number") {
-          // Bug fix #8 — pastram confidence pentru badge (visible review).
-          setVisionConfidence(j.confidence);
-          // 5/22/2026 — lowered threshold 60 → 40. Analytics arata 83% abandon
-          // pe tip select (user nu apuca sa apese dropdown). Auto-fill mai agresiv
-          // → user vede tipul deja selectat + poate corecta manual. Risk minimal:
-          // AI Llama 4 Scout Vision are 73% accuracy chiar la confidence 40+.
-          if (j.confidence >= 40) {
-            setData((d) => (d.tip ? d : { ...d, tip: j.tip }));
-            setTipDetectedByAI(true);
-            trackFunnelStep("sesizare-create", "tip-selected", { tip: j.tip, source: "vision", confidence: j.confidence });
-          }
-        }
-      } catch {
-        // silent — vision e best-effort
-      }
-    })();
-  }, [imagini, data.tip, tipDetectedByAI]);
+  // 2026-06-06 — ELIMINAT auto-detectarea tipului din IMAGINE (vision-route).
+  // User: tipul de problemă se setează STRICT din DESCRIERE (vezi mai jos
+  // /api/ai/classify pe text). Poza rămâne pentru dovezi + textul formal, dar
+  // NU mai dictează tipul.
 
   // Debounced auto-classify tip from description (800ms after typing stops)
   useEffect(() => {
@@ -852,22 +815,36 @@ export function SesizareForm() {
   // explicit ca profilul sa fi raspuns. Pentru useri anonimi (no auth),
   // profileLoaded devine true imediat dupa fallback-ul localStorage.
   const prewarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastGenSigRef = useRef<string>("");
   useEffect(() => {
-    if (data.formal_text) return; // deja generat
     if (aiLoading) return; // deja ruleaza
     if (!profileLoaded) return; // așteptăm identity de pe profile/localStorage
     if (data.descriere.length < 30) return; // not enough context
     if (!data.tip) return;
     if (data.locatie.length < 3) return;
+    // 2026-06-06 — REGENERARE la SCHIMBAREA inputurilor (nu doar prima dată).
+    // User: „când termin de scris descriere + locație + nume + adresă, să se
+    // REFACĂ". Semnătura inputurilor evită re-rularea pentru aceleași date
+    // (fără buclă: formal_text NU mai e în deps).
+    const sig = [
+      data.descriere.trim(),
+      data.tip,
+      data.locatie.trim(),
+      (data.nume || "").trim(),
+      (data.adresa || "").trim(),
+      data.sector || "",
+    ].join("¦");
+    if (sig === lastGenSigRef.current) return; // deja generat pentru aceste date
     if (prewarmTimerRef.current) clearTimeout(prewarmTimerRef.current);
     prewarmTimerRef.current = setTimeout(() => {
+      lastGenSigRef.current = sig;
       void handleAIImprove({ withPhotos: imagini.length > 0, silent: true });
     }, 1500);
     return () => {
       if (prewarmTimerRef.current) clearTimeout(prewarmTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.descriere, data.tip, data.locatie, data.formal_text, data.nume, data.adresa, profileLoaded]);
+  }, [data.descriere, data.tip, data.locatie, data.nume, data.adresa, data.sector, profileLoaded]);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -1640,8 +1617,8 @@ ${today}`;
         </Field>
 
         <Field label="Tip problemă (opțional — completăm noi)">
-          {/* 5/22/2026 — tip nu mai e required. AI detectează automat din
-              poză (vision) sau din descriere (text classifier). Dacă rămâne
+          {/* 5/22/2026 — tip nu mai e required. 2026-06-06: AI detectează tipul
+              STRICT din DESCRIERE (text classifier), NU din poză. Dacă rămâne
               gol, backend setează „altele" + categoria se generează din
               text. Analytics arata 83% abandon era la step tip selection. */}
           <div className="flex items-center gap-2">
@@ -1674,32 +1651,10 @@ ${today}`;
                 Auto
               </span>
             )}
-            {/* Bug fix #8 — Vision confidence badge: verde 70%+, amber 40-70%,
-                rosu <40%. User stie cat de incredere e suggestion-ul AI. */}
-            {visionConfidence !== null && (
-              <span
-                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                  visionConfidence >= 70
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                    : visionConfidence >= 40
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                      : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
-                }`}
-                title={
-                  visionConfidence >= 70
-                    ? "AI foarte încrezător în acest tip"
-                    : visionConfidence >= 40
-                      ? "AI parțial sigur — verifică sugestia"
-                      : "AI nu e sigur — alege manual tipul corect"
-                }
-              >
-                {visionConfidence}%
-              </span>
-            )}
           </div>
           {tipDetectedByAI && !tipDetecting && (
             <p className="text-xs text-[var(--color-text-muted)] mt-1">
-              Tipul a fost detectat automat din poza/descriere. Poți să-l schimbi dacă vrei altul.
+              Tipul a fost detectat automat din descriere. Poți să-l schimbi dacă vrei altul.
             </p>
           )}
         </Field>

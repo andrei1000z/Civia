@@ -191,8 +191,18 @@ const SOLICITATION_START =
  *  nu o descriere de problemă. */
 function isPrimarilySolicitation(text: string): boolean {
   const t = text.trim();
+  // 2026-06-06 — DOAR cererile SCURTE & PURE folosesc problema-boilerplate a
+  // tipului. O descriere lungă SAU cu detaliu de problemă (cauză/context:
+  // „deoarece", „pentru că", „însă", „care") trebuie REFORMULATĂ integral —
+  // altfel pierdem ce a scris cetățeanul (bug raportat: „solicit stâlpișori...
+  // deoarece mașini pe trotuar... parcare cu plată neocupată" → înlocuit cu
+  // boilerplate generic). Pragul + conectorii separă cererea pură de problemă.
+  if (t.length > 90) return false;
+  if (/\b(deoarece|pentru\s+c[ăa]|fiindc[ăa]|întruc[âa]t|îns[ăa]|care|deși|de[șs]i|astfel|prin\s+urmare)\b/i.test(t)) {
+    return false;
+  }
   if (SOLICITATION_START.test(t)) return true;
-  if (t.length < 90 && hasSolicitation(t)) return true;
+  if (t.length < 70 && hasSolicitation(t)) return true;
   return false;
 }
 
@@ -328,7 +338,7 @@ export async function reorderActions(args: {
         },
       ],
       temperature: 0.1,
-      max_tokens: 700,
+      max_tokens: 900,
     });
     if (!out) return args.prefabActions;
 
@@ -436,7 +446,7 @@ export async function generateContextualActions(args: {
           },
         ],
         temperature: 0.2,
-        max_tokens: 600,
+        max_tokens: 900,
       },
       { fallbackModel: GROQ_MODEL_FAST },
     );
@@ -448,8 +458,15 @@ export async function generateContextualActions(args: {
       .map((l) => l.trim())
       .map((l) => l.replace(/^[\d]+[.)]\s*/, "")) // strip "1. " sau "1) "
       .map((l) => l.replace(/^[-•*]\s*/, ""))     // strip bullet markers
-      .filter((l) => l.length >= 20 && l.length <= 400)
+      .filter((l) => l.length >= 20 && l.length <= 500)
       .filter((l) => !/^solicit|^v[ăa]\s+rog|^cerem|^rug[ăa]m/i.test(l)); // skip solicit lines
+
+    // 2026-06-06 — scoate acțiunile de la FINAL tăiate la mijloc (trunchiere la
+    // max_tokens): o acțiune completă se termină cu „.!?" sau „)". „...eventuale
+    // ajust" (raportat de user) → eliminat în loc să ajungă rupt în email.
+    while (lines.length > 0 && !/[.!?)]$/.test(lines[lines.length - 1]!)) {
+      lines.pop();
+    }
 
     if (lines.length < 2) return args.prefabFallback;
     return lines.slice(0, 4); // max 4 actions
