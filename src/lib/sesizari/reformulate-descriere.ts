@@ -127,6 +127,14 @@ function cleanRegister(s: string): string {
   t = t.replace(/[!?]+/g, ".");
   t = scrubProfanity(t);
   for (const [re, rep] of COLLOQUIAL_MAP) t = t.replace(re, rep);
+  // 2026-06-06 — scoate locatorii VAGI redundanți cu adresa din intro:
+  // „din/în (această/acea) zonă (respectivă/menționată/afectată)". User: nu vrem
+  // „pe trotuarul din zonă" când adresa e deja sus. PĂSTRĂM „zonă pietonală/
+  // verde/rezidențială/de protecție" (acolo „zonă" e parte din sens).
+  t = t.replace(
+    /\s+(?:din|[îi]n)\s+(?:aceast[ăa]\s+|acea\s+)?zon[ăa](?!\s+(?:de\s+(?:protec|agrement|siguran[țt]|joac|odihn|interes|risc|importan)|pietonal|reziden|verde|industrial|protec|comercial|istoric|agrement|[șs]colar|metropolitan|periurban))(?:\s+(?:respectiv[ăa]|men[țt]ionat[ăa]|afectat[ăa]))?/gi,
+    "",
+  );
   return t
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/([,.;:])\s*[,.;:]+/g, "$1")
