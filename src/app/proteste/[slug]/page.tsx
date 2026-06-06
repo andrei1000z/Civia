@@ -194,14 +194,16 @@ export async function generateMetadata({
       title: p.title,
       description: desc,
       url,
-      images: p.cover_image_url ? [{ url: p.cover_image_url }] : ["/opengraph-image"],
+      // 2026-06-07 (audit #38) — fallback la OG-ul PER-PROTEST (titlu + dată +
+      // locație + status), nu la cel root generic. Activează opengraph-image.tsx.
+      images: p.cover_image_url ? [{ url: p.cover_image_url }] : [`${url}/opengraph-image`],
       locale: "ro_RO",
     },
     twitter: {
       card: "summary_large_image",
       title: p.title,
       description: desc,
-      images: p.cover_image_url ? [p.cover_image_url] : ["/opengraph-image"],
+      images: p.cover_image_url ? [p.cover_image_url] : [`${url}/opengraph-image`],
     },
   };
 }

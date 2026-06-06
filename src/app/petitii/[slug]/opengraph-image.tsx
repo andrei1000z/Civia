@@ -11,6 +11,7 @@ interface PetitieRow {
   summary: string;
   category: string | null;
   county_code: string | null;
+  external_signature_count: number | null;
 }
 
 async function getPetitie(slug: string): Promise<PetitieRow | null> {
@@ -18,7 +19,7 @@ async function getPetitie(slug: string): Promise<PetitieRow | null> {
     const supabase = createSupabaseAnon();
     const { data } = await supabase
       .from("petitii")
-      .select("title, summary, category, county_code")
+      .select("title, summary, category, county_code, external_signature_count")
       .eq("slug", slug)
       .in("status", ["active", "closed"])
       .maybeSingle();
@@ -41,6 +42,9 @@ export default async function PetitieOgImage({ params }: { params: Promise<{ slu
   const summary = p?.summary?.slice(0, 200) ?? "Petiție civică curatată de Civia.";
   const category = p?.category ?? null;
   const county = p?.county_code ?? null;
+  const signatures = p?.external_signature_count ?? null;
+  const signaturesLabel =
+    signatures && signatures > 0 ? signatures.toLocaleString("ro-RO") : null;
 
   return new ImageResponse(
     (
@@ -143,6 +147,15 @@ export default async function PetitieOgImage({ params }: { params: Promise<{ slu
           {title}
         </h1>
 
+        {/* Semnături — social proof (audit #38). Numărul REAL sincronizat din
+            sursă (vezi #5) → cardul de share arată momentum-ul, crește click-ul. */}
+        {signaturesLabel && (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 22 }}>
+            <span style={{ fontSize: 48, fontWeight: 800, color: "#a7f3d0" }}>{signaturesLabel}</span>
+            <span style={{ fontSize: 24, fontWeight: 600, opacity: 0.85 }}>semnături strânse</span>
+          </div>
+        )}
+
         {/* Summary */}
         <p
           style={{
@@ -151,7 +164,7 @@ export default async function PetitieOgImage({ params }: { params: Promise<{ slu
             opacity: 0.85,
             margin: 0,
             display: "-webkit-box" as never,
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical" as never,
             overflow: "hidden",
           }}
