@@ -18,6 +18,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { sendSmsBatch } from "@/lib/sms/send-sms";
 import { SITE_URL } from "@/lib/constants";
+import { escapeHtml } from "@/lib/sanitize";
 
 type CivicKind = "petitie" | "protest";
 
@@ -142,13 +143,4 @@ export async function broadcastNewCivicContent(
 function truncate(s: string, n: number): string {
   if (s.length <= n) return s;
   return s.slice(0, n - 1) + "…";
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }

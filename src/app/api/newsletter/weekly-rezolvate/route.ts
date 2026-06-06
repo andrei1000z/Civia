@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -131,10 +132,6 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({ ok: true, recipients: recipients.length, sent, failed, resolved_count: rezolvate.length });
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function formatRelative(iso: string | null): string {

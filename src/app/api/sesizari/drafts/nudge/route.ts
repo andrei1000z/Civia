@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -81,8 +82,4 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({ ok: true, scanned: drafts.length, sent, failures: failures.length > 0 ? failures : undefined });
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

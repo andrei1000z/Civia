@@ -10,6 +10,7 @@ import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { buildFormalText } from "@/lib/sesizari/mailto";
 import { ENV } from "@/lib/env";
 import * as Sentry from "@sentry/nextjs";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -436,11 +437,4 @@ export async function POST(
     cc: ccEmails,
     message_id: result.id,
   });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

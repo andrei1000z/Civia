@@ -4,6 +4,7 @@ import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import { getUpcomingEvents } from "@/data/calendar-civic";
 import { SESIZARE_TIPURI } from "@/lib/constants";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -202,12 +203,4 @@ export async function GET(req: Request) {
     stats: { weekTotal, weekResolved, prevTotal, prevResolved },
     generatedAt: nowIso,
   });
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import * as Sentry from "@sentry/nextjs";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -200,12 +201,4 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ ok: true, code, status: "pending_completion" });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

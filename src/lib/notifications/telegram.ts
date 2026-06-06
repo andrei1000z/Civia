@@ -97,6 +97,9 @@ export async function alertAdmin(opts: {
   });
 }
 
+// NU folosi escapeHtml din @/lib/sanitize aici: Telegram „HTML parse mode"
+// decodează DOAR &lt; &gt; &amp; — dacă am escapa și " sau ' (cum face canonicul),
+// Telegram ar afișa literal „&quot;" / „&#039;" în mesaj. Escape Telegram-specific.
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

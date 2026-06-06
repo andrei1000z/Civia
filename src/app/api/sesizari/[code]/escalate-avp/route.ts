@@ -6,6 +6,7 @@ import { buildFromHeader } from "@/lib/email/format";
 import { buildAvpPlangere } from "@/lib/sesizari/avp-template";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import * as Sentry from "@sentry/nextjs";
+import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -130,13 +131,4 @@ export async function POST(
     sent_to: plangere.to,
     message_id: result.id,
   });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
