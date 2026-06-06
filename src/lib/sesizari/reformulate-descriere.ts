@@ -72,9 +72,23 @@ OUTPUT: STRICT textul reformulat, fără preambul, fără markdown, fără ghili
 
 const FALLBACK_MAX_LEN = 500;
 
-/** Capitalize + diacritice deterministe + final punctuation fallback. */
+// Vulgarități + umplutură colocvială — eliminate când AI-ul nu poate formaliza
+// și cădem pe textul BRUT al cetățeanului. Nu vrem „plm/dracu/futu/frate" în
+// emailul oficial către autorități.
+const PROFANITY_FILLER = /\b(?:[îi]n\s+)?(?:p+l+m+|pl[mn]|dracu'?|draq|fut[ue]?(?:-?i|-?l)?|pul[aă]|piz+d[aă]|muie|k+t|c[aă]cat|naiba|m[aă]\b|frate|bre|b[aă]h|b[aă]i+|fmm|wtf)\b/gi;
+
+function scrubProfanity(text: string): string {
+  return text
+    .replace(PROFANITY_FILLER, " ")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Capitalize + scrub vulgarități + diacritice deterministe + punctuație. */
 function fallback(raw: string): string {
-  const cleaned = restoreDiacritics(raw.replace(/\s+/g, " ").trim().slice(0, FALLBACK_MAX_LEN));
+  const scrubbed = scrubProfanity(raw.replace(/\s+/g, " ").trim());
+  const cleaned = restoreDiacritics(scrubbed.slice(0, FALLBACK_MAX_LEN));
   if (cleaned.length === 0) return "";
   const capitalized = cleaned[0]!.toUpperCase() + cleaned.slice(1);
   return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
@@ -106,8 +120,10 @@ function hasSolicitation(text: string): boolean {
   return SOLICITATION_PATTERNS.some((re) => re.test(text));
 }
 
-// Verbe de început care indică o SOLUȚIE/CERERE, nu o descriere de problemă.
-const SOLICITATION_START = /^(solicit|cer\b|cerem|v[ăa]\s+(rog|rug[ăa]m)|montare|monta[țt]i|montarea|instalare|instalarea|instala[țt]i|reparare|repararea|repara[țt]i|amenajare|amenajarea|amenaja[țt]i|punere|pune[țt]i|doresc\s+(montarea|instalarea|repararea|amenajarea|punerea|amplasarea))\b/i;
+// Verbe/structuri de început care indică o SOLUȚIE/CERERE, nu o descriere de
+// problemă. Acoperă și „să monteze", „vreau să puneți", „aș vrea să se repare".
+const SOLICITATION_START =
+  /^\s*(?:solicit|cer\b|cerem|v[ăa]\s+(?:rog|rug[ăa]m)|montare|montarea|monta[țt]i|instalare|instalarea|instala[țt]i|reparare|repararea|repara[țt]i|amenajare|amenajarea|amenaja[țt]i|amplasare|amplasarea|punere|pune[țt]i|(?:vreau|doresc|a[șs]\s+(?:vrea|dori))\s+(?:ca\s+)?(?:s[ăa]\s+)?(?:se\s+)?(?:monte|monta|instal|repar|amenaj|amplas|pun|fac)|s[ăa]\s+(?:se\s+)?(?:monteze|monta|instaleze|repare|amenajeze|amplaseze|pun[ăa]|fac[ăa]))\b/i;
 
 /** True dacă textul e PRIMORDIAL o cerere/soluție (ex: „solicit stâlpișori"),
  *  nu o descriere de problemă. */
@@ -173,6 +189,10 @@ export async function reformulateDescriere(
       .trim();
     if (stripped.length < 10) return fallback(input);
     if (hasSolicitation(stripped)) return fallback(input);
+    // GUARD ANTI-TRUNCHIERE: dacă output-ul nu se termină cu punctuație de final
+    // (.!?), e tăiat la mijloc (ex: Gemini cu „thinking" → „Autoturismele
+    // parcate pe") → fallback determinist COMPLET în loc de fragment.
+    if (!/[.!?]$/.test(stripped)) return fallback(input);
     // Post-pass diacritice: prinde cuvintele pe care modelul le-a lăsat fără
     // diacritice („cosuri/stalpii") — text public corect gramatical.
     return restoreDiacritics(stripped);
@@ -532,15 +552,16 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
       temperature: 0.1,
       max_tokens: 150,
     });
-    if (!out || out.length < 3) return fallbackAddress(input);
+    if (!out || out.length < 3) return restoreDiacritics(fallbackAddress(input));
     // Strip ghilimele dacă AI le-a pus accidental.
     const cleaned = out.replace(/^["'„«]+|["'»"]+$/g, "").trim();
-    if (cleaned.length < 3) return fallbackAddress(input);
-    // 2026-06-05 — GUARD ANTI-TRUNCHIERE: dacă AI-ul (mai ales Gemini) a SCURTAT
-    // agresiv o adresă complexă („Strada Știrbei Vodă, pe tronsonul... între X și
-    // Y, pe ambele trotuare" → „Strada Știrbei"), respingem și păstrăm adresa
-    // COMPLETĂ (doar diacritice + capitalizare). User raportat 2026-06-05.
-    if (input.length > 30 && cleaned.length < input.length * 0.6) {
+    if (cleaned.length < 3) return restoreDiacritics(fallbackAddress(input));
+    // 2026-06-05 — GUARD ANTI-GARBAGE/TRUNCHIERE: normalizarea unei adrese
+    // EXPANDEAZĂ (diacritice + abrevieri), nu scurtează. Dacă output-ul AI e sub
+    // 85% din input, conține artefacte markdown/cod, sau e multiline → e
+    // trunchiat/corupt (ex: Gemini „thinking" → „Calea Mo", „Strada Știrbei",
+    // „* Rule") → fallback determinist COMPLET (input păstrat + diacritice).
+    if (cleaned.length < input.length * 0.85 || /[*#`{}[\]\n]/.test(cleaned)) {
       return restoreDiacritics(fallbackAddress(input));
     }
     return cleaned;

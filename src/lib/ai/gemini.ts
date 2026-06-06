@@ -86,7 +86,13 @@ export async function callGemini({
     model,
     messages,
     temperature,
-    max_tokens,
+    // 2026-06-05 — Gemini 2.5-flash e model cu „thinking": raționamentul intern
+    // consumă din max_tokens, iar la valori mici output-ul VIZIBIL rămânea
+    // trunchiat la câteva caractere („Calea Mo", „Autoturismele parcate pe").
+    // Dezactivăm thinking-ul (reasoning_effort: none) + plafon generos ca
+    // output-ul scurt să se completeze garantat.
+    max_tokens: Math.max(max_tokens, 800),
+    reasoning_effort: "none",
   };
   if (response_format) body.response_format = response_format;
 
