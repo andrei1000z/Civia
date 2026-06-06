@@ -138,10 +138,37 @@ function cleanRegister(s: string): string {
     .trim();
 }
 
+/** Dacă textul brut ÎNCEPE cu o CERERE („Solicit X. Solicitarea mea este
+ *  necesară deoarece [PROBLEMĂ]..."), păstrează DOAR problema. Folosit în
+ *  fallback (când AI e rate-limited) ca să NU ajungă „Solicit.../Solicitarea
+ *  mea..." brut în emailul oficial — raportat de user. */
+function stripLeadingSolicitation(s: string): string {
+  const t = s.trim();
+  if (!/^(?:solicit|cer\b|cerem|v[ăa]\s+(?:rog|rug[ăa]m)|doresc|vreau|a[șs]\s+(?:vrea|dori))/i.test(t)) {
+    return t;
+  }
+  // Problema vine de obicei după un conector cauzal — păstrăm ce e după el.
+  const m = t.match(
+    /\b(?:deoarece|pentru\s+c[ăa]|fiindc[ăa]|[îi]ntruc[âa]t|din\s+cauz[ăa]\s+c[ăa]|av[âa]nd\s+[îi]n\s+vedere\s+c[ăa])\s+/i,
+  );
+  if (m && m.index !== undefined) {
+    const after = t.slice(m.index + m[0].length).trim();
+    if (after.length >= 20) return after.charAt(0).toUpperCase() + after.slice(1);
+  }
+  // Fără conector: sărim prima propoziție (cererea) + un eventual
+  // „Solicitarea mea este necesară." care urmează.
+  let rest = t.replace(/^[^.!?]*[.!?]\s*/, "").trim();
+  rest = rest.replace(/^solicitarea\s+mea[^.!?]*[.!?]\s*/i, "").trim();
+  if (rest.length >= 20) return rest.charAt(0).toUpperCase() + rest.slice(1);
+  return t;
+}
+
 /** Formalizează DETERMINIST textul brut (fallback când AI e indisponibil):
- *  cleanRegister + scoate umplutura/cererile/încheierile politicoase. */
+ *  taie cererea din față + cleanRegister + scoate umplutura/încheierile. */
 function formalizeFallback(raw: string): string {
-  const s = cleanRegister(raw).replace(FILLER_PHRASES, " ").replace(CLOSING_PHRASES, " ");
+  const s = cleanRegister(stripLeadingSolicitation(raw))
+    .replace(FILLER_PHRASES, " ")
+    .replace(CLOSING_PHRASES, " ");
   return s
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/([,.;:])\s*[,.;:]+/g, "$1")
