@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Force the module to use its in-memory fallback by stubbing env vars BEFORE
-// importing — the module captures redis config at import time.
+// importing — modulul citește useDb (service key) la import. 2026-06-06: sursa
+// de adevăr e profiles.hide_name în prod; fără service key → fallback in-memory.
 vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
 vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
 
 // Use dynamic import so stubs apply first.
 const { setHideName, getHideName, getHiddenUserIds } = await import("./hidden-users");

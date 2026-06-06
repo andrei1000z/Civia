@@ -1,74 +1,42 @@
-// Privacy toggle: "hide my name on public sesizări".
-// Stored in Upstash Redis as two SETs:
-//   - hidden-users:    user IDs that opted in
-//   - hidden-emails:   author_email values that opted in
-// Both are needed because a sesizare submitted while logged out has
-// user_id=NULL but a real author_email. Without the email path, those
-// rows would still leak the user's name even after they enable the
-// toggle on /cont.
-// In-memory fallback keeps dev mode functional without Upstash.
+/**
+ * Flag „ascunde numele" (hide-name). SURSA DE ADEVĂR: profiles.hide_name
+ * (migrarea 015). Când e true, fiecare suprafață publică afișează „Cetățean".
+ *
+ * 2026-06-06 — MIGRAT de pe Upstash (SUSPENDAT billing) pe profiles direct.
+ * Upstash era doar un INDEX al user-ilor cu hide_name=true; coloana din DB e
+ * canonică → zero pierdere de date, zero dependență de Upstash. În prod citim/
+ * scriem profiles via admin client; în dev/test (fără service key) folosim un
+ * fallback in-memory. Toate funcțiile fail-open (DB outage → nu ascundem nimic;
+ * feed-ul public oricum forțează anonimizarea pentru TOȚI ne-ownerii).
+ */
 
-import { Redis } from "@upstash/redis";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
-const KEY = "civia:privacy:hidden-users";
-const EMAIL_KEY = "civia:privacy:hidden-emails";
-
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-        // 2026-06-06 — Upstash SUSPENDAT (billing) → smismember retry-uia de 5×
-        // cu backoff = ~5s hang/request. Retry minim → fail RAPID (fallback gol).
-        // Feed-ul nu mai apelează asta deloc; rămâne doar pt. comentarii.
-        retry: { retries: 1, backoff: () => 0 },
-      })
-    : null;
-
-// In-memory fallback (dev only) — persists for the process lifetime.
+// PROD = profiles (service key prezent); DEV/TEST = in-memory.
+const useDb = !!(
+  process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL
+);
 const memoryFallback = new Set<string>();
-const memoryEmailFallback = new Set<string>();
-
-function normalizeEmail(email: string | null | undefined): string | null {
-  if (!email) return null;
-  const trimmed = email.trim().toLowerCase();
-  return trimmed.length > 0 ? trimmed : null;
-}
 
 /**
- * Toggle the hide-name flag for the given user. The email argument is
- * optional but strongly recommended — guests-then-signed-up users have
- * historical sesizari with `user_id=null`, and we need the email path
- * to anonymize those reliably.
+ * Setează flagul hide_name pe profil (sursa de adevăr). `email` e ignorat acum
+ * (era doar pentru indexul Upstash pe emailuri).
  */
 export async function setHideName(
   userId: string,
   hide: boolean,
-  email?: string | null,
+  _email?: string | null,
 ): Promise<void> {
   if (!userId) return;
-  const normalizedEmail = normalizeEmail(email);
-  if (!redis) {
-    if (hide) {
-      memoryFallback.add(userId);
-      if (normalizedEmail) memoryEmailFallback.add(normalizedEmail);
-    } else {
-      memoryFallback.delete(userId);
-      if (normalizedEmail) memoryEmailFallback.delete(normalizedEmail);
-    }
+  if (!useDb) {
+    if (hide) memoryFallback.add(userId);
+    else memoryFallback.delete(userId);
     return;
   }
-  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
-  // sau API outage NU trebuie să rupă PUT /api/profile (user nu poate
-  // salva nimic). Hide-name toggle e best-effort; user poate retoggle.
+  // Best-effort: un eșec aici NU trebuie să rupă PUT /api/profile.
   try {
-    if (hide) {
-      await redis.sadd(KEY, userId);
-      if (normalizedEmail) await redis.sadd(EMAIL_KEY, normalizedEmail);
-    } else {
-      await redis.srem(KEY, userId);
-      if (normalizedEmail) await redis.srem(EMAIL_KEY, normalizedEmail);
-    }
+    const sb = createSupabaseAdmin();
+    await sb.from("profiles").update({ hide_name: hide }).eq("id", userId);
   } catch {
     /* silent — celelalte profile updates trec OK */
   }
@@ -76,67 +44,47 @@ export async function setHideName(
 
 export async function getHideName(userId: string): Promise<boolean> {
   if (!userId) return false;
-  if (!redis) return memoryFallback.has(userId);
-  // 2026-05-27 — defensive try/catch (vezi getHiddenUserIds rationale).
-  // /cont încarcă /api/profile la mount; dacă Redis 500-uiește, /cont rămâne
-  // pe skeleton forever. Fail-open: assume nu e hidden.
+  if (!useDb) return memoryFallback.has(userId);
+  // Fail-open: DB outage → assume nu e hidden (preferabil la /cont blocat).
   try {
-    const res = await redis.sismember(KEY, userId);
-    return Number(res) === 1;
+    const sb = createSupabaseAdmin();
+    const { data } = await sb
+      .from("profiles")
+      .select("hide_name")
+      .eq("id", userId)
+      .maybeSingle();
+    return !!(data as { hide_name?: boolean } | null)?.hide_name;
   } catch {
     return false;
   }
 }
 
 /**
- * Batch variant — use when anonymizing a list of sesizări so we do one
- * round-trip instead of N. Returns the subset of userIds whose owners
- * opted into the flag.
+ * Batch — întoarce subsetul de userIds cu hide_name=true, dintr-un singur query
+ * (IN), pentru anonimizarea listelor (comentarii). Zero query-uri per rând.
  */
 export async function getHiddenUserIds(userIds: string[]): Promise<Set<string>> {
   if (userIds.length === 0) return new Set();
-  if (!redis) {
-    return new Set(userIds.filter((id) => memoryFallback.has(id)));
-  }
-  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
-  // sau API outage NU trebuie să taie listings. Fallback fail-open: nu
-  // ascundem nimic (defensiv preferable la blank-page error 500).
+  if (!useDb) return new Set(userIds.filter((id) => memoryFallback.has(id)));
+  // Fail-open: la outage nu ascundem nimic (preferabil unui 500 / blank page).
   try {
-    const flags = (await redis.smismember(KEY, userIds)) as number[];
-    const hidden = new Set<string>();
-    userIds.forEach((id, i) => {
-      if (flags[i] === 1) hidden.add(id);
-    });
-    return hidden;
+    const sb = createSupabaseAdmin();
+    const { data } = await sb
+      .from("profiles")
+      .select("id")
+      .in("id", userIds)
+      .eq("hide_name", true);
+    return new Set((data ?? []).map((r) => (r as { id: string }).id));
   } catch {
     return new Set();
   }
 }
 
 /**
- * Batch variant for emails. Used by the sesizare anonymizer to catch
- * historical rows submitted as a guest (user_id=null) but with the
- * user's email in author_email — without this, opting in to anonymity
- * would only hide future sesizari, not the existing ones.
+ * DEPRECATED — `profiles` nu are coloană `email`, iar feed-ul public nu mai
+ * apelează această funcție (anonimizarea e ON by default pentru toți
+ * ne-ownerii). Păstrată ca no-op pentru compatibilitate de import. No-op.
  */
-export async function getHiddenEmails(emails: string[]): Promise<Set<string>> {
-  const normalized = Array.from(
-    new Set(emails.map((e) => normalizeEmail(e)).filter((e): e is string => !!e)),
-  );
-  if (normalized.length === 0) return new Set();
-  if (!redis) {
-    return new Set(normalized.filter((e) => memoryEmailFallback.has(e)));
-  }
-  // 2026-05-27 — defensive try/catch (vezi getHiddenUserIds rationale).
-  let flags: number[];
-  try {
-    flags = (await redis.smismember(EMAIL_KEY, normalized)) as number[];
-  } catch {
-    return new Set();
-  }
-  const hidden = new Set<string>();
-  normalized.forEach((e, i) => {
-    if (flags[i] === 1) hidden.add(e);
-  });
-  return hidden;
+export async function getHiddenEmails(_emails: string[]): Promise<Set<string>> {
+  return new Set<string>();
 }

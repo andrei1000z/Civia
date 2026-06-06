@@ -73,21 +73,23 @@ Restul:
  * Aceeasi imagine analizata de 100 useri = 1 AI call, nu 100.
  * Economie: ~80-90% pe vision pe sesizari publice / similar issues.
  */
+// 2026-06-06 — MIGRAT Upstash → Cloudflare D1 (Upstash suspendat billing).
+// Cache vision pe 7 zile: aceeași imagine analizată de N useri = 1 apel Groq.
+function visionCacheKey(imageUrl: string): string {
+  // djb2 (fără crypto — compatibil edge).
+  let hash = 5381;
+  for (let i = 0; i < imageUrl.length; i++) {
+    hash = ((hash << 5) + hash + imageUrl.charCodeAt(i)) | 0;
+  }
+  return `vision-cache:${Math.abs(hash).toString(36)}`;
+}
+
 async function getCachedVision(imageUrl: string): Promise<VisionRoutingResult | null> {
   try {
-    const { Redis } = await import("@upstash/redis");
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return null;
-    const redis = new Redis({ url, token });
-    // Hash URL — simple djb2 ca sa nu folosim crypto (edge runtime).
-    let hash = 5381;
-    for (let i = 0; i < imageUrl.length; i++) {
-      hash = ((hash << 5) + hash + imageUrl.charCodeAt(i)) | 0;
-    }
-    const key = `vision-cache:${Math.abs(hash).toString(36)}`;
-    const cached = await redis.get<VisionRoutingResult>(key);
-    return cached ?? null;
+    const { analyticsD1 } = await import("@/lib/analytics/d1-client");
+    if (!analyticsD1) return null;
+    const raw = await analyticsD1.get<string>(visionCacheKey(imageUrl));
+    return raw ? (JSON.parse(raw) as VisionRoutingResult) : null;
   } catch {
     return null;
   }
@@ -95,17 +97,11 @@ async function getCachedVision(imageUrl: string): Promise<VisionRoutingResult | 
 
 async function setCachedVision(imageUrl: string, result: VisionRoutingResult): Promise<void> {
   try {
-    const { Redis } = await import("@upstash/redis");
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return;
-    const redis = new Redis({ url, token });
-    let hash = 5381;
-    for (let i = 0; i < imageUrl.length; i++) {
-      hash = ((hash << 5) + hash + imageUrl.charCodeAt(i)) | 0;
-    }
-    const key = `vision-cache:${Math.abs(hash).toString(36)}`;
-    await redis.set(key, result, { ex: 7 * 24 * 60 * 60 }); // 7 zile
+    const { analyticsD1 } = await import("@/lib/analytics/d1-client");
+    if (!analyticsD1) return;
+    await analyticsD1.set(visionCacheKey(imageUrl), JSON.stringify(result), {
+      ex: 7 * 24 * 60 * 60, // 7 zile
+    });
   } catch {
     // silent — cache failure NU trebuie sa rupa flow
   }
