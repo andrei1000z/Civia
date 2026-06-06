@@ -4,15 +4,16 @@
  * Plan items #74, #81, #91 (5/22/2026):
  *   - Track AI calls per user_id (sau IP daca anonim) zilnic
  *   - Daily budget global (toate userii) ca safety net
- *   - Daca atins → skip provider-i expensive (Gemini → Groq free fallback)
  *   - Daca user atins quota → return 429 cu mesaj clar
  *
- * Storage: Upstash Redis cu TTL 24h (auto-reset zilnic).
- *
- * NU blochează functionalitatea — doar previne abuse + runaway costs.
+ * 2026-06-06 — MIGRAT Upstash → Cloudflare D1 (Upstash suspendat billing, ca
+ * restul: rate-limit, cache, analytics). Storage: D1 kv cu TTL 24h (auto-reset
+ * zilnic). Increment NON-atomic (get + set) — quota e SOFT, micile race-uri sub
+ * concurență sunt acceptabile. Fail-open peste tot: dacă D1 lipsește/pică,
+ * permitem call-ul (NU blocăm funcționalitatea).
  */
 
-import { Redis } from "@upstash/redis";
+import { analyticsD1 } from "@/lib/analytics/d1-client";
 
 const QUOTA_PREFIX = "ai-quota";
 const DAILY_TTL_SECONDS = 24 * 60 * 60;
@@ -20,15 +21,6 @@ const DAILY_TTL_SECONDS = 24 * 60 * 60;
 // Defaults — pot fi overridate via env vars la deploy.
 const USER_DAILY_LIMIT = Number(process.env.AI_USER_DAILY_LIMIT ?? 50);
 const GLOBAL_DAILY_BUDGET = Number(process.env.AI_GLOBAL_DAILY_BUDGET ?? 5000);
-
-let _redis: Redis | null = null;
-function getRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  if (!_redis) _redis = new Redis({ url, token });
-  return _redis;
-}
 
 function todayKey(): string {
   const now = new Date();
@@ -50,57 +42,45 @@ export interface QuotaCheck {
   reason?: string;
 }
 
+const ALLOW_ALL: QuotaCheck = {
+  allowed: true,
+  userUsed: 0,
+  userLimit: USER_DAILY_LIMIT,
+  globalUsed: 0,
+  globalLimit: GLOBAL_DAILY_BUDGET,
+};
+
 /**
- * Check + increment AI quota pentru user/IP.
- * Idempotent: poate fi apelat înainte de AI call ca să decide allow/block.
+ * Check + increment AI quota pentru user/IP. Idempotent: apelat înainte de AI
+ * call ca să decidă allow/block. Fail-open dacă D1 nu e disponibil.
  */
 export async function checkAndIncrementQuota(args: {
   /** user_id (Supabase) sau IP fallback. */
   identifier: string;
-  /** Feature pentru tagging Sentry / audit (improve / vision / chat / classify). */
+  /** Feature pentru tagging (improve / vision / chat / classify / severity). */
   feature: string;
 }): Promise<QuotaCheck> {
-  const redis = getRedis();
-  // Daca Upstash nu e configurat (dev), allow-all (zero cost). În prod
-  // Vercel are env-urile setate.
-  if (!redis) {
-    return {
-      allowed: true,
-      userUsed: 0,
-      userLimit: USER_DAILY_LIMIT,
-      globalUsed: 0,
-      globalLimit: GLOBAL_DAILY_BUDGET,
-    };
-  }
+  const store = analyticsD1;
+  if (!store) return ALLOW_ALL; // D1 neconfigurat (dev) → zero cost, allow-all.
 
   const day = todayKey();
   const userKey = `${QUOTA_PREFIX}:user:${day}:${args.identifier}`;
   const globalKey = `${QUOTA_PREFIX}:global:${day}`;
 
-  // 2026-05-27 — defensive try/catch. Upstash rate-limit (10k/day free tier)
-  // sau API outage NU trebuie să blocheze AI calls (vision, chat, improve).
-  // Fail-open: allow call, returnam counts = 0. Worst case: depasim quota
-  // pe scurt; Vercel budget alert prinde abuse-ul real.
-  let userCurrentRaw: number | null = null;
-  let globalCurrentRaw: number | null = null;
+  // Fail-open: outage D1 NU trebuie să blocheze AI calls.
+  let userCurrent = 0;
+  let globalCurrent = 0;
   try {
-    [userCurrentRaw, globalCurrentRaw] = await Promise.all([
-      redis.get<number>(userKey),
-      redis.get<number>(globalKey),
+    const [u, g] = await Promise.all([
+      store.get<string>(userKey),
+      store.get<string>(globalKey),
     ]);
+    userCurrent = Number(u ?? 0) || 0;
+    globalCurrent = Number(g ?? 0) || 0;
   } catch {
-    return {
-      allowed: true,
-      userUsed: 0,
-      userLimit: USER_DAILY_LIMIT,
-      globalUsed: 0,
-      globalLimit: GLOBAL_DAILY_BUDGET,
-    };
+    return ALLOW_ALL;
   }
-  const userCurrent = Number(userCurrentRaw ?? 0);
-  const globalCurrent = Number(globalCurrentRaw ?? 0);
 
-  // Check limite înainte de increment.
   if (userCurrent >= USER_DAILY_LIMIT) {
     return {
       allowed: false,
@@ -122,20 +102,17 @@ export async function checkAndIncrementQuota(args: {
     };
   }
 
-  // Increment atomic (pipeline). Pe failure Redis: allow oricum (fail-open).
+  // Increment NON-atomic (get-then-set). Best-effort; AI call continuă oricum.
   try {
-    const pipe = redis.pipeline();
-    pipe.incr(userKey);
-    pipe.expire(userKey, DAILY_TTL_SECONDS);
-    pipe.incr(globalKey);
-    pipe.expire(globalKey, DAILY_TTL_SECONDS);
-    // Per-feature counter pentru analytics (#92 din plan).
     const featureKey = `${QUOTA_PREFIX}:feature:${day}:${args.feature}`;
-    pipe.incr(featureKey);
-    pipe.expire(featureKey, DAILY_TTL_SECONDS);
-    await pipe.exec();
+    const fCur = Number((await store.get<string>(featureKey)) ?? 0) || 0;
+    await Promise.all([
+      store.set(userKey, String(userCurrent + 1), { ex: DAILY_TTL_SECONDS }),
+      store.set(globalKey, String(globalCurrent + 1), { ex: DAILY_TTL_SECONDS }),
+      store.set(featureKey, String(fCur + 1), { ex: DAILY_TTL_SECONDS }),
+    ]);
   } catch {
-    /* increment best-effort; AI call continues */
+    /* increment best-effort */
   }
 
   return {
@@ -147,34 +124,27 @@ export async function checkAndIncrementQuota(args: {
   };
 }
 
-/**
- * Snapshot pentru admin dashboard sau debug.
- */
+/** Snapshot pentru admin dashboard sau debug. */
 export async function getQuotaSnapshot(): Promise<{
   day: string;
   globalUsed: number;
   globalLimit: number;
   perFeature: Record<string, number>;
 }> {
-  const redis = getRedis();
+  const store = analyticsD1;
   const day = todayKey();
-  if (!redis) {
+  if (!store) {
     return { day, globalUsed: 0, globalLimit: GLOBAL_DAILY_BUDGET, perFeature: {} };
   }
-  const globalKey = `${QUOTA_PREFIX}:global:${day}`;
-  // 2026-05-27 — defensive try/catch. Admin dashboard nu trebuie sa
-  // crash-eze daca Redis down.
   try {
-    const globalUsed = Number((await redis.get<number>(globalKey)) ?? 0);
-    // Feature counters — știm fixe (5 features) → bulk get.
+    const globalUsed = Number((await store.get<string>(`${QUOTA_PREFIX}:global:${day}`)) ?? 0) || 0;
     const features = ["improve", "vision", "chat", "classify", "severity"];
-    const featureKeys = features.map((f) => `${QUOTA_PREFIX}:feature:${day}:${f}`);
     const featureCounts = await Promise.all(
-      featureKeys.map((k) => redis.get<number>(k)),
+      features.map((f) => store.get<string>(`${QUOTA_PREFIX}:feature:${day}:${f}`)),
     );
     const perFeature: Record<string, number> = {};
     features.forEach((f, i) => {
-      perFeature[f] = Number(featureCounts[i] ?? 0);
+      perFeature[f] = Number(featureCounts[i] ?? 0) || 0;
     });
     return { day, globalUsed, globalLimit: GLOBAL_DAILY_BUDGET, perFeature };
   } catch {
