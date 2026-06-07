@@ -238,11 +238,21 @@ function deterministicPreClassify(args: {
     };
   }
 
-  // ─── IN-LUCRU ──────────────────────────────────────────────────────────────
+  // ─── IN-LUCRU (acțiune autoritate — măsuri luate dar PROBLEMA NU e încă reparată) ──
+  // CRITIC: „Note de Constatare", „se vor demara/efectua lucrări", „am dispus
+  // măsuri", „aplicat sancțiuni/amenzi" = AUTORITATEA A ACȚIONAT, dar lucrările
+  // NU sunt finalizate → in-lucru, NU rezolvat. (Bug real 00007: AI a zis rezolvat
+  // la „a aplicat Note de Constatare. Se vor demara lucrări".)
   if (
     /\b(?:echipa|echipele|departamentul)\s+(?:noastr[ăa]|de\s+specialitate)\s+(?:va|vor)\s+(?:interveni|interven[tț]ia|verifica)/i.test(b) ||
     /\bl[ăa]\s+urm[ăa]toarea\s+(?:saptam[âa]n[ăa]|edi[tț]ie|lun[ăa])/i.test(b) ||
-    /\b(?:am\s+alocat|am\s+programat|am\s+repartizat)\s+(?:resurse|lucrare|interven[tț]ia)/i.test(b)
+    /\b(?:am\s+alocat|am\s+programat|am\s+repartizat)\s+(?:resurse|lucrare|interven[tț]ia)/i.test(b) ||
+    /\bnot[ăae]\s+de\s+constatare/i.test(b) ||
+    /\bse\s+vor\s+(?:demara|efectua|executa|realiza|întreprinde)\s+(?:lucrar|m[ăa]sur|repara|ac[tț]iun)/i.test(b) ||
+    /\b(?:am|au\s+fost)\s+dispus[e]?\s+(?:m[ăa]suri|verific[ăa]ri|repara[tț]ii)/i.test(b) ||
+    /\b(?:s-?au\s+)?aplicat\s+(?:sanc[tț]iuni|amenzi|amend[ăa]|sanc[tț]iune|avertismente?)/i.test(b) ||
+    /\bm[ăa]suri\s+de\s+remediere/i.test(b) ||
+    /\burmeaz[ăa]\s+(?:s[ăa]\s+fie|a\s+fi)\s+(?:efectuate|executate|demarate|realizate)/i.test(b)
   ) {
     return {
       status: "in-lucru",
@@ -350,9 +360,9 @@ CRITERII STATUS:
 
 - "inregistrata": Autoritatea confirma primirea sesizarii/cererii/peititiei sau ofera numar de inregistrare. Subject-ul tipic contine: „Numar inregistrare 'Sesizare X'", „Solicitarea a fost inregistrata", „Cerere inregistrata", „înregistrare cerere", „Confirmare primire". Body tipic: „Va comunicam ca am primit sesizarea dvs", „Va raspundem in termenul legal de 30 zile conform OG 27/2002", „Sesizarea a fost inregistrata sub nr X/AN", „Cerere inregistrata cu nr X/AN". DACA SUBIECTUL ESTE „Numar inregistrare 'Sesizare X'" SAU „Solicitarea a fost inregistrata" → ASTA E INREGISTRATA cu confidence 95+, indiferent ce e in body. NU PUNE „necunoscut" pe astfel de subiecte.
 
-- "in-lucru": Autoritatea confirma ca lucreaza, intervine, sau a programat actiune. Subject/body: „Echipa noastra va interveni saptamana viitoare", „Lucrarea este in executie", „Am alocat resurse pentru remediere", „Am programat interventia".
+- "in-lucru": Autoritatea a LUAT MASURI / a actionat, DAR problema NU e inca reparata. Include: „Echipa noastra va interveni saptamana viitoare", „Lucrarea este in executie", „Am alocat resurse pentru remediere", „Am programat interventia", „Am aplicat Note de Constatare", „S-au aplicat sanctiuni/amenzi", „Am dispus masuri de remediere", „Se vor demara lucrarile". REGULA: daca autoritatea CONSTATA + ANUNTA masuri viitoare („se vor demara", „urmeaza sa", „am dispus") → ASTA E IN-LUCRU, NU rezolvat.
 
-- "rezolvat": Autoritatea confirma rezolvarea. „Lucrarea a fost finalizata", „Problema semnalata a fost remediata", „Va comunicam rezolvarea".
+- "rezolvat": DOAR cand problema e EFECTIV reparata, la TRECUT, finalizat. „Lucrarea a fost finalizata", „Problema semnalata a fost remediata", „Stalpisorii au fost montati", „Va comunicam rezolvarea". NU folosi rezolvat daca apare „se vor demara", „urmeaza", „Note de Constatare", „am dispus masuri", „sanctiuni aplicate" — alea sunt IN-LUCRU (actiune luata, dar lucrarea nu e gata).
 
 - "redirectionata": Autoritatea spune ca nu e competenta ei. „Nu intra in competenta noastra, va rugam adresati X", „Am transmis sesizarea catre X", subject FW: / FWD: cu trimitere catre alta institutie.
 
