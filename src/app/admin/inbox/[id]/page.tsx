@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { formatDate } from "@/lib/utils";
+import { ReplyManualReviewForm } from "@/components/admin/ReplyManualReviewForm";
 
 export const metadata = { title: "Răspuns inbox — detaliu" };
 export const dynamic = "force-dynamic";
@@ -118,6 +119,17 @@ export default async function AdminInboxDetailPage({
         </div>
       </div>
 
+      {row.ai_status === "necunoscut" && (
+        <div
+          role="alert"
+          className="mb-6 rounded-md border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-800 dark:text-red-300"
+        >
+          ⚠️ <strong>Necesită verificare manuală</strong> — AI nu a putut clasifica acest răspuns
+          (frecvent: răspunsul real e într-un PDF scanat ne-extras). Citește atașamentele mai jos și
+          corectează clasificarea în „Revizuire manuală".
+        </div>
+      )}
+
       {/* Sesizare match */}
       {sesizareCode && (
         <section className="mb-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md p-4">
@@ -169,6 +181,13 @@ export default async function AdminInboxDetailPage({
         )}
       </section>
 
+      {/* Revizuire manuală (audit P1) — corectează clasificarea + avansează sesizarea */}
+      <ReplyManualReviewForm
+        replyId={row.id}
+        currentStatus={row.ai_status}
+        hasSesizare={!!row.sesizare_id}
+      />
+
       {/* Attachments cu texte extrase */}
       {row.attachments && row.attachments.length > 0 && (
         <section className="mb-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md p-4">
@@ -191,6 +210,16 @@ export default async function AdminInboxDetailPage({
                       )}
                     </div>
                   </div>
+                  {att.r2_key && (
+                    <a
+                      href={`/api/admin/inbox/attachment?key=${encodeURIComponent(att.r2_key)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-xs text-[var(--color-primary)] hover:underline whitespace-nowrap"
+                    >
+                      ↓ Descarcă
+                    </a>
+                  )}
                 </div>
                 {att.extraction_error && (
                   <div className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded mt-2">
