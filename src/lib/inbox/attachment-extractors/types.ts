@@ -9,6 +9,8 @@ export type ExtractionMethod =
   | "unpdf"
   | "gemini-vision-pdf"
   | "gemini-vision-image"
+  | "cloudflare-vision-image"
+  | "cloudflare-vision-pdf"
   | "mammoth-docx"
   | "skipped"
   | "failed";

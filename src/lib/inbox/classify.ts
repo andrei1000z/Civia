@@ -1,4 +1,4 @@
-import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
+import { groqText, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 
 /**
  * AI classifier for inbound replies from Romanian authorities.
@@ -430,21 +430,24 @@ export async function classifyReply(args: {
     };
   }
 
-  // 4. AI fallback
+  // 4. AI fallback — cascadă rezilientă (Groq→Gemini→Cloudflare→registry).
+  // 2026-06-07: înainte era apel Groq DIRECT → orice 429 cădea la FALLBACK
+  // „necunoscut", chiar și pe răspunsuri oficiale de fond → sesizarea nu avansa.
+  // Acum trece prin groqText (același cascadă ca restul AI-ului).
   try {
-    const groq = getGroqClient();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: text.slice(0, 8000) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 400,
-    });
-
-    const raw = completion.choices[0]?.message?.content;
+    const raw = await groqText(
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text.slice(0, 8000) },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        max_tokens: 400,
+      },
+      { fallbackModel: GROQ_MODEL_FAST },
+    );
     if (!raw) return FALLBACK;
 
     const parsed = JSON.parse(raw) as Partial<ClassifyResult>;

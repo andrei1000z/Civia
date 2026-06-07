@@ -16,12 +16,23 @@
 
 import { extractText } from "unpdf";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { geminiKeys } from "@/lib/ai/gemini";
 import {
   type AttachmentExtractionInput,
   type AttachmentExtractionResult,
   truncateExtracted,
   PDF_TEXT_NATIVE_MIN_CHARS,
 } from "./types";
+
+const PDF_OCR_PROMPT = `Extrage TOT textul din acest document PDF în română.
+Păstrează:
+- Structura (paragrafe, liste numerotate, tabele ca text plain)
+- Numerele de înregistrare, datele, semnăturile vizibile
+- Anteturile/footerele autorității (Primăria X, ANAF, etc.)
+
+NU adăuga comentarii / interpretări. NU traduce. Returnează DOAR textul
+extras, ca și cum ai copia-paste din document. Dacă vezi text scanat
+neclear, semnalează cu [neclar] dar continuă restul textului.`;
 
 export async function extractPdf(
   input: AttachmentExtractionInput,
@@ -52,8 +63,12 @@ export async function extractPdf(
   }
 
   // Step 2: Gemini Vision pe PDF direct (suportă PDF nativ + OCR scanate).
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
+  // 2026-06-07: ROTAȚIE multi-cheie pe 429. Cota Gemini e per-proiect Google,
+  // deci GEMINI_API_KEY_2/_3 (din alte proiecte) = cote separate → triplăm cota
+  // gratuită. Înainte: 1 cheie → 429 → „failed" → răspunsul autorității din PDF
+  // scanat rămânea invizibil → sesizarea bloca la „înregistrată".
+  const keys = geminiKeys();
+  if (keys.length === 0) {
     return {
       extracted_text: null,
       extraction_method: "failed",
@@ -62,48 +77,35 @@ export async function extractPdf(
     };
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    // Convert Uint8Array → base64 pentru Gemini API.
-    const base64 = Buffer.from(input.bytes).toString("base64");
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: base64,
-        },
-      },
-      {
-        text: `Extrage TOT textul din acest document PDF în română.
-Păstrează:
-- Structura (paragrafe, liste numerotate, tabele ca text plain)
-- Numerele de înregistrare, datele, semnăturile vizibile
-- Anteturile/footerele autorității (Primăria X, ANAF, etc.)
-
-NU adăuga comentarii / interpretări. NU traduce. Returnează DOAR textul
-extras, ca și cum ai copia-paste din document. Dacă vezi text scanat
-neclear, semnalează cu [neclar] dar continuă restul textului.`,
-      },
-    ]);
-
-    const text = result.response.text().trim();
-
-    return {
-      extracted_text: text ? truncateExtracted(text) : null,
-      extraction_method: "gemini-vision-pdf",
-      extraction_ms: Date.now() - t0,
-      extraction_error: text ? null : "Gemini returned empty",
-    };
-  } catch (e) {
-    const err = e instanceof Error ? e.message : "Gemini Vision failed";
-    return {
-      extracted_text: null,
-      extraction_method: "failed",
-      extraction_ms: Date.now() - t0,
-      extraction_error: err,
-    };
+  const base64 = Buffer.from(input.bytes).toString("base64");
+  let lastErr = "";
+  for (const key of keys) {
+    try {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const result = await model.generateContent([
+        { inlineData: { mimeType: "application/pdf", data: base64 } },
+        { text: PDF_OCR_PROMPT },
+      ]);
+      const text = result.response.text().trim();
+      return {
+        extracted_text: text ? truncateExtracted(text) : null,
+        extraction_method: "gemini-vision-pdf",
+        extraction_ms: Date.now() - t0,
+        extraction_error: text ? null : "Gemini returned empty",
+      };
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : "Gemini Vision failed";
+      // Doar pe 429/quota încercăm următoarea cheie; erorile hard (403, parse,
+      // PDF corupt) nu se rezolvă cu altă cheie → ieșim.
+      if (!/429|quota|Too Many Requests|RESOURCE_EXHAUSTED/i.test(lastErr)) break;
+    }
   }
+
+  return {
+    extracted_text: null,
+    extraction_method: "failed",
+    extraction_ms: Date.now() - t0,
+    extraction_error: lastErr || "all Gemini keys exhausted",
+  };
 }
