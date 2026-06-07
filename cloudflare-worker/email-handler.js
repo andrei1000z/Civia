@@ -581,16 +581,36 @@ function decodeBody(body, encoding, charset) {
     } catch { return body; }
   }
   if (encoding === "quoted-printable") {
-    const decoded = decodeQP(body); // string cu bytes 0-255
-    const bytes = Uint8Array.from(decoded, (c) => c.charCodeAt(0) & 0xff);
-    return toText(bytes) ?? decoded;
+    // Review #3: NU masca cu &0xff — ar distruge literalele Unicode (ș=U+0219,
+    // ț=U+021B) rămase ne-encodate de unele webmail-uri. decodeQPToBytes
+    // construiește corect octeții: =XX → octet, literal → octeții lui UTF-8.
+    return toText(decodeQPToBytes(body)) ?? body;
   }
-  // 7bit / 8bit / binary — pentru charset non-UTF-8 reconstruim bytes-ii.
-  if (cs !== "utf-8") {
-    const bytes = Uint8Array.from(body, (c) => c.charCodeAt(0) & 0xff);
-    return toText(bytes) ?? body;
-  }
+  // 7bit / 8bit / binary: body e deja string (din .text() UTF-8). Pentru UTF-8
+  // (cvasi-totalitatea emailurilor) e corect ca atare. Charset-urile non-UTF-8
+  // pe 8bit NU sunt recuperabile aici (octeții bruți s-au pierdut la .text() —
+  // vezi review #4; ar necesita citirea raw ca bytes).
   return body;
+}
+
+/** QP → octeți reali: „=XX" → octet; caracter literal → octeții lui UTF-8.
+ *  Evită coruperea literalelor Unicode (vs vechiul charCodeAt & 0xff). */
+function decodeQPToBytes(str) {
+  const out = [];
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (ch === "=") {
+      const h = str.substr(i + 1, 2);
+      if (/^[0-9A-Fa-f]{2}$/.test(h)) { out.push(parseInt(h, 16)); i += 2; continue; }
+      if (str[i + 1] === "\n") { i += 1; continue; }                        // soft break =\n
+      if (str[i + 1] === "\r" && str[i + 2] === "\n") { i += 2; continue; } // soft break =\r\n
+      out.push(0x3d); continue;                                              // '=' singular
+    }
+    const code = ch.charCodeAt(0);
+    if (code < 0x80) out.push(code);
+    else for (const b of new TextEncoder().encode(ch)) out.push(b);
+  }
+  return new Uint8Array(out);
 }
 
 /**

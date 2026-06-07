@@ -3,8 +3,11 @@ import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync } from "@/lib/ratelimit";
-import { computeStatusUpdate } from "@/lib/inbox/status-from-reply";
+import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
 import { logAdminAction } from "@/lib/audit";
+
+// Statusurile de reply care corespund unui status de sesizare valid + avansabil.
+const ADVANCING = new Set(["inregistrata", "in-lucru", "rezolvat", "redirectionata"]);
 
 export const dynamic = "force-dynamic";
 
@@ -86,33 +89,42 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  // 2. Opțional: avansează statusul sesizării (forward-only via computeStatusUpdate).
+  // 2. Opțional: aplică statusul pe sesizare. OVERRIDE ADMIN — admin e trusted,
+  //    deci NU forward-only (forward-only e doar pt. ack-uri AUTOMATE; un om
+  //    trebuie să poată CORECTA un status greșit, inclusiv în jos). Audit logat.
+  //    Review #1: înainte computeStatusUpdate (forward-only) refuza tăcut un
+  //    downgrade → adminul credea că a reparat, dar sesizarea rămânea greșită.
   let sesizareStatus: string | null = null;
   const sesizareId = (reply as { sesizare_id: string | null }).sesizare_id;
-  if (apply_to_sesizare && sesizareId) {
+  if (apply_to_sesizare && sesizareId && ADVANCING.has(reply_status)) {
     const { data: ses } = await admin
       .from("sesizari")
       .select("id, code, status")
       .eq("id", sesizareId)
       .maybeSingle();
     if (ses) {
-      const upd = computeStatusUpdate({
-        currentStatus: (ses as { status: string }).status,
-        aiStatus: reply_status,
-        nrInregistrare: (reply as { ai_nr_inregistrare: string | null }).ai_nr_inregistrare,
-        summary: (reply as { ai_summary: string | null }).ai_summary,
-        at: new Date().toISOString(),
-      });
-      if (upd) {
+      const curr = (ses as { status: string }).status;
+      if (reply_status !== curr) {
+        const upd: Record<string, unknown> = { status: reply_status };
+        const nr = (reply as { ai_nr_inregistrare: string | null }).ai_nr_inregistrare;
+        if (nr && nr.trim()) upd.nr_inregistrare = nr.trim();
+        const summary = (reply as { ai_summary: string | null }).ai_summary;
+        const substantive = ["in-lucru", "rezolvat", "redirectionata"].includes(reply_status);
+        if (substantive && summary && summary.trim().length > 20) {
+          upd.official_response = summary.trim();
+          upd.official_response_at = new Date().toISOString();
+        }
         await admin.from("sesizari").update(upd).eq("id", (ses as { id: string }).id);
-        await admin.from("sesizare_timeline").insert({
-          sesizare_id: (ses as { id: string }).id,
-          event_type: upd.status,
+        // Review #2: writer canonic (dedup) în loc de insert raw.
+        await appendTimelineEvent({
+          admin,
+          sesizareId: (ses as { id: string }).id,
+          eventType: reply_status,
           description: "Status actualizat de admin după revizuirea manuală a unui răspuns oficial.",
-          created_by: user.id,
+          sentryTags: { source: "admin_inbox_reply_review" },
         });
-        sesizareStatus = upd.status;
       }
+      sesizareStatus = reply_status; // setat chiar și pe no-op → fără „eșec tăcut"
     }
   }
 
