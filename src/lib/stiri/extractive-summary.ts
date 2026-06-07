@@ -212,7 +212,14 @@ export function extractiveSummary(title: string, content: string | null): string
   if (selected.length < 1) return null;
   selected.sort((a, b) => a.id - b.id); // reordonare pozițională (flux narativ)
 
-  const peScurt = capitalize(selected.map((s) => s.text.trim()).join(" "));
+  let peScurt = capitalize(selected.map((s) => s.text.trim()).join(" "));
+  // Curăță reziduuri din stripping: spațiu înainte de punctuație + semne orfane
+  // la final (ex. „ ?"" rămas dintr-un teaser tăiat) + garantează final cu punct.
+  peScurt = peScurt
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s*[?!]?\s*["”]\s*$/, "")
+    .replace(/\s+$/, "");
+  if (!/[.!?]$/.test(peScurt)) peScurt += ".";
 
   // Cifre cheie (extragere deterministă).
   const facts = extractFacts(text, 5);
