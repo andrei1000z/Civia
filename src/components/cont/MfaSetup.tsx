@@ -15,6 +15,22 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
  */
 type Status = "loading" | "disabled" | "enrolling" | "enabled" | "error";
 
+/**
+ * Supabase prepend-uiește deja „data:image/svg+xml;utf-8,<SVG RAW>" la qr_code
+ * (vezi GoTrueClient). SVG-ul RAW ne-encodat se sparge în browser (ex. „#" din
+ * culori = fragment URL). Extragem SVG-ul + îl re-encodăm corect ca data-URL.
+ */
+export function qrToSrc(qr: string): string {
+  const prefix = "data:image/svg+xml;utf-8,";
+  if (qr.startsWith(prefix)) {
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.slice(prefix.length))}`;
+  }
+  // Deja un data-URL binar (png/base64) sau URL extern → folosește direct.
+  if (qr.startsWith("data:") || qr.startsWith("http")) return qr;
+  // SVG brut → encodează.
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr)}`;
+}
+
 export function MfaSetup() {
   const [status, setStatus] = useState<Status>("loading");
   const [factorId, setFactorId] = useState<string | null>(null);
@@ -164,7 +180,7 @@ export function MfaSetup() {
             <div className="inline-block rounded-[var(--radius-sm)] bg-white p-3 border border-[var(--color-border)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`data:image/svg+xml;utf8,${encodeURIComponent(qrCode)}`}
+                src={qrToSrc(qrCode)}
                 alt="Cod QR pentru configurarea 2FA"
                 width={176}
                 height={176}
