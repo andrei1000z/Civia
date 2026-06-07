@@ -5,6 +5,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { extractArticleBody } from "@/lib/stiri/extract-body";
+import { extractiveSummary } from "@/lib/stiri/extractive-summary";
 
 export interface SummarizableStire {
   id: string;
@@ -166,7 +167,13 @@ export async function getOrGenerateAiSummary(
     // Final guard: never return text that's effectively the excerpt
     // as the synthesis. The page hides the panel on null.
     if (result && isJustTheExcerpt(result, stire.excerpt)) return null;
-    return result;
+    if (result) return result;
+    // 2026-06-08 — AI indisponibil (toți providerii rate-limited) → fallback
+    // EXTRACTIV DETERMINIST (TextRank, instant, 0 cost, 0 rețea) în loc de
+    // „se generează, revino". NU se persistă → se regenerează cu AI când quota revine.
+    const ext = extractiveSummary(stire.title, content);
+    if (ext && isJustTheExcerpt(ext, stire.excerpt)) return null;
+    return ext;
   });
   inFlight.set(stire.id, promise);
   try {
