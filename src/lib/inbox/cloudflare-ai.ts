@@ -33,7 +33,8 @@ export async function cloudflareAIVision(opts: {
 
   try {
     const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`,
+      // LLaVA 1.5 — fără blocaj UE (Llama 3.2 Vision e restricționat Meta în UE).
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/llava-hf/llava-1.5-7b-hf`,
       {
         method: "POST",
         headers: {

@@ -17,12 +17,32 @@
 import { extractText } from "unpdf";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { geminiKeys } from "@/lib/ai/gemini";
+import { visionOcr } from "../vision-ocr";
 import {
   type AttachmentExtractionInput,
   type AttachmentExtractionResult,
   truncateExtracted,
   PDF_TEXT_NATIVE_MIN_CHARS,
 } from "./types";
+
+/**
+ * Randează prima pagină a unui PDF într-un PNG (via unpdf + @napi-rs/canvas).
+ * Folosit pentru a trimite PDF-uri SCANATE la modele vision care nu citesc PDF
+ * direct (Groq/Cloudflare). Dynamic import → dacă binarul nativ lipsește pe
+ * runtime, întoarce null grațios (nu crăpa ruta de inbox).
+ */
+async function renderPdfFirstPage(bytes: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const { renderPageAsImage } = await import("unpdf");
+    const png = await renderPageAsImage(new Uint8Array(bytes), 1, {
+      canvasImport: () => import("@napi-rs/canvas"),
+      scale: 2,
+    });
+    return new Uint8Array(png);
+  } catch {
+    return null;
+  }
+}
 
 const PDF_OCR_PROMPT = `Extrage TOT textul din acest document PDF în română.
 Păstrează:
@@ -40,8 +60,11 @@ export async function extractPdf(
   const t0 = Date.now();
 
   // Step 1: unpdf text-native (free, fast).
+  // .slice() — unpdf/pdfjs DETAȘEAZĂ ArrayBuffer-ul primit; îi dăm o copie ca
+  // input.bytes să rămână valid pentru Gemini + render (Step 2/3). Altfel
+  // render-ul primea buffer gol → OCR fallback eșua tăcut.
   try {
-    const result = await extractText(input.bytes, { mergePages: true });
+    const result = await extractText(input.bytes.slice(), { mergePages: true });
     const text = Array.isArray(result.text) ? result.text.join("\n") : result.text;
     const trimmed = text.trim();
 
@@ -102,10 +125,27 @@ export async function extractPdf(
     }
   }
 
+  // Step 3: render PDF→PNG → OCR vision rezilient (Groq Llama 4 Scout → CF LLaVA).
+  // 2026-06-08 — independent de Gemini: deblochează PDF-urile scanate când toate
+  // cheile Gemini sunt 429. Verificat live pe răspunsul Poliției Locale.
+  const png = await renderPdfFirstPage(input.bytes);
+  if (png) {
+    const ocr = await visionOcr(png, "image/png");
+    if (ocr.text) {
+      return {
+        extracted_text: truncateExtracted(ocr.text),
+        extraction_method: ocr.method === "groq-vision" ? "groq-vision-pdf" : "cloudflare-vision-pdf",
+        extraction_ms: Date.now() - t0,
+        extraction_error: null,
+      };
+    }
+    lastErr = `${lastErr} | render+vision: ${ocr.error}`;
+  }
+
   return {
     extracted_text: null,
     extraction_method: "failed",
     extraction_ms: Date.now() - t0,
-    extraction_error: lastErr || "all Gemini keys exhausted",
+    extraction_error: lastErr || "all OCR paths exhausted",
   };
 }

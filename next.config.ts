@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
   // Standalone output — Vercel detectează și creează deployment bundles
   // mai mici (-10-20s upload artifacts). Recommended de Vercel docs.
   output: "standalone",
+  // 2026-06-08 — pachete native/grele lăsate externe (nu bundle-uite): unpdf +
+  // @napi-rs/canvas pentru OCR PDF scanat (render→imagine→vision) în rutele de
+  // inbox. Binarul nativ trebuie rezolvat la runtime, nu împachetat.
+  serverExternalPackages: ["@napi-rs/canvas", "unpdf"],
   // În producție, eliminăm console.log-urile (dar păstrăm warn/error
   // pentru Sentry). Reduce bundle + previne PII leaking accidental.
   compiler: {

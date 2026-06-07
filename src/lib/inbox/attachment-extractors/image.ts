@@ -17,7 +17,7 @@ import {
   type AttachmentExtractionResult,
   truncateExtracted,
 } from "./types";
-import { cloudflareAIVision } from "../cloudflare-ai";
+import { visionOcr } from "../vision-ocr";
 
 const GEMINI_IMG_PROMPT = `Această poză e un document oficial scanat de la o autoritate
 publică din România (primărie, ANAF, poliție, etc.). Extrage TOT textul
@@ -29,8 +29,6 @@ vizibil, păstrând:
 
 NU adăuga interpretări. NU traduce. Returnează DOAR textul extras.
 Dacă vezi text neclar / scris de mână, semnalează cu [neclar].`;
-
-const CF_IMG_PROMPT = `Extract all visible text from this Romanian document image, including registration numbers, dates, signatures, headers. Preserve diacritics (ă, â, î, ș, ț). Return ONLY the extracted text.`;
 
 export async function extractImage(
   input: AttachmentExtractionInput,
@@ -79,13 +77,13 @@ export async function extractImage(
     }
   }
 
-  // Step 2: Fallback Cloudflare Workers AI Vision (Llama 3.2 11B, free 10k/zi) —
-  // pe 429 Gemini, lipsă cheie, sau Gemini gol. Citește imaginea direct.
-  const cf = await cloudflareAIVision({ imageBytes: input.bytes, prompt: CF_IMG_PROMPT });
-  if (cf.text) {
+  // Step 2: cascadă vision rezilientă (Groq Llama 4 Scout → Cloudflare LLaVA) —
+  // pe 429 Gemini / lipsă cheie / Gemini gol. Independentă de Gemini.
+  const ocr = await visionOcr(input.bytes, mimeType);
+  if (ocr.text) {
     return {
-      extracted_text: truncateExtracted(cf.text),
-      extraction_method: "cloudflare-vision-image",
+      extracted_text: truncateExtracted(ocr.text),
+      extraction_method: ocr.method === "groq-vision" ? "groq-vision-image" : "cloudflare-vision-image",
       extraction_ms: Date.now() - t0,
       extraction_error: null,
     };
@@ -95,7 +93,7 @@ export async function extractImage(
     extracted_text: null,
     extraction_method: "failed",
     extraction_ms: Date.now() - t0,
-    extraction_error: `${keys.length ? `Gemini: ${lastErr}` : "GEMINI missing"} + CF: ${cf.error}`,
+    extraction_error: `${keys.length ? `Gemini: ${lastErr}` : "GEMINI missing"} | ${ocr.error}`,
   };
 }
 
