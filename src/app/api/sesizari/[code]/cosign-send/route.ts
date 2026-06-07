@@ -25,6 +25,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { buildFromHeader } from "@/lib/email/format";
+import { replyToAddress, authorityOutboundMessageId } from "@/lib/inbox/reply-token";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -218,9 +219,11 @@ export async function POST(
   // nouă obișnuită, doar cu identitatea persoanei care trimite acum.
   const subject = `Sesizare ${sesizare.code} — ${safeTitlu(sesizare.titlu, { descriere: sesizare.descriere })}`;
 
-  // 2026-05-27 — plus-addressing Reply-To pentru match 99% (Subaddressing
-  // toggle ON în Cloudflare Email Routing — vezi audit 2026-05-27).
-  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
+  // 2026-06-08 — Reply-To cu TOKEN opac + Message-ID propriu (matching automat,
+  // N1+N2; vezi match-reply.ts). Răspunsul co-semnării se leagă de aceeași
+  // sesizare prin tokenul partajat (HMAC din cod).
+  const replyTo = replyToAddress(sesizare.code);
+  const outboundMessageId = authorityOutboundMessageId(sesizare.code);
   // From = numele co-semnatarului <sesizari@civia.ro>
   const fromHeader = buildFromHeader(nume, "sesizari@civia.ro");
 
@@ -234,6 +237,7 @@ export async function POST(
     text: formalText,
     replyTo,
     from: fromHeader,
+    headers: { "Message-ID": outboundMessageId },
     attachments: attachments.length > 0 ? attachments : undefined,
   });
 

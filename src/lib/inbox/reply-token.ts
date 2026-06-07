@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual, randomUUID } from "crypto";
 
 /**
  * 2026-06-08 — Token opac pentru Reply-To (matching reply→sesizare, Nivel 1).
@@ -25,6 +25,12 @@ export function makeReplyToken(code: string): string {
 /** Adresa de Reply-To cu token opac. */
 export function replyToAddress(code: string): string {
   return `sesizari+${makeReplyToken(code)}@civia.ro`;
+}
+
+/** Message-ID RFC propriu pentru threading (N2). Folosit de TOATE rutele care
+ *  trimit la autorități (send-via-civia, cosign-send, resend, escalate). */
+export function authorityOutboundMessageId(code: string): string {
+  return `<sesizare-${code}-${randomUUID().slice(0, 12)}@civia.ro>`;
 }
 
 /** Verificare constant-time token↔cod. */
