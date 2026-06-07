@@ -53,6 +53,8 @@ export async function sendEmail(params: {
   /** URL one-click de dezabonare per-destinatar (newsletter) — header
    *  List-Unsubscribe RFC 8058. Default: pagina globală /cont?unsubscribe=1. */
   listUnsubscribe?: string;
+  /** Headere custom (ex. Message-ID propriu pentru threading reply→sesizare). */
+  headers?: Record<string, string>;
 }): Promise<{ ok: boolean; id?: string }> {
   // audit #26 — sanitizare centrală a subiectului (toate email-urile trec pe aici).
   const subject = sanitizeSubject(params.subject);
@@ -83,6 +85,7 @@ export async function sendEmail(params: {
       ...(params.replyTo ? { replyTo: params.replyTo } : {}),
       ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {
+        ...(params.headers ?? {}),
         "List-Unsubscribe": params.listUnsubscribe
           ? `<${params.listUnsubscribe}>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`
           : `<${ENV.SITE_URL()}/cont?unsubscribe=1>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,

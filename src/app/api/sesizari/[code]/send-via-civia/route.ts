@@ -5,6 +5,8 @@ import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email/resend";
 import { buildFromHeader } from "@/lib/email/format";
+import { randomUUID } from "crypto";
+import { replyToAddress, makeReplyToken } from "@/lib/inbox/reply-token";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -265,7 +267,11 @@ export async function POST(
   // sesizari+CODE@civia.ro ajung tot la Worker, NU drop). Folosim
   // plus-addressing pe Reply-To ca să maximizăm code extraction confidence
   // (worker găsește codul direct în To: header, 99% accuracy).
-  const replyTo = `sesizari+${sesizare.code}@civia.ro`;
+  // 2026-06-08 — Reply-To cu TOKEN opac (HMAC) în loc de cod brut, + Message-ID
+  // RFC propriu pentru threading. Ambele alimentează matching-ul automat
+  // reply→sesizare (match-reply.ts, N1+N2). Codul rămâne în subiect (N3, plasă).
+  const replyTo = replyToAddress(sesizare.code);
+  const outboundMessageId = `<sesizare-${sesizare.code}-${randomUUID().slice(0, 12)}@civia.ro>`;
 
   // From: doar numele user-ului + adresa sesizari@civia.ro (fără +CODE,
   // ca să rămână clean în signature către primărie).
@@ -282,6 +288,7 @@ export async function POST(
     text: formalText,
     replyTo,
     from: fromHeader,
+    headers: { "Message-ID": outboundMessageId },
     attachments: attachments.length > 0 ? attachments : undefined,
   });
 
@@ -336,6 +343,8 @@ export async function POST(
       sent_at: now,
       sent_to_emails: [...primaryEmails, ...ccEmails],
       resend_message_id: result.id ?? null,
+      outbound_message_id: outboundMessageId,
+      reply_token: makeReplyToken(sesizare.code),
       // Marcam status ca „trimis" daca era „nou".
       ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
     })

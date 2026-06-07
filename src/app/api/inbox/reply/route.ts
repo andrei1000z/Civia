@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { extractSesizareCode } from "@/lib/inbox/extract-code";
+import { matchReply, type MatchMethod, type MatchConfidence } from "@/lib/inbox/match-reply";
 import { decodeEmailSubject, repairMojibake } from "@/lib/inbox/decode-mime";
 import { computeStatusUpdate } from "@/lib/inbox/status-from-reply";
 import { identifySender } from "@/lib/inbox/sender-identity";
@@ -287,76 +288,13 @@ export async function POST(req: Request) {
   const sender = identifySender(from);
   const senderEmail = sender?.email ?? from.toLowerCase();
 
-  // ─── 5. Look up sesizare ────────────────────────────────────────
+  // ─── 5. Match reply → sesizare ──────────────────────────────────
+  // Matching-ul (cascadă 4 niveluri, match-reply.ts) rulează DUPĂ extracția
+  // atașamentelor (OCR-ul alimentează Nivelul 4 de scoring). Aici doar declarăm.
   let sesizareId: string | null = null;
   let sesizareUserId: string | null = null;
-  let sesizareTitlu: string | null = null;
-  let matchMethod: "code" | "threading" | "sender_recent" | null = null;
-
-  if (extraction.code) {
-    const { data: ses } = await admin
-      .from("sesizari")
-      .select("id, user_id, titlu, status")
-      .eq("code", extraction.code)
-      .maybeSingle();
-    if (ses) {
-      sesizareId = ses.id as string;
-      sesizareUserId = (ses.user_id as string | null) ?? null;
-      sesizareTitlu = (ses.titlu as string | null) ?? null;
-      matchMethod = "code";
-    }
-  }
-
-  // 2026-05-27 v3 — Fallback 1: threading prin In-Reply-To/References (RFC 5322 §3.6.4).
-  // Dacă subject nu conține codul dar email-ul are In-Reply-To care
-  // pointează la un Message-ID generat de Civia la trimitere, putem
-  // recupera sesizarea. Worker-ul nostru pune Message-ID la trimitere ca
-  // <sesizare-CCCCC-uuid@civia.ro> deci poate extrage codul din chain.
-  if (!sesizareId && (inReplyTo || referencesChain)) {
-    const chain = `${inReplyTo ?? ""} ${referencesChain ?? ""}`;
-    // Caut pattern: <sesizare-CCCCC-...@civia.ro> sau similar
-    const m = chain.match(/sesizare[-_](\d{5})[-_@]/i);
-    if (m && m[1]) {
-      const { data: ses } = await admin
-        .from("sesizari")
-        .select("id, user_id, titlu")
-        .eq("code", m[1])
-        .maybeSingle();
-      if (ses) {
-        sesizareId = ses.id as string;
-        sesizareUserId = (ses.user_id as string | null) ?? null;
-        sesizareTitlu = (ses.titlu as string | null) ?? null;
-        matchMethod = "threading";
-      }
-    }
-  }
-
-  // 2026-05-25 — Fallback 2: match by sender_email → recent sesizari trimise.
-  // Cazuri reale (raport 25.05): „contact@politia6.ro" + „registratura@primarias1.ro"
-  // au răspuns dar subject NU conține cod și nici In-Reply-To header.
-  // Strategy: caut sesizari trimise în ultimele 14 zile care au senderEmail
-  // în sent_to_emails[]. Dacă exact UNA → match cu mare încredere. Dacă mai
-  // multe → ambiguu, rămâne unmatched (siguranță > convenience).
-  if (!sesizareId) {
-    const cutoff = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
-    const { data: candidates } = await admin
-      .from("sesizari")
-      .select("id, user_id, titlu, sent_to_emails, sent_at")
-      .gte("sent_at", cutoff)
-      .contains("sent_to_emails", [senderEmail.toLowerCase()])
-      .order("sent_at", { ascending: false })
-      .limit(5);
-    if (candidates && candidates.length === 1) {
-      const c = candidates[0]!;
-      sesizareId = c.id as string;
-      sesizareUserId = (c.user_id as string | null) ?? null;
-      sesizareTitlu = (c.titlu as string | null) ?? null;
-      matchMethod = "sender_recent";
-    }
-    // Dacă >1 candidate, lăsăm unmatched — admin moderation manual.
-  }
-  void matchMethod;
-  void sesizareTitlu;
+  let matchMethod: MatchMethod = null;
+  let matchConfidence: MatchConfidence = null;
 
   // ─── 5.5 Extract text din atașamente (PDF, DOCX, imagini) ──────
   // 2026-05-27 — Înainte primăriile răspundeau cu PDF atașat și body
@@ -445,6 +383,31 @@ export async function POST(req: Request) {
   }
   const aiInputText = cleanBody + attachmentTextParts.join("");
 
+  // ─── 5b. Match reply → sesizare (cascadă 4 niveluri, vezi match-reply.ts) ──
+  // N1 token (Reply-To) → N2 threading (Message-ID) → N3 cod → N4 domeniu/
+  // conținut/AI (DOAR pe candidați eligibili). replyText include OCR + nume
+  // fișiere pentru scoringul de adresă.
+  {
+    const filenames = extractionResults.map((e) => e.filename).join(" ");
+    const m = await matchReply({
+      to,
+      extractedCode: extraction.code,
+      inReplyTo,
+      referencesChain,
+      fromEmail: senderEmail,
+      replyText: `${subject || ""} ${aiInputText} ${filenames}`,
+      receivedAt: new Date().toISOString(),
+      admin,
+    });
+    sesizareId = m.sesizareId;
+    matchMethod = m.method;
+    matchConfidence = m.confidence;
+    if (sesizareId) {
+      const { data: ses } = await admin.from("sesizari").select("user_id").eq("id", sesizareId).maybeSingle();
+      sesizareUserId = (ses?.user_id as string | null) ?? null;
+    }
+  }
+
   // ─── 6. Classify + authenticity score (parallel for latency) ────
   // 2026-05-29 — trusted_sender pasat la classifier ca să poată folosi
   // signals de tip „subject Sesizare X de la PMB = inregistrata cu 85%"
@@ -472,7 +435,10 @@ export async function POST(req: Request) {
   // de domenii) — folosim authenticity_score care combina semnale tehnice
   // (AUTH catalog, DKIM/SPF, gov TLD) cu analiza semantica AI (formal
   // limbaj, semnatura institutionala, referinte juridice).
-  const autoApply = sesizareId !== null && shouldAutoApplyEnhanced({
+  // Auto-apply pe status DOAR la matching ÎNALTĂ (determinist: token/threading/
+  // cod, sau fuzzy clar: domeniu unic / scor adresă ≥3). MEDIE = sugestie: reply
+  // legat de sesizare dar statusul NU se schimbă automat (intră în review).
+  const autoApply = sesizareId !== null && matchConfidence === "high" && shouldAutoApplyEnhanced({
     classification_confidence: classification.confidence,
     classification_status: classification.status,
     authenticity_score: authenticity.score,
@@ -513,6 +479,7 @@ export async function POST(req: Request) {
       message_id: messageId,
       in_reply_to: inReplyTo,
       references_chain: referencesChain,
+      match_method: matchMethod,
       ai_status: classification.status,
       ai_confidence: classification.confidence,
       ai_summary: classification.summary,
@@ -628,7 +595,7 @@ export async function POST(req: Request) {
 
   await logDebug({
     admin, req, http_status: 200, rawBody,
-    error_message: `OK | code=${extraction.code ?? "NULL"} | source=${extraction.source}${matchMethod === "sender_recent" ? "→sender" : ""} | sesizare=${sesizareId?.slice(0, 8) ?? "NOMATCH"} | ai=${classification.status} | conf=${classification.confidence} | auto=${autoApply}`,
+    error_message: `OK | code=${extraction.code ?? "NULL"} | match=${matchMethod ?? "none"}/${matchConfidence ?? "-"} | sesizare=${sesizareId?.slice(0, 8) ?? "NOMATCH"} | ai=${classification.status} | conf=${classification.confidence} | auto=${autoApply}`,
   });
 
   return NextResponse.json({
