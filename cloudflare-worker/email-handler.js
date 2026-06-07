@@ -439,9 +439,9 @@ function parseEmail(raw) {
           bytes, // NEW: bytes decoded pentru upload R2
         });
       } else if (/text\/html/i.test(pct)) {
-        html = decodeBody(part.body, cte);
+        html = decodeBody(part.body, cte, charsetOf(pct));
       } else if (/text\/plain/i.test(pct)) {
-        text = decodeBody(part.body, cte);
+        text = decodeBody(part.body, cte, charsetOf(pct));
       } else if (/multipart\//i.test(pct)) {
         const nb = pct.match(/boundary="?([^";]+)"?/i);
         if (nb) {
@@ -463,9 +463,9 @@ function parseEmail(raw) {
                 bytes: nbytes,
               });
             } else if (/text\/html/i.test(nct) && !html) {
-              html = decodeBody(np.body, ncte);
+              html = decodeBody(np.body, ncte, charsetOf(nct));
             } else if (/text\/plain/i.test(nct) && !text) {
-              text = decodeBody(np.body, ncte);
+              text = decodeBody(np.body, ncte, charsetOf(nct));
             }
           }
         }
@@ -473,7 +473,7 @@ function parseEmail(raw) {
     }
   } else {
     const cte = (headers["content-transfer-encoding"] || "").toLowerCase();
-    const decoded = decodeBody(body, cte);
+    const decoded = decodeBody(body, cte, charsetOf(contentType));
     if (/text\/html/i.test(contentType)) html = decoded;
     else text = decoded;
   }
@@ -555,11 +555,41 @@ function parseHeaders(blob) {
   return out;
 }
 
-function decodeBody(body, encoding) {
+/** Extrage charset din Content-Type (default utf-8). */
+function charsetOf(contentType) {
+  const m = (contentType || "").match(/charset\s*=\s*"?([^"\s;]+)"?/i);
+  return m ? m[1].toLowerCase() : "utf-8";
+}
+
+/**
+ * 2026-06-07 — decodează body TEXT respectând charset-ul.
+ * Bug fix mojibake („BunÄ ziua" în loc de „Bună ziua"): înainte base64/QP
+ * returnau un string cu bytes Latin-1; byte-urile UTF-8 erau interpretate
+ * greșit. Acum reconstruim bytes-ii reali și decodăm cu TextDecoder(charset).
+ */
+function decodeBody(body, encoding, charset) {
+  const cs = charset || "utf-8";
+  const toText = (bytes) => {
+    try { return new TextDecoder(cs).decode(bytes); }
+    catch { try { return new TextDecoder("utf-8").decode(bytes); } catch { return null; } }
+  };
   if (encoding === "base64") {
-    try { return atob(body.replace(/\s/g, "")); } catch { return body; }
+    try {
+      const binary = atob(body.replace(/\s/g, ""));
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      return toText(bytes) ?? binary;
+    } catch { return body; }
   }
-  if (encoding === "quoted-printable") return decodeQP(body);
+  if (encoding === "quoted-printable") {
+    const decoded = decodeQP(body); // string cu bytes 0-255
+    const bytes = Uint8Array.from(decoded, (c) => c.charCodeAt(0) & 0xff);
+    return toText(bytes) ?? decoded;
+  }
+  // 7bit / 8bit / binary — pentru charset non-UTF-8 reconstruim bytes-ii.
+  if (cs !== "utf-8") {
+    const bytes = Uint8Array.from(body, (c) => c.charCodeAt(0) & 0xff);
+    return toText(bytes) ?? body;
+  }
   return body;
 }
 
