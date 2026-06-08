@@ -9,6 +9,32 @@ import {
   POLITIA_LOCALA_JUDET,
   findCityContact,
 } from "@/data/autoritati-contact";
+import { ALL_COUNTIES } from "@/data/counties";
+
+// 2026-06-08 — Cod județ → oraș REȘEDINȚĂ (pentru „Primăria Craiova", nu
+// „Primăria DJ"). Datele de contact sunt cheiate pe cod județ, fără numele
+// orașului → maparea asta dă numele uman corect.
+const COUNTY_SEAT: Record<string, string> = {
+  AB: "Alba Iulia", AR: "Arad", AG: "Pitești", BC: "Bacău", BH: "Oradea",
+  BN: "Bistrița", BT: "Botoșani", BR: "Brăila", BV: "Brașov", BZ: "Buzău",
+  CL: "Călărași", CS: "Reșița", CJ: "Cluj-Napoca", CT: "Constanța",
+  CV: "Sfântu Gheorghe", DB: "Târgoviște", DJ: "Craiova", GL: "Galați",
+  GR: "Giurgiu", GJ: "Târgu Jiu", HR: "Miercurea Ciuc", HD: "Deva",
+  IL: "Slobozia", IS: "Iași", IF: "Buftea", MM: "Baia Mare",
+  MH: "Drobeta-Turnu Severin", MS: "Târgu Mureș", NT: "Piatra Neamț",
+  OT: "Slatina", PH: "Ploiești", SM: "Satu Mare", SJ: "Zalău", SB: "Sibiu",
+  SV: "Suceava", TR: "Alexandria", TM: "Timișoara", TL: "Tulcea", VS: "Vaslui",
+  VL: "Râmnicu Vâlcea", VN: "Focșani",
+};
+
+/** Numele uman al județului (ex: „Dolj") din cod. Fallback la cod. */
+function countyDisplayName(code: string): string {
+  return ALL_COUNTIES.find((c) => c.id === code)?.name ?? code;
+}
+/** Numele orașului reședință (ex: „Craiova") din cod. Fallback la numele județului. */
+function countySeatName(code: string): string {
+  return COUNTY_SEAT[code] ?? countyDisplayName(code);
+}
 
 export interface Authority {
   id: string;
@@ -432,7 +458,7 @@ function getCountyAuthorities(
     if (primarie?.email) {
       primary.push({
         id: `primarie-${countyCode}`,
-        name: `Primăria ${countyCode}`,
+        name: `Primăria ${countySeatName(countyCode)}`,
         email: primarie.email,
         ...(primarie.phone ? { phone: primarie.phone } : {}),
       });
@@ -444,7 +470,7 @@ function getCountyAuthorities(
     if (plTags.has(tip) && politiaLocala?.email) {
       primary.unshift({
         id: `pl-${countyCode}`,
-        name: `Poliția Locală ${countyCode}`,
+        name: `Poliția Locală ${countySeatName(countyCode)}`,
         email: politiaLocala.email,
         ...(politiaLocala.phone ? { phone: politiaLocala.phone } : {}),
       });
@@ -453,14 +479,14 @@ function getCountyAuthorities(
     // IPJ in CC when tip is criminal-adjacent (parcare blocking access,
     // zgomot) — but most IPJ entries have no email, only phone.
     if (["parcare", "zgomot"].includes(tip) && politie?.email) {
-      cc.push({ id: `politie-${countyCode}`, name: `IPJ ${countyCode}`, email: politie.email });
+      cc.push({ id: `politie-${countyCode}`, name: `IPJ ${countyDisplayName(countyCode)}`, email: politie.email });
     }
   }
 
   // 3. Prefectura always in CC (oversight)
   const prefectura = PREFECTURI[countyCode];
   if (prefectura?.email) {
-    cc.push({ id: `prefectura-${countyCode}`, name: `Prefectura ${countyCode}`, email: prefectura.email });
+    cc.push({ id: `prefectura-${countyCode}`, name: `Prefectura ${countyDisplayName(countyCode)}`, email: prefectura.email });
   }
 
   // 2026-05-29 — Auto-escalation politie (county-side). Daca descrierea
@@ -473,7 +499,7 @@ function getCountyAuthorities(
     if (police.needsLocal && politiaLocala?.email && !primary.find((x) => x.email === politiaLocala.email)) {
       primary.push({
         id: `pl-${countyCode}-auto`,
-        name: `Poliția Locală ${countyCode}`,
+        name: `Poliția Locală ${countySeatName(countyCode)}`,
         email: politiaLocala.email,
         ...(politiaLocala.phone ? { phone: politiaLocala.phone } : {}),
       });
@@ -481,7 +507,7 @@ function getCountyAuthorities(
     if (police.needsTraffic && politie?.email && !primary.find((x) => x.email === politie.email) && !cc.find((x) => x.email === politie.email)) {
       primary.push({
         id: `politie-${countyCode}-auto`,
-        name: `IPJ ${countyCode}`,
+        name: `IPJ ${countyDisplayName(countyCode)}`,
         email: politie.email,
       });
     }
@@ -489,7 +515,7 @@ function getCountyAuthorities(
 
   // Fallback: if no specific contacts, generic
   if (primary.length === 0) {
-    primary.push({ id: "generic", name: "Primăria locală", email: `registratura@primaria${countyCode.toLowerCase()}.ro` });
+    primary.push({ id: "generic", name: `Primăria ${countySeatName(countyCode)}`, email: `registratura@primaria${countyCode.toLowerCase()}.ro` });
   }
 
   const names = primary.map((a) => a.name);
