@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Locate,
@@ -1347,10 +1347,13 @@ export function SesizareForm() {
   };
 
   const tipInfo = SESIZARE_TIPURI.find((t) => t.value === data.tip);
-  const parkingCtx =
-    data.tip === "parcare" && parkingJurisdiction
-      ? { jurisdiction: parkingJurisdiction }
-      : undefined;
+  const parkingCtx = useMemo(
+    () =>
+      data.tip === "parcare" && parkingJurisdiction
+        ? { jurisdiction: parkingJurisdiction }
+        : undefined,
+    [data.tip, parkingJurisdiction],
+  );
   // Bug fix user 5/22/2026 — recipients calculate doar daca avem semnal real
   // de locatie (text adresa SAU lat/lng SAU detectedCounty). Inainte, daca
   // user-ul alegea „stalpisori" fara sa fi pus inca adresa, recipients
@@ -1361,11 +1364,20 @@ export function SesizareForm() {
   // 2026-05-26 — Fallback county DIN locatie text dacă reverse-geocode
   // nu a setat detectedCounty (user e pe /sesizari national, scrie
   // „Cluj-Napoca" în locatie). Mirror cu fix-ul server-side.
-  const effectiveCounty =
-    detectedCounty ?? (data.locatie ? detectCountyFromLocatie(data.locatie) : null);
-  const recipients = data.tip && hasLocationSignal
-    ? getAuthoritiesFor(data.tip, data.sector, effectiveCounty, data.locatie, parkingCtx, data.descriere)
-    : null;
+  // audit fix: memoizat — înainte effectiveCounty/recipients/previewText se
+  // recalculau la FIECARE keystroke (getAuthoritiesFor string-matching + buildFormalText
+  // construia tot emailul) pe componentul de 2184 linii → O(build email) per caracter.
+  const effectiveCounty = useMemo(
+    () => detectedCounty ?? (data.locatie ? detectCountyFromLocatie(data.locatie) : null),
+    [detectedCounty, data.locatie],
+  );
+  const recipients = useMemo(
+    () =>
+      data.tip && hasLocationSignal
+        ? getAuthoritiesFor(data.tip, data.sector, effectiveCounty, data.locatie, parkingCtx, data.descriere)
+        : null,
+    [data.tip, hasLocationSignal, data.sector, effectiveCounty, data.locatie, parkingCtx, data.descriere],
+  );
 
   const LUNI_RO = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
   const now = new Date();
@@ -1385,7 +1397,9 @@ export function SesizareForm() {
   // formal_text AI, sau fallback determinist generateFormalText). Înainte aveam un
   // template crud inline când AI n-a rulat încă → scria prost în preview
   // („am observat {tip} în această zonă. {text brut}").
-  const previewText = buildFormalText({
+  const previewText = useMemo(
+    () =>
+      buildFormalText({
         tip: data.tip,
         titlu: effectiveTitlu,
         locatie: data.locatie,
@@ -1406,7 +1420,11 @@ export function SesizareForm() {
                 observedAt: parkingObservedAt || null,
               }
             : undefined,
-      });
+      }),
+    [data.tip, effectiveTitlu, data.locatie, data.sector, data.lat, data.lng, data.descriere,
+     data.formal_text, data.nume, data.email, data.adresa, imagini, parkingPlateText,
+     parkingJurisdiction, parkingObservedAt],
+  );
 
   const mailtoLink = () => {
     if (!recipients) return "#";
