@@ -338,10 +338,20 @@ export function AnalyticsDashboard() {
   // Auto-refresh la 30 secunde (era 5s — prea agresiv, request waste).
   // User poate trigger manual refresh prin tasta R sau butonul refresh.
   // 30s e sweet spot între freshness și economie request count.
+  // audit fix: pauză polling când tab-ul e ascuns (înainte ardea quota Upstash
+  // la 30s chiar și în background).
   useEffect(() => {
     load();
-    const i = setInterval(load, 30_000);
-    return () => clearInterval(i);
+    let i: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!i) i = setInterval(load, 30_000); };
+    const stop = () => { if (i) { clearInterval(i); i = null; } };
+    const onVis = () => {
+      if (document.hidden) stop();
+      else { load(); start(); }
+    };
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
   }, [load]);
 
   // Keyboard shortcut: R pentru manual refresh (skip pe inputs).

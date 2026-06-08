@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId, cloneElement, isValidElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -942,12 +942,20 @@ const inputClass =
   "w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  // audit fix (a11y): asociere programatică label↔input (useId + htmlFor + id
+  // injectat în child). Înainte label-ul nu era legat de input pe formularul cont.
+  const autoId = useId();
+  const childProps = (isValidElement(children) ? (children.props as Record<string, unknown>) : {}) || {};
+  const fieldId = (typeof childProps.id === "string" && childProps.id) || autoId;
+  const child = isValidElement(children)
+    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, { id: fieldId })
+    : children;
   return (
     <div className="min-w-0">
-      <label className="block text-[11px] sm:text-xs font-semibold mb-1 text-[var(--color-text-muted)] break-words leading-tight">
+      <label htmlFor={fieldId} className="block text-[11px] sm:text-xs font-semibold mb-1 text-[var(--color-text-muted)] break-words leading-tight">
         {label}
       </label>
-      {children}
+      {child}
     </div>
   );
 }
