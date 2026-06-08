@@ -686,6 +686,8 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
   if (input.length < 3) return input;
 
   try {
+    // audit fix (GDPR/PII): adresa de domiciliu e PII → cache:false ca să NU
+    // persiste în cache-ul Redis al răspunsurilor AI.
     const out = await groqText({
       model: GROQ_MODEL_FAST,
       messages: [
@@ -694,7 +696,7 @@ export async function reformulateAdresa(raw: string | null | undefined): Promise
       ],
       temperature: 0.1,
       max_tokens: 150,
-    });
+    }, { cache: false });
     if (!out || out.length < 3) return restoreDiacritics(fallbackAddress(input));
     // Strip ghilimele dacă AI le-a pus accidental.
     const cleaned = out.replace(/^["'„«]+|["'»"]+$/g, "").trim();
