@@ -26,6 +26,16 @@ type ViewMode = "list" | "map";
 
 const PAGE_SIZE = 20;
 
+/** audit fix: culoare text lizibilă (alb/negru) după luminanța fundalului —
+ *  text alb pe amber (#F59E0B) / sky (#0EA5E9) pica WCAG AA (~2:1). */
+function readableTextColor(hex: string | undefined): string {
+  const h = (hex || "").replace("#", "");
+  if (h.length !== 6) return "#ffffff";
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b; // luminanță percepută
+  return lum > 150 ? "#111827" : "#ffffff";
+}
+
 export function SesizariPublice() {
   const county = useCountyOptional();
   const router = useRouter();
@@ -88,6 +98,9 @@ export function SesizariPublice() {
   // "loading" is derived: true when last-fetched key differs from current filter key
   const fetchKey = `${filterTip}|${filterStatus}|${sort}|${effectiveCounty ?? "all"}`;
   const [lastFetchedKey, setLastFetchedKey] = useState<string | null>(null);
+  // audit fix: error-state distinct — fără el, eșecul de rețea cădea pe
+  // empty-state („Fii primul care semnalează"), confundând eroarea cu zero date.
+  const [fetchError, setFetchError] = useState(false);
   const loading = lastFetchedKey !== fetchKey;
 
   // Fetch from API
@@ -107,10 +120,14 @@ export function SesizariPublice() {
         const data = j.data ?? [];
         setRows(data);
         setHasMore(data.length >= PAGE_SIZE);
+        setFetchError(false);
         setLastFetchedKey(fetchKey);
       })
       .catch((err) => {
-        if (err.name !== "AbortError") setLastFetchedKey(fetchKey);
+        if (err.name !== "AbortError") {
+          setFetchError(true);
+          setLastFetchedKey(fetchKey);
+        }
       });
 
     return () => controller.abort();
@@ -188,12 +205,15 @@ export function SesizariPublice() {
       params.set("limit", String(PAGE_SIZE));
       params.set("offset", "0");
       const res = await fetch(`/api/sesizari?${params.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
       const fresh = (j.data ?? []) as SesizareFeedRow[];
-      if (fresh.length > 0) setRows(fresh);
+      setRows(fresh);
+      setFetchError(false);
       setPendingNew(0);
     } catch {
-      // Silent — user can click again.
+      // audit fix: semnalează eroarea în loc s-o înghită silent.
+      setFetchError(true);
     }
   }, [filterTip, filterStatus, effectiveCounty, sort]);
 
@@ -372,6 +392,21 @@ export function SesizariPublice() {
             </div>
           ))}
         </div>
+      ) : fetchError && rows.length === 0 ? (
+        <div className="py-20 text-center">
+          <div className="text-6xl mb-4 opacity-40">⚠️</div>
+          <p className="text-lg font-semibold mb-2">Nu am putut încărca sesizările</p>
+          <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-md mx-auto">
+            A apărut o problemă de conexiune. Verifică internetul și încearcă din nou.
+          </p>
+          <button
+            type="button"
+            onClick={refreshFeed}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+          >
+            Reîncearcă
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         (() => {
           const hasActiveFilter =
@@ -447,11 +482,11 @@ export function SesizariPublice() {
                 <div className="flex items-start justify-between mb-3 gap-2 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
                     {STATUS_LABELS[s.status] ? (
-                      <Badge bgColor={STATUS_COLORS[s.status]} color="white">
+                      <Badge bgColor={STATUS_COLORS[s.status]} color={readableTextColor(STATUS_COLORS[s.status])}>
                         {STATUS_LABELS[s.status]}
                       </Badge>
                     ) : (
-                      <Badge bgColor={STATUS_COLORS["nou"]} color="white">
+                      <Badge bgColor={STATUS_COLORS["nou"]} color={readableTextColor(STATUS_COLORS["nou"])}>
                         {STATUS_LABELS["nou"]}
                       </Badge>
                     )}

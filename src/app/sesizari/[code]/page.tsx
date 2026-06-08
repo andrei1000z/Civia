@@ -186,7 +186,7 @@ export default async function SesizareDetailPage({
                   <span aria-hidden="true">{tipIcon}</span>
                   {tipLabel}
                 </Badge>
-                <Badge variant="neutral">{sesizare.sector}</Badge>
+                {sesizare.sector && <Badge variant="neutral">{sesizare.sector}</Badge>}
               </div>
               <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                 <span

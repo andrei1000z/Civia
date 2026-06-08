@@ -795,6 +795,7 @@ export function SesizareForm() {
     // has enough context (descriere + tip). No need to wait for a prior
     // formal_text — the vision pass will generate it fresh.
     if (data.descriere.length < 10 || !data.tip) return;
+    if (aiLoading) return; // audit fix: nu porni generări AI concurente (race pe formal_text)
     void handleAIImprove({ withPhotos: true, silent: true });
     // Intentionally omit handleAIImprove — it reads latest state via closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps

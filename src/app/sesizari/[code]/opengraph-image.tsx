@@ -1,25 +1,15 @@
 import { ImageResponse } from "next/og";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
-import { resolveTipLabel } from "@/lib/constants";
+// 2026-06-08 (audit) — STATUS_COLORS/STATUS_LABELS canonice (toate ~12 statusuri,
+// derivate din SESIZARE_STATUS_META) în loc de copia parțială de 4 → înainte
+// depusa/trimis/inregistrata/actiune-autoritate/amanata/redirectionata/etc.
+// cădeau pe slug brut + gri pe share card.
+import { resolveTipLabel, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const alt = "Sesizare Civia";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-
-const STATUS_COLORS: Record<string, string> = {
-  "nou": "#3b82f6",
-  "in-lucru": "#f59e0b",
-  "rezolvat": "#10b981",
-  "respins": "#ef4444",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  "nou": "Nou",
-  "in-lucru": "În lucru",
-  "rezolvat": "Rezolvat",
-  "respins": "Respins",
-};
 
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
