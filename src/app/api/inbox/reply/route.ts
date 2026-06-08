@@ -522,7 +522,7 @@ export async function POST(req: Request) {
     // Citim statusul curent pentru guard-ul forward-only.
     const { data: cur } = await admin
       .from("sesizari")
-      .select("status")
+      .select("status, author_email, titlu")
       .eq("id", sesizareId)
       .maybeSingle();
     const updates = computeStatusUpdate({
@@ -543,6 +543,25 @@ export async function POST(req: Request) {
           level: "warning",
           extra: { error: updateErr.message, sesizare_id: sesizareId, newStatus: updates.status },
         });
+      } else {
+        // 2026-06-08 — Notificare EMAIL către autor când statusul avansează
+        // (pe lângă push). Best-effort, nu blochează răspunsul webhook-ului.
+        const authorEmail = (cur as { author_email?: string | null } | null)?.author_email;
+        if (authorEmail) {
+          try {
+            const { buildStatusUpdateEmail } = await import("@/lib/email/status-update");
+            const { sendEmail } = await import("@/lib/email/resend");
+            const { subject, html } = buildStatusUpdateEmail({
+              code: matchedCode ?? extraction.code ?? "",
+              titlu: (cur as { titlu?: string | null } | null)?.titlu ?? null,
+              newStatus: updates.status,
+              summary: classification.summary,
+            });
+            await sendEmail({ to: authorEmail, subject, html });
+          } catch (e) {
+            Sentry.captureException(e, { tags: { route: "inbox.reply", kind: "status_email_failed" } });
+          }
+        }
       }
       // NU mai inseram un timeline event aditional aici. Trigger-ul DB
       // pe sesizari.status creează automat „Status actualizat la: X".
