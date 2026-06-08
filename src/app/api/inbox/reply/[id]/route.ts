@@ -87,12 +87,19 @@ export async function PATCH(
     return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
 
-  // If user corrected to a new status, apply it on sesizari + timeline
+  // If user corrected to a new status, apply it on sesizari + timeline.
+  // audit fix: 'cerere_informatii'/'necunoscut' sunt sub-stări ale REPLY-ului, nu
+  // statusuri valide de sesizare (DB CHECK le respinge) → înainte update-ul eșua
+  // tăcut. Le excludem din update-ul pe sesizari.status + verificăm eroarea.
   const finalStatus = parsed.data.user_corrected_status ?? (parsed.data.user_confirmed ? replyRow.ai_status : null);
-  if (finalStatus && finalStatus !== ses.status) {
+  const applicable = finalStatus && finalStatus !== "cerere_informatii" && finalStatus !== "necunoscut";
+  if (applicable && finalStatus !== ses.status) {
     const sesUpdates: Record<string, unknown> = { status: finalStatus };
     if (replyRow.ai_nr_inregistrare) sesUpdates.nr_inregistrare = replyRow.ai_nr_inregistrare;
-    await admin.from("sesizari").update(sesUpdates).eq("id", ses.id);
+    const { error: statusErr } = await admin.from("sesizari").update(sesUpdates).eq("id", ses.id);
+    if (statusErr) {
+      return NextResponse.json({ error: statusErr.message }, { status: 400 });
+    }
     await admin.from("sesizare_timeline").insert({
       sesizare_id: ses.id,
       event_type: finalStatus as string,

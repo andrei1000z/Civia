@@ -5,6 +5,32 @@ import { getGroqClient, GROQ_MODEL } from "@/lib/groq/client";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { repairJsonStrings, extractFieldsRegex } from "@/lib/groq/json-repair";
 import { PETITIE_CATEGORII } from "@/lib/constants";
+import { lookup } from "dns/promises";
+import net from "net";
+
+/** audit fix (anti-SSRF): doar http(s) + blochează IP-uri private/loopback/
+ *  link-local. Înainte fetch pe URL arbitrar putea lovi servicii interne. */
+function isPrivateIp(ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || (a === 172 && b! >= 16 && b! <= 31) ||
+      (a === 192 && b === 168) || (a === 169 && b === 254);
+  }
+  if (net.isIPv6(ip)) {
+    const low = ip.toLowerCase();
+    return low === "::1" || low.startsWith("fc") || low.startsWith("fd") ||
+      low.startsWith("fe80") || low.startsWith("::ffff:127.") || low.startsWith("::ffff:10.") ||
+      low.startsWith("::ffff:192.168.") || low.startsWith("::ffff:169.254.");
+  }
+  return true; // necunoscut → respinge
+}
+async function assertSafePublicUrl(raw: string): Promise<void> {
+  let u: URL;
+  try { u = new URL(raw); } catch { throw new Error("URL invalid"); }
+  if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("Schemă URL nepermisă");
+  const { address } = await lookup(u.hostname);
+  if (isPrivateIp(address)) throw new Error("Adresă internă blocată");
+}
 
 const ALLOWED_IMAGE_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -194,6 +220,14 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { url } = schema.parse(body);
+
+    // audit fix (anti-SSRF): validează schema + blochează IP-uri interne înainte
+    // de fetch (URL-ul vine de la admin, dar defense-in-depth).
+    try {
+      await assertSafePublicUrl(url);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "URL nepermis" }, { status: 400 });
+    }
 
     // 1) Fetch HTML with timeout
     const controller = new AbortController();

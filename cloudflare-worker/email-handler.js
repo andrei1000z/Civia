@@ -65,6 +65,9 @@ export default {
     // ─── 0. Validate env config (loud failure if missing) ────────
     if (!env.WEBHOOK_URL || !env.INBOX_WEBHOOK_SECRET) {
       console.error("Missing env: WEBHOOK_URL or INBOX_WEBHOOK_SECRET");
+      // audit fix: respinge (bounce) în loc de drop TĂCUT → expeditorul
+      // (autoritatea) primește eroare + poate reîncerca, nu pierdem răspunsul.
+      try { message.setReject("Civia inbox temporarily unavailable"); } catch {}
       return;
     }
 
