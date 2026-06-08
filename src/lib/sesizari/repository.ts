@@ -116,6 +116,9 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
       // Anterior se afișa „Calapod" pe card. Acum: „Cetățean" pe public.
       author_display_name: "Cetățean",
       author_email: null, // never expose to non-owner non-admin viewers
+      // audit fix (PII): adresa de domiciliu e privată — nu o expune ne-ownerilor
+      // (înainte era returnată RAW oricui știa codul sesizării).
+      author_address: null,
       formal_text: scrubbedFormalText,
     };
   });

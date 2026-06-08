@@ -12,7 +12,7 @@ import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { CookieBanner } from "@/components/CookieBanner";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { AlertBanner } from "@/components/AlertBanner";
-import { Analytics } from "@/components/Analytics";
+import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
 import { NavProgress } from "@/components/NavProgress";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { DeferredClientMount } from "@/components/DeferredClientMount";
@@ -225,15 +225,8 @@ export default function RootLayout({
             LCP on the homepage + county pages. Next font already fingerprints
             it so cache hits are immediate. */}
 
-        {/* External analytics — encarcat post-interactive ca sa nu intarzie LCP.
-            CSP-ul din next.config.ts permite explicit acest origin in script-src
-            si data-ingest in connect-src. */}
-        <Script
-          src="https://analytics-seven-steel.vercel.app/t.js#uWJsj_JcWfedSWt0uoVOIWetojpIX9xMbQ1foaQaorM"
-          data-site="a1247f123f848a3d7d14783ed83806da889e89bcfc45582bbf2358e37a73c916"
-          data-ingest="https://rhjfutxgmnkonichxpro.supabase.co/functions/v1"
-          strategy="afterInteractive"
-        />
+        {/* audit fix (GDPR): analytics extern mutat în <ConsentedAnalytics> (body),
+            gate pe consimțământul cookie. Nu se mai încarcă necontrolat. */}
       </head>
       <body
         className="min-h-full flex flex-col pt-16"
@@ -247,7 +240,7 @@ export default function RootLayout({
       >
         <OrganizationJsonLd />
         <WebsiteJsonLd />
-        <Analytics />
+        <ConsentedAnalytics />
         <NavProgress />
         <ScrollRestoration />
         {/* 5/22/2026 v5 — AuroraBackground scoasă complet. Userul a raportat

@@ -37,8 +37,10 @@ export async function GET(req: Request) {
     // Salvare ~130 MB/zi Fast Origin Transfer.
     let query = supabase
       .from("sesizari_feed")
+      // audit fix (PII): scos author_name — export public NU trebuie să scurgă
+      // nume reale de cetățeni (bypassa anonimizarea + zero auth).
       .select(
-        "code,created_at,status,tip,sector,county,titlu,locatie,descriere,author_name,nr_comentarii"
+        "code,created_at,status,tip,sector,county,titlu,locatie,descriere,nr_comentarii"
       )
       .limit(limit)
       .order("created_at", { ascending: false });
@@ -52,7 +54,7 @@ export async function GET(req: Request) {
     const rows = (data ?? []) as Record<string, unknown>[];
     const header = [
       "cod", "data", "status", "tip", "sector", "titlu", "locatie",
-      "descriere", "autor", "comentarii",
+      "descriere", "comentarii",
     ];
     const csv = [
       header.join(","),
@@ -65,7 +67,6 @@ export async function GET(req: Request) {
         escapeCsv(r.titlu as string),
         escapeCsv(r.locatie as string),
         escapeCsv(r.descriere as string),
-        escapeCsv(r.author_name as string),
         escapeCsv(r.nr_comentarii as number),
       ].join(",")),
     ].join("\n");
