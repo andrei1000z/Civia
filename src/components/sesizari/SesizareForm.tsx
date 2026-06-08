@@ -578,17 +578,8 @@ export function SesizareForm() {
   // automat" cand l-am gasit din text (keyword-based) ca user-ul sa
   // poata corecta daca am gresit. Reset cand user schimba manual.
   const [sectorDetectedByText, setSectorDetectedByText] = useState(false);
-
-  // P1.7 — sesizări vecine recente (același tip, <80m, ultimele 7 zile).
-  // Afișăm un banner cu sugestie de co-semnare în loc de submit duplicat.
-  type NearbyDuplicate = {
-    code: string;
-    titlu: string;
-    distance_m?: number;
-    created_at?: string;
-    cosign_count?: number;
-  };
-  const [nearbyDuplicates, setNearbyDuplicates] = useState<NearbyDuplicate[]>([]);
+  // (audit) state-ul nearbyDuplicates + tipul aferent au fost eliminate —
+  // detectarea duplicatelor se face acum doar prin <DuplicateDetector>.
 
   // 2026-06-06 — ELIMINAT auto-detectarea tipului din IMAGINE (vision-route).
   // User: tipul de problemă se setează STRICT din DESCRIERE (vezi mai jos
@@ -685,43 +676,9 @@ export function SesizareForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.lat, data.lng]);
 
-  // P1.7 — duplicate detection ÎN form. Când avem lat/lng + tip, întrebăm
-  // /api/sesizari/duplicates dacă există sesizări vecine în ultimele 7 zile.
-  // Dacă da, afișăm banner cu sugestie de co-semnare. Reduce noise + boost
-  // cosign rate (inspirat SeeClickFix duplicate clustering).
-  const duplicateCheckRef = useRef(false);
-  useEffect(() => {
-    if (submitted) return;
-    if (!data.tip || data.lat == null || data.lng == null) return;
-    if (duplicateCheckRef.current) return;
-    duplicateCheckRef.current = true;
-    const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 4000);
-    fetch("/api/sesizari/duplicates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tip: data.tip,
-        lat: data.lat,
-        lng: data.lng,
-        sector: data.sector || null,
-        radius: 80,
-      }),
-      signal: ctrl.signal,
-    })
-      .then((r) => r.json())
-      .then((j) => {
-        if (Array.isArray(j?.candidates) && j.candidates.length > 0) {
-          setNearbyDuplicates(j.candidates);
-        }
-      })
-      .catch(() => { /* silent */ })
-      .finally(() => clearTimeout(timeout));
-    return () => {
-      clearTimeout(timeout);
-      ctrl.abort();
-    };
-  }, [data.tip, data.lat, data.lng, data.sector, submitted]);
+  // 2026-06-08 (audit): detectarea duplicatelor în form se face acum DOAR prin
+  // <DuplicateDetector> (50m). Effect-ul vechi nearbyDuplicates (80m) a fost
+  // eliminat — request dublu + UI dublu + ref care nu se reseta (rula o dată).
 
   const handleAIImprove = async (opts?: { withPhotos?: boolean; silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -2098,39 +2055,10 @@ export function SesizareForm() {
           </div>
         )}
 
-        {/* P1.7 — duplicate detection banner. Inspirat SeeClickFix clustering. */}
-        {nearbyDuplicates.length > 0 && !submitted && (
-          <div role="alert" className="p-4 rounded-[var(--radius-md)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 space-y-2">
-            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 inline-flex items-center gap-1.5">
-              <span aria-hidden="true">📍</span>
-              Am găsit {nearbyDuplicates.length} {nearbyDuplicates.length === 1 ? "sesizare recentă" : "sesizări recente"} la mai puțin de 80m
-            </p>
-            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-              Vrei să le <strong>co-semnezi</strong> în loc? Co-semnarea aduce mai multă presiune pe primărie decât duplicate separate.
-            </p>
-            <ul className="space-y-1.5 mt-2">
-              {nearbyDuplicates.slice(0, 3).map((d) => (
-                <li key={d.code} className="flex items-center gap-2 text-xs">
-                  <a
-                    href={`/sesizari/${d.code}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono font-semibold text-amber-900 dark:text-amber-200 underline hover:no-underline"
-                  >
-                    {d.code}
-                  </a>
-                  <span className="text-amber-800 dark:text-amber-300 truncate">{d.titlu}</span>
-                  {typeof d.distance_m === "number" && (
-                    <span className="text-amber-700 dark:text-amber-400 shrink-0">{Math.round(d.distance_m)}m</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-2">
-              Dacă problema ta e diferită (altă stradă, altă cauză), continuă cu Trimite — sesizarea ta va fi separată.
-            </p>
-          </div>
-        )}
+        {/* 2026-06-08 (audit): bannerul nearbyDuplicates (80m) a fost eliminat —
+            era redundant cu <DuplicateDetector> (50m, mai sus) ȘI buggy (ref
+            duplicateCheckRef nu se reseta → rula o singură dată, rezultate stale).
+            O singură sursă de adevăr pentru detectarea duplicatelor. */}
 
         {/* 2026-05-24 Faza 4: Sticky bottom CTA pe mobile — butonul rămâne
             mereu vizibil pe scrolling. Personas cer „să văd butonul tot
