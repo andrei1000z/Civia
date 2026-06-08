@@ -1380,8 +1380,11 @@ export function SesizareForm() {
   // Route through buildFormalText so the AI-generated text gets the same
   // identity/date/photo-URL rewriter as the final Gmail body. Otherwise
   // preview shows something different than what actually gets sent.
-  const previewText = (data.tip === "parcare" && parkingPlateText && parkingJurisdiction) || data.formal_text
-    ? buildFormalText({
+  // 2026-06-08 — Mereu prin buildFormalText (tratează intern: parcare cu plăcuțe,
+  // formal_text AI, sau fallback determinist generateFormalText). Înainte aveam un
+  // template crud inline când AI n-a rulat încă → scria prost în preview
+  // („am observat {tip} în această zonă. {text brut}").
+  const previewText = buildFormalText({
         tip: data.tip,
         titlu: effectiveTitlu,
         locatie: data.locatie,
@@ -1402,26 +1405,7 @@ export function SesizareForm() {
                 observedAt: parkingObservedAt || null,
               }
             : undefined,
-      })
-    : `Bună ziua,
-
-Mă numesc ${data.nume || "[NUMELE]"}, locuiesc în ${data.adresa || "[ADRESA]"} și doresc să vă aduc la cunoștință o problemă care afectează calitatea vieții pe ${data.locatie || "[LOCAȚIA]"}.
-
-Astăzi, ${today}, am observat ${tipInfo?.label.toLowerCase() || "[tipul problemei]"}${constatareText} în această zonă. ${data.descriere || "[DESCRIEREA DETALIATĂ A PROBLEMEI]"}
-${evidenceText}
-Pentru a rezolva această situație, vă solicit respectuos să luați următoarele măsuri:
-
-1. Verificare la fața locului: constatarea situației și identificarea măsurilor necesare.
-2. Intervenție corespunzătoare: remedierea problemei în termen rezonabil.
-3. Comunicare răspuns: informare privind măsurile luate, conform OG 27/2002.
-
-De asemenea, vă rog să îmi furnizați un număr de înregistrare pentru această sesizare, pentru a putea urmări progresul soluționării.
-
-Vă mulțumesc anticipat pentru atenția acordată.
-
-Cu stimă,
-${data.nume || "[NUMELE]"}
-${today}`;
+      });
 
   const mailtoLink = () => {
     if (!recipients) return "#";
@@ -1831,6 +1815,26 @@ ${today}`;
               </span>
             </button>
           </div>
+          {/* 2026-06-08 — Helper național: cere orașul/sectorul + arată județul
+              detectat din adresă, ca să nu cadă pe județul din profil (ex: adresă
+              din Craiova trimisă greșit la Cluj fiindcă userul n-a scris orașul). */}
+          {!(data.lat && data.lng) && (() => {
+            const txt = data.locatie?.trim() ?? "";
+            const fromText = txt.length >= 4 ? detectCountyFromLocatie(txt) : null;
+            if (fromText) {
+              const nm = ALL_COUNTIES.find((c) => c.id === fromText)?.name;
+              return (
+                <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1">
+                  ✓ Trimitem către <span className="font-semibold">{fromText === "B" ? "București" : `județul ${nm}`}</span> — detectat din adresă.
+                </p>
+              );
+            }
+            return (
+              <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+                💡 Scrie și <span className="font-semibold text-[var(--color-text)]">orașul și/sau sectorul</span> după adresă — ex: „Strada Frății Golești, <span className="font-semibold text-[var(--color-text)]">Craiova</span>" sau „Calea Victoriei 45, <span className="font-semibold text-[var(--color-text)]">Sector 1</span>". Așa ajunge la autoritatea corectă, nu la județul din profil.
+              </p>
+            );
+          })()}
           {data.lat && data.lng && (
             <div className="mt-1 space-y-0.5">
               <p className={cn(

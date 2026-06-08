@@ -3,6 +3,7 @@ import { getAuthoritiesFor, type ResolvedRecipients } from "./authorities";
 import { normalizeRoLocation } from "./format-helpers";
 import { buildParkingLegalText, type ParkingJurisdiction } from "./parking";
 import { safeTitlu } from "./titlu";
+import { generateFormalText } from "./formal-template";
 
 export interface MailtoInput {
   tip: string;
@@ -194,8 +195,6 @@ function rewriteFormalText(formalText: string, input: MailtoInput): string {
 }
 
 export function buildFormalText(input: MailtoInput): string {
-  const tipLabel = SESIZARE_TIPURI.find((t) => t.value === input.tip)?.label ?? "";
-  const today = formatRoDate();
   const numarFoto = input.imagini?.length ?? 0;
   const evidence =
     numarFoto > 0
@@ -262,31 +261,21 @@ export function buildFormalText(input: MailtoInput): string {
       : rewritten;
   }
 
-  // Fallback: narrative template in the same style as the AI prompt.
-  // Used when AI hasn't run yet (no formal_text) — keeps the email
-  // format consistent regardless of whether AI was invoked.
-  const name = input.author_name || "[NUMELE]";
-  const address = input.author_address || "[ADRESA]";
-  const problem = tipLabel ? tipLabel.toLowerCase() : "situație";
-
-  return `Bună ziua,
-
-Mă numesc ${name}, locuiesc în ${address} și doresc să vă aduc la cunoștință o problemă care afectează calitatea vieții pe ${input.locatie}.
-
-Astăzi, ${today}, am observat ${problem} în această zonă. ${input.descriere}${evidence}
-Pentru a rezolva această situație, vă solicit respectuos să luați următoarele măsuri:
-
-1. Verificare la fața locului: constatarea situației și identificarea autorităților competente.
-2. Intervenție corespunzătoare: remedierea problemei în termen rezonabil.
-3. Comunicare răspuns: informare privind măsurile luate, conform OG 27/2002.
-
-De asemenea, vă rog să îmi furnizați un număr de înregistrare pentru această sesizare, pentru a putea urmări progresul soluționării.
-
-Vă mulțumesc anticipat pentru atenția acordată.
-
-Cu stimă,
-${name}
-${today}`;
+  // Fallback (AI n-a rulat încă, fără formal_text): folosim template-ul
+  // DETERMINIST din formal-template.ts. Înainte aveam aici un template crud
+  // („Astăzi am observat {tip} în această zonă. {text brut}") care (a)
+  // încadra greșit TIPUL ca lucru „observat" (ex. „am observat montare
+  // stâlpișori" când cetățeanul CERE stâlpișori), (b) arunca descrierea brută
+  // verbatim. generateFormalText folosește corect descrierea + acțiuni legale
+  // per tip, fără misframing. (Bug raportat 2026-06-08 din preview.)
+  return generateFormalText({
+    tip: input.tip,
+    locatie: input.locatie,
+    descriere: input.descriere,
+    nume: input.author_name || null,
+    adresa: input.author_address || null,
+    hasPhotos: numarFoto > 0,
+  });
 }
 
 /**
