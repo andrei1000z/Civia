@@ -124,11 +124,17 @@ export class CiviaD1Client {
   }
 
   async del(key: string): Promise<number> {
-    const rows = await d1Query<{ ok: number }>(
-      `DELETE FROM kv WHERE k = ? RETURNING 1 AS ok`,
-      [key],
-    );
-    return rows.length;
+    // audit fix (GDPR purge): șterge din TOATE cele 5 tabele de storage (la fel
+    // ca expire), nu doar `kv`. Înainte purge-ul GDPR nu ștergea datele reale
+    // stocate în hash_kv/set_kv/list_kv/zset_kv.
+    await d1Batch([
+      { sql: `DELETE FROM kv WHERE k = ?`, params: [key] },
+      { sql: `DELETE FROM hash_kv WHERE k = ?`, params: [key] },
+      { sql: `DELETE FROM set_kv WHERE k = ?`, params: [key] },
+      { sql: `DELETE FROM list_kv WHERE k = ?`, params: [key] },
+      { sql: `DELETE FROM zset_kv WHERE k = ?`, params: [key] },
+    ]);
+    return 1;
   }
 
   async expire(key: string, seconds: number): Promise<number> {

@@ -94,6 +94,9 @@ export function SesizariMap({ limit = 15, height = "400px", zoom = 12 }: Sesizar
             try {
               const r = payload.new as SesizareFeedRow;
               if (!r.publica) return;
+              // audit fix: același guard ca pe fetch-ul inițial — coordonate
+              // invalide (null/NaN) crash-uiesc Leaflet pe markerul realtime.
+              if (typeof r.lat !== "number" || typeof r.lng !== "number" || Number.isNaN(r.lat) || Number.isNaN(r.lng)) return;
               setMarkers((prev) => {
                 const next: MarkerData = {
                   id: r.id,

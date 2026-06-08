@@ -183,13 +183,22 @@ export function IstoricInteractive({ primari }: Props) {
         {filtered.map((primar) => (
           <div
             key={primar.id}
+            role="button"
+            tabIndex={0}
             className={cn(
-              "group relative bg-[var(--color-surface)] border rounded-[var(--radius-md)] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-md)]",
+              "group relative bg-[var(--color-surface)] border rounded-[var(--radius-md)] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
               compareIds.includes(primar.id)
                 ? "border-[var(--color-primary)] border-2"
                 : "border-[var(--color-border)]"
             )}
             onClick={() => setModalId(primar.id)}
+            onKeyDown={(e) => {
+              // audit fix: card accesibil de la tastatură (înainte doar onClick pe div).
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setModalId(primar.id);
+              }
+            }}
           >
             {/* Compare checkbox */}
             <button
