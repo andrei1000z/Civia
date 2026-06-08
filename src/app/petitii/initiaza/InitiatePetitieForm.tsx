@@ -140,6 +140,15 @@ export function InitiatePetitieForm({ userEmail }: Props) {
   return (
     <form
       action={formAction}
+      onSubmit={() => {
+        // audit fix: la submit reușit server action face redirect() → codul
+        // clientului se oprește, deci clearDraft() (doar din butonul „Șterge draft")
+        // nu rulează niciodată → la următoarea vizită formularul „nou" e pre-populat
+        // cu petiția deja trimisă. Ștergem localStorage la submit (NU și state-ul
+        // React, ca formularul să-și păstreze datele dacă serverul respinge;
+        // autosave-ul re-salvează dacă user-ul editează după o eroare).
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+      }}
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-3)] ring-1 ring-purple-500/5 p-6 md:p-8 space-y-10 md:space-y-12"
     >
       {/* Banner top — Logged-in + draft state. Wrapped într-un container

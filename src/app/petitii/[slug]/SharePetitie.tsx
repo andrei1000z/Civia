@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Share2,
   Link2,
@@ -38,6 +38,46 @@ export function SharePetitie({ url, title, summary }: Props) {
   const text = title;
   const longText = `${title}\n\n${summary.slice(0, 200)}\n\n${url}`;
   const enc = encodeURIComponent;
+
+  // audit fix (a11y): focus trap + Escape + restaurare focus pe trigger la închidere.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      dialogRef.current
+        ? Array.from(
+            dialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.hasAttribute("disabled"))
+        : [];
+    focusables()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key === "Tab") {
+        const els = focusables();
+        if (els.length === 0) return;
+        const first = els[0]!, last = els[els.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      triggerRef.current?.focus();
+    };
+  }, [open]);
 
   const links = [
     {
@@ -145,6 +185,7 @@ export function SharePetitie({ url, title, summary }: Props) {
           role="presentation"
         >
           <div
+            ref={dialogRef}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

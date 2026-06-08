@@ -192,6 +192,43 @@ export default async function PetitiePage({
             {petitie.title}
           </h1>
 
+          {/* audit fix: social proof (nr. semnături) + bară de progres — readuse la
+              momentul deciziei de semnare. Înainte dispăreau pe pagina de detaliu
+              (formularul de inițiere promitea bara, dar nu se randa niciodată). */}
+          {(() => {
+            const signatures = petitie.external_signature_count ?? petitie.signature_count ?? 0;
+            const target = petitie.target_signatures ?? 0;
+            if (signatures <= 0 && target <= 0) return null;
+            const pct = target > 0 ? Math.min(100, Math.round((signatures / target) * 100)) : 0;
+            return (
+              <div className="mb-4 md:mb-5">
+                <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                  <span className="inline-flex items-baseline gap-1.5 text-sm">
+                    <span className="font-extrabold text-xl text-[var(--color-text)] tabular-nums">{signatures.toLocaleString("ro-RO")}</span>
+                    <span className="text-[var(--color-text-muted)]">semnături{externalHost ? ` pe ${externalHost}` : ""}</span>
+                  </span>
+                  {target > 0 && (
+                    <span className="text-xs text-[var(--color-text-muted)] tabular-nums shrink-0">
+                      din {target.toLocaleString("ro-RO")} · {pct}%
+                    </span>
+                  )}
+                </div>
+                {target > 0 && (
+                  <div
+                    className="h-2 rounded-full bg-[var(--color-surface-2)] overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={signatures}
+                    aria-valuemin={0}
+                    aria-valuemax={target}
+                    aria-label="Progres semnături"
+                  >
+                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700 transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Adresant — către cine se adresează petiția. Apare imediat
               sub titlu ca să fie clar cine ar trebui să răspundă. */}
           {petitie.addressee && (
