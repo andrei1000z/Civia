@@ -315,8 +315,30 @@ export async function getComments(sesizareId: string): Promise<SesizareCommentRo
     .eq("sesizare_id", sesizareId)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const rows = (data ?? []) as SesizareCommentRow[];
-  return anonymizeHiddenComments(rows);
+  const rows = await anonymizeHiddenComments((data ?? []) as SesizareCommentRow[]);
+  if (rows.length === 0) return rows;
+
+  // 2026-06-08 (audit) — atașează tally-urile de voturi + votul viewer-ului din
+  // sesizare_comment_votes. Înainte UI-ul pornea de la 0/0 și optimistic-update-ul
+  // se construia peste un baseline gol → votul pe un comentariu cu 10 like-uri afișa „1".
+  const ids = rows.map((r) => r.id);
+  const [votesRes, viewer] = await Promise.all([
+    supabase.from("sesizare_comment_votes").select("comment_id, value, user_id").in("comment_id", ids),
+    getViewerContext(),
+  ]);
+  const tally = new Map<string, { up: number; down: number; mine: -1 | 1 | null }>();
+  for (const id of ids) tally.set(id, { up: 0, down: 0, mine: null });
+  for (const v of (votesRes.data ?? []) as { comment_id: string; value: number; user_id: string }[]) {
+    const t = tally.get(v.comment_id);
+    if (!t) continue;
+    if (v.value === 1) t.up++;
+    else if (v.value === -1) t.down++;
+    if (viewer.viewerId && v.user_id === viewer.viewerId) t.mine = v.value as -1 | 1;
+  }
+  return rows.map((r) => {
+    const t = tally.get(r.id)!;
+    return { ...r, upvotes: t.up, downvotes: t.down, user_vote: t.mine };
+  });
 }
 
 /**

@@ -36,6 +36,17 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
 
   useEffect(() => {
     setComments(initialComments);
+    // audit fix: inițializează voteMeta din tally-urile reale (getComments le
+    // atașează acum), ca afișajul + optimistic-update-ul să pornească de la DB.
+    const init: Record<string, CommentMeta> = {};
+    for (const c of initialComments) {
+      init[c.id] = {
+        upvotes: c.upvotes ?? 0,
+        downvotes: c.downvotes ?? 0,
+        userVote: c.user_vote ?? null,
+      };
+    }
+    setVoteMeta(init);
   }, [initialComments]);
 
   // Group comments: top-level + replies map keyed by parent_comment_id.

@@ -84,6 +84,11 @@ export interface SesizareCommentRow {
   created_at: string;
   /** NULL = top-level. UUID = reply la comentariul respectiv (threading 1 nivel). */
   parent_comment_id?: string | null;
+  // 2026-06-08 (audit) — agregări de voturi atașate de getComments din
+  // sesizare_comment_votes, ca UI-ul să pornească de la starea reală (nu 0/0).
+  upvotes?: number;
+  downvotes?: number;
+  user_vote?: -1 | 1 | null;
 }
 
 export interface SesizareCommentVoteRow {
