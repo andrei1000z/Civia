@@ -26,11 +26,18 @@ export default async function AdminUtilizatoriPage({
 
   const admin = createSupabaseAdmin();
 
+  // audit fix: înainte, fără căutare, se făcea `.ilike("id", "%")` pe o coloană
+  // uuid → eroare → total mereu 0. Acum: filtru DOAR când există căutare, peste
+  // full_name + email + display_name (toate afișate ca coloane).
+  const safeQ = q ? q.replace(/[,()%*]/g, "") : "";
+  const orFilter = safeQ
+    ? `full_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%,display_name.ilike.%${safeQ}%`
+    : null;
+
   // Total count
-  const { count: total } = await admin
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .ilike(q ? "full_name" : "id", q ? `%${q}%` : "%");
+  let countQuery = admin.from("profiles").select("*", { count: "exact", head: true });
+  if (orFilter) countQuery = countQuery.or(orFilter);
+  const { count: total } = await countQuery;
 
   // Fetch profiles
   let query = admin
@@ -39,7 +46,7 @@ export default async function AdminUtilizatoriPage({
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1);
 
-  if (q) query = query.ilike("full_name", `%${q}%`);
+  if (orFilter) query = query.or(orFilter);
 
   const { data: profiles } = await query;
 

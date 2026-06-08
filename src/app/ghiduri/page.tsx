@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { BookOpen, Clock, ArrowRight } from "lucide-react";
 import { ghiduri } from "@/data/ghiduri";
 import { Badge } from "@/components/ui/Badge";
@@ -66,15 +67,17 @@ export default function GhiduriPage() {
                           raman lazy. Analytics 2026-05-13: /ghiduri LCP poor
                           33% deoarece toate imaginile erau lazy = LCP astepta
                           dupa toate scripturile. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      {/* audit fix: next/image (fill + srcset responsiv + AVIF/WebP
+                          redimensionat) în loc de raw <img> → reduce payload-ul LCP
+                          (era ~600KB). */}
+                      <Image
                         src={`/images/ghiduri/${ghid.image}.webp`}
                         alt=""
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading={idx < 3 ? "eager" : "lazy"}
-                        fetchPriority={idx === 0 ? "high" : "auto"}
-                        width="400"
-                        height="192"
+                        fill
+                        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        priority={idx === 0}
+                        loading={idx === 0 ? undefined : idx < 3 ? "eager" : "lazy"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                     </>

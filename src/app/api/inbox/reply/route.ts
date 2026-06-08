@@ -295,6 +295,7 @@ export async function POST(req: Request) {
   let sesizareUserId: string | null = null;
   let matchMethod: MatchMethod = null;
   let matchConfidence: MatchConfidence = null;
+  let matchedCode: string | null = null; // codul sesizării matchuite (pt. push/URL)
 
   // ─── 5.5 Extract text din atașamente (PDF, DOCX, imagini) ──────
   // 2026-05-27 — Înainte primăriile răspundeau cu PDF atașat și body
@@ -402,6 +403,7 @@ export async function POST(req: Request) {
     sesizareId = m.sesizareId;
     matchMethod = m.method;
     matchConfidence = m.confidence;
+    matchedCode = m.code;
     if (sesizareId) {
       const { data: ses } = await admin.from("sesizari").select("user_id").eq("id", sesizareId).maybeSingle();
       sesizareUserId = (ses?.user_id as string | null) ?? null;
@@ -578,11 +580,15 @@ export async function POST(req: Request) {
 
     if (recipients.size > 0) {
       try {
+        // audit fix: folosește codul sesizării MATCHUITE (matchedCode), nu
+        // extraction.code care e deseori null când match-ul vine din token/
+        // threading/conținut → înainte „Sesizarea null" + URL /sesizari/null.
+        const pushCode = matchedCode ?? extraction.code;
         await sendPushToUsers([...recipients], {
-          title: `${emoji} Sesizarea ${extraction.code} — ${classification.status === "rezolvat" ? "Rezolvată" : classification.status === "inregistrata" ? "Înregistrată" : classification.status === "in-lucru" ? "În lucru" : "Răspuns primit"}`,
+          title: `${emoji} Sesizarea ${pushCode} — ${classification.status === "rezolvat" ? "Rezolvată" : classification.status === "inregistrata" ? "Înregistrată" : classification.status === "in-lucru" ? "În lucru" : "Răspuns primit"}`,
           body: classification.summary,
-          url: `/sesizari/${extraction.code}`,
-          tag: `reply-${extraction.code}-${replyRow?.id ?? "x"}`,
+          url: `/sesizari/${pushCode}`,
+          tag: `reply-${pushCode}-${replyRow?.id ?? "x"}`,
         });
       } catch (e) {
         Sentry.captureException(e, {
