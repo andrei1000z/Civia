@@ -126,7 +126,9 @@ async function getStats(): Promise<Stats | null> {
 
 function pctSafe(n: number, d: number): number {
   if (!d) return 0;
-  return Math.round((n / d) * 100);
+  // audit fix: cap la 100% — „cu răspuns" putea depăși total (replies la sesizări
+  // ne-aprobate/necontorizate în total) → bară overflow + procent peste 100.
+  return Math.min(100, Math.round((n / d) * 100));
 }
 
 export default async function ImpactPage() {

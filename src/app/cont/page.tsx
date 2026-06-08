@@ -910,7 +910,7 @@ export default function ContPage() {
                       setDeleting(false);
                     }
                   }}
-                  disabled={deleting || deleteConfirmText.trim().toUpperCase() !== "ȘTERGE"}
+                  disabled={deleting || deleteConfirmText.trim().toUpperCase().replace(/[ȘŞ]/g, "S").replace(/[ȚŢ]/g, "T") !== "STERGE"}
                   className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-500"
                 >
                   {deleting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : null}
