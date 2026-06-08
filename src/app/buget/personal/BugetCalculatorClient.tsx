@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { calculateFromNet, distributeToCategories } from "@/lib/buget/calculator";
-import { ALL_COUNTIES } from "@/data/counties";
 
 export function BugetCalculatorClient() {
   const [salary, setSalary] = useState<number>(5000);
-  const [county, setCounty] = useState<string>("B");
+  // audit fix: selectorul de județ a fost eliminat — calculatorul e NAȚIONAL
+  // (calculateFromNet/distributeToCategories nu folosesc județul), deci alegerea
+  // nu schimba nimic → inducea în eroare.
   const [showResults, setShowResults] = useState<boolean>(false);
 
   const breakdown = useMemo(() => calculateFromNet(salary), [salary]);
@@ -27,37 +28,20 @@ export function BugetCalculatorClient() {
           setShowResults(true);
         }}
       >
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="salary" className="block text-sm font-medium mb-1.5">
-              Salariu net lunar (RON)
-            </label>
-            <input
-              id="salary"
-              type="number"
-              min="1000"
-              max="100000"
-              step="100"
-              value={salary}
-              onChange={(e) => setSalary(Number(e.target.value) || 0)}
-              className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            />
-          </div>
-          <div>
-            <label htmlFor="county" className="block text-sm font-medium mb-1.5">
-              Județul tău
-            </label>
-            <select
-              id="county"
-              value={county}
-              onChange={(e) => setCounty(e.target.value)}
-              className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)]"
-            >
-              {ALL_COUNTIES.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label htmlFor="salary" className="block text-sm font-medium mb-1.5">
+            Salariu net lunar (RON)
+          </label>
+          <input
+            id="salary"
+            type="number"
+            min="1000"
+            max="100000"
+            step="100"
+            value={salary}
+            onChange={(e) => setSalary(Number(e.target.value) || 0)}
+            className="w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          />
         </div>
         <button
           type="submit"

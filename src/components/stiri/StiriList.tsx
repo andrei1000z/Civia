@@ -109,6 +109,13 @@ export function StiriList() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
+  // audit fix: debounce căutarea (350ms) ca să NU emită un request /api/stiri
+  // per tastă. Categorie/județ rămân instant (sunt click-uri, nu typing).
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 350);
+    return () => clearTimeout(t);
+  }, [query]);
   // 2026-05-25 — 12 → 24 articole vizibile initial (mai mult conținut
   // above-the-fold; pool-ul a fost dublat la fetch route).
   const [visible, setVisible] = useState(24);
@@ -118,7 +125,7 @@ export function StiriList() {
     setFetchError(null);
     const params = new URLSearchParams();
     if (category !== "all") params.set("category", category);
-    if (query) params.set("q", query);
+    if (debouncedQuery) params.set("q", debouncedQuery);
     if (county) params.set("county", county.id);
     params.set("limit", "100");
     try {
@@ -138,7 +145,7 @@ export function StiriList() {
     } finally {
       if (!signal?.aborted && !opts.silent) setLoading(false);
     }
-  }, [category, query, county]);
+  }, [category, debouncedQuery, county]);
 
   useEffect(() => {
     const ctrl = new AbortController();

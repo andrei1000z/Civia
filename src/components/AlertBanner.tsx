@@ -44,8 +44,10 @@ const SEVERITY_STYLES: Record<string, { bg: string; text: string; icon: typeof I
     icon: AlertOctagon,
   },
   warning: {
+    // audit fix: text alb pe amber-500 pica WCAG AA (~2:1). Text foarte închis
+    // (amber-950) are contrast bun pe amber-500/amber-600.
     bg: "bg-amber-500/95 dark:bg-amber-600/95 backdrop-blur-sm",
-    text: "text-white",
+    text: "text-amber-950",
     icon: AlertTriangle,
   },
   info: {
