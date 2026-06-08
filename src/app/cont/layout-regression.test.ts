@@ -39,7 +39,8 @@ describe("/cont layout — mobile regression guards", () => {
     const wrapperClasses = fieldMatch?.[1] ?? "";
     expect(wrapperClasses).toContain("min-w-0");
 
-    const labelMatch = source.match(/<label\s+className="([^"]+)">\s*\{label\}/);
+    // 2026-06-08: label-ul are acum și htmlFor (a11y) — regex flexibil la atribute.
+    const labelMatch = source.match(/<label[^>]*\sclassName="([^"]+)">\s*\{label\}/);
     expect(labelMatch).not.toBeNull();
     const labelClasses = labelMatch?.[1] ?? "";
     expect(labelClasses).toContain("break-words");
