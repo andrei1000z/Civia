@@ -23,6 +23,7 @@ import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
 import { SimilarSesizari } from "@/components/sesizari/SimilarSesizari";
+import { EscalationThresholdCard } from "@/components/sesizari/EscalationThresholdCard";
 import { ResendButton } from "@/components/sesizari/ResendButton";
 import { DeleteSesizareButton } from "@/components/sesizari/DeleteSesizareButton";
 import { StatusTicketButton } from "@/components/sesizari/StatusTicketButton";
@@ -637,6 +638,17 @@ export default async function SesizareDetailPage({
               </ol>
             )}
           </div>
+
+          {/* Prag de escaladare (Faza 1) — greutate civică (co-semnături) +
+              countdown legal AVP (timp pur, OG 27/2002). Ascuns pe rezolvat. */}
+          <EscalationThresholdCard
+            code={sesizare.code}
+            createdAt={sesizare.created_at}
+            status={sesizare.status}
+            officialResponseAt={sesizare.official_response_at ?? null}
+            cosignersCount={cosignersCount}
+            isAuthor={isAuthor}
+          />
 
           {/* Similar sesizari (cine a mai sesizat) — sub Status & activitate */}
           <SimilarSesizari sesizari={similar} />

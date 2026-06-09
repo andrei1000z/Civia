@@ -28,7 +28,9 @@ export interface OverdueResult {
   daysOverdue: number;
 }
 
-const FINAL_STATUSES = new Set(["rezolvat", "respins"]);
+/** Statusuri finale — autoritatea a luat o decizie. Reutilizat de escalation.ts
+ *  (eligibilitate AVP) ca să nu existe două surse de adevăr. */
+export const FINAL_STATUSES = new Set(["rezolvat", "respins"]);
 
 export function evaluateOverdue(
   s: OverdueInput,

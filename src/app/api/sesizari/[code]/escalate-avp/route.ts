@@ -7,6 +7,7 @@ import { buildAvpPlangere } from "@/lib/sesizari/avp-template";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import * as Sentry from "@sentry/nextjs";
 import { escapeHtml } from "@/lib/sanitize";
+import { evaluateAvpEligibility } from "@/lib/sesizari/escalation";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -45,7 +46,7 @@ export async function POST(
   const admin = createSupabaseAdmin();
   const { data: sesizare } = await admin
     .from("sesizari")
-    .select("id, code, titlu, locatie, status, author_name, author_email, author_address, sent_to_emails, created_at, user_id")
+    .select("id, code, titlu, locatie, status, author_name, author_email, author_address, sent_to_emails, created_at, official_response_at, user_id")
     .eq("code", code)
     .maybeSingle();
 
@@ -61,18 +62,23 @@ export async function POST(
     return NextResponse.json({ error: "Doar autorul poate escalada la AVP" }, { status: 403 });
   }
 
-  // Permis doar pe sesizări marcate ca ignorate sau cu mult timp expirat.
-  // (Folosim status ca trigger principal; opțional pot adăuga +60 zile check.)
-  if (sesizare.status !== "ignorat") {
-    const ageDays = Math.floor(
-      (Date.now() - new Date(sesizare.created_at).getTime()) / (24 * 60 * 60 * 1000),
-    );
-    if (ageDays < 45) {
-      return NextResponse.json(
-        { error: `Termenul legal OG 27/2002 nu a expirat încă (${ageDays}/45 zile). Poți escalada după ce ajunge la 45+ zile fără răspuns.` },
-        { status: 422 },
-      );
-    }
+  // Gate LEGAL centralizat în evaluateAvpEligibility (sursă unică de adevăr,
+  // partajată cu UI-ul ca să nu diverge). Server-ul rămâne autoritatea finală:
+  // chiar dacă cineva forțează POST-ul, aici se respinge. Co-semnăturile NU
+  // intră în acest calcul — escaladarea e funcție pură de timp legal + răspuns.
+  const elig = evaluateAvpEligibility({
+    created_at: sesizare.created_at,
+    status: sesizare.status,
+    official_response_at: sesizare.official_response_at ?? null,
+  });
+  if (!elig.eligible) {
+    const msg =
+      elig.reason === "resolved"
+        ? "Sesizarea a fost deja soluționată. Nu poți escalada o problemă închisă."
+        : elig.reason === "responded"
+          ? "Autoritatea a transmis deja un răspuns oficial — termenul legal a fost respectat."
+          : `Termenul legal OG 27/2002 nu a expirat încă (${elig.daysSinceFiled}/45 zile). Poți escalada după 45+ zile fără răspuns.`;
+    return NextResponse.json({ error: msg }, { status: 422 });
   }
 
   if (!sesizare.author_name || !sesizare.author_email) {
