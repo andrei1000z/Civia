@@ -20,7 +20,7 @@ export function PhotoGallery({ urls, title = "Foto" }: Props) {
         {urls.map((_, i) => (
           <div
             key={i}
-            className="aspect-video rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] flex items-center justify-center"
+            className="aspect-[3/4] rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] flex items-center justify-center"
             aria-hidden="true"
           >
             <ImgIcon size={24} className="text-[var(--color-text-muted)]" />
@@ -41,7 +41,7 @@ export function PhotoGallery({ urls, title = "Foto" }: Props) {
           <div
             key={i}
             role="listitem"
-            className="group relative aspect-video rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] overflow-hidden hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
+            className="group relative aspect-[3/4] rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] overflow-hidden hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
           >
             <button
               type="button"
@@ -52,10 +52,14 @@ export function PhotoGallery({ urls, title = "Foto" }: Props) {
               <span className="sr-only">Mărește imaginea</span>
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* object-contain pe poze-dovadă: arătăm INTEGRAL fotografia (fără
+                crop care ascunde contextul — trotuar, zebră, semn). Poze portrait
+                de telefon umplu natural containerul 3/4; landscape rămâne letterbox
+                subtil pe surface-2. */}
             <img
               src={url}
               alt={`${title} ${i + 1}`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform pointer-events-none"
+              className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform pointer-events-none"
               loading="lazy"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">

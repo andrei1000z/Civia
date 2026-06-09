@@ -120,13 +120,24 @@ export function detectCountyFromLocatie(locatie: string | null | undefined): str
 
   // 1) Match exact pe orașe cunoscute (sortate descrescător după lungime
   //    ca să match-uim „cluj-napoca" înainte de „cluj").
+  //
+  // 2026-06-10 FIX: un nume de oraș precedat de un prefix de STRADĂ e parte din
+  //    numele străzii, NU localitatea. Ex: „Calea București, Craiova, Dolj" e în
+  //    Craiova (DJ), nu în București — „Calea București" e o stradă din Craiova.
+  //    Fără asta, sesizarea pleca GREȘIT la PMB. Negative lookbehind pe prefixe.
+  const STREET_PREFIX =
+    "(?:strada|str|bulevardul|b-?dul|bd|calea|cal|soseaua|sos|aleea|ale|splaiul|spl|piata|p-?ta|intrarea|intr|drumul|dr|prelungirea|prel)\\.?";
   const cityEntries = Object.entries(CITY_TO_COUNTY).sort(
     ([a], [b]) => b.length - a.length,
   );
   for (const [city, countyId] of cityEntries) {
     const normCity = normalize(city);
-    // Match cu word boundary (ca să nu match „arad" în „aradul")
-    const re = new RegExp(`\\b${normCity.replace(/[-]/g, "[- ]?")}\\b`, "i");
+    // Word boundary (ca să nu match „arad" în „aradul") + negative lookbehind
+    // pe prefixe de stradă (ca să nu match „bucuresti" în „calea bucuresti").
+    const re = new RegExp(
+      `(?<!\\b${STREET_PREFIX}\\s{1,2})\\b${normCity.replace(/[-]/g, "[- ]?")}\\b`,
+      "i",
+    );
     if (re.test(normLoc)) return countyId;
   }
 

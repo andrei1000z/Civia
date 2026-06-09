@@ -88,6 +88,19 @@ describe("detectCountyFromLocatie — edge cases", () => {
     expect(detectCountyFromLocatie("12345 zip")).toBeNull();
   });
 
+  // 2026-06-10 — regresie: nume de oraș în nume de STRADĂ ≠ localitate.
+  // Bug raportat (Mihai, Craiova): „Calea București, Craiova" pleca la PMB.
+  it("nu confundă numele orașului din numele străzii cu localitatea", () => {
+    // „Calea București" e o stradă din Craiova → DJ, nu B.
+    expect(detectCountyFromLocatie("Calea București, Craiova, Dolj")).toBe("DJ");
+    expect(detectCountyFromLocatie("Bulevardul București nr. 10, Craiova")).toBe("DJ");
+    // „Calea Galați" în Brăila → BR, nu GL.
+    expect(detectCountyFromLocatie("Strada Mihai Eminescu, Calea Galați, Brăila")).toBe("BR");
+    // București real (precedat de virgulă/sector, nu de prefix de stradă) rămâne B.
+    expect(detectCountyFromLocatie("Sector 1, București")).toBe("B");
+    expect(detectCountyFromLocatie("Bdul Magheru, București")).toBe("B");
+  });
+
   it("nu match partial — word boundary respectat", () => {
     // „arad\" exact → match
     expect(detectCountyFromLocatie("str X, arad")).toBe("AR");
