@@ -3,9 +3,13 @@
  * în cascada de generare. Free tier: ~10k neurons/zi. Endpoint OpenAI-compatibil:
  *   POST https://api.cloudflare.com/client/v4/accounts/{id}/ai/v1/chat/completions
  *
- * ENV: CLOUDFLARE_API_TOKEN (scope „Workers AI") + CLOUDFLARE_ACCOUNT_ID
- *      (sau R2_ACCOUNT_ID). Dacă lipsesc → isCloudflareTextConfigured() = false
- *      și cascada îl sare elegant.
+ * ENV: CLOUDFLARE_AI_TOKEN (token DEDICAT Workers AI; fallback CLOUDFLARE_API_TOKEN)
+ *      + CLOUDFLARE_ACCOUNT_ID (sau R2_ACCOUNT_ID). Dacă lipsesc →
+ *      isCloudflareTextConfigured() = false și cascada îl sare elegant.
+ *
+ * 2026-06-10 — token AI separat de cel general: CLOUDFLARE_API_TOKEN e folosit și
+ * de D1/Browser Rendering (alte scope-uri), deci AI-ul folosește CLOUDFLARE_AI_TOKEN
+ * dedicat (scope doar „Workers AI") ca să nu fie nevoie de un singur token atotputernic.
  *
  * 2026-06-05 — adăugat ca al 3-lea furnizor gratuit ca AI-ul Civia să nu mai
  * rămână fără cotă (Groq + Gemini + Cloudflare, fiecare cu limită proprie).
@@ -19,7 +23,7 @@ export const CF_TEXT_MODELS = [
 
 export function isCloudflareTextConfigured(): boolean {
   return !!(
-    process.env.CLOUDFLARE_API_TOKEN &&
+    (process.env.CLOUDFLARE_AI_TOKEN || process.env.CLOUDFLARE_API_TOKEN) &&
     (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID)
   );
 }
@@ -52,7 +56,7 @@ export async function callCloudflareText({
   signal,
 }: CallOptions): Promise<string | null> {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID;
-  const token = process.env.CLOUDFLARE_API_TOKEN;
+  const token = process.env.CLOUDFLARE_AI_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   if (!accountId || !token) {
     throw new Error("Cloudflare AI not configured");
   }

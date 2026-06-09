@@ -10,7 +10,7 @@
  *
  * ENV vars:
  *   CLOUDFLARE_ACCOUNT_ID = same as R2_ACCOUNT_ID
- *   CLOUDFLARE_API_TOKEN  = token cu permisiuni Workers AI
+ *   CLOUDFLARE_AI_TOKEN   = token DEDICAT Workers AI (fallback CLOUDFLARE_API_TOKEN)
  */
 
 interface CloudflareAIResult {
@@ -23,7 +23,7 @@ export async function cloudflareAIVision(opts: {
   prompt: string;
 }): Promise<CloudflareAIResult> {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID;
-  const token = process.env.CLOUDFLARE_API_TOKEN;
+  const token = process.env.CLOUDFLARE_AI_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   if (!accountId || !token) {
     return { text: null, error: "Cloudflare AI not configured" };
   }
