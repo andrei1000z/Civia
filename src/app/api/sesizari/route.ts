@@ -440,6 +440,37 @@ export async function POST(req: Request) {
       // Fallback: safeFormalText (formular) — mai bine ceva decât să blocăm.
     }
 
+    // 2026-06-09 — Guard anti-double-submit: dacă ACELAȘI autor a creat deja o
+    // sesizare identică (același tip + ~aceleași coordonate) în ultimele 5 minute,
+    // întoarce-o pe aceea (idempotent) în loc să creăm un duplicat. Cauza reală:
+    // 00067/00068 — submit dublu la 14s distanță, conținut identic. Best-effort.
+    if (resolvedUserId || parsed.author_email) {
+      try {
+        const dupAdmin = createSupabaseAdmin();
+        const dupCutoff = new Date(Date.now() - 5 * 60_000).toISOString();
+        let dq = dupAdmin
+          .from("sesizari")
+          .select("*")
+          .eq("tip", parsed.tip)
+          .gte("created_at", dupCutoff)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        dq = resolvedUserId ? dq.eq("user_id", resolvedUserId) : dq.eq("author_email", parsed.author_email!);
+        if (finalLat != null && finalLng != null) {
+          dq = dq.gte("lat", finalLat - 0.0003).lte("lat", finalLat + 0.0003)
+                 .gte("lng", finalLng - 0.0003).lte("lng", finalLng + 0.0003);
+        } else {
+          dq = dq.eq("locatie", polished.locatie);
+        }
+        const { data: dup } = await dq;
+        if (dup && dup.length > 0) {
+          return NextResponse.json({ data: dup[0], deduped: true });
+        }
+      } catch {
+        /* dedup best-effort — nu blocăm crearea pe eroare de query */
+      }
+    }
+
     try {
       const row = await createSesizare({
         code,
