@@ -31,7 +31,10 @@ export const GROQ_MODEL_FAST = process.env.GROQ_MODEL_FAST || "llama-3.1-8b-inst
 // Modele Groq „production" suplimentare încercate înainte de a ieși din Groq
 // (gpt-oss-120b e succesorul recomandat de Groq, calitate ~70B). Cotele sunt pe
 // organizație, dar fiecare model are RPD propriu — mai multe șanse.
-const GROQ_MODEL_BACKUPS = ["openai/gpt-oss-120b", "llama-3.1-8b-instant", "gemma2-9b-it"];
+// 2026-06-10 FIX: scos „gemma2-9b-it" — DEZAFECTAT de Groq (400 model_decommissioned).
+// Când cascada ajungea la el, dădea hard-400 în loc să treacă la Gemini/Cloudflare.
+// Înlocuit cu gpt-oss-20b (variantă mică, validă) ca al treilea backup Groq.
+const GROQ_MODEL_BACKUPS = ["openai/gpt-oss-120b", "llama-3.1-8b-instant", "openai/gpt-oss-20b"];
 // Vision-capable model for photo analysis in sesizări. Llama 4 Scout is
 // Groq's flagship vision model as of 2025-2026.
 export const GROQ_MODEL_VISION =
@@ -68,7 +71,7 @@ function requestHash(p: GroqTextParams): string {
  * Scop: AI-ul Civia să NU mai rămână NICIODATĂ fără cotă. Fiecare provider are
  * limită SEPARATĂ; când unul dă 429, trecem la următorul:
  *
- *   Groq (70B → 8B → gemma2) → Gemini (5 modele) → Cloudflare Workers AI
+ *   Groq (70B → 8B → gpt-oss) → Gemini (5 modele) → Cloudflare Workers AI
  *   → provideri OpenAI-compat configurați (Cerebras/OpenRouter/Mistral/…)
  *   → [throw] → caller-ul face fallback determinist.
  *

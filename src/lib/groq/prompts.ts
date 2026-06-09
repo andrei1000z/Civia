@@ -199,16 +199,16 @@ Primești o descriere a unei probleme (1-3 propoziții) și decizi ce tip se pot
 
 LISTA DE TIPURI (alege DOAR UNUL):
 - "groapa" — gropi în asfalt, denivelări carosabil, pietre căzute
-- "trotuar" — trotuar degradat, borduri sparte, plăci ridicate, alee spartă (NU include montare stâlpișori)
+- "trotuar" — trotuar degradat, borduri sparte, plăci ridicate, alee spartă, LIPSĂ trotuar (inexistent / neamenajat, pietonii forțați să meargă pe carosabil) (NU include montare stâlpișori)
 - "iluminat" — becuri arse, stâlpi defecți, zone întunecate noaptea
-- "copac" — copaci periculoși, căzuți, ramuri rupte, uscați
+- "copac" — copaci periculoși, căzuți, ramuri rupte, uscați, NETOALETAȚI / crengi joase care împiedică trecerea pietonilor ori acoperă semne/iluminat, vegetație neîngrijită pe trotuar
 - "gunoi" — tomberoane pline, depozitare ilegală, containere, salubrizare
-- "parcare" — mașini parcate ilegal, pe trotuar, blocaje, parcare sălbatică
+- "parcare" — mașini parcate ilegal, pe trotuar, blocaje, parcare sălbatică, CIRCULAȚIE/condus pe trotuar sau pe spațiul pietonal (vehicul unde n-ar trebui să fie)
 - "stalpisori" — cerere de montare stâlpișori anti-parcare PE TROTUAR (bollards). REGULĂ STRICTĂ: doar dacă descrierea menționează EXPLICIT „stâlpișori" / „stâlpisor" / „bollards" ȘI contextul e CLAR despre trotuar / parcare pe trotuar. NU alege „stalpisori" pentru: gard pe linie tramvai (→ transport), barieră drum (→ semafor), separator carosabil (→ transport sau altele).
 - "canalizare" — inundație, capace lipsă, gură canal înfundată
 - "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere (INCL. zebră ștearsă, marcaj rutier necitiibil — distincție de „trecere_pietoni" care e CERERE NOUĂ)
 - "graffiti" — vandalism grafică, pictură ilegală, tagging pe pereți (NU afișe — alege "afisaj")
-- "mobilier" — bancă stricată, coșuri de gunoi lipsă, fântâni nefuncționale
+- "mobilier" — bancă stricată, coșuri de gunoi lipsă SAU amplasate greșit (pe stâlpi, obstrucționează trecerea/carosabilul), fântâni nefuncționale, mobilier stradal deteriorat ori prost poziționat
 - "transport" — autobuz, tramvai, metrou, STB, Metrorex, stație, intârziere, ruta scoasă, GARD DESPĂRȚITOR pe linie tramvai/cale ferată, șine, linie tramvai blocată, infrastructură transport public deteriorată. PRIORITATE MARE: dacă textul conține „tramvai" / „tramvaiul" / „șine" / „linia [număr]" / „metrou" / „cale ferată" / „STB" / „Metrorex" → alege NEAPĂRAT „transport", NU „stalpisori" sau alt tip. Stâlpișorii anti-parcare există DOAR pe trotuar; un „gard despărțitor pe linie tramvai" e infrastructură de transport.
 - "afisaj" — afișe sălbatice, panouri publicitare ilegale, bannere fără autorizație, billboard-uri neautorizate
 - "banda_transport" — CERERE DE AMENAJARE bandă dedicată autobuz/troleibuz, separare carosabil pentru transport public. Cuvinte cheie: „bandă bus", „culoar dedicat", „bandă transport".
