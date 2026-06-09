@@ -9,7 +9,11 @@
  * digestul + weekly. Dezabonarea chiar oprește emailurile.
  */
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { verifyUnsubscribeToken, decodeUnsubscribeEmail } from "@/lib/email/newsletter-unsubscribe";
+import {
+  verifyUnsubscribeToken,
+  decodeUnsubscribeEmail,
+  verifyAreaUnsubscribeToken,
+} from "@/lib/email/newsletter-unsubscribe";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +31,32 @@ async function handle(req: Request): Promise<Response> {
   if (!e || !t) return htmlPage("Link incomplet", "Lipsește parametrul de dezabonare.", 400);
 
   const email = decodeUnsubscribeEmail(e);
-  if (!email || !verifyUnsubscribeToken(email, t)) {
+  if (!email) {
     return htmlPage("Link invalid", "Link-ul de dezabonare nu este valid sau a expirat.", 403);
   }
 
   const admin = createSupabaseAdmin();
+
+  // ─── Scope „area" (Faza 2) — dezabonare granulară de la O SINGURĂ arie ──
+  // NU atinge newsletter-ul global. Token legat de (email + subId).
+  const scope = url.searchParams.get("scope");
+  if (scope === "area") {
+    const subId = url.searchParams.get("id");
+    if (!subId || !/^[0-9a-f-]{36}$/i.test(subId) || !verifyAreaUnsubscribeToken(email, subId, t)) {
+      return htmlPage("Link invalid", "Link-ul de dezabonare nu este valid sau a expirat.", 403);
+    }
+    // Idempotent: ștergem abonarea (dacă nu există, tot confirmăm).
+    const { error: areaErr } = await admin.from("area_subscriptions").delete().eq("id", subId);
+    if (areaErr) {
+      return htmlPage("Eroare", "A apărut o eroare. Încearcă din nou sau scrie-ne la contact@civia.ro.", 500);
+    }
+    return htmlPage("Te-ai dezabonat ✓", "Nu vei mai primi digestul pentru această zonă.", 200);
+  }
+
+  // ─── Scope global (newsletter) — comportamentul existent ──
+  if (!verifyUnsubscribeToken(email, t)) {
+    return htmlPage("Link invalid", "Link-ul de dezabonare nu este valid sau a expirat.", 403);
+  }
   const { error } = await admin
     .from("newsletter_subscribers")
     .update({ unsubscribed_at: new Date().toISOString() })

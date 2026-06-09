@@ -33,6 +33,7 @@ import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 import { MfaSetup } from "@/components/cont/MfaSetup";
+import { AreaSubscriptionsManager } from "@/components/area/AreaSubscriptionsManager";
 
 interface Profile {
   id: string;
@@ -719,6 +720,9 @@ export default function ContPage() {
               <PushPermissionButton />
             </div>
           )}
+
+          {/* Zone urmărite (Faza 2) — abonările la digestul local. Ascuns dacă none. */}
+          {user && <AreaSubscriptionsManager />}
 
           {/* 2026-06-07 (audit #11) — securitate cont: 2FA opt-in (Supabase MFA nativ). */}
           {user && <MfaSetup />}

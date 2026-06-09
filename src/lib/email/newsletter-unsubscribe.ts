@@ -47,3 +47,27 @@ export function decodeUnsubscribeEmail(e: string): string | null {
     return null;
   }
 }
+
+// ─── Dezabonare GRANULARĂ pe arie (Faza 2 — „Urmărește zona") ──────────
+// Token legat de (email + subId) ca să dezaboneze DOAR acea arie, nu
+// newsletter-ul global. Stateless (HMAC), one-click din digestul local.
+
+export function areaUnsubscribeToken(email: string, subId: string): string {
+  return createHmac("sha256", SECRET).update(`area:${normalize(email)}:${subId}`).digest("hex").slice(0, 32);
+}
+
+export function verifyAreaUnsubscribeToken(email: string, subId: string, token: string): boolean {
+  const expected = areaUnsubscribeToken(email, subId);
+  if (token.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
+/** URL one-click de dezabonare de la O SINGURĂ arie. */
+export function areaUnsubscribeUrl(email: string, subId: string, baseUrl: string): string {
+  const e = Buffer.from(normalize(email), "utf8").toString("base64url");
+  return `${baseUrl}/api/newsletter/unsubscribe?scope=area&id=${subId}&e=${e}&t=${areaUnsubscribeToken(email, subId)}`;
+}

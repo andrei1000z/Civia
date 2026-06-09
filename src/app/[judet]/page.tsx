@@ -34,6 +34,7 @@ import {
   TYPE_LABELS as INTRERUPERI_LABELS,
 } from "@/data/intreruperi";
 import { CountyStatCards, aqiColor } from "@/components/county/CountyStatCards";
+import { FollowAreaButton } from "@/components/area/FollowAreaButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { CountyPlaceJsonLd } from "@/components/JsonLd";
 import { SITE_URL, STATUS_COLORS, STATUS_LABELS, sourceTextColor } from "@/lib/constants";
@@ -768,6 +769,13 @@ export default async function CountyHomePage({
             aqi={stats.aqiMediu}
             aqiQuality={stats.aqiQuality}
           />
+        </div>
+      </section>
+
+      {/* „Urmărește zona" (Faza 2) — abonare la digestul local săptămânal */}
+      <section className="relative z-10 mt-5">
+        <div className="container-narrow flex justify-center">
+          <FollowAreaButton county={county.id} countyName={county.name} source="county_page" />
         </div>
       </section>
 

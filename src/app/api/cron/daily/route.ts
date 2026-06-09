@@ -44,6 +44,7 @@ export async function GET(req: Request) {
     "/api/sesizari/winback",
   ];
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
+  if (day === 2) jobs.push("/api/newsletter/digest-local"); // Marți (Faza 2 — digest local pe zonă)
   if (day === 5) jobs.push("/api/newsletter/weekly-rezolvate"); // Vineri
 
   const run = (path: string) =>

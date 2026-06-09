@@ -17,7 +17,6 @@ import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
 import { forwardGeocode } from "@/lib/sesizari/geocoding";
-import { sendPushToUsers } from "@/lib/push/web-push-client";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 
@@ -502,6 +501,20 @@ export async function POST(req: Request) {
       // 2026-05-18: scos „adopt-a-street" feature complet.
       // 2026-06-04: scoasă și urmărirea (sesizare_follows) — fără notificări
       // către followeri pe sesizare/judeţ.
+      // 2026-06-10 (Faza 2): push geo pe area_subscriptions — notifică abonații
+      // care urmăresc zona sesizării (dublu opt-in: area push + device push).
+      if (resolvedCounty) {
+        const { notifyAreaSubscribers } = await import("@/lib/area/notify-push");
+        void notifyAreaSubscribers({
+          county: resolvedCounty,
+          sector: resolvedSector,
+          tip: parsed.tip,
+          locatie: polished.locatie,
+          code,
+          titlu: polished.titlu,
+          excludeUserId: resolvedUserId,
+        });
+      }
 
       // Send confirmation email (non-blocking — don't delay response)
       const authorEmail = parsed.author_email;
