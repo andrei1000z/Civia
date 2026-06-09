@@ -19,6 +19,7 @@ import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SharePetitie } from "./SharePetitie";
 import { AiSummary } from "@/app/stiri/[id]/AiSummary";
 import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
+import { petitieToSesizareTip } from "@/lib/petitii/chaining";
 
 // Petition detail content (title, body, AI summary) is essentially
 // frozen after creation. The signature count comes from the external
@@ -416,17 +417,11 @@ export default async function PetitiePage({
               semnat petitia nationala, depune si o sesizare concreta
               catre primarie. Cross-pollination civic. */}
           {(() => {
-            // Map de la categoria petitiei la tipul de sesizare relevant.
-            const PETITIE_TO_SESIZARE: Record<string, { tip: string; pitch: string }> = {
-              Mediu: { tip: "copac", pitch: "Vezi un copac taiat, gunoi pe spatiu verde sau alta problema de mediu in cartierul tau?" },
-              Transport: { tip: "transport", pitch: "Banda autobuz blocata, semafor stricat, sau o problema de transport in zona ta?" },
-              Sănătate: { tip: "altele", pitch: "Vezi probleme locale legate de sanatate publica (gunoi netoxic, lipsa servicii)?" },
-              Locuințe: { tip: "trotuar", pitch: "Vezi probleme de urbanism in cartierul tau (trotuare, spatii verzi, mobilier urban)?" },
-              Siguranță: { tip: "iluminat", pitch: "Iluminat stricat, parcare ilegala, sau alte probleme de siguranta in zona?" },
-              Animale: { tip: "altele", pitch: "Vezi animale fara stapan, abuzate sau alte probleme legate de drepturile animalelor local?" },
-              Cultură: { tip: "altele", pitch: "Vezi probleme legate de patrimoniu local sau cultura (cladiri istorice degradate)?" },
-            };
-            const mapped = petitie.category ? PETITIE_TO_SESIZARE[petitie.category] : null;
+            // Mapping centralizat în @/lib/petitii/chaining (single source of
+            // truth, testat). Acoperă toate cele 14 PETITIE_CATEGORII — înainte
+            // erau doar 7 inline, deci cardul era ascuns pentru ~38% din petiții
+            // (ex: „Drepturi" — categoria cu cele mai multe petiții).
+            const mapped = petitieToSesizareTip(petitie.category);
             if (!mapped) return null;
             return (
               <div className="mt-6 p-4 sm:p-5 rounded-[var(--radius-md)] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">

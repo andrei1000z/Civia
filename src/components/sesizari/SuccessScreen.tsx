@@ -12,6 +12,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 import { withRef } from "@/lib/referral/client";
+import { RelatedPetitiiCard } from "@/components/sesizari/RelatedPetitiiCard";
 
 /**
  * Success screen post-submit — extras din SesizareForm in fisier separat
@@ -152,6 +153,13 @@ export function SuccessScreen({
       </div>
 
       <SuccessShareSection code={code} title={emailInput.titlu} />
+
+      {/* Chaining sesizare→petiție (Faza 1) — a doua acțiune la intenție maximă. */}
+      <RelatedPetitiiCard
+        tip={emailInput.tip}
+        locatie={emailInput.locatie}
+        sector={emailInput.sector}
+      />
 
       <p className="text-[11px] text-[var(--color-text-muted)] mt-6 leading-relaxed">
         Răspunsul vine în max. <strong className="text-[var(--color-text)]">30 de zile</strong> calendaristice (OG 27/2002).
