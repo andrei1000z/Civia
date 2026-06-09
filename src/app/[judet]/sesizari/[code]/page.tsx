@@ -41,9 +41,10 @@ export default async function CountySesizareDetail({
   const county = getCountyBySlug(judet);
   const sesizare = await getSesizareByCode(code);
   if (!sesizare) notFound();
-
-  const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  // audit fix: validează că sesizarea aparține județului din URL — înainte
+  // /cluj/sesizari/00007 afișa o sesizare din alt județ (conținut duplicat SEO +
+  // breadcrumb greșit). + scos apelul getUser() mort (rezultat nefolosit).
+  if (county && sesizare.county && sesizare.county !== county.id) notFound();
 
   const comments = await getComments(sesizare.id);
 

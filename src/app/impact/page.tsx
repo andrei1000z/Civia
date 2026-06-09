@@ -87,8 +87,10 @@ async function getStats(): Promise<Stats | null> {
     { data: byStatus },
   ] = queries;
 
-  // Unique sesizari cu reply
-  const cuRaspuns = new Set((cuRaspunsData ?? []).map((r) => r.sesizare_id)).size;
+  // Unique sesizari cu reply. audit fix: cap la `total` (aprobate) — unele
+  // replies sunt pe sesizări nemoderate/ascunse, neincluse în total → fără cap
+  // funnel-ul „cu răspuns primit" depășea 100% (bară overflow + procent >100).
+  const cuRaspuns = Math.min(total ?? 0, new Set((cuRaspunsData ?? []).map((r) => r.sesizare_id)).size);
 
   // Group counties
   const countyMap = new Map<string, number>();
