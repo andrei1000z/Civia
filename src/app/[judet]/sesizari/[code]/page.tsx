@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, MapPin, Calendar, User } from "lucide-react";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { getCountyBySlug } from "@/data/counties";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, resolveTipLabel, SITE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
