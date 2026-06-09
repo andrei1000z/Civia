@@ -562,6 +562,39 @@ export async function POST(req: Request) {
             Sentry.captureException(e, { tags: { route: "inbox.reply", kind: "status_email_failed" } });
           }
         }
+
+        // roadmap Faza 0 — CELEBRAREA VICTORIEI: la rezolvare, email festiv către
+        // co-semnatari („Ai contribuit — problema e gata"). Best-effort.
+        if (updates.status === "rezolvat") {
+          try {
+            const { buildVictoryEmail } = await import("@/lib/email/status-update");
+            const { sendEmail } = await import("@/lib/email/resend");
+            const { data: cosigns } = await admin
+              .from("sesizare_cosigners")
+              .select("email, user_id")
+              .eq("sesizare_id", sesizareId);
+            const emails = new Set<string>();
+            for (const c of (cosigns ?? []) as { email: string | null }[]) {
+              if (c.email) emails.add(c.email.toLowerCase());
+            }
+            const uids = ((cosigns ?? []) as { user_id: string | null }[]).map((c) => c.user_id).filter((u): u is string => !!u);
+            if (uids.length > 0) {
+              const { data: profs } = await admin.from("profiles").select("email").in("id", uids);
+              for (const p of (profs ?? []) as { email: string | null }[]) if (p.email) emails.add(p.email.toLowerCase());
+            }
+            const authorEmailLc = (cur as { author_email?: string | null } | null)?.author_email?.toLowerCase();
+            if (authorEmailLc) emails.delete(authorEmailLc); // autorul a primit deja emailul de status
+            if (emails.size > 0) {
+              const { subject: vSubject, html: vHtml } = buildVictoryEmail({
+                code: matchedCode ?? extraction.code ?? "",
+                titlu: (cur as { titlu?: string | null } | null)?.titlu ?? null,
+              });
+              await Promise.allSettled([...emails].slice(0, 100).map((e) => sendEmail({ to: e, subject: vSubject, html: vHtml })));
+            }
+          } catch (e) {
+            Sentry.captureException(e, { tags: { route: "inbox.reply", kind: "victory_email_failed" } });
+          }
+        }
       }
       // NU mai inseram un timeline event aditional aici. Trigger-ul DB
       // pe sesizari.status creează automat „Status actualizat la: X".

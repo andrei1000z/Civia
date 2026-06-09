@@ -36,6 +36,9 @@ export async function GET(req: Request) {
     "/api/sesizari/reminders",
     "/api/sesizari/auto-status",
     "/api/sesizari/drafts/nudge",
+    // 2026-06-09 (roadmap Faza 0) — streak win-back. Endpoint-ul exista dar NU
+    // era chemat de nicăieri (bucla de retenție era moartă) → acum rulează zilnic.
+    "/api/streaks/at-risk",
   ];
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
   if (day === 5) jobs.push("/api/newsletter/weekly-rezolvate"); // Vineri

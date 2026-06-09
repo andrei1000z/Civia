@@ -62,3 +62,40 @@ export function buildStatusUpdateEmail(args: {
 </body></html>`;
   return { subject, html };
 }
+
+/**
+ * 2026-06-09 (roadmap Faza 0 — celebrarea victoriei) — email festiv către
+ * CO-SEMNATARI când o sesizare e rezolvată. „Ai contribuit — problema e gata."
+ */
+export function buildVictoryEmail(args: { code: string; titlu: string | null }): { subject: string; html: string } {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const titlu = args.titlu ? esc(args.titlu) : `Sesizarea ${args.code}`;
+  const url = `${SITE}/sesizari/${args.code}`;
+  const subject = `🎉 Victorie! Sesizarea ${args.code} a fost rezolvată`;
+  const html = `<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+      <tr><td style="background:linear-gradient(135deg,#16a34a,#15803d);padding:36px 32px;text-align:center">
+        <div style="font-size:48px;line-height:1">🎉</div>
+        <div style="color:#fff;font-size:22px;font-weight:800;margin-top:8px">Problema a fost rezolvată!</div>
+      </td></tr>
+      <tr><td style="padding:28px 32px 8px;text-align:center">
+        <h1 style="margin:0 0 8px;font-size:18px;color:#0f172a;line-height:1.3">${titlu}</h1>
+        <p style="margin:0;color:#64748b;font-size:13px">Sesizarea <strong>${args.code}</strong></p>
+      </td></tr>
+      <tr><td style="padding:12px 32px;color:#334155;font-size:15px;line-height:1.6;text-align:center">
+        <strong>Ai contribuit la asta.</strong> Ai co-semnat această sesizare, iar autoritatea a rezolvat-o. Vocea ta a contat — împreună ați adus presiunea care a făcut diferența. 💪
+      </td></tr>
+      <tr><td style="padding:20px 32px 28px;text-align:center">
+        <a href="${url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px">Vezi victoria</a>
+      </td></tr>
+      <tr><td style="padding:16px 32px;border-top:1px solid #f1f5f9;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center">
+        Primești acest email pentru că ai co-semnat această sesizare prin Civia.
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+  return { subject, html };
+}
