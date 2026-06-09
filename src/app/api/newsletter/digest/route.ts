@@ -172,9 +172,11 @@ export async function GET(req: Request) {
   // Send to all subscribers (sequential with tiny gap — Resend rate limit ~10/s free tier)
   // 2026-06-05 — html construit PER destinatar ca să includem link-ul de
   // dezabonare individual (GDPR one-click) + header List-Unsubscribe.
-  let sent = 0;
-  let failed = 0;
-  for (const sub of subscribers) {
+  // audit fix: înainte serial cu sleep 120ms/email (lent pe liste mari). Acum
+  // loturi PARALELE (Promise.allSettled) — latențele de send se suprapun → mult
+  // mai rapid wall-clock, cu un gap între loturi ca să rămânem sub ~10/s (free tier).
+  const subject = `Civia — ${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta`;
+  const sendOne = async (sub: { email: string }): Promise<boolean> => {
     const unsubUrl = newsletterUnsubscribeUrl(sub.email, siteUrl);
     const html = emailTemplate({
       title: "Săptămâna civică",
@@ -183,16 +185,21 @@ export async function GET(req: Request) {
       ctaText: "Vezi sesizările publice",
       ctaUrl: `${siteUrl}/sesizari-publice`,
     });
-    const result = await sendEmail({
-      to: sub.email,
-      subject: `Civia — ${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta`,
-      html,
-      listUnsubscribe: unsubUrl,
-    });
-    if (result.ok) sent++;
-    else failed++;
-    // Throttle: ~10 emails/sec upper bound
-    await new Promise((r) => setTimeout(r, 120));
+    const result = await sendEmail({ to: sub.email, subject, html, listUnsubscribe: unsubUrl });
+    return result.ok;
+  };
+
+  let sent = 0;
+  let failed = 0;
+  const CHUNK = 8;
+  for (let i = 0; i < subscribers.length; i += CHUNK) {
+    const group = subscribers.slice(i, i + CHUNK);
+    const results = await Promise.allSettled(group.map(sendOne));
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) sent++;
+      else failed++;
+    }
+    if (i + CHUNK < subscribers.length) await new Promise((r) => setTimeout(r, 1000));
   }
 
   return NextResponse.json({
