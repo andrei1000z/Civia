@@ -30,6 +30,9 @@ const schema = z.object({
     "necunoscut",
   ]),
   apply_to_sesizare: z.boolean().default(false),
+  // 2026-06-08 — legare manuală orfan: codul sesizării la care se leagă reply-ul
+  // (când AI/matching n-a găsit-o automat). Doar dacă reply-ul e încă orfan.
+  link_code: z.string().trim().min(1).max(12).optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -66,7 +69,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid" }, { status: 400 });
   }
-  const { reply_status, apply_to_sesizare } = parsed.data;
+  const { reply_status, apply_to_sesizare, link_code } = parsed.data;
 
   const admin = createSupabaseAdmin();
   const { data: reply } = await admin
@@ -78,14 +81,36 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   const prevStatus = (reply as { ai_status: string | null }).ai_status;
 
-  // 1. Corectează clasificarea răspunsului (override admin).
+  // 0. Legare manuală orfan: dacă reply-ul n-are sesizare_id ȘI s-a dat link_code,
+  //    rezolvăm codul → id. Devine sesizareId-ul folosit mai jos.
+  let sesizareId = (reply as { sesizare_id: string | null }).sesizare_id;
+  let linkedNow = false;
+  if (!sesizareId && link_code) {
+    const { data: target } = await admin
+      .from("sesizari")
+      .select("id")
+      .eq("code", link_code)
+      .maybeSingle();
+    if (!target) {
+      return NextResponse.json({ error: `Sesizarea ${link_code} nu există` }, { status: 404 });
+    }
+    sesizareId = (target as { id: string }).id;
+    linkedNow = true;
+  }
+
+  // 1. Corectează clasificarea răspunsului (override admin) + leagă orfanul.
+  const replyUpdate: Record<string, unknown> = {
+    ai_status: reply_status,
+    user_confirmed: true,
+    user_corrected_status: reply_status,
+  };
+  if (linkedNow) {
+    replyUpdate.sesizare_id = sesizareId;
+    replyUpdate.match_method = "manual";
+  }
   const { error: upErr } = await admin
     .from("sesizare_replies")
-    .update({
-      ai_status: reply_status,
-      user_confirmed: true,
-      user_corrected_status: reply_status,
-    })
+    .update(replyUpdate)
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
@@ -95,7 +120,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   //    Review #1: înainte computeStatusUpdate (forward-only) refuza tăcut un
   //    downgrade → adminul credea că a reparat, dar sesizarea rămânea greșită.
   let sesizareStatus: string | null = null;
-  const sesizareId = (reply as { sesizare_id: string | null }).sesizare_id;
+  // sesizareId rezolvat mai sus (din reply.sesizare_id sau din link_code).
   if (apply_to_sesizare && sesizareId && ADVANCING.has(reply_status)) {
     const { data: ses } = await admin
       .from("sesizari")

@@ -35,6 +35,7 @@ export function ReplyManualReviewForm({
     currentStatus && currentStatus !== "necunoscut" ? currentStatus : "inregistrata",
   );
   const [applyToSesizare, setApplyToSesizare] = useState<boolean>(hasSesizare);
+  const [linkCode, setLinkCode] = useState(""); // legare orfan: codul sesizării
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,10 +45,15 @@ export function ReplyManualReviewForm({
     setError(null);
     setDone(null);
     try {
+      const willLink = !hasSesizare && linkCode.trim().length > 0;
       const res = await fetch(`/api/admin/inbox/reply/${replyId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reply_status: status, apply_to_sesizare: applyToSesizare && hasSesizare }),
+        body: JSON.stringify({
+          reply_status: status,
+          apply_to_sesizare: applyToSesizare && (hasSesizare || willLink),
+          ...(willLink ? { link_code: linkCode.trim() } : {}),
+        }),
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string; sesizareStatus?: string | null };
       if (!res.ok) {
@@ -55,9 +61,11 @@ export function ReplyManualReviewForm({
         return;
       }
       setDone(
-        json.sesizareStatus
-          ? `Salvat. Sesizarea → „${json.sesizareStatus}".`
-          : "Salvat (clasificarea răspunsului actualizată).",
+        willLink
+          ? `Legat de sesizarea ${linkCode.trim()}${json.sesizareStatus ? ` → „${json.sesizareStatus}"` : ""}.`
+          : json.sesizareStatus
+            ? `Salvat. Sesizarea → „${json.sesizareStatus}".`
+            : "Salvat (clasificarea răspunsului actualizată).",
       );
       router.refresh();
     } catch (e) {
@@ -93,7 +101,24 @@ export function ReplyManualReviewForm({
         ))}
       </select>
 
-      {hasSesizare && (
+      {!hasSesizare && (
+        <div className="mt-3">
+          <label htmlFor="link-code" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
+            Răspuns orfan — leagă-l de sesizarea (cod)
+          </label>
+          <input
+            id="link-code"
+            type="text"
+            inputMode="numeric"
+            value={linkCode}
+            onChange={(e) => setLinkCode(e.target.value)}
+            placeholder="ex: 00007"
+            className="h-10 w-40 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-mono text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          />
+        </div>
+      )}
+
+      {(hasSesizare || linkCode.trim().length > 0) && (
         <label
           className={`mt-3 flex items-center gap-2 text-sm ${canAdvance ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"}`}
         >
@@ -104,7 +129,7 @@ export function ReplyManualReviewForm({
             onChange={(e) => setApplyToSesizare(e.target.checked)}
             className="w-4 h-4 accent-[var(--color-primary)]"
           />
-          Aplică pe sesizare (avansează statusul, forward-only)
+          Aplică pe sesizare (avansează statusul)
           {!canAdvance && <span className="text-xs">— indisponibil pentru acest tip</span>}
         </label>
       )}
