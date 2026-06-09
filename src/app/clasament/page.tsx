@@ -36,27 +36,42 @@ type CountyStats = {
   fixScore: number;
 };
 
-async function fetchCountyStats(): Promise<CountyStats[]> {
-  // 2026-05-27 — try/catch defensiv. /clasament e public; Supabase outage
-  // NU trebuie sa crash-eze pagina (return [] → leaderboard gol cu PageHero).
-  const admin = createSupabaseAdmin();
-  let data: Array<{ county: string | null; status: string | null }> | null = null;
-  try {
-    const res = await admin
-      .from("sesizari")
-      .select("county, status")
-      .eq("moderation_status", "approved")
-      .eq("publica", true)
-      .not("county", "is", null);
-    data = res.data;
-  } catch {
-    return [];
-  }
+interface CountyStatsResult {
+  /** Județe cu ≥3 raportări (semnificativ statistic) — leaderboardul principal. */
+  stats: CountyStats[];
+  /** Județe cu 1-2 raportări — afișate separat ca „date preliminare". */
+  preliminary: CountyStats[];
+  /** Totaluri NAȚIONALE pe TOATE sesizările publice (inclusiv fără județ + sub prag). */
+  nationalTotal: number;
+  nationalResolved: number;
+}
 
+async function fetchCountyStats(): Promise<CountyStatsResult> {
+  // 2026-05-27 — try/catch defensiv. /clasament e public; Supabase outage
+  // NU trebuie sa crash-eze pagina.
+  // 2026-06-10 (audit) — NU mai excludem county=NULL: altfel 5 sesizări dispar
+  // din rata națională. Numărăm TOT pentru rata națională; leaderboardul pe județe
+  // rămâne pe ≥3 raportări (semnificativ), restul în „preliminare".
+  const admin = createSupabaseAdmin();
+  const res = await admin
+    .from("sesizari")
+    .select("county, status")
+    .eq("moderation_status", "approved")
+    .eq("publica", true);
+  if (res.error || !res.data) {
+    return { stats: [], preliminary: [], nationalTotal: 0, nationalResolved: 0 };
+  }
+  const data = res.data;
+
+  // Rata națională = TOATE sesizările publice (inclusiv fără județ + sub prag).
+  let nationalTotal = 0;
+  let nationalResolved = 0;
   const buckets = new Map<string, { total: number; resolved: number }>();
-  for (const row of data ?? []) {
+  for (const row of data) {
+    nationalTotal += 1;
+    if (row.status === "rezolvat") nationalResolved += 1;
     const id = row.county;
-    if (!id) continue;
+    if (!id) continue; // fără județ → contează la național, nu la leaderboardul pe județe
     let b = buckets.get(id);
     if (!b) {
       b = { total: 0, resolved: 0 };
@@ -67,54 +82,65 @@ async function fetchCountyStats(): Promise<CountyStats[]> {
   }
 
   const stats: CountyStats[] = [];
+  const preliminary: CountyStats[] = [];
   for (const [countyId, b] of buckets.entries()) {
     const c = ALL_COUNTIES.find((x) => x.id === countyId);
     if (!c) continue;
-    if (b.total < 3) continue;
-    stats.push({
+    const row: CountyStats = {
       countyId,
       countyName: c.name,
       countySlug: c.slug,
       total: b.total,
       resolved: b.resolved,
       fixScore: Math.round((b.resolved / b.total) * 100),
-    });
+    };
+    (b.total >= 3 ? stats : preliminary).push(row);
   }
 
-  return stats.sort((a, b) => b.fixScore - a.fixScore || b.total - a.total);
+  const byScore = (a: CountyStats, b: CountyStats) => b.fixScore - a.fixScore || b.total - a.total;
+  return {
+    stats: stats.sort(byScore),
+    preliminary: preliminary.sort((a, b) => b.total - a.total),
+    nationalTotal,
+    nationalResolved,
+  };
 }
 
 type CityStats = { city: string; total: number; resolved: number; fixScore: number };
 
 /**
- * Leaderboard pe ORAȘ (Faza 2 — hiper-localizare). Grupează sesizările publice
- * pe localitate via extractLocality(locatie) — sesizari n-are coloană locality,
- * deci derivăm orașul din textul liber. Prag minim 4 sesizări/oraș ca să fie
- * semnificativ statistic.
+ * Leaderboard pe ZONĂ (Faza 2 — hiper-localizare). sesizari n-are coloană
+ * locality, deci derivăm zona din county + locatie:
+ *   • București → sector („Sector N") din extractLocality, altfel „București (altă zonă)";
+ *   • alt județ → orașul din extractLocality(locatie), altfel numele județului.
+ * Așa NU mai dispar sesizările fără „Sector N" în text (ex: „Bd. Corneliu Coposu")
+ * și nici cele din alte județe. Prag ≥2 raportări/zonă (date sparse la început).
  */
 async function fetchCityStats(): Promise<CityStats[]> {
   const admin = createSupabaseAdmin();
-  let data: Array<{ locatie: string | null; status: string | null }> | null = null;
-  try {
-    const res = await admin
-      .from("sesizari")
-      .select("locatie, status")
-      .eq("moderation_status", "approved")
-      .eq("publica", true)
-      .not("locatie", "is", null);
-    data = res.data;
-  } catch {
-    return [];
-  }
+  const res = await admin
+    .from("sesizari")
+    .select("locatie, county, status")
+    .eq("moderation_status", "approved")
+    .eq("publica", true);
+  if (res.error || !res.data) return [];
+
+  const zoneOf = (locatie: string | null, county: string | null): string | null => {
+    const loc = extractLocality(locatie); // „Sector N" / oraș cunoscut / null
+    if (county === "B") return loc ?? "București (altă zonă)";
+    if (loc && !loc.startsWith("Sector")) return loc; // oraș real non-B
+    const name = county ? ALL_COUNTIES.find((c) => c.id === county)?.name : null;
+    return name ?? loc ?? null;
+  };
 
   const buckets = new Map<string, { total: number; resolved: number }>();
-  for (const row of data ?? []) {
-    const city = extractLocality(row.locatie);
-    if (!city) continue; // doar orașe recunoscute (extractLocality e conservator)
-    let b = buckets.get(city);
+  for (const row of res.data) {
+    const zone = zoneOf(row.locatie, row.county);
+    if (!zone) continue;
+    let b = buckets.get(zone);
     if (!b) {
       b = { total: 0, resolved: 0 };
-      buckets.set(city, b);
+      buckets.set(zone, b);
     }
     b.total += 1;
     if (row.status === "rezolvat") b.resolved += 1;
@@ -122,7 +148,7 @@ async function fetchCityStats(): Promise<CityStats[]> {
 
   const stats: CityStats[] = [];
   for (const [city, b] of buckets.entries()) {
-    if (b.total < 4) continue;
+    if (b.total < 2) continue;
     stats.push({ city, total: b.total, resolved: b.resolved, fixScore: Math.round((b.resolved / b.total) * 100) });
   }
   return stats.sort((a, b) => b.fixScore - a.fixScore || b.total - a.total).slice(0, 12);
@@ -130,21 +156,16 @@ async function fetchCityStats(): Promise<CityStats[]> {
 
 async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; total: number; rank: number }>> {
   const admin = createSupabaseAdmin();
-  let data: Array<{ author_name: string | null; author_display_name: string | null; status: string | null }> | null = null;
-  try {
-    const res = await admin
-      .from("sesizari")
-      .select("author_name, author_display_name, status")
-      .eq("moderation_status", "approved")
-      .eq("publica", true)
-      .not("author_name", "is", null);
-    data = res.data;
-  } catch {
-    return [];
-  }
+  const res = await admin
+    .from("sesizari")
+    .select("author_name, author_display_name, status")
+    .eq("moderation_status", "approved")
+    .eq("publica", true)
+    .not("author_name", "is", null);
+  if (res.error || !res.data) return [];
 
   const buckets = new Map<string, { total: number; resolved: number }>();
-  for (const row of data ?? []) {
+  for (const row of res.data) {
     const display = leaderboardAuthorName({
       display_name: row.author_display_name,
       author_name: row.author_name,
@@ -159,8 +180,12 @@ async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; 
     if (row.status === "rezolvat") b.resolved += 1;
   }
 
+  // 2026-06-10 (audit) — includem și cetățenii cu o singură sesizare DACĂ au
+  // rezolvat-o (impact real). Înainte filtrul `total>=2` ascundea un rezolvator
+  // (ex: Enache, 1 sesizare rezolvată) → leaderboardul arăta mai puține rezolvate
+  // decât există. Acum: 2+ sesizări SAU 1+ rezolvată.
   const list = Array.from(buckets.entries())
-    .filter(([, b]) => b.total >= 2)
+    .filter(([, b]) => b.total >= 2 || b.resolved >= 1)
     .map(([name, b]) => ({ name, total: b.total, resolved: b.resolved }))
     .sort((a, b) => b.resolved - a.resolved || b.total - a.total)
     .slice(0, 10);
@@ -229,16 +254,20 @@ function scoreTint(score: number): { color: string; bg: string; label: string } 
 const MEDAL_EMOJI = ["🥇", "🥈", "🥉"];
 
 export default async function ClasamentPage() {
-  const [counties, cities, topUsers, topAmbassadors] = await Promise.all([
+  const [countyData, cities, topUsers, topAmbassadors] = await Promise.all([
     fetchCountyStats(),
     fetchCityStats(),
     fetchTopUsers(),
     fetchTopAmbassadors(),
-  ]);
+  ] as const);
 
-  const totalSesizari = counties.reduce((acc, c) => acc + c.total, 0);
-  const totalResolved = counties.reduce((acc, c) => acc + c.resolved, 0);
-  const nationalScore = totalSesizari > 0 ? Math.round((totalResolved / totalSesizari) * 100) : 0;
+  // 2026-06-10 (audit) — rata națională pe TOATE sesizările publice (inclusiv
+  // fără județ + sub prag), nu doar pe județele afișate. Înainte: 4/63; acum 4/69.
+  const counties = countyData.stats;
+  const preliminaryCounties = countyData.preliminary;
+  const nationalTotal = countyData.nationalTotal;
+  const nationalResolved = countyData.nationalResolved;
+  const nationalScore = nationalTotal > 0 ? Math.round((nationalResolved / nationalTotal) * 100) : 0;
 
   return (
     <div className="container-narrow py-8 md:py-12">
@@ -252,7 +281,11 @@ export default async function ClasamentPage() {
         title="Clasament primării"
         icon={Trophy}
         gradient={HERO_GRADIENT.success}
-        tagline={`${totalResolved} din ${totalSesizari} sesizări rezolvate la nivel național`}
+        tagline={
+          nationalTotal === 0
+            ? "Așteptăm primele sesizări publice…"
+            : `${nationalResolved} din ${nationalTotal} sesizări rezolvate la nivel național`
+        }
       />
 
       {/* National stat card mare — la blick clar */}
@@ -267,7 +300,8 @@ export default async function ClasamentPage() {
           {nationalScore}%
         </p>
         <p className="text-sm text-[var(--color-text-muted)] mt-2">
-          din {totalSesizari.toLocaleString("ro-RO")} sesizări publice
+          {nationalResolved.toLocaleString("ro-RO")} rezolvate din{" "}
+          {nationalTotal.toLocaleString("ro-RO")} sesizări publice (toate, indiferent de județ)
         </p>
       </Card>
 
@@ -320,12 +354,13 @@ export default async function ClasamentPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-2">
+          <div className="grid gap-2" role="list">
             {counties.slice(3).map((c, i) => {
               const t = scoreTint(c.fixScore);
               return (
                 <Link
                   key={c.countyId}
+                  role="listitem"
                   href={`/${c.countySlug}/sesizari`}
                   className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 hover:shadow-[var(--shadow-2)] hover:border-[var(--color-primary)]/30 transition-all flex items-center gap-4 group"
                 >
@@ -369,22 +404,61 @@ export default async function ClasamentPage() {
         )}
       </section>
 
-      {/* Top orașe (Faza 2 — hiper-localizare). Rata de rezolvare pe localitate. */}
-      {cities.length > 0 && (
+      {/* Alte județe cu puține raportări (1-2) — afișate transparent ca date
+          preliminare ca să nu dispară (ex: Cluj cu 1 sesizare). */}
+      {preliminaryCounties.length > 0 && (
         <section className="mb-12">
-          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-1 flex items-center gap-2">
-            <Building2 size={20} aria-hidden="true" className="text-sky-500" />
-            Top orașe
+          <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-bold mb-1 flex items-center gap-2">
+            <MapPin size={18} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+            Alte județe
           </h2>
           <p className="text-xs text-[var(--color-text-muted)] mb-4">
-            Rata de rezolvare pe localitate (minim 4 sesizări). Vezi cum se compară orașul tău.
+            Sub 3 raportări — date preliminare, fără rată de rezolvare semnificativă încă.
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="flex flex-wrap gap-2">
+            {preliminaryCounties.map((c) => (
+              <Link
+                key={c.countyId}
+                href={`/${c.countySlug}/sesizari`}
+                className="inline-flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-full)] px-3 py-1.5 text-sm hover:border-[var(--color-primary)]/30 transition-colors"
+              >
+                <span className="font-medium">{c.countyName}</span>
+                <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
+                  {c.resolved}/{c.total}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Top zone (Faza 2 — hiper-localizare). Sectoare București + orașe. */}
+      <section className="mb-12">
+        <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-1 flex items-center gap-2">
+          <Building2 size={20} aria-hidden="true" className="text-sky-500" />
+          Top zone
+        </h2>
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+          Rata de rezolvare pe zonă (minim 2 sesizări) — sectoare București și orașe din alte județe.
+        </p>
+        {cities.length === 0 ? (
+          <Card>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Încă nu avem o zonă cu minim 2 sesizări publice. Ești din zona ta?{" "}
+              <Link href="/sesizari" className="text-[var(--color-primary)] font-medium hover:underline">
+                Fă prima sesizare
+              </Link>{" "}
+              și pune-ți zona pe hartă.
+            </p>
+          </Card>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2" role="list">
             {cities.map((c, i) => {
               const t = scoreTint(c.fixScore);
               return (
                 <div
                   key={c.city}
+                  role="listitem"
                   className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-3"
                 >
                   <div className="w-6 text-center text-sm font-bold text-[var(--color-text-muted)] tabular-nums">
@@ -406,26 +480,30 @@ export default async function ClasamentPage() {
               );
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
-      {/* Cetățeni top 10 */}
+      {/* Cetățeni cu impact — cei care au sesizat / rezolvat probleme */}
       <section className="mb-8">
-        <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+        <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-1 flex items-center gap-2">
           <Users size={20} aria-hidden="true" />
-          Cetățeni activi
+          Cetățeni cu impact
         </h2>
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+          Cetățeni cu 2+ sesizări sau cu cel puțin o problemă rezolvată — ordonați după rezolvate.
+        </p>
         {topUsers.length === 0 ? (
           <Card>
             <p className="text-sm text-[var(--color-text-muted)]">
-              Încă nu avem cetățeni cu 2+ sesizări rezolvate.
+              Încă nu avem cetățeni cu sesizări publice și o problemă rezolvată.
             </p>
           </Card>
         ) : (
-          <div className="grid gap-2">
+          <div className="grid gap-2" role="list">
             {topUsers.map((u) => (
               <div
-                key={u.rank}
+                key={u.name}
+                role="listitem"
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-4"
               >
                 <div className="w-8 text-center font-bold tabular-nums">

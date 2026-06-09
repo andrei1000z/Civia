@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI_MODEL_BACKUPS } from "@/lib/ai/gemini";
+import { callCloudflareText, isCloudflareTextConfigured, CF_TEXT_MODELS } from "@/lib/ai/cloudflare-text";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
@@ -215,7 +216,7 @@ async function callAiWithFallback(
   // a synthesis use-case. The polishSynthesis post-processor smooths
   // over any grammar gap between providers.
   type Candidate = {
-    provider: "gemini" | "groq";
+    provider: "gemini" | "groq" | "cloudflare";
     model: string;
     run: () => Promise<string>;
   };
@@ -246,6 +247,10 @@ async function callAiWithFallback(
   // (latest aliases) au quota separată dar majoritar ratează la fel când
   // Google rate-limit-eaza projectul. Reducem la 2 Gemini → 2 Groq = 4
   // candidați total. Save quota + latency on degraded conditions.
+  const cfCall = (model: string) => async (): Promise<string> => {
+    const out = await callCloudflareText({ messages, model, temperature: 0.2, max_tokens: 1100 });
+    return (out ?? "").trim();
+  };
   const candidates: Candidate[] = [
     ...(isGeminiConfigured()
       ? [
@@ -255,6 +260,12 @@ async function callAiWithFallback(
       : []),
     { provider: "groq" as const, model: GROQ_MODEL, run: groqCall(GROQ_MODEL, 900) },
     { provider: "groq" as const, model: GROQ_MODEL_FAST, run: groqCall(GROQ_MODEL_FAST, 900) },
+    // 2026-06-10 — Cloudflare Workers AI ca ULTIM nivel (cotă separată 10k/zi).
+    // Înainte cascada știrilor avea DOAR Gemini+Groq → când ambele erau epuizate,
+    // 36% din știri rămâneau blocate pe „se generează". Acum Cloudflare prinde mingea.
+    ...(isCloudflareTextConfigured()
+      ? [{ provider: "cloudflare" as const, model: CF_TEXT_MODELS[0], run: cfCall(CF_TEXT_MODELS[0]) }]
+      : []),
   ];
   void GEMINI_MODEL_BACKUPS; // Keep import; cap reduce explicit pentru cost
 
