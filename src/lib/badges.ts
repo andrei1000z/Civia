@@ -38,6 +38,13 @@ export const BADGES = {
     { id: "streak-30", name: "Streak o luna", icon: "💎", description: "30 zile consecutiv activ", threshold: 30 },
     { id: "streak-100", name: "Streak 100 zile", icon: "👑", description: "100 zile consecutiv — civic guardian", threshold: 100 },
   ],
+  // 2026-06-09 (Faza 1): ambasador — cetățeni aduși pe Civia prin link-ul propriu
+  // de referral (referred_by = userul). Bucla virală de creștere #1.
+  ambasador: [
+    { id: "ambasador-1", name: "Ambasador", icon: "🤝", description: "Ai adus primul cetățean pe Civia", threshold: 1 },
+    { id: "ambasador-5", name: "Ambasador de încredere", icon: "📣", description: "Ai activat 5 cetățeni", threshold: 5 },
+    { id: "ambasador-20", name: "Ambasador civic", icon: "🌟", description: "Ai activat 20 de cetățeni", threshold: 20 },
+  ],
 };
 
 export interface UserBadges {
@@ -51,6 +58,7 @@ export function computeBadges(counts: {
   verifications: number;
   resolved: number;
   streak?: number;
+  referrals?: number;
 }): UserBadges {
   const earned: UserBadges["earned"] = [];
   const next: UserBadges["next"] = [];
@@ -71,6 +79,7 @@ export function computeBadges(counts: {
   checkCategory(BADGES.verifications, counts.verifications);
   checkCategory(BADGES.resolved, counts.resolved);
   if (counts.streak !== undefined) checkCategory(BADGES.streak, counts.streak);
+  if (counts.referrals !== undefined) checkCategory(BADGES.ambasador, counts.referrals);
 
   return { earned, next };
 }

@@ -123,6 +123,58 @@ async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; 
   return list.map((u, i) => ({ ...u, rank: i + 1 }));
 }
 
+/**
+ * Top ambasadori (Faza 1) — cetățeni care au adus cei mai mulți alți cetățeni
+ * pe Civia prin link-ul de referral. Privacy-safe: îi numim public DOAR pe cei
+ * care au activat profilul public (opt-in) — restul rămân necelebrați nominal.
+ */
+async function fetchTopAmbassadors(): Promise<
+  Array<{ name: string; slug: string; count: number; rank: number }>
+> {
+  const admin = createSupabaseAdmin();
+  let data: Array<{ referred_by: string | null }> | null = null;
+  try {
+    const res = await admin.from("profiles").select("referred_by").not("referred_by", "is", null);
+    data = res.data;
+  } catch {
+    return [];
+  }
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const id = row.referred_by;
+    if (!id) continue;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  if (counts.size === 0) return [];
+
+  const topIds = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([id]) => id);
+
+  const { data: profs } = await admin
+    .from("profiles")
+    .select("id, display_name, public_profile_slug, public_profile_enabled")
+    .in("id", topIds);
+
+  const list = ((profs ?? []) as Array<{
+    id: string;
+    display_name: string | null;
+    public_profile_slug: string | null;
+    public_profile_enabled: boolean;
+  }>)
+    .filter((p) => p.public_profile_enabled && p.public_profile_slug)
+    .map((p) => ({
+      name: p.display_name ?? "Cetățean Civia",
+      slug: p.public_profile_slug as string,
+      count: counts.get(p.id) ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return list.map((u, i) => ({ ...u, rank: i + 1 }));
+}
+
 function scoreTint(score: number): { color: string; bg: string; label: string } {
   if (score >= 60) return { color: "var(--color-success)", bg: "var(--color-success-soft)", label: "Bun" };
   if (score >= 30) return { color: "var(--color-warning)", bg: "var(--color-warning-soft)", label: "Mediu" };
@@ -132,9 +184,10 @@ function scoreTint(score: number): { color: string; bg: string; label: string } 
 const MEDAL_EMOJI = ["🥇", "🥈", "🥉"];
 
 export default async function ClasamentPage() {
-  const [counties, topUsers] = await Promise.all([
+  const [counties, topUsers, topAmbassadors] = await Promise.all([
     fetchCountyStats(),
     fetchTopUsers(),
+    fetchTopAmbassadors(),
   ]);
 
   const totalSesizari = counties.reduce((acc, c) => acc + c.total, 0);
@@ -311,6 +364,50 @@ export default async function ClasamentPage() {
           </div>
         )}
       </section>
+
+      {/* Top ambasadori (Faza 1) — cetățeni care activează cartierul. Apare
+          doar când avem ambasadori cu profil public opt-in. */}
+      {topAmbassadors.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-1 flex items-center gap-2">
+            <span className="text-xl" aria-hidden="true">🤝</span>
+            Ambasadori — cetățeni care activează cartierul
+          </h2>
+          <p className="text-xs text-[var(--color-text-muted)] mb-4">
+            Cei care au adus cei mai mulți cetățeni noi pe Civia. Distribuie o
+            sesizare sau o petiție și apari și tu aici.
+          </p>
+          <div className="grid gap-2">
+            {topAmbassadors.map((u) => (
+              <Link
+                key={u.slug}
+                href={`/u/${u.slug}`}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-4 hover:shadow-[var(--shadow-2)] hover:border-[var(--color-primary)]/30 transition-all group"
+              >
+                <div className="w-8 text-center font-bold tabular-nums">
+                  {u.rank <= 3 ? (
+                    <span className="text-xl" aria-hidden="true">{MEDAL_EMOJI[u.rank - 1]}</span>
+                  ) : (
+                    <span className="text-sm text-[var(--color-text-muted)]">{u.rank}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm group-hover:text-[var(--color-primary)] transition-colors">
+                    {u.name}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {u.count === 1 ? "1 cetățean adus" : `${u.count} cetățeni aduși`}
+                  </div>
+                </div>
+                <Badge variant="neutral" style={{ color: "var(--color-warning)", backgroundColor: "var(--color-warning-soft)" }}>
+                  <Users size={11} aria-hidden="true" />
+                  {u.count}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

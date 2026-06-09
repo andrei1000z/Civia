@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Award, FileText } from "lucide-react";
+import { ArrowLeft, Award, FileText, Users } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SITE_URL, SITE_NAME } from "@/lib/constants";
 
@@ -85,6 +85,12 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
     .eq("user_id", profile.id)
     .eq("status", "rezolvat");
 
+  // Referral (Faza 1) — câți cetățeni a adus pe Civia prin link-ul propriu.
+  const { count: referrals } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("referred_by", profile.id);
+
   const items = (sesizari ?? []) as Array<{
     code: string;
     titlu: string;
@@ -100,6 +106,11 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
   if ((total ?? 0) >= 50) badges.push({ label: "Power Contributor 50+", color: "bg-violet-500" });
   else if ((total ?? 0) >= 10) badges.push({ label: "Contributor activ", color: "bg-sky-500" });
   if ((resolved ?? 0) >= 5) badges.push({ label: "5+ probleme rezolvate", color: "bg-emerald-500" });
+  // Faza 1 — ambasador (cetățeni aduși pe Civia).
+  const refCount = referrals ?? 0;
+  if (refCount >= 20) badges.push({ label: "🌟 Ambasador civic", color: "bg-amber-500" });
+  else if (refCount >= 5) badges.push({ label: "📣 Ambasador de încredere", color: "bg-amber-500" });
+  else if (refCount >= 1) badges.push({ label: "🤝 Ambasador", color: "bg-amber-500" });
 
   return (
     <div className="container-narrow py-8 md:py-12">
@@ -132,6 +143,15 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
           <p className="text-2xl font-bold tabular-nums">{resolved ?? 0}</p>
           <p className="text-xs text-[var(--color-text-muted)]">Rezolvate</p>
         </div>
+        {refCount > 0 && (
+          <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] border border-[var(--color-border)]">
+            <Users size={18} className="text-amber-500 mb-2" aria-hidden="true" />
+            <p className="text-2xl font-bold tabular-nums">{refCount}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {refCount === 1 ? "Cetățean adus pe Civia" : "Cetățeni aduși pe Civia"}
+            </p>
+          </div>
+        )}
         {badges.length > 0 && (
           <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] border border-[var(--color-border)]">
             <div className="flex flex-wrap gap-1">

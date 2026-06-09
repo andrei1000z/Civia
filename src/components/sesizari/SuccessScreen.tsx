@@ -11,6 +11,7 @@ import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
+import { withRef } from "@/lib/referral/client";
 
 /**
  * Success screen post-submit — extras din SesizareForm in fisier separat
@@ -161,7 +162,13 @@ export function SuccessScreen({
 
 function SuccessShareSection({ code, title }: { code: string; title: string }) {
   const [copied, setCopied] = useState(false);
-  const url = `https://civia.ro/sesizari/${code}`;
+  // Referral (Faza 1) — atașăm ?ref={codul meu} pe link-ul partajat după mount
+  // (cookie civia_rc, citit client-side). Anonim → fără cod, url neschimbat.
+  const baseUrl = `https://civia.ro/sesizari/${code}`;
+  const [url, setUrl] = useState(baseUrl);
+  useEffect(() => {
+    setUrl(withRef(baseUrl));
+  }, [baseUrl]);
   const shareText = title;
 
   const trackShare = (channel: string) => {

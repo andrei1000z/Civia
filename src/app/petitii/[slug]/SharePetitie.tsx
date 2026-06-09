@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { cn } from "@/lib/utils";
+import { withRef } from "@/lib/referral/client";
 
 interface Props {
   url: string;          // absolute URL
@@ -35,8 +36,14 @@ export function SharePetitie({ url, title, summary }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Referral (Faza 1) — atașăm ?ref={codul meu} pe link-ul partajat după mount.
+  const [shareUrl, setShareUrl] = useState(url);
+  useEffect(() => {
+    setShareUrl(withRef(url));
+  }, [url]);
+
   const text = title;
-  const longText = `${title}\n\n${summary.slice(0, 200)}\n\n${url}`;
+  const longText = `${title}\n\n${summary.slice(0, 200)}\n\n${shareUrl}`;
   const enc = encodeURIComponent;
 
   // audit fix (a11y): focus trap + Escape + restaurare focus pe trigger la închidere.
@@ -85,7 +92,7 @@ export function SharePetitie({ url, title, summary }: Props) {
       label: "X / Twitter",
       bg: "bg-black hover:bg-zinc-900",
       icon: <SvgX />,
-      href: `https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(url)}`,
+      href: `https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(shareUrl)}`,
     },
     {
       id: "bluesky",
@@ -93,42 +100,42 @@ export function SharePetitie({ url, title, summary }: Props) {
       bg: "bg-sky-500 hover:bg-sky-600",
       icon: <SvgBluesky />,
       // Bluesky intent compose: text-only, includem URL în text
-      href: `https://bsky.app/intent/compose?text=${enc(`${text}\n${url}`)}`,
+      href: `https://bsky.app/intent/compose?text=${enc(`${text}\n${shareUrl}`)}`,
     },
     {
       id: "facebook",
       label: "Facebook",
       bg: "bg-blue-600 hover:bg-blue-700",
       icon: <SvgFacebook />,
-      href: `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`,
+      href: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`,
     },
     {
       id: "whatsapp",
       label: "WhatsApp",
       bg: "bg-emerald-600 hover:bg-emerald-700",
       icon: <SvgWhatsApp />,
-      href: `https://wa.me/?text=${enc(`${text} ${url}`)}`,
+      href: `https://wa.me/?text=${enc(`${text} ${shareUrl}`)}`,
     },
     {
       id: "telegram",
       label: "Telegram",
       bg: "bg-sky-600 hover:bg-sky-700",
       icon: <SvgTelegram />,
-      href: `https://t.me/share/url?url=${enc(url)}&text=${enc(text)}`,
+      href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(text)}`,
     },
     {
       id: "linkedin",
       label: "LinkedIn",
       bg: "bg-blue-700 hover:bg-blue-800",
       icon: <SvgLinkedin />,
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`,
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(shareUrl)}`,
     },
     {
       id: "reddit",
       label: "Reddit",
       bg: "bg-orange-600 hover:bg-orange-700",
       icon: <SvgReddit />,
-      href: `https://reddit.com/submit?url=${enc(url)}&title=${enc(text)}`,
+      href: `https://reddit.com/submit?url=${enc(shareUrl)}&title=${enc(text)}`,
     },
     {
       id: "email",
@@ -141,7 +148,7 @@ export function SharePetitie({ url, title, summary }: Props) {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast("Link copiat", "success");
       setTimeout(() => setCopied(false), 2000);
@@ -157,7 +164,7 @@ export function SharePetitie({ url, title, summary }: Props) {
       return;
     }
     try {
-      await navigator.share({ title, text: summary.slice(0, 200), url });
+      await navigator.share({ title, text: summary.slice(0, 200), url: shareUrl });
     } catch {
       // User canceled — silent.
     }
@@ -250,7 +257,7 @@ export function SharePetitie({ url, title, summary }: Props) {
                 <div className="flex gap-2">
                   <input
                     readOnly
-                    value={url}
+                    value={shareUrl}
                     onClick={(e) => (e.target as HTMLInputElement).select()}
                     aria-label="URL petiție"
                     className="flex-1 h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-mono text-[var(--color-text-muted)] truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

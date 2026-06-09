@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { generateNonce, buildCspWithNonce } from "@/lib/csp/nonce";
 import { updateSupabaseSession } from "@/lib/supabase/proxy";
+import { REF_VISITOR_COOKIE, isValidRefCode } from "@/lib/referral/code";
 
 // Opt-in via env flag — when CSP_NONCE_MODE=on, we generate a per-request
 // nonce and forward it via x-csp-nonce header so Server Components can
@@ -193,7 +194,24 @@ export default async function proxy(request: NextRequest) {
   // 2026-05-24: REDIRECT_EXACT (bilete/istoric) — eliminate, sunt
   // county-only pagini ce nu mai trebuie auto-prefixate. Userii vor
   // accesa direct /{slug}/bilete dacă vor.
-  return refreshAuth(request, withNonce(request));
+  const res = await refreshAuth(request, withNonce(request));
+
+  // ─── Referral first-touch (Faza 1) ─────────────────────────────────
+  // Vizitator cu `?ref={cod}` și fără cookie încă → setăm cookie-ul 90 zile.
+  // FIRST-TOUCH: nu suprascriem un ref existent (primul care a adus userul
+  // primește creditul). httpOnly — citit doar server-side la signup (callback).
+  const ref = request.nextUrl.searchParams.get("ref");
+  if (isValidRefCode(ref) && !request.cookies.get(REF_VISITOR_COOKIE)) {
+    res.cookies.set(REF_VISITOR_COOKIE, ref.toLowerCase(), {
+      maxAge: 60 * 60 * 24 * 90,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
+  return res;
 }
 
 // Matcher expandat 5/21/2026 ca proxy.ts sa ruleze pe TOATE paginile,

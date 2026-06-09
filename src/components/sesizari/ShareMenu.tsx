@@ -5,6 +5,7 @@ import { Share2, MessageCircle, Send, Link2, QrCode, Check } from "lucide-react"
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/Toast";
 import { QR_API_BASE_URL } from "@/lib/constants";
+import { withRef } from "@/lib/referral/client";
 
 interface Props {
   url: string;
@@ -24,6 +25,14 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Referral (Faza 1) — după mount, adaugă ?ref={codul meu} pe URL-ul de share
+  // (cookie-ul civia_rc e citit client-side). La SSR/prim render folosim url-ul
+  // simplu; meniul se deschide doar după mount, deci share-urile poartă ref-ul.
+  const [shareUrl, setShareUrl] = useState(url);
+  useEffect(() => {
+    setShareUrl(withRef(url));
+  }, [url]);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -42,14 +51,14 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   }, [open, qrOpen]);
 
   const fullText = `${title} - Civia`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${fullText}\n${url}`)}`;
-  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(fullText)}`;
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(url)}`;
-  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${fullText}\n${shareUrl}`)}`;
+  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(fullText)}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(shareUrl)}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   // Bluesky compose intent — share text + URL via Bluesky's official intent
   // URL. Civia are deja cont @civiaro pe Bluesky, deci shares ajung in
   // ecosistemul european open-source preferat.
-  const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${fullText}\n${url}`)}`;
+  const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${fullText}\n${shareUrl}`)}`;
 
   // Helper — fire a "share" custom analytics event with the channel
   // so /admin/analytics can show which sharing surfaces are hot.
@@ -62,17 +71,17 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`${fullText}\n${url}`);
+      await navigator.clipboard.writeText(`${fullText}\n${shareUrl}`);
       setCopied(true);
       toast("Link copiat!", "success", 2000);
       trackShare("clipboard");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt("Copiază:", url);
+      window.prompt("Copiază:", shareUrl);
     }
   };
 
-  const qrUrl = `${QR_API_BASE_URL}?size=300x300&data=${encodeURIComponent(url)}`;
+  const qrUrl = `${QR_API_BASE_URL}?size=300x300&data=${encodeURIComponent(shareUrl)}`;
 
   const iconSize = size === "sm" ? 13 : 15;
   // „lg" = h-11 px-4 — la fel ca butoanele de acțiune (SignSesizare, Status etc.)
@@ -86,7 +95,7 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (typeof nav.share !== "function") return false;
     try {
-      await nav.share({ title, url });
+      await nav.share({ title, url: shareUrl });
       trackShare("native");
       return true;
     } catch {
@@ -232,8 +241,8 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
           >
             <h3 id="qr-modal-title" className="font-semibold text-lg mb-3 text-slate-900 text-center">Scanează codul</h3>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrUrl} alt={`Cod QR pentru ${url}`} className="mx-auto" width={300} height={300} />
-            <p className="text-xs text-center text-slate-600 mt-3 truncate" title={url}>{url}</p>
+            <img src={qrUrl} alt={`Cod QR pentru ${shareUrl}`} className="mx-auto" width={300} height={300} />
+            <p className="text-xs text-center text-slate-600 mt-3 truncate" title={shareUrl}>{shareUrl}</p>
             <button
               type="button"
               onClick={() => setQrOpen(false)}

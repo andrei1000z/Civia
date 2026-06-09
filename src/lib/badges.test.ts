@@ -163,3 +163,30 @@ describe("computeBadges cu streak", () => {
     expect(ids.filter((id) => id.startsWith("streak"))).toHaveLength(0);
   });
 });
+
+describe("computeBadges cu referrals (ambasador — Faza 1)", () => {
+  const ZB = { sesizari: 0, comments: 0, verifications: 0, resolved: 0 };
+
+  it("acorda ambasador-1 la primul cetatean adus", () => {
+    const r = computeBadges({ ...ZB, referrals: 1 });
+    const ids = r.earned.map((e) => e.badge.id);
+    expect(ids).toContain("ambasador-1");
+    expect(ids).not.toContain("ambasador-5");
+    expect(r.next.find((n) => n.badge.id === "ambasador-5")?.remaining).toBe(4);
+  });
+
+  it("acorda toate tier-urile la 20 de cetateni activati", () => {
+    const ids = computeBadges({ ...ZB, referrals: 20 }).earned.map((e) => e.badge.id);
+    expect(ids).toContain("ambasador-1");
+    expect(ids).toContain("ambasador-5");
+    expect(ids).toContain("ambasador-20");
+  });
+
+  it("backward compat: fara referrals → niciun badge ambasador", () => {
+    const ids = computeBadges(ZB).earned.map((e) => e.badge.id);
+    expect(ids.filter((id) => id.startsWith("ambasador"))).toHaveLength(0);
+    // si nu apare in „next" (nu impingem userii spre ambasador daca n-au pornit)
+    const nextIds = computeBadges(ZB).next.map((n) => n.badge.id);
+    expect(nextIds.filter((id) => id.startsWith("ambasador"))).toHaveLength(0);
+  });
+});

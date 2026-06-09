@@ -13,6 +13,7 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { AlertBanner } from "@/components/AlertBanner";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
+import { ReferralSelfBridge } from "@/components/referral/ReferralSelfBridge";
 import { NavProgress } from "@/components/NavProgress";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { DeferredClientMount } from "@/components/DeferredClientMount";
@@ -260,6 +261,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
+              {/* Referral (Faza 1) — asigură cookie-ul propriu civia_rc pentru
+                  share-uri cu ?ref=. Zero UI, doar pentru userii logați. */}
+              <ReferralSelfBridge />
               <AlertBanner />
               <Navbar />
               <main id="main-content" className="flex-1 flex flex-col">{children}</main>
