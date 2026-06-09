@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Star, AlertTriangle, CheckCircle2, Users, X, ChevronDown, Filter, GitCompare } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatDecimal } from "@/lib/utils";
@@ -326,12 +326,41 @@ function PrimarModal({
     { id: "viceprimari", label: "Viceprimari", icon: Users, items: primar.viceprimari, color: "text-purple-600" },
   ];
 
+  // audit a11y: semantică dialog + Escape + focus trap + restaurare focus.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      dialogRef.current
+        ? Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])')).filter((el) => el.offsetParent !== null)
+        : [];
+    focusables()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Tab") {
+        const els = focusables();
+        if (els.length === 0) return;
+        const first = els[0]!, last = els[els.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); triggerRef.current?.focus(); };
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
+      role="presentation"
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Detalii primar ${primar.nume}`}
         className="w-full max-w-2xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8"
         onClick={(e) => e.stopPropagation()}
       >

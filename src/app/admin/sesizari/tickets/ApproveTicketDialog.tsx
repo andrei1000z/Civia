@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -97,17 +97,38 @@ export function ApproveTicketDialog({ open, ticket, submitting, onClose, onSubmi
     setAiResult(null);
   }, [open, ticket]);
 
-  // Esc + body-scroll lock.
+  // Esc + body-scroll lock + (audit a11y) focus management: focus inițial în
+  // dialog, focus trap pe Tab, restaurare focus pe trigger la închidere.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!open) return;
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      dialogRef.current
+        ? Array.from(
+            dialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null)
+        : [];
+    focusables()[0]?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !submitting) onClose();
+      if (e.key === "Escape" && !submitting) { onClose(); return; }
+      if (e.key === "Tab") {
+        const els = focusables();
+        if (els.length === 0) return;
+        const first = els[0]!, last = els[els.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      triggerRef.current?.focus();
     };
   }, [open, submitting, onClose]);
 
@@ -169,6 +190,7 @@ export function ApproveTicketDialog({ open, ticket, submitting, onClose, onSubmi
       role="presentation"
     >
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
