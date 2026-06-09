@@ -86,10 +86,18 @@ export async function sendEmail(params: {
       ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {
         ...(params.headers ?? {}),
-        "List-Unsubscribe": params.listUnsubscribe
-          ? `<${params.listUnsubscribe}>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`
-          : `<${ENV.SITE_URL()}/cont?unsubscribe=1>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        // audit fix: `List-Unsubscribe-Post: One-Click` (RFC 8058) cere un
+        // endpoint care acceptă POST — îl emitem DOAR când există un
+        // listUnsubscribe real. Pe tranzacționale punem doar mailto (fără -Post
+        // care pointa la /cont?unsubscribe=1, o pagină GET → one-click pica).
+        ...(params.listUnsubscribe
+          ? {
+              "List-Unsubscribe": `<${params.listUnsubscribe}>, <mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            }
+          : {
+              "List-Unsubscribe": `<mailto:unsubscribe@civia.ro?subject=Unsubscribe>`,
+            }),
       },
     });
     if (error) {

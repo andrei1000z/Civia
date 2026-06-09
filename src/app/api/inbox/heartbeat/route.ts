@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { getClientIp } from "@/lib/ratelimit";
+import { getClientIp, rateLimitAsync } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -19,8 +19,16 @@ export const maxDuration = 10;
  */
 
 export async function POST(req: Request) {
-  const admin = createSupabaseAdmin();
   const ip = getClientIp(req);
+
+  // audit fix: endpoint neautentificat care scria în DB nelimitat (DoS / log
+  // flooding). Rate limit agresiv pe IP (worker-ul legitim face 1 ping/email).
+  const rl = await rateLimitAsync(`inbox-heartbeat:${ip}`, { limit: 20, windowMs: 60_000 });
+  if (!rl.success) {
+    return NextResponse.json({ ok: false, note: "rate-limited" }, { status: 429 });
+  }
+
+  const admin = createSupabaseAdmin();
 
   // Capture headers (selective — skip cookies/auth for size/security)
   const headers: Record<string, string> = {};
@@ -33,7 +41,7 @@ export async function POST(req: Request) {
   let body: string | null = null;
   try {
     const raw = await req.text();
-    body = raw.slice(0, 50_000);
+    body = raw.slice(0, 4_000); // audit: cap mic (heartbeat e mic) — anti log-flooding
   } catch {
     // ignore
   }
