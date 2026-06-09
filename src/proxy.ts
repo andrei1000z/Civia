@@ -9,11 +9,17 @@ import { updateSupabaseSession } from "@/lib/supabase/proxy";
 // next.config.ts is used. Allows a safe gradual rollout.
 const NONCE_MODE_ON = process.env.CSP_NONCE_MODE === "on";
 
-function withNonce(res: NextResponse, request: NextRequest): NextResponse {
-  if (!NONCE_MODE_ON) return res;
+function withNonce(request: NextRequest): NextResponse {
+  if (!NONCE_MODE_ON) return NextResponse.next();
   const nonce = generateNonce();
-  // Forward to RSC via request headers (echoed back as response header).
-  request.headers.set("x-csp-nonce", nonce);
+  // audit fix: propagă nonce-ul la Server Components prin request headers ÎN
+  // momentul creării response-ului. Înainte se muta `request.headers` DUPĂ ce
+  // `res` era deja creat din request-ul original → nonce-ul nu ajungea niciodată
+  // la RSC (headers() nu-l vedea). NextResponse.next({ request: { headers } }) e
+  // pattern-ul canonic Next.js de propagare a headerelor de request modificate.
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set("x-csp-nonce", nonce);
+  const res = NextResponse.next({ request: { headers: reqHeaders } });
   res.headers.set("x-csp-nonce", nonce);
   res.headers.set("Content-Security-Policy", buildCspWithNonce(nonce));
   return res;
@@ -136,7 +142,7 @@ export default async function proxy(request: NextRequest) {
   // 2026-05-25 EARLY RETURN: pe paths publice fără auth refresh nu mai
   // facem updateSupabaseSession (skip Supabase getUser round-trip).
   if (isPublicNoAuthPath(pathname)) {
-    return withNonce(NextResponse.next(), request);
+    return withNonce(request);
   }
 
   // ─── Legacy routes 308 redirects (rute sterse, vezi LEGACY_REDIRECTS) ──
@@ -187,7 +193,7 @@ export default async function proxy(request: NextRequest) {
   // 2026-05-24: REDIRECT_EXACT (bilete/istoric) — eliminate, sunt
   // county-only pagini ce nu mai trebuie auto-prefixate. Userii vor
   // accesa direct /{slug}/bilete dacă vor.
-  return refreshAuth(request, withNonce(NextResponse.next(), request));
+  return refreshAuth(request, withNonce(request));
 }
 
 // Matcher expandat 5/21/2026 ca proxy.ts sa ruleze pe TOATE paginile,
