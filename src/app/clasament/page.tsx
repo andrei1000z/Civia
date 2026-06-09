@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Trophy, TrendingUp, MapPin, Users, ArrowUpRight } from "lucide-react";
+import { Trophy, TrendingUp, MapPin, Users, ArrowUpRight, Building2 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { ALL_COUNTIES } from "@/data/counties";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { leaderboardAuthorName } from "@/lib/sesizari/display-name";
+import { extractLocality } from "@/lib/sesizari/extract-locality";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { SITE_URL } from "@/lib/constants";
 
@@ -81,6 +82,50 @@ async function fetchCountyStats(): Promise<CountyStats[]> {
   }
 
   return stats.sort((a, b) => b.fixScore - a.fixScore || b.total - a.total);
+}
+
+type CityStats = { city: string; total: number; resolved: number; fixScore: number };
+
+/**
+ * Leaderboard pe ORAȘ (Faza 2 — hiper-localizare). Grupează sesizările publice
+ * pe localitate via extractLocality(locatie) — sesizari n-are coloană locality,
+ * deci derivăm orașul din textul liber. Prag minim 4 sesizări/oraș ca să fie
+ * semnificativ statistic.
+ */
+async function fetchCityStats(): Promise<CityStats[]> {
+  const admin = createSupabaseAdmin();
+  let data: Array<{ locatie: string | null; status: string | null }> | null = null;
+  try {
+    const res = await admin
+      .from("sesizari")
+      .select("locatie, status")
+      .eq("moderation_status", "approved")
+      .eq("publica", true)
+      .not("locatie", "is", null);
+    data = res.data;
+  } catch {
+    return [];
+  }
+
+  const buckets = new Map<string, { total: number; resolved: number }>();
+  for (const row of data ?? []) {
+    const city = extractLocality(row.locatie);
+    if (!city) continue; // doar orașe recunoscute (extractLocality e conservator)
+    let b = buckets.get(city);
+    if (!b) {
+      b = { total: 0, resolved: 0 };
+      buckets.set(city, b);
+    }
+    b.total += 1;
+    if (row.status === "rezolvat") b.resolved += 1;
+  }
+
+  const stats: CityStats[] = [];
+  for (const [city, b] of buckets.entries()) {
+    if (b.total < 4) continue;
+    stats.push({ city, total: b.total, resolved: b.resolved, fixScore: Math.round((b.resolved / b.total) * 100) });
+  }
+  return stats.sort((a, b) => b.fixScore - a.fixScore || b.total - a.total).slice(0, 12);
 }
 
 async function fetchTopUsers(): Promise<Array<{ name: string; resolved: number; total: number; rank: number }>> {
@@ -184,8 +229,9 @@ function scoreTint(score: number): { color: string; bg: string; label: string } 
 const MEDAL_EMOJI = ["🥇", "🥈", "🥉"];
 
 export default async function ClasamentPage() {
-  const [counties, topUsers, topAmbassadors] = await Promise.all([
+  const [counties, cities, topUsers, topAmbassadors] = await Promise.all([
     fetchCountyStats(),
+    fetchCityStats(),
     fetchTopUsers(),
     fetchTopAmbassadors(),
   ]);
@@ -322,6 +368,46 @@ export default async function ClasamentPage() {
           </div>
         )}
       </section>
+
+      {/* Top orașe (Faza 2 — hiper-localizare). Rata de rezolvare pe localitate. */}
+      {cities.length > 0 && (
+        <section className="mb-12">
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-1 flex items-center gap-2">
+            <Building2 size={20} aria-hidden="true" className="text-sky-500" />
+            Top orașe
+          </h2>
+          <p className="text-xs text-[var(--color-text-muted)] mb-4">
+            Rata de rezolvare pe localitate (minim 4 sesizări). Vezi cum se compară orașul tău.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {cities.map((c, i) => {
+              const t = scoreTint(c.fixScore);
+              return (
+                <div
+                  key={c.city}
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-3"
+                >
+                  <div className="w-6 text-center text-sm font-bold text-[var(--color-text-muted)] tabular-nums">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">{c.city}</div>
+                    <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      {c.resolved} rezolvate · {c.total} total
+                    </div>
+                    <div className="mt-1.5 h-1.5 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${c.fixScore}%`, backgroundColor: t.color }} />
+                    </div>
+                  </div>
+                  <div className="text-lg font-extrabold tabular-nums shrink-0" style={{ color: t.color }}>
+                    {c.fixScore}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Cetățeni top 10 */}
       <section className="mb-8">
