@@ -2076,6 +2076,14 @@ export function SesizareForm() {
           </button>
         </div>
 
+        {/* roadmap F0 — reasigurare onboarding la momentul deciziei: adresează
+            abandonul #1 (frica de „trebuie cont"). Sesizarea se face 100% anonim. */}
+        {!submitting && !submitted && (
+          <p className="text-[11px] text-center text-emerald-700 dark:text-emerald-400 mt-2 font-medium">
+            ✓ Fără cont · 100% gratuit · ~90 de secunde
+          </p>
+        )}
+
         {!data.formal_text && !aiLoading && !submitting && (
           <p className="text-[11px] text-center text-[var(--color-text-muted)] mt-2 inline-flex items-center justify-center gap-1.5 w-full">
             <Sparkles size={11} className="text-purple-500" aria-hidden="true" />
