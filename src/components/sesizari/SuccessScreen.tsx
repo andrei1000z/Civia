@@ -10,6 +10,7 @@ import { playSound } from "@/lib/liquid-civic/sound";
 import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
+import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 
 /**
  * Success screen post-submit — extras din SesizareForm in fisier separat
@@ -123,6 +124,15 @@ export function SuccessScreen({
 
       {autoSendStatus === "needs-identity" && (
         <SendViaCiviaButton code={code} className="mb-6" />
+      )}
+
+      {/* roadmap F0 — push timing: prompt-ul de notificări apare la momentul
+          potrivit (după trimitere reușită), cu copy legat de valoare. Se ascunde
+          singur pentru anonimi/browsere nesuportate. */}
+      {autoSendStatus === "sent" && (
+        <div className="mb-6 flex justify-center">
+          <PushPermissionButton context="🔔 Te anunțăm când primăria răspunde" />
+        </div>
       )}
 
       <div className="flex flex-col gap-3">

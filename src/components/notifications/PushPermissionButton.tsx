@@ -19,7 +19,7 @@ import { trackPushPermission } from "@/components/analytics/CiviaTracker";
  *
  * Dezactivare: simetric — unsubscribe + DELETE /api/push/subscribe.
  */
-export function PushPermissionButton() {
+export function PushPermissionButton({ context }: { context?: string } = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [supported, setSupported] = useState(false);
@@ -123,7 +123,7 @@ export function PushPermissionButton() {
     );
   }
 
-  return (
+  const btn = (
     <button
       type="button"
       onClick={subscribed ? unsubscribe : subscribe}
@@ -140,6 +140,17 @@ export function PushPermissionButton() {
       {subscribed ? "Oprește notificări push" : "Activează notificări push"}
     </button>
   );
+  // context = text scurt deasupra butonului; apare DOAR împreună cu butonul
+  // (după null-check-ul de mai sus), deci niciodată orfan.
+  if (context && !subscribed) {
+    return (
+      <div className="inline-flex flex-col items-center gap-1.5">
+        <p className="text-xs text-[var(--color-text-muted)]">{context}</p>
+        {btn}
+      </div>
+    );
+  }
+  return btn;
 }
 
 /** VAPID public key e base64url; convertim la Uint8Array cum cere API-ul. */
