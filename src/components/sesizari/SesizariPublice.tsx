@@ -146,11 +146,14 @@ export function SesizariPublice() {
   // să apară numărul global de sesizări făcute, nu cele 20 paginate. Sursa:
   // /api/v1/stats (cached 15 min). Fallback la rows.length dacă API eșuează.
   const [totalCount, setTotalCount] = useState<number | null>(null);
+  // roadmap F0 — social proof: nr. rezolvate (dovada că platforma funcționează).
+  const [resolvedCount, setResolvedCount] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/v1/stats")
       .then((r) => r.json())
       .then((j) => {
         if (typeof j?.data?.total === "number") setTotalCount(j.data.total);
+        if (typeof j?.data?.resolved === "number") setResolvedCount(j.data.resolved);
       })
       .catch(() => { /* silent — fallback la rows.length */ });
   }, []);
@@ -352,6 +355,11 @@ export function SesizariPublice() {
                 {totalCount !== null
                   ? `${totalCount.toLocaleString("ro-RO")} sesizări pe Civia`
                   : `${filtered.length} sesizări`}
+                {resolvedCount !== null && resolvedCount > 0 && (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {" · "}{resolvedCount.toLocaleString("ro-RO")} rezolvate ✓
+                  </span>
+                )}
               </span>
               {pendingNew > 0 && (
                 <button
