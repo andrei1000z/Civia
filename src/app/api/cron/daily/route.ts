@@ -39,6 +39,9 @@ export async function GET(req: Request) {
     // 2026-06-09 (roadmap Faza 0) — streak win-back. Endpoint-ul exista dar NU
     // era chemat de nicăieri (bucla de retenție era moartă) → acum rulează zilnic.
     "/api/streaks/at-risk",
+    // 2026-06-09 (roadmap Faza 1) — chaser a-doua-acțiune: la ~48h după prima
+    // sesizare fără a doua acțiune, email „Ce s-a mai raportat în {oraș}".
+    "/api/sesizari/winback",
   ];
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
   if (day === 5) jobs.push("/api/newsletter/weekly-rezolvate"); // Vineri
