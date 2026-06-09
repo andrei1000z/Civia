@@ -396,7 +396,7 @@ export class CiviaD1Client {
 
   // ─── Pipeline (batch executor for grouping multiple writes) ──────────────
   pipeline(): D1Pipeline {
-    return new D1Pipeline(this);
+    return new D1Pipeline();
   }
 }
 
@@ -409,65 +409,115 @@ export class CiviaD1Client {
  * NU e cu adevarat tranzactional ca pipeline Redis — pentru analytics best-effort
  * e suficient.
  */
-type PipelineOp = () => Promise<unknown>;
+export type D1Stmt = { sql: string; params: Array<string | number | null> };
 
+const STORAGE_TABLES = ["kv", "hash_kv", "set_kv", "list_kv", "zset_kv"] as const;
+
+// 2026-06-08 (audit perf): D1 REST /query rulează multiple statements separate
+// prin „;" într-un singur request. null=netestat, true=ok (1 request/batch),
+// false=nu (fallback la individual-paralel). Detectat la prima rulare + memorat.
+let d1MultiStmtSupported: boolean | null = null;
+
+/**
+ * Flush statements colectate: ÎNCEARCĂ un singur request HTTP cu toate
+ * statements concatenate cu „;" (params aplatizate în ordine) → reduce un
+ * pageview de la zeci de round-trips la 1/batch. FALLBACK la individual-paralel
+ * dacă D1 respinge multi-statement (zero regresie). Statements sunt IDEMPOTENTE
+ * (INSERT ON CONFLICT / UPDATE / DELETE) → o eventuală re-rulare la fallback e safe.
+ */
+export async function flushD1Statements(stmts: D1Stmt[]): Promise<void> {
+  if (stmts.length === 0) return;
+  const individual = async () => {
+    await Promise.allSettled(stmts.map((s) => d1Query(s.sql, s.params)));
+  };
+  if (stmts.length === 1 || d1MultiStmtSupported === false) {
+    await individual();
+    return;
+  }
+  try {
+    await d1Query(stmts.map((s) => s.sql).join(";\n"), stmts.flatMap((s) => s.params));
+    d1MultiStmtSupported = true;
+  } catch {
+    d1MultiStmtSupported = false;
+    await individual();
+  }
+}
+
+/**
+ * Pipeline care COLECTEAZĂ statements (nu mai execută closure-uri separat per op)
+ * și le trimite batch-uit la exec(). Înainte fiecare op = un fetch separat
+ * (zeci/pageview). Statements identice cu cele din metodele directe (fără RETURNING).
+ */
 export class D1Pipeline {
-  private ops: PipelineOp[] = [];
-  constructor(private client: CiviaD1Client) {}
+  private stmts: D1Stmt[] = [];
 
   hincrby(k: string, f: string, n: number): this {
-    this.ops.push(() => this.client.hincrby(k, f, n));
+    this.stmts.push({ sql: `INSERT INTO hash_kv (k, f, v) VALUES (?, ?, ?) ON CONFLICT(k, f) DO UPDATE SET v = CAST((CAST(v AS INTEGER) + ?) AS TEXT)`, params: [k, f, String(n), n] });
     return this;
   }
   hset(k: string, fields: Record<string, string | number>): this {
-    this.ops.push(() => this.client.hset(k, fields));
+    for (const [f, v] of Object.entries(fields)) {
+      this.stmts.push({ sql: `INSERT INTO hash_kv (k, f, v) VALUES (?, ?, ?) ON CONFLICT(k, f) DO UPDATE SET v = excluded.v`, params: [k, f, String(v)] });
+    }
     return this;
   }
   hsetnx(k: string, f: string, v: string | number): this {
-    this.ops.push(() => this.client.hsetnx(k, f, v));
+    this.stmts.push({ sql: `INSERT INTO hash_kv (k, f, v) VALUES (?, ?, ?) ON CONFLICT(k, f) DO NOTHING`, params: [k, f, String(v)] });
     return this;
   }
   expire(k: string, sec: number): this {
-    this.ops.push(() => this.client.expire(k, sec));
+    const e = NOW() + sec * 1000;
+    for (const t of STORAGE_TABLES) this.stmts.push({ sql: `UPDATE ${t} SET expires_at = ? WHERE k = ?`, params: [e, k] });
     return this;
   }
   sadd(k: string, ...m: Array<string | number>): this {
-    this.ops.push(() => this.client.sadd(k, ...m));
+    for (const x of m) this.stmts.push({ sql: `INSERT INTO set_kv (k, m) VALUES (?, ?) ON CONFLICT(k, m) DO NOTHING`, params: [k, String(x)] });
     return this;
   }
   lpush(k: string, ...v: Array<string | number>): this {
-    this.ops.push(() => this.client.lpush(k, ...v));
+    const now = NOW();
+    v.forEach((x, i) => this.stmts.push({ sql: `INSERT INTO list_kv (k, id, v) VALUES (?, ?, ?)`, params: [k, now * 1000 + i, String(x)] }));
     return this;
   }
   ltrim(k: string, s: number, e: number): this {
-    this.ops.push(() => this.client.ltrim(k, s, e));
+    if (e === -1) {
+      this.stmts.push({ sql: `DELETE FROM list_kv WHERE k = ? AND id IN (SELECT id FROM list_kv WHERE k = ? ORDER BY id DESC LIMIT ?)`, params: [k, k, s] });
+    } else {
+      this.stmts.push({ sql: `DELETE FROM list_kv WHERE k = ? AND id NOT IN (SELECT id FROM list_kv WHERE k = ? ORDER BY id DESC LIMIT ? OFFSET ?)`, params: [k, k, e - s + 1, s] });
+    }
     return this;
   }
   zadd(k: string, entry: { score: number; member: string | number }): this {
-    this.ops.push(() => this.client.zadd(k, entry));
+    this.stmts.push({ sql: `INSERT INTO zset_kv (k, m, s) VALUES (?, ?, ?) ON CONFLICT(k, m) DO UPDATE SET s = excluded.s`, params: [k, String(entry.member), entry.score] });
     return this;
   }
   zincrby(k: string, n: number, m: string | number): this {
-    this.ops.push(() => this.client.zincrby(k, n, m));
+    this.stmts.push({ sql: `INSERT INTO zset_kv (k, m, s) VALUES (?, ?, ?) ON CONFLICT(k, m) DO UPDATE SET s = s + ?`, params: [k, String(m), n, n] });
     return this;
   }
   del(k: string): this {
-    this.ops.push(() => this.client.del(k));
+    for (const t of STORAGE_TABLES) this.stmts.push({ sql: `DELETE FROM ${t} WHERE k = ?`, params: [k] });
     return this;
   }
   zrem(k: string, ...m: Array<string | number>): this {
-    this.ops.push(() => this.client.zrem(k, ...m));
+    if (m.length) this.stmts.push({ sql: `DELETE FROM zset_kv WHERE k = ? AND m IN (${m.map(() => "?").join(",")})`, params: [k, ...m.map(String)] });
     return this;
   }
   srem(k: string, ...m: Array<string | number>): this {
-    this.ops.push(() => this.client.srem(k, ...m));
+    if (m.length) this.stmts.push({ sql: `DELETE FROM set_kv WHERE k = ? AND m IN (${m.map(() => "?").join(",")})`, params: [k, ...m.map(String)] });
     return this;
   }
 
+  /** Statements colectate (read-only, pentru teste/diagnostic). */
+  get statements(): ReadonlyArray<D1Stmt> {
+    return this.stmts;
+  }
+
   async exec(): Promise<unknown[]> {
-    // Best-effort: execute all ops in parallel, swallow individual errors.
-    const results = await Promise.allSettled(this.ops.map((op) => op()));
-    return results.map((r) => (r.status === "fulfilled" ? r.value : null));
+    const stmts = this.stmts;
+    this.stmts = [];
+    await flushD1Statements(stmts);
+    return [];
   }
 }
 
