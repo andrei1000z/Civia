@@ -153,6 +153,31 @@ export default function ContPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  // audit a11y: focus management pe modalul de ștergere cont (focus inițial +
+  // trap pe Tab + Escape + restaurare focus). Înainte: doar role=dialog pe overlay.
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!deleteModal) return;
+    deleteTriggerRef.current = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      deleteDialogRef.current
+        ? Array.from(deleteDialogRef.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null)
+        : [];
+    focusables()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !deleting) { setDeleteModal(false); return; }
+      if (e.key === "Tab") {
+        const els = focusables();
+        if (els.length === 0) return;
+        const first = els[0]!, last = els[els.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); deleteTriggerRef.current?.focus(); };
+  }, [deleteModal, deleting]);
   // Bug #8 fix 5/22/2026 — newsletter auto-save fetch poate complete dupa
   // ce userul navigeaza away; setState pe unmounted component arunca warning
   // si leak. AbortController + mounted ref garanteaza cleanup.
@@ -834,6 +859,7 @@ export default function ContPage() {
           aria-labelledby="delete-modal-title"
         >
           <div
+            ref={deleteDialogRef}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden"
           >
