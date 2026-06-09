@@ -370,10 +370,13 @@ export default function ContPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.newsletter_sms_optin && !form.phone.trim()) {
-      setSaveError("Pentru newsletter pe SMS, completează numărul de telefon.");
-      return;
-    }
+    // audit fix: fără telefon NICIUN opt-in SMS nu poate fi activ → resetăm toate
+    // cele 3 înainte de POST. Înainte doar newsletter_sms_optin era validat, iar
+    // notify_petitii_sms/notify_proteste_sms rămâneau true în DB după ștergerea
+    // telefonului (UI „off" vs DB „on" — și SMS-uri fără telefon valid).
+    const payload = form.phone.trim()
+      ? form
+      : { ...form, newsletter_sms_optin: false, notify_petitii_sms: false, notify_proteste_sms: false };
     setSaving(true);
     setSaved(false);
     setSaveError(null);
@@ -381,7 +384,7 @@ export default function ContPage() {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok) {
