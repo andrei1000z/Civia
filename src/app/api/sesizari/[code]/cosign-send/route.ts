@@ -20,6 +20,7 @@
 
 import { NextResponse } from "next/server";
 import { safeTitlu } from "@/lib/sesizari/titlu";
+import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -287,10 +288,14 @@ export async function POST(
     // din timeline-ul public; acesta apare ca etapă reală de trimitere).
     if (sesizare.status === "nou") {
       try {
-        await admin.from("sesizare_timeline").insert({
-          sesizare_id: sesizare.id,
-          event_type: "trimis_via_civia",
+        // 2026-06-10 (audit statusuri) — prin appendTimelineEvent: dedup la sursă
+        // dacă send-via-civia a scris deja `trimis_via_civia` aproape simultan.
+        await appendTimelineEvent({
+          admin,
+          sesizareId: sesizare.id,
+          eventType: "trimis_via_civia",
           description: `Email trimis către ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"} prin Civia.`,
+          sentryTags: { kind: "cosign_timeline_fail", code: sesizare.code },
         });
       } catch {
         // best-effort
@@ -326,10 +331,12 @@ export async function POST(
   // pe timeline public eventul `cosign_send` e filtrat complet, dar păstrăm
   // descriere safe pentru audit + owner view + admin view.
   try {
-    await admin.from("sesizare_timeline").insert({
-      sesizare_id: sesizare.id,
-      event_type: "cosign_send",
+    await appendTimelineEvent({
+      admin,
+      sesizareId: sesizare.id,
+      eventType: "cosign_send",
       description: "Un cetățean a co-semnat și a trimis acest email către autorități prin Civia.",
+      sentryTags: { kind: "cosign_send_timeline_fail", code: sesizare.code },
     });
   } catch {
     // best-effort

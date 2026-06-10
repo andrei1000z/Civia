@@ -49,10 +49,17 @@ export async function GET(req: Request) {
   const cutoffOldest = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
   const cutoffNewest = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
+  // 2026-06-10 (audit statusuri) — include și `inregistrata`: un simplu ack de
+  // înregistrare NU e răspuns pe fond (OG 27/2002 cere soluționare). Înainte,
+  // sesizările confirmate dar fără răspuns real nu primeau NICIUN reminder →
+  // buclă moartă (perechea fix-ului din auto-status). Gard suplimentar:
+  // official_response_at IS NULL — nu remindui „n-a răspuns" când există răspuns
+  // consemnat (ex: admin a marcat manual implicarea autorității).
   const { data: candidates, error } = await admin
     .from("sesizari")
     .select("id, code, titlu, descriere, tip, locatie, sector, created_at, author_email, author_name, status, moderation_status")
-    .in("status", ["nou", "trimis", "raspuns_partial"])
+    .in("status", ["nou", "trimis", "raspuns_partial", "inregistrata"])
+    .is("official_response_at", null)
     .eq("moderation_status", "approved")
     .gte("created_at", cutoffOldest)
     .lte("created_at", cutoffNewest)
@@ -124,10 +131,18 @@ export async function GET(req: Request) {
         </p>
       `;
     } else if (step === "d30") {
+      // Copy nuanțat pentru `inregistrata`: autoritatea A confirmat primirea,
+      // dar confirmarea de înregistrare NU e răspuns pe fond (OG 27/2002 cere
+      // soluționare, nu doar ack) — fără nuanță, „nu a răspuns" ar suna fals.
+      const ackLine = sez.status === "inregistrata"
+        ? `<p>Autoritatea ți-a <strong>confirmat înregistrarea</strong>, dar o confirmare nu e un răspuns pe fond — legea cere <strong>soluționarea</strong> sesizării, nu doar numar de înregistrare.</p>`
+        : "";
       subject = `Sesizare „${titluSafe}" — termen legal expirat, escaladează`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>. Daca autoritatea nu a raspuns, ai dreptul sa escaladezi:</p>
+        <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>.</p>
+        ${ackLine}
+        <p>Daca autoritatea nu a raspuns pe fond, ai dreptul sa escaladezi:</p>
         <ul>
           <li><strong>Avocatul Poporului</strong> — petitie online <a href="https://avp.ro">avp.ro</a></li>
           <li><strong>Sesizare in instanta</strong> — Legea contenciosului administrativ 554/2004</li>
@@ -139,10 +154,15 @@ export async function GET(req: Request) {
         </p>
       `;
     } else {
+      const ackLine60 = sez.status === "inregistrata"
+        ? `<p>(Autoritatea a confirmat înregistrarea, dar confirmarea nu e răspuns pe fond — legea cere soluționare.)</p>`
+        : "";
       subject = `Sesizare „${titluSafe}" — 60 zile fără răspuns`;
       bodyHtml = `
         <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${titluSafe}"</strong> si nicio reactie de la autoritate. Asta inseamna ca:</p>
+        <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${titluSafe}"</strong> si niciun raspuns pe fond de la autoritate.</p>
+        ${ackLine60}
+        <p>Asta inseamna ca:</p>
         <ul>
           <li>Termenul legal e dublu depasit</li>
           <li>Daca decizi sa actionezi in instanta, ai dovada de pasivitate</li>
@@ -173,6 +193,10 @@ export async function GET(req: Request) {
     const daysOld = Math.floor((Date.now() - new Date(sez.created_at).getTime()) / (24 * 60 * 60 * 1000));
     const step = pickStep(daysOld);
     if (!step) continue;
+    // `inregistrata` = autoritatea a confirmat primirea — la 7/14 zile nu e nimic
+    // de semnalat (ack-ul e normal). Reminder doar când termenul legal e depășit
+    // (d30/d60) și tot nu există răspuns pe fond.
+    if (sez.status === "inregistrata" && (step === "d7" || step === "d14")) continue;
     if (sentMap.get(sez.id)?.has(step)) continue;
     if (!sez.author_email) continue;
 

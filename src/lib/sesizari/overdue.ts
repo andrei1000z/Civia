@@ -29,7 +29,13 @@ export interface OverdueResult {
 }
 
 /** Statusuri finale — autoritatea a luat o decizie. Reutilizat de escalation.ts
- *  (eligibilitate AVP) ca să nu existe două surse de adevăr. */
+ *  (eligibilitate AVP) ca să nu existe două surse de adevăr.
+ *
+ *  ATENȚIE — divergență INTENȚIONATĂ față de TERMINAL_EVENT_TYPES (events.ts):
+ *  `ignorat` e terminal pentru UI (pill-ul „Acum" din timeline), dar NU e aici,
+ *  pentru că o sesizare ignorată rămâne DESCHISĂ legal — e exact starea care
+ *  deblochează escaladarea la AVP. Dacă o adaugi aici, sesizările ignorate
+ *  dispar din overdue și pierd dreptul de escaladare. */
 export const FINAL_STATUSES = new Set(["rezolvat", "respins"]);
 
 export function evaluateOverdue(

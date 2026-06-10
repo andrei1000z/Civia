@@ -16,6 +16,9 @@ interface AppendArgs {
   /** Optional explicit timestamp (the moment when the event happened
    *  in the real world). Defaults to `now()` via the column default. */
   createdAt?: string;
+  /** Optional user id stamped on the row (send-via-civia / cosign flows
+   *  record who triggered the send). */
+  createdBy?: string | null;
   /** Tags forwarded to Sentry on failure for observability. */
   sentryTags?: Record<string, string>;
   /** Extra context attached to the Sentry breadcrumb. */
@@ -48,7 +51,7 @@ interface AppendResult {
  * admin/citizen note still goes through — those carry information.
  */
 export async function appendTimelineEvent(args: AppendArgs): Promise<AppendResult> {
-  const { admin, sesizareId, eventType, description, createdAt, sentryTags, sentryExtra } =
+  const { admin, sesizareId, eventType, description, createdAt, createdBy, sentryTags, sentryExtra } =
     args;
 
   const trimmedDescription = description?.trim() ?? "";
@@ -79,6 +82,7 @@ export async function appendTimelineEvent(args: AppendArgs): Promise<AppendResul
     description: trimmedDescription || `Status actualizat la: ${eventType}`,
   };
   if (createdAt) payload.created_at = createdAt;
+  if (createdBy !== undefined) payload.created_by = createdBy;
 
   const { error } = await admin.from("sesizare_timeline").insert(payload);
 

@@ -36,10 +36,13 @@ export interface SesizareEventVisual {
  */
 export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   depusa: { label: "Sesizare depusă pe platformă", icon: FileText, color: "#2563EB" },
-  trimis: { label: "Sesizare trimisă către autorități", icon: Send, color: "#059669" },
+  // 2026-06-10 (audit statusuri) — culoarea aliniată la badge-ul de status `trimis`
+  // (#0891B2 cyan în SESIZARE_STATUS_META). Înainte era #059669 verde → aceeași
+  // noțiune apărea cu două culori pe timeline vs badge.
+  trimis: { label: "Sesizare trimisă către autorități", icon: Send, color: "#0891B2" },
   // Bug fix 5/22/2026 — send-via-civia emite event_type „trimis_via_civia"
   // dar nu era in catalog, deci aparea „Eveniment" generic in timeline.
-  trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#059669" },
+  trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#0891B2" },
   cosemnat: { label: "Un alt cetățean a trimis și el sesizarea", icon: UserPlus, color: "#0891B2" },
   // 2026-06-10 (audit statusuri) — cosign-send scrie event_type „cosign_send"
   // (înregistrare internă a trimiterii de către co-semnatar; filtrat din timeline-ul
@@ -74,6 +77,11 @@ export function getSesizareEventMeta(eventType: string): SesizareEventVisual {
  * „acum/live", așa că UI-ul nu afișează pill-ul „Acum" pe ele.
  * 2026-05-25: user feedback — „Problemă rezolvată e pentru totdeauna,
  * scoate Acum".
+ *
+ * ATENȚIE — divergență INTENȚIONATĂ față de FINAL_STATUSES (overdue.ts):
+ * `ignorat` + `escaladat_avp` sunt terminale doar pentru UI (nu mai e nimic
+ * „live" de afișat), dar legal sesizarea ignorată rămâne DESCHISĂ — e exact
+ * starea care permite escaladarea la AVP. Nu unifica cele două seturi.
  */
 export const TERMINAL_EVENT_TYPES = new Set<string>([
   "rezolvat",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { decryptField, encryptField } from "@/lib/crypto/field";
+import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
@@ -392,19 +393,17 @@ export async function POST(
     });
   }
 
-  const { error: tlError } = await admin.from("sesizare_timeline").insert({
-    sesizare_id: sesizare.id,
-    event_type: "trimis_via_civia",
+  // 2026-06-10 (audit statusuri) — prin appendTimelineEvent (nu insert direct):
+  // dedup la sursă când send-via-civia + cosign-send aterizează aproape simultan
+  // pe aceeași sesizare. Sentry-ul de eșec e în writer.
+  await appendTimelineEvent({
+    admin,
+    sesizareId: sesizare.id,
+    eventType: "trimis_via_civia",
     description: `Email trimis automat de Civia către ${primaryEmails.length} ${primaryEmails.length === 1 ? "autoritate" : "autorități"} oficiale. Așteptăm răspunsul.`,
-    created_by: user?.id ?? null,
+    createdBy: user?.id ?? null,
+    sentryTags: { kind: "send_civia_timeline_fail", code: sesizare.code },
   });
-  if (tlError) {
-    Sentry.captureMessage("send-via-civia: timeline insert failed", {
-      level: "warning",
-      tags: { kind: "send_civia_timeline_fail", code: sesizare.code },
-      extra: { sesizare_id: sesizare.id, tl_error: tlError.message, tl_code: tlError.code },
-    });
-  }
 
   // 5/22/2026 — Auto-ack către cetățean. Independent de BCC (BCC nu garantează
   // livrare la user; multe Gmail-uri filtrează BCC-uri ca spam). Email separat
