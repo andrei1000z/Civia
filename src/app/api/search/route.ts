@@ -69,6 +69,30 @@ function normalizeForSearch(s: string): string {
     .replace(/ţ/g, "t");
 }
 
+/**
+ * 2026-06-10 (audit search) — regex DIACRITIC-TOLERANT pentru filtrul DB.
+ *
+ * BUG găsit: query-ul e normalizat (fără diacritice) → „masini", dar coloanele DB
+ * au diacritice → „Mașini". `ilike '%masini%'` NU prinde „Mașini" (ș≠s) → zeci de
+ * sesizări „Mașini parcate" erau INVIZIBILE la căutare. Fix fără migrație:
+ * construim un regex unde fiecare literă-bază acoperă variantele cu diacritice și
+ * filtrăm cu `imatch` (PostgREST ~*). Doar [a-z0-9] → zero risc de injection regex.
+ */
+const DIACRITIC_CLASS: Record<string, string> = {
+  a: "[aăâ]",
+  i: "[iî]",
+  s: "[sșş]",
+  t: "[tțţ]",
+};
+function diacriticRegex(word: string): string {
+  return word
+    .toLowerCase()
+    .split("")
+    .filter((c) => /[a-z0-9]/.test(c)) // doar alfanumeric → nu injectăm meta-caractere
+    .map((c) => DIACRITIC_CLASS[c] ?? c)
+    .join("");
+}
+
 function roStems(word: string): string[] {
   const stems = [word];
   const suffixes = ["ului", "elor", "iei", "rea", "lui", "lor", "ată", "ate", "ări", "ul", "ei", "ii", "ea", "le", "or", "al", "ia", "ie", "ă", "a", "e", "i", "u"];
@@ -316,34 +340,37 @@ export async function GET(req: Request) {
   // 2026-06-10 (audit search) — filtrăm DB pe cel mai SELECTIV cuvânt (cel mai
   // lung), nu pe primul. „groapă cluj" filtra doar pe „groapă" (primul) și putea
   // rata match-ul pe „cluj"; cel mai lung cuvânt e de regulă mai distinctiv.
-  const filterWord = [...safeWords].sort((a, b) => b.length - a.length)[0] ?? firstWord;
+  const filterWord = [...safeWords].sort((a, b) => b.length - a.length)[0] ?? firstWord ?? "";
   // Detectează un cod de sesizare (ex „00035", „35") ca să-l prioritizăm.
   const codeQuery = /^\d{1,6}$/.test(qRaw) ? qRaw : null;
+  // Regex diacritic-tolerant pe cuvântul de filtrare (prinde „Mașini" la „masini").
+  // Fallback la ilike dacă regex-ul iese gol (cuvânt non-alfanumeric).
+  const dre = diacriticRegex(filterWord);
 
   if (firstWord) {
     const [sesRes, stiriRes, petitiiRes, protesteRes] = await Promise.all([
       supabase
         .from("sesizari_feed")
         .select("code, titlu, locatie, sector, status, descriere")
-        // include `code` ca o sesizare să fie căutabilă după numărul ei (00035).
-        .or(`code.ilike.%${filterWord}%,titlu.ilike.%${filterWord}%,locatie.ilike.%${filterWord}%,descriere.ilike.%${filterWord}%`)
+        // `code` pe ilike (cifre, fără diacritice); textul pe imatch diacritic-tolerant.
+        .or(`code.ilike.%${filterWord}%,titlu.imatch.${dre},locatie.imatch.${dre},descriere.imatch.${dre}`)
         .limit(20),
       supabase
         .from("stiri_cache")
         .select("id, title, excerpt, source, published_at")
-        .or(`title.ilike.%${filterWord}%,excerpt.ilike.%${filterWord}%`)
+        .or(`title.imatch.${dre},excerpt.imatch.${dre}`)
         .order("published_at", { ascending: false })
         .limit(15),
       supabase
         .from("petitii")
         .select("slug, title, summary, status")
-        .or(`title.ilike.%${filterWord}%,summary.ilike.%${filterWord}%`)
+        .or(`title.imatch.${dre},summary.imatch.${dre}`)
         .eq("status", "active")
         .limit(10),
       supabase
         .from("proteste")
         .select("slug, title, subtitle, city, start_at")
-        .or(`title.ilike.%${filterWord}%,subtitle.ilike.%${filterWord}%,city.ilike.%${filterWord}%`)
+        .or(`title.imatch.${dre},subtitle.imatch.${dre},city.imatch.${dre}`)
         .eq("moderation_status", "approved")
         .limit(10),
     ]);

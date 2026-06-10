@@ -127,6 +127,22 @@ const QUICK_ACTIONS: { title: string; url: string; icon: typeof Send; color: str
   },
 ];
 
+/**
+ * Căutări populare CURATE (audit search). Privacy-safe: NU trackăm query-urile
+ * reale ale userilor (pot conține nume/adrese — platformă civică GDPR-strictă);
+ * arătăm o listă fixă de termeni civici comuni ca scurtături în empty state.
+ */
+const SUGGESTED_SEARCHES = [
+  "groapă",
+  "trotuar",
+  "stâlpișori",
+  "iluminat",
+  "petiții",
+  "întreruperi curent",
+  "Primăria Cluj",
+  "proteste",
+];
+
 function getRecentSearches(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -477,13 +493,27 @@ export function SearchModal({ open, onClose }: Props) {
               <div>
                 <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-2.5">
                   <TrendingUp size={11} aria-hidden="true" />
-                  Caută orice
+                  Căutări populare
                 </p>
-                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-                  Tastează numele unei probleme („groapă"), județ („Cluj"), petiție,
-                  protest, lege, autoritate sau orice termen civic. Search-ul se
-                  uită în <strong className="text-[var(--color-text)]">sesizări, petiții, proteste,
-                  știri, ghiduri, glosar și autorități</strong>.
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {SUGGESTED_SEARCHES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setQuery(s);
+                        inputRef.current?.focus();
+                      }}
+                      className="inline-flex items-center px-2.5 h-7 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-primary-soft)] hover:text-[var(--color-primary-on-soft)] text-xs text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+                  Search-ul se uită în <strong className="text-[var(--color-text)]">sesizări, petiții,
+                  proteste, știri, ghiduri, glosar și autorități</strong> — inclusiv după
+                  numărul sesizării (ex „00035").
                 </p>
               </div>
             </div>
