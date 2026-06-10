@@ -290,6 +290,7 @@ export default function ConfidentialitatePage() {
         <ul>
           <li>Toate conexiunile sunt criptate <strong>HTTPS / TLS 1.3</strong>;</li>
           <li>Datele în repaus sunt criptate (AES-256, Supabase + Vercel KV);</li>
+          <li>Adresa de domiciliu este criptată suplimentar <strong>la nivel de câmp</strong> (AES-256-GCM), cu cheia stocată separat de baza de date — o eventuală scurgere a bazei nu expune adresele;</li>
           <li>Autentificare fără parole — magic-link cu expirare scurtă (5 min);</li>
           <li>Politici Row-Level Security (RLS) la nivel de bază de date;</li>
           <li>Rate-limiting per IP + per cont pentru prevenirea abuzului;</li>
