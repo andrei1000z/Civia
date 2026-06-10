@@ -42,18 +42,21 @@ export async function GET(req: Request) {
 
   const admin = createSupabaseAdmin();
 
-  // Cut-off: 60 zile fără reply. Considerăm doar sesizările care au fost
-  // ACTIV trimise (status trimis, inregistrata, in-lucru, redirectionata,
-  // actiune-autoritate, amanata) sau cele care au fost create dar n-au mai
-  // primit nimic (nou, dar acelea pierd legal claim-ul după 60 zile oricum).
+  // Cut-off: 60 zile fără RĂSPUNS SUBSTANȚIAL. 2026-06-10 (audit statusuri) —
+  // semnalul „autoritatea a răspuns" e official_response_at (setat DOAR pe răspuns
+  // real: in-lucru/rezolvat/redirectionata), NU simpla prezență a unui reply.
+  // Înainte, `inregistrata` (o confirmare de înregistrare = și ea un reply) bloca
+  // PE VECI marcarea ignorat → 00001/00002 stăteau 65 de zile fără să poată escalada
+  // la AVP. Acum: doar statusurile FĂRĂ angajare reală (nou/trimis/inregistrata) cu
+  // official_response_at NULL devin `ignorat` după 60 de zile. Statusurile in-lucru/
+  // redirectionata/actiune-autoritate/amanata = autoritatea s-a implicat → nu le atingem.
   const cutoff60d = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Verificăm reply-urile primite — dacă există ≥1 reply real de la
-  // autoritate (NOT spam), atunci NU mai e „ignorat".
   const { data: candidates, error } = await admin
     .from("sesizari")
     .select("id, code, titlu, status, created_at, sent_at, author_email")
-    .in("status", ["nou", "trimis", "inregistrata", "in-lucru", "redirectionata", "actiune-autoritate", "amanata"])
+    .in("status", ["nou", "trimis", "inregistrata"])
+    .is("official_response_at", null)
     .lte("created_at", cutoff60d);
 
   if (error) {
@@ -63,18 +66,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, scanned: 0, marked: 0 });
   }
 
-  const ids = candidates.map((c) => c.id);
-  const { data: replies } = await admin
-    .from("sesizare_replies")
-    .select("sesizare_id")
-    .in("sesizare_id", ids);
-  const hasReplyMap = new Set<string>((replies ?? []).map((r) => r.sesizare_id as string));
-
+  // Gating-ul „fără răspuns substanțial" e deja în query (official_response_at
+  // IS NULL + statusuri fără angajare) — nu mai e nevoie de verificarea pe
+  // prezența unui reply (care includea și simplul ack `inregistrata`).
   let marked = 0;
   const errors: string[] = [];
   for (const sez of candidates) {
-    if (hasReplyMap.has(sez.id)) continue; // primit reply, nu e ignorat
-
     const { error: updErr } = await admin
       .from("sesizari")
       .update({ status: "ignorat" })
