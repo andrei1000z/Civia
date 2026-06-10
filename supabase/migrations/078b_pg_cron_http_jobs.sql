@@ -2,6 +2,14 @@
 -- Migration 078b: pg_cron HTTP jobs (necesită app.cron_secret)
 -- ============================================================
 --
+-- ⚠️ DEPRECATED (2026-06-10, audit statusuri). NU rula această migrare alături
+-- de dispecerul canonic /api/cron/daily (vercel.json). Ar DUBLA emisia: pg_cron
+-- programează `reminders` la 6h, iar dispecerul zilnic îl rulează deja 1×/zi →
+-- emailuri duplicate către cetățeni. Dispecerul Vercel e canonic (acoperă și
+-- joburile noi: auto-status, purge-retention, winback, streaks — pe care pg_cron
+-- nu le are). Dacă pg_cron a fost activat anterior, dezactivează-l (vezi
+-- migrația 101_deprecate_pgcron pentru cron.unschedule defensiv).
+--
 -- 2026-05-27 — Sub-daily jobs care apelează endpoint-uri Vercel cu
 -- Bearer auth. Separate de 078 pentru că necesită Postgres setting
 -- `app.cron_secret` setat ÎNAINTE de a rula migrarea.

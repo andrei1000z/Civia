@@ -88,6 +88,8 @@ Vercel Hobby plan caps cron jobs at 1×/day. Two strategies in use:
 
 Auth on `/api/stiri/fetch` accepts either `Authorization: Bearer ${CRON_SECRET}` (cron path) or a logged-in admin session.
 
+**Canonical scheduler = `/api/cron/daily`** (the dispatcher in `vercel.json`). It fans out to all sub-jobs (reminders, auto-status, drafts/nudge, streaks, winback, purge-retention; newsletter on Mon/Tue/Fri). The pg_cron migrations `078`/`078b` are **DEPRECATED** — do NOT enable `078b`'s HTTP jobs (reminders-6h, stiri-30min, etc.) alongside the daily dispatcher: they call the same endpoints → duplicate emails. Migration `101_deprecate_pgcron_http` defensively unschedules them. The pure-SQL jobs in `078` (cleanup/feed-refresh/mark-overdue) are DB-internal maintenance and don't conflict.
+
 ## AI guardrails
 
 Read `src/lib/groq/prompts.ts → SYSTEM_PROMPT_FORMAL` before changing how sesizari emails are generated. The prompt has anti-cliché rules tuned to real failure modes we've seen ("pietonii sunt forțați să circule pe carosabil" hallucinated when the photo shows a clear sidewalk, etc.). Don't strip those rules — they're load-bearing.
