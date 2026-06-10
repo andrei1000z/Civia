@@ -23,6 +23,7 @@ import {
   type SesizareStatus,
 } from "@/lib/sesizari/status";
 import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
+import { isBlockedRegression, blockedRegressionMessage } from "@/lib/sesizari/state-machine";
 import { sendPushToUsers } from "@/lib/push/web-push-client";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +99,16 @@ export async function POST(
 
   const newStatus = parsed.data.status as SesizareStatus;
   const statusChanged = newStatus !== sesizare.status;
+
+  // 2026-06-10 (audit statusuri) — blochează regresia PERICULOASĂ (revenire la
+  // nou/trimis dintr-un status avansat) care reseta timeline + eligibilitatea AVP
+  // cu 1 click. Reopen-urile legitime (rezolvat→in-lucru) rămân permise.
+  if (statusChanged && isBlockedRegression(sesizare.status, newStatus)) {
+    return NextResponse.json(
+      { error: blockedRegressionMessage(sesizare.status, newStatus) },
+      { status: 400 },
+    );
+  }
 
   // ─── Update status + optional official response ──────────────
   const admin = createSupabaseAdmin();

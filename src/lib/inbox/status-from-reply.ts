@@ -14,19 +14,11 @@
  *    (în lucru / rezolvat / redirecționat) cu rezumat real.
  */
 
-export const STATUS_RANK: Record<string, number> = {
-  nou: 0,
-  trimis: 1,
-  redirectionata: 2,
-  inregistrata: 3,
-  "actiune-autoritate": 4,
-  interventie: 4,
-  amanata: 4,
-  "in-lucru": 4,
-  rezolvat: 6,
-  respins: 6,
-  ignorat: 6,
-};
+// STATUS_RANK e definit canonic în state-machine.ts (sursă unică, partajată cu
+// regulile de tranziție admin). Re-exportat pentru compatibilitate cu importurile
+// existente din această cale.
+import { STATUS_RANK } from "@/lib/sesizari/state-machine";
+export { STATUS_RANK };
 
 export interface StatusUpdate {
   status: string;
