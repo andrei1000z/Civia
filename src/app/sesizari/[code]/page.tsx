@@ -551,7 +551,7 @@ export default async function SesizareDetailPage({
                 </p>
               </div>
             ) : (
-              <ol className="relative space-y-5" aria-label="Cronologia stării sesizării">
+              <ol className="relative space-y-5 stagger-children" aria-label="Cronologia stării sesizării">
                 {timeline.map((step, i) => {
                   const isLast = i === timeline.length - 1;
                   const terminal = isTerminalEvent(step.event_type);

@@ -263,7 +263,7 @@ function PetitieCard({
   return (
     <Link
       href={`/petitii/${p.slug}`}
-      className="group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all"
+      className="group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden card-lift hover:border-[var(--color-primary)]/30"
     >
       {p.image_url ? (
         <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">

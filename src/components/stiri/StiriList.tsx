@@ -310,7 +310,7 @@ export function StiriList() {
           {featured && (
             <Link
               href={`/stiri/${featured.id}`}
-              className="group block mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-2)] overflow-hidden hover:shadow-[var(--shadow-4)] hover:-translate-y-0.5 transition-all"
+              className="group block mb-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-2)] overflow-hidden card-lift"
             >
               <div className="grid md:grid-cols-[1.2fr_1fr] md:items-stretch">
                 <div
@@ -385,7 +385,7 @@ export function StiriList() {
               <Link
                 key={stire.id}
                 href={`/stiri/${stire.id}`}
-                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] overflow-hidden hover:-translate-y-1 hover:shadow-[var(--shadow-3)] transition-all cursor-pointer"
+                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] overflow-hidden card-lift cursor-pointer"
               >
                 <div
                   className={cn(
