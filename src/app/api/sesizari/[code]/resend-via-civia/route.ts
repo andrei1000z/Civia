@@ -15,6 +15,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { decryptField } from "@/lib/crypto/field";
 import { safeTitlu } from "@/lib/sesizari/titlu";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -76,6 +77,10 @@ export async function POST(
     return NextResponse.json({ error: "Sesizare negasita" }, { status: 404 });
   }
   const sesizare = data as SesizareRow;
+  // Decriptează adresa de domiciliu (criptată la nivel de câmp în DB) ca tot
+  // codul de mai jos — verificarea de lungime + textul formal — să lucreze pe
+  // text simplu.
+  sesizare.author_address = decryptField(sesizare.author_address);
 
   // Ownership check
   const isOwner =

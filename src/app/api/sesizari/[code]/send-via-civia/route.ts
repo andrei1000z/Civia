@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { decryptField, encryptField } from "@/lib/crypto/field";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
@@ -75,6 +76,10 @@ export async function POST(
   if (!sesizare) {
     return NextResponse.json({ error: "Sesizare negasita" }, { status: 404 });
   }
+  // Decriptează adresa (criptată la nivel de câmp în DB) LOCAL — nu în repo,
+  // ca să n-o expunem altor consumatori ai getSesizareByCode (ex: pagina
+  // publică). Tot codul de mai jos lucrează pe text simplu.
+  sesizare.author_address = decryptField(sesizare.author_address);
 
   // 5/22/2026 — daca lipsesc nume/adresa pe sesizare DAR userul le-a
   // furnizat in body, update sesizare inainte de trimitere.
@@ -84,7 +89,9 @@ export async function POST(
     const admin = createSupabaseAdmin();
     const updates: Record<string, string> = {};
     if (needsNameUpdate && bodyNume) updates.author_name = bodyNume;
-    if (needsAddressUpdate && bodyAdresa) updates.author_address = bodyAdresa;
+    // Criptează adresa nouă înainte de a o stoca (rămâne text simplu în memorie
+    // pentru email, vezi mai jos).
+    if (needsAddressUpdate && bodyAdresa) updates.author_address = encryptField(bodyAdresa) ?? bodyAdresa;
     await admin.from("sesizari").update(updates).eq("id", sesizare.id);
     // Update in-memory ca sa folosim noile valori in email.
     if (needsNameUpdate && bodyNume) sesizare.author_name = bodyNume;

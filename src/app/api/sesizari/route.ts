@@ -18,6 +18,7 @@ import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
 import { forwardGeocode, countyCentroid } from "@/lib/sesizari/geocoding";
 import { ROMANIA_CENTER } from "@/lib/constants";
+import { encryptField } from "@/lib/crypto/field";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 
@@ -500,7 +501,10 @@ export async function POST(req: Request) {
         ...parsed,
         county: resolvedCounty,
         sector: resolvedSector,
-        author_address: resolvedAuthorAddress,
+        // 2026-06-10 — adresa de domiciliu criptată la nivel de câmp (AES-256-GCM,
+        // cheie în env, separat de DB). O scurgere logică a bazei nu expune unde
+        // locuiesc cetățenii. Decriptată doar la trimiterea către autoritate.
+        author_address: encryptField(resolvedAuthorAddress),
         formal_text: identityHardenedFormalText,
         author_name: sanitizeText(parsed.author_name, 120),
         author_display_name: authorDisplayName,

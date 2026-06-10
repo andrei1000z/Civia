@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { decryptField } from "@/lib/crypto/field";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
@@ -93,7 +94,7 @@ export async function POST(
     titlu: sesizare.titlu,
     locatie: sesizare.locatie,
     nume: sesizare.author_name,
-    adresa: sesizare.author_address,
+    adresa: decryptField(sesizare.author_address),
     email: sesizare.author_email,
     createdAt: new Date(sesizare.created_at),
     destinatari: sesizare.sent_to_emails ?? [],
