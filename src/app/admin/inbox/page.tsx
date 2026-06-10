@@ -64,6 +64,19 @@ export default async function AdminInboxPage() {
     // SQL outage → empty list
   }
 
+  // 2026-06-10 (audit statusuri, #5) — răspunsuri „în așteptare de confirmare":
+  // AI le-a clasificat cu un status real, dar NU le-a aplicat automat (încredere
+  // medie + sender netrusted) ȘI sunt legate de o sesizare. Adminul trebuie să le
+  // vadă clar ca să confirme manual statusul sugerat (înainte erau pierdute în listă).
+  const needsReview = (r: ReplyRow) =>
+    !!r.ai_status &&
+    r.ai_status !== "necunoscut" &&
+    r.ai_status !== "cerere_informatii" &&
+    !r.auto_applied &&
+    !r.trusted_sender &&
+    !!r.sesizare_id;
+  const pendingCount = rows.filter(needsReview).length;
+
   return (
     <div>
       <div className="mb-6">
@@ -81,6 +94,15 @@ export default async function AdminInboxPage() {
           Click pe rând pentru detalii + textele extrase din atașamente.
         </p>
       </div>
+
+      {pendingCount > 0 && (
+        <div className="mb-4 rounded-md border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 px-4 py-3 text-sm">
+          <strong className="text-amber-800 dark:text-amber-300 tabular-nums">{pendingCount}</strong>{" "}
+          {pendingCount === 1 ? "răspuns așteaptă" : "răspunsuri așteaptă"} confirmare manuală —
+          AI le-a clasificat dar nu le-a aplicat automat (încredere medie). Rândurile evidențiate
+          de mai jos — click pentru a confirma statusul sugerat.
+        </div>
+      )}
 
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md overflow-hidden">
         <table className="w-full text-sm">
@@ -100,7 +122,11 @@ export default async function AdminInboxPage() {
             {rows.map((r) => (
               <tr
                 key={r.id}
-                className="border-t border-[var(--color-border)] hover:bg-[var(--color-surface-2)] transition-colors"
+                className={`border-t border-[var(--color-border)] transition-colors ${
+                  needsReview(r)
+                    ? "bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-100/70 dark:hover:bg-amber-950/35"
+                    : "hover:bg-[var(--color-surface-2)]"
+                }`}
               >
                 <td className="px-3 py-2">
                   <Link
