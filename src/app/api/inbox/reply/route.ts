@@ -7,6 +7,8 @@ import { extractSesizareCode } from "@/lib/inbox/extract-code";
 import { matchReply, type MatchMethod, type MatchConfidence } from "@/lib/inbox/match-reply";
 import { decodeEmailSubject, repairMojibake } from "@/lib/inbox/decode-mime";
 import { computeStatusUpdate } from "@/lib/inbox/status-from-reply";
+import { appendTimelineEvent } from "@/lib/sesizari/timeline-writer";
+import { timelineEventForStatus, type SesizareStatus } from "@/lib/sesizari/status";
 import { identifySender } from "@/lib/inbox/sender-identity";
 import { classifyReply } from "@/lib/inbox/classify";
 import { scoreAuthenticity, shouldAutoApplyEnhanced } from "@/lib/inbox/authenticity";
@@ -545,6 +547,28 @@ export async function POST(req: Request) {
           extra: { error: updateErr.message, sesizare_id: sesizareId, newStatus: updates.status },
         });
       } else {
+        // 2026-06-10 — FIX (audit statusuri): scrie eventul de status în
+        // timeline. Înainte, codul se baza pe un trigger DB „on status update"
+        // care NU EXISTĂ → statusurile aplicate de AI (inregistrata/in-lucru/
+        // rezolvat/redirectionata) nu produceau niciun rând în timeline
+        // (00057/00056/00055/00054 aveau status dar timeline gol). appendTimelineEvent
+        // face dedup pe ultimul rând, deci nu reintroduce spam-ul de duplicate care
+        // a motivat ștergerea originală. Notificările rămân separate (push + email mai jos).
+        try {
+          const tlEvent = timelineEventForStatus(updates.status as SesizareStatus);
+          if (tlEvent) {
+            await appendTimelineEvent({
+              admin,
+              sesizareId,
+              eventType: tlEvent,
+              description: classification.summary?.slice(0, 200) ?? null,
+              sentryTags: { source: "inbox_reply_status" },
+            });
+          }
+        } catch (e) {
+          Sentry.captureException(e, { tags: { route: "inbox.reply", kind: "timeline_write_failed" } });
+        }
+
         // 2026-06-08 — Notificare EMAIL către autor când statusul avansează
         // (pe lângă push). Best-effort, nu blochează răspunsul webhook-ului.
         const authorEmail = (cur as { author_email?: string | null } | null)?.author_email;
@@ -597,11 +621,11 @@ export async function POST(req: Request) {
           }
         }
       }
-      // NU mai inseram un timeline event aditional aici. Trigger-ul DB
-      // pe sesizari.status creează automat „Status actualizat la: X".
-      // AI summary cu detalii e in sesizare_replies.ai_summary, vizibil
-      // pe pagina detail in sectiunea „Răspunsuri primite" (5/21/2026:
-      // user reported notification spam din event-uri duplicate).
+      // Eventul de status în timeline e scris mai sus (după update reușit),
+      // prin appendTimelineEvent (cu dedup). AI summary cu detalii rămâne și în
+      // sesizare_replies.ai_summary, vizibil pe pagina detail în secțiunea
+      // „Răspunsuri primite". (Istoric 5/21/2026: scrierea fără dedup cauza spam
+      // de event-uri duplicate — dedup-ul din appendTimelineEvent rezolvă asta.)
     }
   }
 

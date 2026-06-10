@@ -41,6 +41,10 @@ export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   // dar nu era in catalog, deci aparea „Eveniment" generic in timeline.
   trimis_via_civia: { label: "Sesizare trimisă către autorități prin email", icon: Send, color: "#059669" },
   cosemnat: { label: "Un alt cetățean a trimis și el sesizarea", icon: UserPlus, color: "#0891B2" },
+  // 2026-06-10 (audit statusuri) — cosign-send scrie event_type „cosign_send"
+  // (înregistrare internă a trimiterii de către co-semnatar; filtrat din timeline-ul
+  // public, dar vizibil în admin/owner). Fără intrare în catalog cădea pe „Eveniment".
+  cosign_send: { label: "Un co-semnatar a trimis sesizarea prin email", icon: UserPlus, color: "#0891B2" },
   inregistrata: { label: "Înregistrată", icon: Building2, color: "#7C3AED" },
   rutata: { label: "Trimisă la direcția de resort", icon: Megaphone, color: "#0891B2" },
   redirectionata: { label: "Redirecționată către altă instituție", icon: Shuffle, color: "#0EA5E9" },
