@@ -161,7 +161,7 @@ export async function POST(
   // admin l-ar putea aplica și ar regresa sesizarea la zero. Îl respingem.
   if (parsed.data.decision === "approved" && appliedStatus === "nou") {
     return NextResponse.json(
-      { error: "Statusul „nou" nu poate fi aplicat — nu e o tranziție validă de revenire." },
+      { error: "Statusul „nou” nu poate fi aplicat — nu e o tranziție validă de revenire." },
       { status: 400 },
     );
   }
