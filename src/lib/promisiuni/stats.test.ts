@@ -38,10 +38,13 @@ describe("date PROMISIUNI (validare seed — risc legal)", () => {
     }
   });
 
-  it("status valid + county valid", () => {
+  it("status valid + county valid (sau RO = național)", () => {
     for (const p of PROMISIUNI) {
       expect(PROMISIUNE_STATUS_META[p.status], `${p.id}: status`).toBeDefined();
-      expect(ALL_COUNTIES.some((c) => c.id === p.county), `${p.id}: county ${p.county}`).toBe(true);
+      expect(
+        p.county === "RO" || ALL_COUNTIES.some((c) => c.id === p.county),
+        `${p.id}: county ${p.county}`,
+      ).toBe(true);
     }
   });
 

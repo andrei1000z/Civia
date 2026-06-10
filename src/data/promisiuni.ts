@@ -131,6 +131,111 @@ export const PROMISIUNI: Promisiune[] = [
       "Proiect anunțat în noiembrie 2025, cu durată estimată de 2 ani (termen noiembrie 2027). În iunie 2026 se află la circa o treime din perioada asumată, fără anunțuri publice recente despre stadiul execuției.",
     verificatLa: "2026-06-11",
   },
+  // ─── Val 2 (research v2, 36 agenți — alte orașe + naționale + respectate) ───
+  {
+    id: "iasi-tramvaie-bozankaya",
+    autoritate: "Primăria Municipiului Iași",
+    functie: "Primărie",
+    county: "IS",
+    promisiune:
+      "Furnizarea a 18 tramvaie noi de 22 de metri (Bozankaya), finanțate prin PNRR, cu termen de finalizare 30 iunie 2026.",
+    termen: "30 iunie 2026",
+    termenIso: "2026-06-30",
+    sursaUrl:
+      "https://ziare.com/tramvaie-noi/primaria-iasi-semnat-achizitie-18-tramvaie-noi-finantare-pnrr-1854965",
+    publicatie: "Ziare.com",
+    dataSursa: "2024-02-26",
+    status: "in-curs",
+    nota:
+      "Contract semnat pe 26 februarie 2024 pentru 18 tramvaie de 22 m, cu termen de livrare 30 iunie 2026. Termenul expiră în mai puțin de 3 săptămâni de la data verificării.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "iasi-spital-regional",
+    autoritate: "Primăria Municipiului Iași",
+    functie: "Primărie",
+    county: "IS",
+    promisiune:
+      "Construcția Spitalului Regional de Urgență Iași: 850 de paturi, 20 de săli de operație, ~3.000 de angajați (investiție de ~668 de milioane de euro).",
+    termen: "2027",
+    termenIso: "2027-12-31",
+    sursaUrl: "https://adevarul.ro/stiri-locale/iasi/incep-lucrarile-la-spitalul-regional-de-la-iasi-2315027.html",
+    publicatie: "Adevărul",
+    dataSursa: "2023-02-01",
+    status: "in-curs",
+    nota:
+      "Lucrările au început în 2023 (autorizație semnată, excavare demarată). Termenul asumat — 2027 — nu a fost depășit la data verificării (iunie 2026).",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "timisoara-inelul-2-est",
+    autoritate: "Primăria Timișoara",
+    functie: "Primărie",
+    county: "TM",
+    promisiune:
+      "Finalizarea segmentului estic al Inelului 2 de circulație, cu finanțare europeană de 78 de milioane de lei și durată de execuție de 16 luni.",
+    termen: "~iulie 2027 (16 luni din martie 2026)",
+    termenIso: "2027-07-01",
+    sursaUrl: "https://www.primariatm.ro/2026/03/20/finantare-inelul-2",
+    publicatie: "Primăria Timișoara (comunicat oficial)",
+    dataSursa: "2026-03-20",
+    status: "in-curs",
+    nota:
+      "Contractul de finanțare a fost anunțat oficial pe 20 martie 2026, cu durată de execuție de 16 luni — termen estimat iulie 2027. Proiectul se află la începutul perioadei asumate.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "cnair-a7-focsani-adjud",
+    autoritate: "CNAIR",
+    functie: "Compania Națională de Administrare a Infrastructurii Rutiere",
+    county: "RO",
+    promisiune:
+      "Deschiderea tronsonului A7 Focșani–Adjud Nord (49 km) până la finalul lui 2025, asigurând circulație continuă pe ~250 km de la București la Adjud.",
+    termen: "decembrie 2025",
+    termenIso: "2025-12-31",
+    sursaUrl: "https://ziare.com/autostrazi-romania/a7-deschidere-focsani-adjud-1983927",
+    publicatie: "Ziare.com",
+    dataSursa: "2025-12-23",
+    status: "respectata",
+    nota:
+      "Tronsonul de 49 km a fost deschis circulației pe 23 decembrie 2025, în interiorul termenului PNRR asumat — 195 km din A7 finanțați prin PNRR erau circulabili la acea dată.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "cnair-drum-expres-tureni",
+    autoritate: "CNAIR / DRDP Cluj",
+    functie: "Administrator infrastructură rutieră",
+    county: "CJ",
+    promisiune:
+      "Deschiderea Drumului Expres A3–Tureni (5 km, legătura DN1–A3) pentru descongestionarea zonei Cluj-Napoca–Turda, anunțată pentru 6 iulie 2025.",
+    termen: "iulie 2025",
+    termenIso: "2025-07-06",
+    sursaUrl: "https://www.ziarul21.ro/actualitate/drumul-expres-a3-tureni-se-deschide-duminica-6-iulie/",
+    publicatie: "Ziarul 21",
+    dataSursa: "2025-07-04",
+    status: "respectata",
+    nota:
+      "Drumul expres (562,6 milioane lei, 9 structuri de artă) a fost deschis circulației pe 10 iulie 2025 — cu 4 zile după data anunțată inițial, dar în interiorul lunii asumate.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "s4-centrul-marius-nasta",
+    autoritate: "Primăria Sectorului 4",
+    functie: "Primărie",
+    county: "B",
+    promisiune:
+      "Finalizarea Centrului de Diagnostic, Tratament și Cercetare a Tuberculozei „Marius Nasta” (Calea Șerban Vodă), finanțat prin PNRR cu ~100 de milioane de euro.",
+    termen: "august 2026",
+    termenIso: "2026-08-31",
+    sursaUrl:
+      "https://agerpres.ro/administratie/2026/05/07/sector-4-centrul-de-diagnostic-tratament-si-cercetare-a-tuberculozei-marius-nasta-va-fi-terminat-in---1553954",
+    publicatie: "AGERPRES",
+    dataSursa: "2026-05-07",
+    status: "in-curs",
+    nota:
+      "La 7 mai 2026, stadiul execuției era de 75%, cu termen de finalizare august 2026 — proiectul se află în ultimele luni ale perioadei asumate.",
+    verificatLa: "2026-06-11",
+  },
 ];
 
 export const PROMISIUNE_STATUS_META: Record<
