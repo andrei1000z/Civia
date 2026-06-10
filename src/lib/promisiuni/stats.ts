@@ -46,6 +46,28 @@ export function sortPromisiuni(items: Promisiune[]): Promisiune[] {
   });
 }
 
+/** Zile până la termen (negative = termenul a trecut). null = nedeclarat. */
+export function daysUntilTermen(termenIso: string | null, nowIso: string): number | null {
+  if (!termenIso) return null;
+  const MS_DAY = 86_400_000;
+  return Math.ceil((new Date(termenIso).getTime() - new Date(nowIso).getTime()) / MS_DAY);
+}
+
+/** Cât % din perioada promisă (dataSursa → termen) a trecut. 0-100, clamp.
+ *  null când termenul e nedeclarat. Folosit la progress bar-ul de pe card. */
+export function termenProgress(
+  dataSursa: string,
+  termenIso: string | null,
+  nowIso: string,
+): number | null {
+  if (!termenIso) return null;
+  const start = new Date(dataSursa).getTime();
+  const end = new Date(termenIso).getTime();
+  const now = new Date(nowIso).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+}
+
 /** Grupare pe autoritate pentru secțiunea „pe primării". */
 export function groupByAutoritate(items: Promisiune[]): Array<{ autoritate: string; functie: string; items: Promisiune[] }> {
   const map = new Map<string, { autoritate: string; functie: string; items: Promisiune[] }>();

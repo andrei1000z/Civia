@@ -85,6 +85,23 @@ describe("sortPromisiuni", () => {
   });
 });
 
+describe("daysUntilTermen + termenProgress", () => {
+  const NOW = "2026-06-11T00:00:00Z";
+  it("zile până la termen (pozitiv înainte, negativ după)", async () => {
+    const { daysUntilTermen } = await import("./stats");
+    expect(daysUntilTermen("2026-06-18", NOW)).toBe(7);
+    expect(daysUntilTermen("2026-05-31", NOW)).toBeLessThan(0);
+    expect(daysUntilTermen(null, NOW)).toBe(null);
+  });
+  it("progres % din perioada promisă, clamp 0-100", async () => {
+    const { termenProgress } = await import("./stats");
+    expect(termenProgress("2026-01-01", "2027-01-01", "2026-07-02")).toBe(50);
+    expect(termenProgress("2024-06-01", "2026-05-31", NOW)).toBe(100); // depășit → clamp
+    expect(termenProgress("2026-01-01", null, NOW)).toBe(null);
+    expect(termenProgress("2027-01-01", "2026-01-01", NOW)).toBe(null); // interval invalid
+  });
+});
+
 describe("groupByAutoritate", () => {
   it("grupează + sortează după nr. promisiuni", () => {
     const g = groupByAutoritate([
