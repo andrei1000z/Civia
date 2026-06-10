@@ -116,6 +116,8 @@ export const NAV_MORE: Array<{
   // 2026-06-10 (Faza 2) — provocarea civică a lunii. national (nu primește
   // prefix /[judet]/ — e surfață națională ca /sesizari /petitii).
   { href: "/provocari", label: "Provocarea lunii", icon: "🎯", nationalOnly: true },
+  // 2026-06-10 (Faza 3) — generator cereri Legea 544/2001 (informații publice).
+  { href: "/informatii-publice", label: "Cere informații (544)", icon: "📨", nationalOnly: true },
   { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
   { href: "/propuneri-legislative", label: "Propuneri legislative", icon: "⚖️", nationalOnly: true },
   // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
