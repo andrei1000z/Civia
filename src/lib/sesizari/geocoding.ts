@@ -194,6 +194,18 @@ function isPlausibleForCounty(
 }
 
 /**
+ * Centroidul județului (București pentru „B") — fallback APROXIMATIV de
+ * ULTIMĂ instanță când geocoding-ul street-level eșuează, dar știm măcar
+ * orașul/județul. Pin-ul aterizează în orașul CORECT (nu în centrul țării /
+ * „munți", cum se întâmpla cu sentinel-ul ROMANIA_CENTER). Returnează null
+ * dacă nici județul nu e cunoscut → caller-ul cere o adresă mai precisă.
+ */
+export function countyCentroid(countyCode: string | null | undefined): [number, number] | null {
+  if (!countyCode) return null;
+  return COUNTY_CENTROIDS[countyCode.toUpperCase()] ?? null;
+}
+
+/**
  * Forward geocoding: text → coordinates. Tries a sequence of extracted
  * queries — full text, then street + number + city, then street + city,
  * then just city — stopping at the first hit.

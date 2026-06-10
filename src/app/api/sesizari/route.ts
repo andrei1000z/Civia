@@ -16,7 +16,8 @@ import { generateTitlu } from "@/lib/sesizari/reformulate-descriere";
 import { objectifyFormalText } from "@/lib/sesizari/objectify";
 import { reformatFormalText } from "@/lib/sesizari/format-paragraphs";
 import { removeMinimization } from "@/lib/sesizari/anti-minimization";
-import { forwardGeocode } from "@/lib/sesizari/geocoding";
+import { forwardGeocode, countyCentroid } from "@/lib/sesizari/geocoding";
+import { ROMANIA_CENTER } from "@/lib/constants";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 
@@ -250,8 +251,16 @@ export async function POST(req: Request) {
     // 2026-05-29 — lat/lng pot fi null acum (geolocation refuzat / no map pick).
     // Tratam in 2 cazuri: (a) avem coords → poate inlocuim cu geocode result
     // daca textul difera; (b) nu avem → forward geocode obligatoriu.
-    let finalLat: number | null = parsed.lat ?? null;
-    let finalLng: number | null = parsed.lng ?? null;
+    // 2026-06-10 — Client-ul trimitea ROMANIA_CENTER (45.9432, 24.9668) ca
+    // fallback când geocoding-ul eșua → pin „în munți" (centrul geografic al
+    // țării, lângă Sibiu). Îl tratăm ca ABSENT: forțăm forward-geocode din text;
+    // dacă nici acela nu prinde street-level, cădem pe centroidul județului.
+    const isRomaniaCenter = (la: number | null, ln: number | null) =>
+      la != null && ln != null &&
+      Math.abs(la - ROMANIA_CENTER[0]) < 0.02 && Math.abs(ln - ROMANIA_CENTER[1]) < 0.02;
+    const sentinel = isRomaniaCenter(parsed.lat ?? null, parsed.lng ?? null);
+    let finalLat: number | null = sentinel ? null : (parsed.lat ?? null);
+    let finalLng: number | null = sentinel ? null : (parsed.lng ?? null);
     try {
       const { getCountyById } = await import("@/data/counties");
       const countyName = parsed.county ? (getCountyById(parsed.county)?.name ?? null) : null;
@@ -274,9 +283,23 @@ export async function POST(req: Request) {
       }
     } catch { /* silent — keep what we have */ }
 
-    // Daca dupa geocode tot nu avem coords, return 400 friendly (NU Zod raw).
-    // Sesizarea fara coords nu poate fi afisata pe harta sau folosita pt
-    // proximity routing (apropiere de strada specifica).
+    // Fallback de ultimă instanță: street-level a eșuat, dar dacă știm
+    // județul (sau e București, după „Sector N" în text) punem CENTROIDUL
+    // orașului — pin aproximativ în orașul CORECT, niciodată în munți. Doar
+    // dacă nici județul nu e cunoscut cădem pe 400-ul de mai jos.
+    if (finalLat == null || finalLng == null) {
+      const sectorInText = /Sector(?:ul)?\s*[1-6]/i.test(`${polished.locatie ?? ""} ${safeLocatie ?? ""}`);
+      const fallbackCounty = parsed.county ?? (sectorInText ? "B" : null);
+      const centroid = countyCentroid(fallbackCounty);
+      if (centroid) {
+        finalLat = centroid[0];
+        finalLng = centroid[1];
+      }
+    }
+
+    // Daca dupa geocode + centroid tot nu avem coords (nici județul nu e
+    // cunoscut), return 400 friendly (NU Zod raw). Sesizarea fara coords nu
+    // poate fi afisata pe harta sau folosita pt proximity routing.
     if (finalLat == null || finalLng == null) {
       return NextResponse.json(
         {
