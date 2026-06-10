@@ -138,7 +138,7 @@ export async function POST(
   // proper salutation („Salut, Eduard,") instead of „Bună,".
   const { data: sesizare } = await admin
     .from("sesizari")
-    .select("id, code, titlu, status, author_email, author_name, resolved_at")
+    .select("id, code, titlu, status, author_email, author_name, resolved_at, official_response_at")
     .eq("id", ticket.sesizare_id)
     .maybeSingle();
 
@@ -156,6 +156,16 @@ export async function POST(
   const appliedNote = parsed.data.applied_note?.trim() || ticket.note;
   const eventAt = parsed.data.event_at ?? decidedAt;
 
+  // 2026-06-10 (audit statusuri) — `nou` nu e o tranziție validă de revenire.
+  // Constraint-ul DB exclude `nou` doar la INSERT-ul ticket-ului; la aprobare
+  // admin l-ar putea aplica și ar regresa sesizarea la zero. Îl respingem.
+  if (parsed.data.decision === "approved" && appliedStatus === "nou") {
+    return NextResponse.json(
+      { error: "Statusul „nou" nu poate fi aplicat — nu e o tranziție validă de revenire." },
+      { status: 400 },
+    );
+  }
+
   if (parsed.data.decision === "approved" && sesizare) {
     if (appliedStatus !== sesizare.status) {
       const updatePayload: Record<string, unknown> = { status: appliedStatus };
@@ -163,6 +173,18 @@ export async function POST(
         // Mirror the admin-stamped event time, not the moment of click,
         // so /sesizari-rezolvate ranks by when it actually got fixed.
         updatePayload.resolved_at = eventAt;
+      }
+      // 2026-06-10 (audit statusuri) — status de „autoritatea s-a implicat" setează
+      // official_response_at (la event_at real) dacă încă e NULL → overdue +
+      // eligibilitatea AVP corecte, indiferent de canal.
+      const RESPONSE_STATUSES = new Set<string>([
+        "inregistrata", "in-lucru", "redirectionata", "actiune-autoritate", "interventie", "amanata", "rezolvat", "respins",
+      ]);
+      if (
+        RESPONSE_STATUSES.has(appliedStatus) &&
+        !(sesizare as { official_response_at?: string | null }).official_response_at
+      ) {
+        updatePayload.official_response_at = eventAt;
       }
       const { error: sErr } = await admin
         .from("sesizari")

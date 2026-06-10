@@ -108,6 +108,24 @@ export async function POST(
     updatePayload.official_response = parsed.data.official_response;
     updatePayload.official_response_at = new Date().toISOString();
   }
+  // 2026-06-10 (audit statusuri) — orice status care înseamnă că autoritatea
+  // S-A IMPLICAT (≠ nou/trimis/ignorat) setează official_response_at dacă încă e
+  // NULL, chiar fără text de răspuns. Codifică „autoritatea a fost auzită" o
+  // singură dată, indiferent de canal (inbox/admin/ticket) → overdue + eligibilitatea
+  // AVP rămân corecte (o sesizare deja tratată de admin nu mai apare ca escaladabilă).
+  const RESPONSE_STATUSES = new Set<string>([
+    "inregistrata", "in-lucru", "redirectionata", "actiune-autoritate", "interventie", "amanata", "rezolvat", "respins",
+  ]);
+  if (RESPONSE_STATUSES.has(newStatus) && !updatePayload.official_response_at) {
+    const { data: respRow } = await admin
+      .from("sesizari")
+      .select("official_response_at")
+      .eq("id", sesizare.id)
+      .maybeSingle();
+    if (!(respRow as { official_response_at?: string | null } | null)?.official_response_at) {
+      updatePayload.official_response_at = new Date().toISOString();
+    }
+  }
   // When the admin flips status to `rezolvat` outside the citizen-author
   // path, mirror the resolved_at timestamp so /sesizari-rezolvate and
   // before/after surfaces still compute durations correctly.
