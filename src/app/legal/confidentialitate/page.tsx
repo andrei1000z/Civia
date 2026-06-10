@@ -40,7 +40,7 @@ export default function ConfidentialitatePage() {
         <ul>
           <li>Folosim minimul absolut de date necesare pentru ca platforma să funcționeze.</li>
           <li>Nu vindem date. Nu folosim Google Analytics sau Meta Pixel. Nu te trackăm pe alte site-uri.</li>
-          <li>Baza de date e în Uniunea Europeană (Supabase EU). Găzduirea aplicației (Vercel, SUA) și unele servicii (email, AI) folosesc procesatori din SUA, cu Clauze Contractuale Standard (SCC) + DPA, conform art. 44-46 GDPR.</li>
+          <li>Baza de date e în Uniunea Europeană (Supabase EU), iar execuția funcțiilor care procesează date personale e fixată în UE (Frankfurt). Furnizorul de găzduire (Vercel Inc.) și unele servicii (email, AI) sunt companii din SUA, cu Clauze Contractuale Standard (SCC) + DPA, conform art. 44-46 GDPR.</li>
           <li>Ai toate drepturile GDPR — le poți exercita în 1 click din /cont sau prin formularul de mai jos.</li>
           <li>Civia.ro nu promovează niciun partid politic sau ideologie. Datele tale nu sunt folosite pentru profilare politică.</li>
         </ul>
@@ -152,7 +152,7 @@ export default function ConfidentialitatePage() {
           centre de date în SEE (Spațiul Economic European):
         </p>
         <ul>
-          <li><strong>Vercel Inc.</strong> (SUA) — găzduirea aplicației Next.js, cu rețea edge globală; transfer pe baza Clauzelor Contractuale Standard (SCC) + DPA. <a href="https://vercel.com/legal/dpa" target="_blank" rel="noopener noreferrer" className="underline">DPA public</a>;</li>
+          <li><strong>Vercel Inc.</strong> (SUA) — găzduirea aplicației Next.js; funcțiile care procesează date personale rulează fixat în UE (Frankfurt/fra1), CDN-ul rămâne global (edge); transfer pe baza Clauzelor Contractuale Standard (SCC) + DPA. <a href="https://vercel.com/legal/dpa" target="_blank" rel="noopener noreferrer" className="underline">DPA public</a>;</li>
           <li><strong>Supabase</strong> — bază de date PostgreSQL + autentificare + storage (regiune EU) — DPA semnat;</li>
           <li><strong>Upstash</strong> — Redis pentru cache + rate-limiting + statistici agregate (regiune EU) — DPA semnat;</li>
           <li><strong>Groq</strong> — procesare AI text + viziune (formalizarea sesizărilor); cu clauze contractuale standard UE pentru orice transfer extra-UE;</li>
