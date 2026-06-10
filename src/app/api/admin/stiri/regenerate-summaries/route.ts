@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrGenerateAiSummary } from "@/lib/stiri/ai-summary";
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
   // dashboard-driven runs). Mirrors the pattern in /api/stiri/fetch.
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization") ?? "";
-  const viaBearer = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const viaBearer = verifyBearer(authHeader, cronSecret);
   if (!viaBearer) {
     const supabase = await createSupabaseServer();
     const {

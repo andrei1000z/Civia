@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import * as Sentry from "@sentry/nextjs";
 import { analyticsRedis, KEY } from "@/lib/analytics/redis";
 
@@ -23,7 +24,7 @@ export const maxDuration = 30;
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  const isCron = cronSecret && auth === `Bearer ${cronSecret}`;
+  const isCron = verifyBearer(auth, cronSecret);
 
   if (!isCron) {
     // Allow manual trigger by admin pentru testing.

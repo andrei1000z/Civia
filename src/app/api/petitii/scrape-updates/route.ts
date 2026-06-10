@@ -8,6 +8,7 @@
  * Rulează zilnic via Vercel cron sau self-healing din /api/petitii GET.
  */
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import { after } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -24,7 +25,7 @@ async function authorize(req: Request): Promise<boolean> {
   // 1. Bearer CRON_SECRET
   const auth = req.headers.get("Authorization");
   if (auth && process.env.CRON_SECRET) {
-    if (auth === `Bearer ${process.env.CRON_SECRET}`) return true;
+    if (verifyBearer(auth, process.env.CRON_SECRET)) return true;
   }
   // 2. Admin session
   const supabase = await createSupabaseServer();

@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# 2026-06-10 (hardening supply-chain, OpenSSF Scorecard / ASVS L2): least
+# privilege pe GITHUB_TOKEN. CI doar face checkout + verificări — are nevoie
+# DOAR de citire. Fără acest bloc, token-ul primește implicit permisiuni de
+# scriere pe contents (risc dacă un step compromis abuzează token-ul).
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

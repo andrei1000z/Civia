@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import * as Sentry from "@sentry/nextjs";
 import { dispatchAlertsForIntreruperi } from "@/lib/intreruperi/alerts-matcher";
 import { loadInterruptions } from "@/lib/intreruperi/store";
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
   const cronSecret = process.env.CRON_SECRET;
   let isCron = false;
-  if (cronSecret && auth === `Bearer ${cronSecret}`) {
+  if (verifyBearer(auth, cronSecret)) {
     isCron = true;
   } else {
     const supabase = await createSupabaseServer();

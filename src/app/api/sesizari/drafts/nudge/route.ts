@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailTemplate } from "@/lib/email/resend";
 import { escapeHtml } from "@/lib/sanitize";
@@ -24,7 +25,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  const isCron = cronSecret && auth === `Bearer ${cronSecret}`;
+  const isCron = verifyBearer(auth, cronSecret);
   if (!isCron) {
     const { createSupabaseServer } = await import("@/lib/supabase/server");
     const supabase = await createSupabaseServer();

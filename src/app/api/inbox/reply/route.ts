@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${secret}`) {
+  if (!verifyBearer(auth, secret)) {
     await logDebug({
       admin, req, http_status: 401, rawBody,
       error_message: `Auth header mismatch. Got: ${auth ? `${auth.slice(0, 7)}...` : "MISSING"}`,

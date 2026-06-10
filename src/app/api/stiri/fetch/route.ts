@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import * as Sentry from "@sentry/nextjs";
 import { fetchAllFeedsWithDiag } from "@/lib/stiri/rss";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -37,7 +38,7 @@ async function authorize(
 ): Promise<{ ok: boolean; reason?: string; userId?: string; viaCron?: boolean }> {
   const auth = req.headers.get("authorization") ?? "";
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && auth === `Bearer ${cronSecret}`) return { ok: true, viaCron: true };
+  if (verifyBearer(auth, cronSecret)) return { ok: true, viaCron: true };
 
   // fallback: allow if logged-in user has role='admin'
   try {

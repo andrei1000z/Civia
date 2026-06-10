@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth/constant-time";
 import * as Sentry from "@sentry/nextjs";
 import { loadInterruptions } from "@/lib/intreruperi/store";
 import { warmBuildingsForOutages } from "@/lib/intreruperi/buildings";
@@ -21,7 +22,7 @@ export const maxDuration = 300;
 async function authorize(req: Request): Promise<boolean> {
   const auth = req.headers.get("authorization") ?? "";
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && auth === `Bearer ${cronSecret}`) return true;
+  if (verifyBearer(auth, cronSecret)) return true;
   try {
     const supabase = await createSupabaseServer();
     const { data: { user } } = await supabase.auth.getUser();
