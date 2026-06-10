@@ -59,9 +59,10 @@ const HOMEPAGE_FAQ = [
   },
 ];
 
-// 2026-05-19: 30min → 4h. Homepage are doar count-uri statice + features list.
-// Counter-ul refresh-eaza la 4h, sesizarile noi apar via on-demand revalidate.
-export const revalidate = 14400;
+// 2026-06-10: 4h → 30min. La 4h, counter-ul de social-proof rămânea în urmă
+// vizibil (arăta 69 când erau 71). 30min e un compromis bun: counter aproape
+// la zi, fără presiune CPU. Sesizările noi apar oricum via on-demand revalidate.
+export const revalidate = 1800;
 
 /**
  * Fetch total approved sesizari count for the homepage social-proof line.
@@ -71,10 +72,14 @@ export const revalidate = 14400;
 async function getTotalSesizariCount(): Promise<number | null> {
   try {
     const admin = createSupabaseAdmin();
+    // 2026-06-10 — numărăm public+approved (sesizările vizibile public), IDENTIC
+    // cu /sesizari-publice, ca numărul să fie CONSISTENT peste tot. Înainte
+    // număra doar `approved` (incl. private) → diferea de feed.
     const { count } = await admin
       .from("sesizari")
       .select("*", { count: "exact", head: true })
-      .eq("moderation_status", "approved");
+      .eq("moderation_status", "approved")
+      .eq("publica", true);
     return count;
   } catch {
     return null;
@@ -160,7 +165,7 @@ export default async function HomePage() {
                   <strong className="text-[var(--color-text)] dark:text-white tabular-nums">
                     {totalSesizari.toLocaleString("ro-RO")}
                   </strong>{" "}
-                  {totalSesizari === 1 ? "sesizare trimisă" : "sesizări trimise"} prin Civia
+                  {totalSesizari === 1 ? "sesizare publică" : "sesizări publice"} pe Civia
                 </span>
               </p>
             )}
