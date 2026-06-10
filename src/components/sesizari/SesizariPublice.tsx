@@ -384,7 +384,7 @@ export function SesizariPublice() {
         // hartă rămane afișata cu zona implicita iar lista de marker e
         // goala — preveneste flickering-ul cand filtered momentan 0 →
         // map dispare → error boundary catch → loop infinit retry.
-        <SesizariMap limit={50} height="600px" zoom={12} />
+        <SesizariMap limit={500} height="600px" zoom={12} />
       ) : loading && rows.length === 0 ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0">
           {[1, 2, 3, 4].map((i) => (

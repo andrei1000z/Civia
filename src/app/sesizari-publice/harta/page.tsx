@@ -46,7 +46,7 @@ export default function SesizariHartaPage() {
         </Link>
       </div>
 
-      <SesizariMap limit={100} height="600px" zoom={7} />
+      <SesizariMap limit={500} height="600px" zoom={7} />
 
       <p className="text-xs text-[var(--color-text-muted)] mt-3 leading-relaxed">
         Sesizări catalogate din ultimele 30 zile. Vizibile doar cele cu opțiunea
