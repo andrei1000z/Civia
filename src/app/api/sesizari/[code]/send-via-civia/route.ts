@@ -343,19 +343,27 @@ export async function POST(
   // primaria primea duplicate). Acum: error→Sentry + 500 la client.
   const admin = createSupabaseAdmin();
   const now = new Date().toISOString();
-  const { error: updateError } = await admin
-    .from("sesizari")
-    .update({
-      sent_via_civia: true,
-      sent_at: now,
-      sent_to_emails: [...primaryEmails, ...ccEmails],
-      resend_message_id: result.id ?? null,
-      outbound_message_id: outboundMessageId,
-      reply_token: makeReplyToken(sesizare.code),
-      // Marcam status ca „trimis" daca era „nou".
-      ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
-    })
-    .eq("id", sesizare.id);
+  // 2026-06-10 (audit statusuri) — RETRY pe update (max 3, backoff). Emailul a
+  // plecat deja; dacă update-ul eșuează, sent_via_civia rămâne false → o re-tentativă
+  // ar RETRIMITE la primărie (dublă trimitere). Retry-ul micșorează drastic fereastra
+  // de eșec. Update-ul e idempotent (re-setarea acelorași flag-uri e fără efecte adverse).
+  const sentUpdatePayload = {
+    sent_via_civia: true,
+    sent_at: now,
+    sent_to_emails: [...primaryEmails, ...ccEmails],
+    resend_message_id: result.id ?? null,
+    outbound_message_id: outboundMessageId,
+    reply_token: makeReplyToken(sesizare.code),
+    // Marcam status ca „trimis" daca era „nou".
+    ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
+  };
+  let updateError: { message: string; code?: string; details?: string } | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { error } = await admin.from("sesizari").update(sentUpdatePayload).eq("id", sesizare.id);
+    updateError = error;
+    if (!error) break;
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 200 * attempt));
+  }
 
   if (updateError) {
     Sentry.captureMessage("send-via-civia: DB update failed AFTER email sent", {
