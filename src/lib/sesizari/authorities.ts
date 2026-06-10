@@ -32,7 +32,7 @@ function countyDisplayName(code: string): string {
   return ALL_COUNTIES.find((c) => c.id === code)?.name ?? code;
 }
 /** Numele orașului reședință (ex: „Craiova") din cod. Fallback la numele județului. */
-function countySeatName(code: string): string {
+export function countySeatName(code: string): string {
   return COUNTY_SEAT[code] ?? countyDisplayName(code);
 }
 

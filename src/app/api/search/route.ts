@@ -7,6 +7,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { SESIZARI_GUIDES } from "@/data/sesizari-guides";
 import { GLOSAR } from "@/data/glosar";
 import { PRIMARII, PREFECTURI, ORASE_IMPORTANTE } from "@/data/autoritati-contact";
+import { countySeatName } from "@/lib/sesizari/authorities";
 
 // 5/23/2026 — Search v2: relevance scoring + petitii + proteste + glosar +
 // autoritati + grouping. Cache scurt (60s) pentru rezultate populare.
@@ -252,15 +253,19 @@ export async function GET(req: Request) {
   // ─── Autorități: primării reședință (key = county code) + orașe importante
   //     mapped to per-județ autorități page. Pagina națională /autoritati a
   //     fost ștearsă 5/23/2026; users sunt redirectați la /{slug}/autoritati. ─
-  const authorityCatalog: Array<{ title: string; kind: string; email?: string; url: string }> = [];
+  // 2026-06-10 (audit search) — `keywords` = termeni alternativi căutabili
+  // (numele județului) ca „craiova" ȘI „dolj" să găsească Primăria Craiova.
+  const authorityCatalog: Array<{ title: string; kind: string; email?: string; url: string; keywords?: string }> = [];
   for (const [code, a] of Object.entries(PRIMARII)) {
     const county = ALL_COUNTIES.find((c) => c.id === code);
     if (county) {
       authorityCatalog.push({
-        title: `Primăria ${county.name}`,
+        // Reședința reală (ex „Primăria Craiova"), nu numele județului („Dolj").
+        title: `Primăria ${countySeatName(code)}`,
         kind: "Primărie reședință",
         email: a.email,
         url: `/${county.slug}/autoritati`,
+        keywords: `${county.name} ${county.id}`,
       });
     }
   }
@@ -272,6 +277,7 @@ export async function GET(req: Request) {
         kind: "Prefectură",
         email: a.email,
         url: `/${county.slug}/autoritati`,
+        keywords: `${countySeatName(code)} ${county.id}`,
       });
     }
   }
@@ -282,11 +288,12 @@ export async function GET(req: Request) {
       kind: "Primărie oraș",
       email: a.email,
       url: county ? `/${county.slug}/autoritati` : "/",
+      keywords: county?.name,
     });
   }
   for (const a of authorityCatalog) {
     const titleN = normalizeForSearch(a.title);
-    const hayN = normalizeForSearch(`${a.title} ${a.kind}`);
+    const hayN = normalizeForSearch(`${a.title} ${a.kind} ${a.keywords ?? ""}`);
     if (matchesAll(hayN, words)) {
       const s = scoreMatch(qRaw, words, titleN, normalizeForSearch(a.kind));
       results.push(makeResult({
@@ -303,30 +310,37 @@ export async function GET(req: Request) {
   const supabase = await createSupabaseServer();
   const safeWords = words.map((w) => sanitizeForPostgrest(w)).filter(Boolean);
   const firstWord = safeWords[0];
+  // 2026-06-10 (audit search) — filtrăm DB pe cel mai SELECTIV cuvânt (cel mai
+  // lung), nu pe primul. „groapă cluj" filtra doar pe „groapă" (primul) și putea
+  // rata match-ul pe „cluj"; cel mai lung cuvânt e de regulă mai distinctiv.
+  const filterWord = [...safeWords].sort((a, b) => b.length - a.length)[0] ?? firstWord;
+  // Detectează un cod de sesizare (ex „00035", „35") ca să-l prioritizăm.
+  const codeQuery = /^\d{1,6}$/.test(qRaw) ? qRaw : null;
 
   if (firstWord) {
     const [sesRes, stiriRes, petitiiRes, protesteRes] = await Promise.all([
       supabase
         .from("sesizari_feed")
         .select("code, titlu, locatie, sector, status, descriere")
-        .or(`titlu.ilike.%${firstWord}%,locatie.ilike.%${firstWord}%,descriere.ilike.%${firstWord}%`)
+        // include `code` ca o sesizare să fie căutabilă după numărul ei (00035).
+        .or(`code.ilike.%${filterWord}%,titlu.ilike.%${filterWord}%,locatie.ilike.%${filterWord}%,descriere.ilike.%${filterWord}%`)
         .limit(20),
       supabase
         .from("stiri_cache")
         .select("id, title, excerpt, source, published_at")
-        .or(`title.ilike.%${firstWord}%,excerpt.ilike.%${firstWord}%`)
+        .or(`title.ilike.%${filterWord}%,excerpt.ilike.%${filterWord}%`)
         .order("published_at", { ascending: false })
         .limit(15),
       supabase
         .from("petitii")
         .select("slug, title, summary, status")
-        .or(`title.ilike.%${firstWord}%,summary.ilike.%${firstWord}%`)
+        .or(`title.ilike.%${filterWord}%,summary.ilike.%${filterWord}%`)
         .eq("status", "active")
         .limit(10),
       supabase
         .from("proteste")
         .select("slug, title, subtitle, city, start_at")
-        .or(`title.ilike.%${firstWord}%,subtitle.ilike.%${firstWord}%,city.ilike.%${firstWord}%`)
+        .or(`title.ilike.%${filterWord}%,subtitle.ilike.%${filterWord}%,city.ilike.%${filterWord}%`)
         .eq("moderation_status", "approved")
         .limit(10),
     ]);
@@ -334,16 +348,19 @@ export async function GET(req: Request) {
     // Sesizari
     for (const r of (sesRes.data ?? []) as Array<{ code: string; titlu: string; locatie: string; descriere: string; status: string }>) {
       const titleN = normalizeForSearch(r.titlu);
-      const hayN = normalizeForSearch(`${r.titlu} ${r.locatie} ${r.descriere}`);
-      if (matchesAll(hayN, safeWords)) {
+      // include codul în haystack ca matchesAll să nu respingă un match pe cod.
+      const hayN = normalizeForSearch(`${r.titlu} ${r.locatie} ${r.descriere} ${r.code}`);
+      // Match pe cod = potrivire directă (utilizatorul știe exact ce caută).
+      const codeHit = codeQuery != null && r.code.includes(codeQuery);
+      if (codeHit || matchesAll(hayN, safeWords)) {
         const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch(r.locatie + " " + r.descriere));
         results.push(makeResult({
           type: "sesizare",
           title: r.titlu,
           url: `/sesizari/${r.code}`,
-          excerpt: r.locatie,
+          excerpt: `#${r.code} · ${r.locatie}`,
           meta: r.status,
-        }, s + 5));
+        }, codeHit ? 200 : s + 5));
       }
     }
 
