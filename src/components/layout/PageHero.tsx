@@ -96,7 +96,7 @@ export function PageHero({
           {/* Liquid-glass icon chip — inset highlight + saturated blur dă
               senzație de „sticlă lichidă" (iOS 18 / Vision OS). */}
           <div
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-[var(--radius-xs)] bg-white/15 grid place-items-center shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-[var(--radius-xs)] bg-white/15 grid place-items-center shrink-0 animate-scale-in"
             style={{
               backdropFilter: "blur(12px) saturate(180%)",
               WebkitBackdropFilter: "blur(12px) saturate(180%)",
@@ -110,21 +110,21 @@ export function PageHero({
             <Icon size={22} className="hidden sm:block" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-[family-name:var(--font-sora)] text-base sm:text-xl md:text-3xl font-extrabold leading-tight mb-1 sm:mb-2 break-words">
+            <h1 className="font-[family-name:var(--font-sora)] text-base sm:text-xl md:text-3xl font-extrabold leading-tight mb-1 sm:mb-2 break-words hero-enter-1">
               {title}
             </h1>
             {description && (
-              <div className="text-[12px] sm:text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words line-clamp-2 sm:line-clamp-none">
+              <div className="text-[12px] sm:text-sm md:text-base text-white/85 leading-relaxed max-w-2xl break-words line-clamp-2 sm:line-clamp-none hero-enter-2">
                 {description}
               </div>
             )}
             {tagline && (
-              <p className="inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words">
+              <p className="inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words hero-enter-3">
                 <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span>{tagline}</span>
               </p>
             )}
-            {children}
+            {children && <div className="hero-enter-3">{children}</div>}
           </div>
         </div>
       </header>

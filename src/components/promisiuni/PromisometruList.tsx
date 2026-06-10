@@ -79,7 +79,7 @@ function PromisiuneCard({ p, nowIso }: { p: Promisiune; nowIso: string }) {
   return (
     <article
       id={p.id}
-      className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-3)] transition-shadow flex flex-col gap-3 scroll-mt-24"
+      className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-1)] card-lift flex flex-col gap-3 scroll-mt-24"
       style={{ borderLeft: `4px solid ${meta.color}` }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -234,9 +234,9 @@ export function PromisometruList({ items }: { items: Promisiune[] }) {
         </div>
       )}
 
-      {/* Lista */}
+      {/* Lista — key pe filtre ca stagger-ul să re-ruleze la schimbarea lor */}
       {filtered.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div key={`${status}-${autoritate ?? "toti"}`} className="grid gap-4 sm:grid-cols-2 stagger-children">
           {filtered.map((p) => (
             <PromisiuneCard key={p.id} p={p} nowIso={nowIso} />
           ))}

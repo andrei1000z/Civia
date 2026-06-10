@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, TrendingUp, Megaphone, Send } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
+import { CountUp } from "@/components/ui/CountUp";
 import { QuickCameraCTA } from "@/components/sesizari/QuickCameraCTA";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
@@ -162,8 +163,8 @@ export default async function HomePage() {
               <p className="mt-6 text-sm text-[var(--color-primary)] dark:text-emerald-100/85 inline-flex items-center gap-2">
                 <Megaphone size={14} aria-hidden="true" />
                 <span>
-                  <strong className="text-[var(--color-text)] dark:text-white tabular-nums">
-                    {totalSesizari.toLocaleString("ro-RO")}
+                  <strong className="text-[var(--color-text)] dark:text-white">
+                    <CountUp value={totalSesizari} />
                   </strong>{" "}
                   {totalSesizari === 1 ? "sesizare publică" : "sesizări publice"} pe Civia
                 </span>

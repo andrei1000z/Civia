@@ -724,6 +724,76 @@ h1, h2, h3, h4, [id] {
   animation: fadeIn 0.18s ease-out forwards;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   2026-06-11 — Fundația de motion „Fable" (refacerea vizuală).
+   Limbaj unitar: o singură curbă (ease-out-expo), durate scurte
+   (180-550ms), transform+opacity only (GPU, zero CLS). Guards:
+   prefers-reduced-motion (media query globală de mai sus) +
+   scripting:none (conținutul nu rămâne ascuns fără JS).
+   ─────────────────────────────────────────────────────────────── */
+
+/* Intrare hero — stagger pe title/descriere/tagline. Folosit de
+   PageHero → animă ~20 de pagini dintr-o singură schimbare. */
+.hero-enter-1 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.hero-enter-2 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
+.hero-enter-3 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both; }
+
+/* Scale-in — icon chips, badge-uri. */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Stagger pe copiii direcți — liste de carduri. Cap la 12 (restul
+   intră împreună cu al 12-lea; sub fold oricum). */
+.stagger-children > * { animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.stagger-children > :nth-child(1) { animation-delay: 0.03s; }
+.stagger-children > :nth-child(2) { animation-delay: 0.08s; }
+.stagger-children > :nth-child(3) { animation-delay: 0.13s; }
+.stagger-children > :nth-child(4) { animation-delay: 0.18s; }
+.stagger-children > :nth-child(5) { animation-delay: 0.23s; }
+.stagger-children > :nth-child(6) { animation-delay: 0.28s; }
+.stagger-children > :nth-child(7) { animation-delay: 0.33s; }
+.stagger-children > :nth-child(8) { animation-delay: 0.38s; }
+.stagger-children > :nth-child(9) { animation-delay: 0.43s; }
+.stagger-children > :nth-child(10) { animation-delay: 0.48s; }
+.stagger-children > :nth-child(11) { animation-delay: 0.53s; }
+.stagger-children > :nth-child(n + 12) { animation-delay: 0.58s; }
+
+/* Scroll-reveal (componenta <Reveal/> adaugă .is-visible la intrarea
+   în viewport). Fără JS (crawlere fără scripting / noscript) conținutul
+   rămâne vizibil. */
+@media (scripting: enabled) {
+  .reveal { opacity: 0; transform: translateY(14px); }
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Bare/gauge-uri care „cresc" la intrare în viewport — promisometru,
+   clasament, impact. Se aplică pe FILL (elementul colorat), cu
+   transform-origin left ca să crească din stânga. */
+.reveal .bar-grow { transform: scaleX(0); transform-origin: left; }
+.reveal.is-visible .bar-grow {
+  transform: scaleX(1);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+/* Card interactiv unificat — lift la hover + press feedback. Înlocuiește
+   amestecul de hover:-translate-y-0.5/-1 + durate diferite din carduri. */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.card-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-3); }
+.card-lift:active { transform: translateY(-1px) scale(0.995); }
+
+/* Press feedback pe butoane primare — tactil, scurt. */
+.btn-press { transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1); }
+.btn-press:active { transform: scale(0.97); }
+
 /* Modal pop — soft scale-in pe dialogul propriu-zis (nu pe backdrop) */
 @keyframes modalPop {
   from {

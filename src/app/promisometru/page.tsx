@@ -5,6 +5,8 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { PROMISIUNI, PROMISIUNE_STATUS_META } from "@/data/promisiuni";
 import { promisiuniStats, groupByAutoritate } from "@/lib/promisiuni/stats";
 import { PromisometruList } from "@/components/promisiuni/PromisometruList";
+import { Reveal } from "@/components/ui/Reveal";
+import { CountUp } from "@/components/ui/CountUp";
 
 export const metadata: Metadata = {
   title: "Promisometru — promisiunile primarilor, urmărite cu sursă și termen",
@@ -31,8 +33,8 @@ export default function PromisometruPage() {
       />
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
-        {/* Statistici pe status */}
-        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Statistici pe status — stagger + count-up */}
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-children">
           {(Object.keys(PROMISIUNE_STATUS_META) as Array<keyof typeof PROMISIUNE_STATUS_META>).map(
             (status) => {
               const meta = PROMISIUNE_STATUS_META[status];
@@ -41,8 +43,8 @@ export default function PromisometruPage() {
                   key={status}
                   className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center shadow-[var(--shadow-1)]"
                 >
-                  <p className="text-2xl font-extrabold tabular-nums" style={{ color: meta.color }}>
-                    {stats.perStatus[status]}
+                  <p className="text-2xl font-extrabold" style={{ color: meta.color }}>
+                    <CountUp value={stats.perStatus[status]} />
                   </p>
                   <p className="mt-0.5 text-xs font-semibold text-[var(--color-text-muted)]">
                     {meta.icon} {meta.label}
@@ -53,15 +55,16 @@ export default function PromisometruPage() {
           )}
         </div>
 
-        {/* Gauge — rata de respectare (doar din promisiunile scadente) */}
+        {/* Gauge — rata de respectare (doar din promisiunile scadente).
+            Bara „crește" la intrarea în viewport (Reveal + bar-grow). */}
         {stats.rataRespectare !== null && (
-          <div className="mb-8 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-1)]">
+          <Reveal className="mb-8 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-1)]">
             <div className="mb-1.5 flex items-baseline justify-between">
               <p className="text-sm font-bold text-[var(--color-text)]">
                 Rata de respectare a promisiunilor scadente
               </p>
-              <p className="text-xl font-extrabold tabular-nums text-[var(--color-text)]">
-                {stats.rataRespectare}%
+              <p className="text-xl font-extrabold text-[var(--color-text)]">
+                <CountUp value={stats.rataRespectare} />%
               </p>
             </div>
             <div
@@ -73,7 +76,7 @@ export default function PromisometruPage() {
               aria-label={`Rata de respectare: ${stats.rataRespectare}%`}
             >
               <div
-                className="h-full rounded-[var(--radius-full)]"
+                className="h-full rounded-[var(--radius-full)] bar-grow"
                 style={{
                   width: `${Math.max(stats.rataRespectare, 2)}%`,
                   background:
@@ -85,7 +88,7 @@ export default function PromisometruPage() {
               Calculată doar din promisiunile ajunse la scadență — cele în curs nu intră; nu judecăm
               înainte de termen.
             </p>
-          </div>
+          </Reveal>
         )}
 
         {/* Lista interactivă (filtre status + autoritate, countdown, share) */}
