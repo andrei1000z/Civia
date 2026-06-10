@@ -358,6 +358,16 @@ export function SearchModal({ open, onClose }: Props) {
             autoComplete="off"
             spellCheck={false}
             aria-label="Caută"
+            // WAI-ARIA 1.2 combobox (audit search): input controlează listbox-ul
+            // de rezultate; aria-activedescendant urmează opțiunea activă fără să
+            // mute focusul din input (navigare cu săgeți + anunț screen reader).
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={showResults}
+            aria-controls="civia-search-listbox"
+            aria-activedescendant={
+              showResults && active >= 0 ? `civia-search-opt-${active}` : undefined
+            }
           />
           {loading && (
             <Loader2
@@ -393,7 +403,6 @@ export function SearchModal({ open, onClose }: Props) {
         <div
           ref={listRef}
           className="max-h-[min(70vh,32rem)] overflow-y-auto"
-          role="listbox"
         >
           {/* Empty state: quick actions + recent searches */}
           {showEmpty && (
@@ -521,14 +530,14 @@ export function SearchModal({ open, onClose }: Props) {
             (() => {
               let globalIdx = -1;
               return (
-                <div className="py-1">
+                <div className="py-1" id="civia-search-listbox" role="listbox" aria-label="Rezultate căutare">
                   {grouped.map((g) => (
-                    <div key={g.group} className="mb-1">
-                      <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)]">
+                    <div key={g.group} className="mb-1" role="group" aria-label={g.label}>
+                      <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)]" aria-hidden="true">
                         {g.label}
                         <span className="ml-1.5 opacity-60">({g.items.length})</span>
                       </div>
-                      <ul>
+                      <div>
                         {g.items.map((r) => {
                           globalIdx += 1;
                           const idx = globalIdx;
@@ -536,8 +545,9 @@ export function SearchModal({ open, onClose }: Props) {
                           const Icon = meta.icon;
                           const isActive = idx === active;
                           return (
-                            <li key={`${r.type}-${r.url}-${idx}`}>
                               <Link
+                                key={`${r.type}-${r.url}-${idx}`}
+                                id={`civia-search-opt-${idx}`}
                                 href={r.url}
                                 data-idx={idx}
                                 role="option"
@@ -584,10 +594,9 @@ export function SearchModal({ open, onClose }: Props) {
                                   />
                                 )}
                               </Link>
-                            </li>
                           );
                         })}
-                      </ul>
+                      </div>
                     </div>
                   ))}
                 </div>

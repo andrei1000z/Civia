@@ -80,7 +80,10 @@ function roStems(word: string): string[] {
   }
   if (word.length > 4) stems.push(word.slice(0, -1));
   if (word.length > 5) stems.push(word.slice(0, -2));
-  return [...new Set(stems)];
+  // 2026-06-10 (audit search) — stemurile < 3 caractere produc fals-pozitive
+  // (match pe orice substring scurt). Le scoatem, dar păstrăm mereu cuvântul
+  // original (chiar dacă e de 2 caractere — match exact, nu prin stem).
+  return [...new Set(stems)].filter((s) => s.length >= 3 || s === word);
 }
 
 function matchesAll(haystack: string, words: string[]): boolean {
