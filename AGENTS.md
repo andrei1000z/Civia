@@ -113,6 +113,17 @@ To keep the verbs consistent across surfaces:
 
 Same convention applies for petitii: hero/entry "Semnează petiția", action button "Semnează acum", card link "Vezi detalii".
 
+## EU compliance (LOAD-BEARING — respect at all times)
+
+Civia targets **exactly** the EU baseline (GDPR / ePrivacy / ENISA / OWASP) — **not above, not below**. The full standard lives in [`docs/EU-COMPLIANCE.md`](docs/EU-COMPLIANCE.md); read it before touching anything that collects, stores, or transmits personal data. The non-negotiables:
+
+- **Minimize at collection.** Only data that's strictly necessary. No auto-GPS (location is map-selected); photo EXIF/GPS is stripped client-side before upload. Never put real email/user-id in analytics payloads.
+- **Every processing has a documented legal basis (Art. 6)** and a matching line in `/legal/confidentialitate`. New feature touching personal data → add the policy line + basis BEFORE launch. (This is how `referral_code` should have been handled — don't repeat it.)
+- **Consent (non-essential) is opt-in OFF by default**, Accept/Reject at visual parity, retractable in one click. Gate non-essential tracking through `ConsentedAnalytics`.
+- **Retention is declared AND enforced.** Anything kept must have a real purge in `/api/cron/purge-retention` (sesizări anonymized at 3y; cosigner email+ip_hash deleted 90d after the parent sesizare closes). Don't promise a retention you don't execute.
+- **Docs == code.** The privacy policy must state the truth (storage type, duration, US-vs-EU processors with SCC). Don't claim "Frankfurt only" for a US vendor.
+- **Don't over-engineer** (explicitly forbidden as *above* standard): DPIA paperwork, universal MFA, client-side/E2E encryption, k-anonymity analytics, ISO 27001 / SOC2 / NIS2 controls, periodic re-consent banners, blockchain logs, ID-document checks for GDPR requests. GDPR Art. 32 + ASVS L2 is the ceiling for an SME civic platform.
+
 ## Don't do
 
 - **Don't add new full-bleed `<section>` heroes.** Use `<PageHero>` from `src/components/layout/PageHero.tsx`.

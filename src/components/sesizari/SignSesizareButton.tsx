@@ -109,6 +109,10 @@ export function SignSesizareButton({
     return { name: "", address: "", email: "" };
   });
   const [remember, setRemember] = useState(true);
+  // GDPR Art. 7 — consimțământ explicit (NEBIFAT default) ca numele+adresa să
+  // fie trimise autorității. Obligatoriu pentru submit; dovada (consent_at) e
+  // stocată server-side.
+  const [consent, setConsent] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   // Honeypot — bots completează automat, respinge silent
   const [honey, setHoney] = useState("");
@@ -160,10 +164,12 @@ export function SignSesizareButton({
       .catch(() => setProfileLoaded(true));
   }, [user, profileLoaded]);
 
-  const canSubmit = data.name.trim().length >= 2 && data.address.trim().length >= 3;
+  // Preview NU cere consimțământ (nu trimite date la autoritate); submit DA.
+  const canPreview = data.name.trim().length >= 2 && data.address.trim().length >= 3;
+  const canSubmit = canPreview && consent;
 
   async function handlePreview() {
-    if (!canSubmit || previewLoading) return;
+    if (!canPreview || previewLoading) return;
     setPreviewLoading(true);
     try {
       const params = new URLSearchParams({
@@ -198,6 +204,7 @@ export function SignSesizareButton({
           nume: data.name.trim(),
           adresa: data.address.trim(),
           email: data.email.trim() || null,
+          consent: true, // GDPR Art. 7 — bifat explicit (canSubmit îl impune)
           _honey: honey,
         }),
       });
@@ -383,11 +390,30 @@ export function SignSesizareButton({
                   </span>
                 </label>
 
+                {/* GDPR Art. 7 — consimțământ explicit (NEBIFAT default), obligatoriu. */}
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    required
+                    className="mt-0.5 w-4 h-4 accent-[var(--color-primary)]"
+                  />
+                  <span className="text-xs text-[var(--color-text)]">
+                    Sunt de acord ca numele și adresa mea să fie trimise autorității,
+                    conform OG 27/2002 și{" "}
+                    <a href="/legal/confidentialitate" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] underline">
+                      politicii de confidențialitate
+                    </a>
+                    .
+                  </span>
+                </label>
+
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handlePreview}
-                    disabled={!canSubmit || previewLoading || state === "sending"}
+                    disabled={!canPreview || previewLoading || state === "sending"}
                     className="shrink-0 inline-flex items-center justify-center gap-1.5 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:bg-[var(--color-border)]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                     title="Vezi exact ce email pleacă"
                   >

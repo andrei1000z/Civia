@@ -40,7 +40,7 @@ export default function ConfidentialitatePage() {
         <ul>
           <li>Folosim minimul absolut de date necesare pentru ca platforma să funcționeze.</li>
           <li>Nu vindem date. Nu folosim Google Analytics sau Meta Pixel. Nu te trackăm pe alte site-uri.</li>
-          <li>Datele sunt stocate în Uniunea Europeană (Supabase EU + Vercel EU).</li>
+          <li>Baza de date e în Uniunea Europeană (Supabase EU). Găzduirea aplicației (Vercel, SUA) și unele servicii (email, AI) folosesc procesatori din SUA, cu Clauze Contractuale Standard (SCC) + DPA, conform art. 44-46 GDPR.</li>
           <li>Ai toate drepturile GDPR — le poți exercita în 1 click din /cont sau prin formularul de mai jos.</li>
           <li>Civia.ro nu promovează niciun partid politic sau ideologie. Datele tale nu sunt folosite pentru profilare politică.</li>
         </ul>
@@ -117,6 +117,7 @@ export default function ConfidentialitatePage() {
             <tr className="border-t border-[var(--color-border)]"><td className="p-3">Newsletter săptămânal</td><td className="p-3">art. 6 (1)(a) — consimțământ explicit</td></tr>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3">Securitate, rate-limiting, anti-abuz</td><td className="p-3">art. 6 (1)(f) — interes legitim</td></tr>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3">Statistici anonimizate</td><td className="p-3">art. 6 (1)(f) — interes legitim minimal</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3">Atribuire recomandări (referral): cod referral + cine te-a invitat — pentru clasamentul de ambasadori, fără profilare comercială. Te poți opune din formularul de mai jos.</td><td className="p-3">art. 6 (1)(f) — interes legitim</td></tr>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3">Cookie-uri non-esențiale</td><td className="p-3">art. 6 (1)(a) — consimțământ (dacă aplicabil)</td></tr>
             <tr className="border-t border-[var(--color-border)]"><td className="p-3">Răspuns la solicitări legale</td><td className="p-3">art. 6 (1)(c) — obligație legală</td></tr>
           </tbody>
@@ -151,7 +152,7 @@ export default function ConfidentialitatePage() {
           centre de date în SEE (Spațiul Economic European):
         </p>
         <ul>
-          <li><strong>Vercel Inc.</strong> — hosting Next.js (regiune Frankfurt, DE) — DPA semnat;</li>
+          <li><strong>Vercel Inc.</strong> (SUA) — găzduirea aplicației Next.js, cu rețea edge globală; transfer pe baza Clauzelor Contractuale Standard (SCC) + DPA. <a href="https://vercel.com/legal/dpa" target="_blank" rel="noopener noreferrer" className="underline">DPA public</a>;</li>
           <li><strong>Supabase</strong> — bază de date PostgreSQL + autentificare + storage (regiune EU) — DPA semnat;</li>
           <li><strong>Upstash</strong> — Redis pentru cache + rate-limiting + statistici agregate (regiune EU) — DPA semnat;</li>
           <li><strong>Groq</strong> — procesare AI text + viziune (formalizarea sesizărilor); cu clauze contractuale standard UE pentru orice transfer extra-UE;</li>
@@ -275,7 +276,7 @@ export default function ConfidentialitatePage() {
                 5/23/2026 — county cookie + civia_county localStorage eliminate
                 (selectarea județului ștearsă din UI, no longer set). */}
             <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civic_cookie_consent</td><td className="p-3">localStorage</td><td className="p-3">Stochează alegerea ta privind consimțământul</td><td className="p-3">permanent (până la ștergere)</td></tr>
-            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_vid</td><td className="p-3">localStorage</td><td className="p-3">Vizitator ID anonim (hash, fără identificare personală)</td><td className="p-3">permanent (până la ștergere)</td></tr>
+            <tr className="border-t border-[var(--color-border)]"><td className="p-3 font-mono text-xs">civia_vid</td><td className="p-3">sessionStorage</td><td className="p-3">Vizitator ID anonim (hash, fără identificare personală) — doar dacă accepți statistici</td><td className="p-3">durata sesiunii (se șterge la închiderea tab-ului)</td></tr>
           </tbody>
         </table>
         <p>

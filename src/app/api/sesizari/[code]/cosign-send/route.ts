@@ -42,6 +42,8 @@ const bodySchema = z.object({
     .union([z.string().email(), z.literal(""), z.null()])
     .optional()
     .transform((v) => (v === "" ? null : v ?? null)),
+  /** GDPR Art. 7 — consimțământ explicit la trimiterea datelor către autoritate. */
+  consent: z.boolean().optional(),
   /** Honeypot — bot-ii completează acest câmp; respinge silent. */
   _honey: z.string().optional(),
 });
@@ -96,7 +98,7 @@ export async function POST(
       { status: 400 },
     );
   }
-  const { nume, adresa, email, _honey } = parsed.data;
+  const { nume, adresa, email, consent, _honey } = parsed.data;
 
   // Honeypot — bots completează → success fake.
   if (_honey) {
@@ -305,6 +307,8 @@ export async function POST(
       email,
       city: extractLocality(adresa),
       ip_hash: ip ? Buffer.from(ip).toString("base64").slice(0, 16) : null,
+      // GDPR Art. 7 — dovada consimțământului explicit (NULL = legacy pre-checkbox).
+      consent_at: consent ? new Date().toISOString() : null,
     });
   } catch (cosignErr) {
     // 23505 = duplicate cosign (idempotent). OK.

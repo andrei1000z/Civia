@@ -42,6 +42,9 @@ export async function GET(req: Request) {
     // 2026-06-09 (roadmap Faza 1) — chaser a-doua-acțiune: la ~48h după prima
     // sesizare fără a doua acțiune, email „Ce s-a mai raportat în {oraș}".
     "/api/sesizari/winback",
+    // 2026-06-10 (conformitate UE) — aplică retenția promisă: anonimizează
+    // co-semnatari la sesizări închise >90z + sesizări anonime >3 ani.
+    "/api/cron/purge-retention",
   ];
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
   if (day === 2) jobs.push("/api/newsletter/digest-local"); // Marți (Faza 2 — digest local pe zonă)
