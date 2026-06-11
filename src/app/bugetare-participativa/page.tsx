@@ -3,6 +3,7 @@ import { Coins, ExternalLink, Vote, Users, ShieldQuestion } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { PROGRAME_BP } from "@/data/bugetare-programe";
 import { CerereBPGenerator } from "@/components/bugetare/CerereBPGenerator";
+import { PrioritatiOras } from "@/components/bugetare/PrioritatiOras";
 import { getCountyById } from "@/data/counties";
 
 export const metadata: Metadata = {
@@ -95,6 +96,20 @@ export default function BugetareParticipativaPage() {
               </a>
             ))}
           </div>
+        </section>
+
+        {/* Prioritățile orașului — iterația 2 (buget umbră): propui + votezi,
+            topul se transmite formal primăriei de către Civia. */}
+        <section className="mb-10">
+          <h2 className="mb-1 text-base font-bold text-[var(--color-text)]">
+            Prioritățile orașului tău — propune și votează
+          </h2>
+          <p className="mb-4 text-xs text-[var(--color-text-muted)]">
+            Ce ar trebui să finanțeze primăria mai întâi? Propune o investiție, votează maximum 3
+            priorități (cont necesar — un vot de om, nu de robot). Civia transmite periodic topul,
+            formal, primăriei — cu temei OG 27/2002 și răspuns obligatoriu în 30 de zile.
+          </p>
+          <PrioritatiOras />
         </section>
 
         {/* Generatorul — absența devine acțiune */}
