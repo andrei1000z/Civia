@@ -98,6 +98,25 @@ export function DashboardSkeleton() {
   );
 }
 
+/** 2026-06-11 (audit UI) — skeleton care OGLINDEȘTE grid-ul real de carduri
+ *  (md:2 col, xl:3 col, înălțime de card), nu rânduri stivuite — altfel
+ *  layout-ul „sare" vizibil când se încarcă datele (feed sesizări publice). */
+export function CardGridSkeleton({ cards = 9 }: { cards?: number }) {
+  return (
+    <SkeletonWrapper label="Se încarcă lista">
+      <div className="container-narrow py-12 md:py-16">
+        <Shimmer className="h-10 w-64 mb-3" />
+        <Shimmer className="h-5 w-full max-w-lg mb-8" />
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+          {Array.from({ length: cards }).map((_, i) => (
+            <Shimmer key={i} className="h-56 w-full" />
+          ))}
+        </div>
+      </div>
+    </SkeletonWrapper>
+  );
+}
+
 /** List of items (sesizari, stiri, events) */
 export function ListSkeleton({ rows = 8 }: { rows?: number }) {
   return (

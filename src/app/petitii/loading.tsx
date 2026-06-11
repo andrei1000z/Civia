@@ -1,4 +1,4 @@
-import { ListSkeleton } from "@/components/ui/PageSkeleton";
+import { CardGridSkeleton } from "@/components/ui/PageSkeleton";
 export default function Loading() {
-  return <ListSkeleton rows={6} />;
+  return <CardGridSkeleton cards={6} />;
 }
