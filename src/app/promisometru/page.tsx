@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Gauge } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { PROMISIUNI, PROMISIUNE_STATUS_META } from "@/data/promisiuni";
-import { promisiuniStats, groupByAutoritate } from "@/lib/promisiuni/stats";
+import { promisiuniStats } from "@/lib/promisiuni/stats";
+import { getAutoritati } from "@/lib/promisiuni/autoritati";
 import { PromisometruList } from "@/components/promisiuni/PromisometruList";
 import { Reveal } from "@/components/ui/Reveal";
 import { CountUp } from "@/components/ui/CountUp";
@@ -20,7 +21,7 @@ export const revalidate = 86400;
 
 export default function PromisometruPage() {
   const stats = promisiuniStats(PROMISIUNI);
-  const grupuri = groupByAutoritate(PROMISIUNI);
+  const autoritati = getAutoritati();
 
   return (
     // container-narrow = pattern-ul canonic al site-ului (ca /sesizari,
@@ -97,37 +98,61 @@ export default function PromisometruPage() {
         {/* Lista interactivă (filtre status + autoritate, countdown, share) */}
         <PromisometruList items={PROMISIUNI} />
 
-        {/* Fișa pe autoritate */}
-        {grupuri.length > 1 && (
+        {/* Profiluri pe autoritate — carduri clickabile către pagina dedicată
+            fiecărui om politic / fiecărei instituții (toate promisiunile lui,
+            cele mai noi primele). */}
+        {autoritati.length > 1 && (
           <section className="mt-10">
-            <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Pe scurt, pe primării</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {grupuri.map((g) => {
-                const s = promisiuniStats(g.items);
-                return (
-                  <div
-                    key={g.autoritate}
-                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-1)]"
-                  >
-                    <p className="text-sm font-bold text-[var(--color-text)]">{g.autoritate}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{g.functie}</p>
-                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                      {(Object.keys(PROMISIUNE_STATUS_META) as Array<keyof typeof PROMISIUNE_STATUS_META>)
-                        .filter((st) => s.perStatus[st] > 0)
-                        .map((st) => (
-                          <span key={st} className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ background: PROMISIUNE_STATUS_META[st].color }}
-                              aria-hidden="true"
-                            />
-                            {s.perStatus[st]} {PROMISIUNE_STATUS_META[st].label.toLowerCase()}
-                          </span>
-                        ))}
+            <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">
+              Cine promite — profiluri urmărite
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
+              {autoritati.map((a) => (
+                <Link
+                  key={a.slug}
+                  href={`/promisometru/${a.slug}`}
+                  className="group rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-1)] card-lift hover:border-[var(--color-primary)]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-700 to-emerald-800 text-sm font-extrabold text-white"
+                      aria-hidden="true"
+                    >
+                      {a.initiale}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+                        {a.autoritate}
+                      </p>
+                      <p className="truncate text-xs text-[var(--color-text-muted)]">{a.functie}</p>
                     </div>
+                    {a.stats.rataRespectare !== null && (
+                      <span className="ml-auto shrink-0 text-base font-extrabold tabular-nums text-[var(--color-text)]">
+                        {a.stats.rataRespectare}%
+                      </span>
+                    )}
                   </div>
-                );
-              })}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
+                    <strong className="tabular-nums text-[var(--color-text)]">{a.items.length}</strong>
+                    {a.items.length === 1 ? "promisiune" : "promisiuni"}
+                    {(Object.keys(PROMISIUNE_STATUS_META) as Array<keyof typeof PROMISIUNE_STATUS_META>)
+                      .filter((st) => a.stats.perStatus[st] > 0)
+                      .map((st) => (
+                        <span key={st} className="inline-flex items-center gap-1">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ background: PROMISIUNE_STATUS_META[st].color }}
+                            aria-hidden="true"
+                          />
+                          {a.stats.perStatus[st]}
+                        </span>
+                      ))}
+                    <span className="ml-auto font-semibold text-[var(--color-primary)]">
+                      Vezi profilul →
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
         )}

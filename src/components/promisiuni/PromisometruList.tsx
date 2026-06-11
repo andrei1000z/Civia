@@ -139,9 +139,18 @@ function PromisiuneCard({ p, nowIso }: { p: Promisiune; nowIso: string }) {
   );
 }
 
-export function PromisometruList({ items }: { items: Promisiune[] }) {
+export function PromisometruList({
+  items,
+  defaultSort = "relevanta",
+}: {
+  items: Promisiune[];
+  /** „noi" = cele mai recente declarații primele (paginile de profil);
+   *  „relevanta" = întârziate → în curs (după termen) → încheiate. */
+  defaultSort?: "relevanta" | "noi";
+}) {
   const [status, setStatus] = useState<StatusFilter>("toate");
   const [autoritate, setAutoritate] = useState<string | null>(null);
+  const [sort, setSort] = useState<"relevanta" | "noi">(defaultSort);
   // „Acum" calculat o dată per montare — suficient pentru countdown-uri de zile.
   const nowIso = useMemo(() => new Date().toISOString(), []);
 
@@ -167,8 +176,9 @@ export function PromisometruList({ items }: { items: Promisiune[] }) {
     let out = items;
     if (status !== "toate") out = out.filter((p) => p.status === status);
     if (autoritate) out = out.filter((p) => p.autoritate === autoritate);
+    if (sort === "noi") return [...out].sort((a, b) => b.dataSursa.localeCompare(a.dataSursa));
     return sortPromisiuni(out);
-  }, [items, status, autoritate]);
+  }, [items, status, autoritate, sort]);
 
   const statusPills: Array<{ key: StatusFilter; label: string; color?: string }> = [
     { key: "toate", label: "Toate" },
@@ -181,6 +191,26 @@ export function PromisometruList({ items }: { items: Promisiune[] }) {
 
   return (
     <div>
+      {/* Sortare */}
+      <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Sortează">
+        <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Sortează:</span>
+        {([["noi", "Cele mai noi"], ["relevanta", "Relevanță"]] as const).map(([val, lbl]) => (
+          <button
+            key={val}
+            type="button"
+            onClick={() => setSort(val)}
+            aria-pressed={sort === val}
+            className={`rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-semibold transition ${
+              sort === val
+                ? "bg-[var(--color-text)] text-[var(--color-bg)]"
+                : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-primary)]"
+            }`}
+          >
+            {lbl}
+          </button>
+        ))}
+      </div>
+
       {/* Filtre status */}
       <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Filtrează după status">
         {statusPills.map(({ key, label, color }) => {
@@ -236,7 +266,7 @@ export function PromisometruList({ items }: { items: Promisiune[] }) {
 
       {/* Lista — key pe filtre ca stagger-ul să re-ruleze la schimbarea lor */}
       {filtered.length > 0 ? (
-        <div key={`${status}-${autoritate ?? "toti"}`} className="grid gap-4 sm:grid-cols-2 stagger-children">
+        <div key={`${status}-${autoritate ?? "toti"}-${sort}`} className="grid gap-4 sm:grid-cols-2 stagger-children">
           {filtered.map((p) => (
             <PromisiuneCard key={p.id} p={p} nowIso={nowIso} />
           ))}
