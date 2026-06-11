@@ -120,6 +120,8 @@ export const NAV_MORE: Array<{
   { href: "/informatii-publice", label: "Cere informații (544)", icon: "📨", nationalOnly: true },
   // 2026-06-11 (Faza 3) — Promisometru: promisiunile primarilor cu sursă + verdict factual.
   { href: "/promisometru", label: "Promisometru", icon: "📊", nationalOnly: true },
+  // 2026-06-11 (Faza 4) — bugetare participativă: programe oficiale + generator de cerere.
+  { href: "/bugetare-participativa", label: "Bugetare participativă", icon: "💶", nationalOnly: true },
   { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
   { href: "/propuneri-legislative", label: "Propuneri legislative", icon: "⚖️", nationalOnly: true },
   // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
