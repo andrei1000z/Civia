@@ -63,7 +63,9 @@ export function PageHero({
       {backHref && (
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
+          // py-3 -my-2: zona de atingere ≥44px pe mobile (WCAG 2.5.5) fără să
+          // schimbe layout-ul vizual (margin negativ compensează padding-ul).
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-5 py-3 -my-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
         >
           <ArrowLeft size={13} aria-hidden="true" />
           {backLabel ?? "Înapoi"}

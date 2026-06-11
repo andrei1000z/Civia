@@ -93,7 +93,7 @@ export function TopVotedWidget() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 stagger-children">
       {rows.map((s) => {
         const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";
         return (

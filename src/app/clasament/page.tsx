@@ -312,7 +312,7 @@ export default async function ClasamentPage() {
             <Trophy size={20} aria-hidden="true" className="text-amber-500" />
             Top 3 județe
           </h2>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-3 gap-3 stagger-children">
             {counties.slice(0, 3).map((c, i) => {
               const t = scoreTint(c.fixScore);
               return (

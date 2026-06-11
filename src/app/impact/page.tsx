@@ -166,7 +166,7 @@ export default async function ImpactPage() {
 
       <div className="container-narrow space-y-8 pb-16">
         {/* HERO STATS — 4 KPI mari */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
           <KpiCard
             icon={FileText}
             label="Sesizări depuse"
