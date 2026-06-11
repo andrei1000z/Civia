@@ -4,6 +4,7 @@ import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI
 import { callCloudflareText, isCloudflareTextConfigured, CF_TEXT_MODELS } from "@/lib/ai/cloudflare-text";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
+import { stripInventedCifre } from "@/lib/stiri/validate-cifre";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { extractArticleBody } from "@/lib/stiri/extract-body";
 import { extractiveSummary } from "@/lib/stiri/extractive-summary";
@@ -397,7 +398,11 @@ async function generate(
       });
       return null;
     }
-    const summary = polishSynthesis(raw);
+    // 2026-06-11 (v11) — defense-in-depth: taie cifrele INVENTATE din „Cifre
+    // cheie" (numere care nu apar în textul-sursă). Promptul interzice
+    // inventarea, dar modelele free-tier o fac oricum (bug real: 0/1/2024
+    // fabricate pe articolul Ciucu). Vezi validate-cifre.ts.
+    const summary = stripInventedCifre(polishSynthesis(raw), rawText);
 
     // Persist with await — stamps the version so the cache check above
     // recognises this row as current. Subsequent reads from any

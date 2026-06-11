@@ -80,5 +80,17 @@
  *       produce the full 5-section structured brief that v6-v9 were
  *       failing to elicit. Bump invalidates v9 cache rows so they
  *       re-synthesize against the (now-richer) content.
+ *  11 — Defense-in-depth contra cifrelor INVENTATE în „Cifre cheie" /
+ *       „Cifre & date cheie". Bug real (articol Gândul despre Ciucu,
+ *       2026-06-11): modelul, forțat de structura cu secțiuni, a umplut
+ *       „Cifre cheie" cu numere fabricate („0: numărul de funcții pe
+ *       care dorește să le părăsească", „1: ani de muncă", „2024" —
+ *       în 2026), deși promptul interzice explicit inventarea.
+ *       Fix: stripInventedCifre (lib/stiri/validate-cifre.ts) — fiecare
+ *       bullet cu cifre din secțiune trebuie să aibă TOATE numerele
+ *       prezente în textul-sursă; bullet inventat → tăiat; secțiune
+ *       golită → scoasă complet (e opțională prin prompt). Aplicat pe
+ *       AMBELE pipeline-uri (stiri + petitii). Bump invalidează cache-ul
+ *       v10 ca sumarele vechi cu cifre fabricate să se regenereze curat.
  */
-export const AI_SUMMARY_VERSION = 10;
+export const AI_SUMMARY_VERSION = 11;

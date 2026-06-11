@@ -3,6 +3,7 @@ import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI_MODEL_BACKUPS } from "@/lib/ai/gemini";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
+import { stripInventedCifre } from "@/lib/stiri/validate-cifre";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 
 export interface SummarizablePetitie {
@@ -259,7 +260,9 @@ async function generate(
       });
       return petitie.summary || petitie.body || petitie.title || null;
     }
-    const summary = polishSynthesis(raw);
+    // 2026-06-11 (v11) — taie cifrele inventate din „Cifre & date cheie"
+    // (validare contra textului petiției). Vezi lib/stiri/validate-cifre.ts.
+    const summary = stripInventedCifre(polishSynthesis(raw), rawText);
 
     try {
       const admin = createSupabaseAdmin();
