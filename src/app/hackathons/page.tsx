@@ -54,7 +54,8 @@ export default function HackathonsPage() {
   const past = HACKATHONS.filter((h) => h.status === "past");
 
   return (
-    <>
+    // container-narrow pe TOT (incl. hero) — pattern-ul canonic (/sesizari).
+    <div className="container-narrow py-8 md:py-12">
       <PageHero
         title="Civic Hackathons"
         icon={Code2}
@@ -68,7 +69,7 @@ export default function HackathonsPage() {
         tagline={`${upcoming.length} upcoming · ${proposals.length} propuneri · ${past.length} trecute`}
       />
 
-      <div className="container-narrow space-y-6 pb-16 max-w-3xl">
+      <div className="space-y-6 pb-16 max-w-3xl">
         {upcoming.length > 0 && (
           <section>
             <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-3 flex items-center gap-2">
@@ -144,7 +145,7 @@ export default function HackathonsPage() {
           </ul>
         </section>
       </div>
-    </>
+    </div>
   );
 }
 

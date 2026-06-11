@@ -92,5 +92,10 @@
  *       golită → scoasă complet (e opțională prin prompt). Aplicat pe
  *       AMBELE pipeline-uri (stiri + petitii). Bump invalidează cache-ul
  *       v10 ca sumarele vechi cu cifre fabricate să se regenereze curat.
+ *  12 — Anti-filler în stripInventedCifre: bullet-urile ale căror numere
+ *       sunt toate 0/1 FĂRĂ cuvânt de magnitudine/unitate (milioane, lei,
+ *       km, ani…) sunt tăiate — „1 mesaj publicat pe Facebook" nu e cifră
+ *       cheie chiar dacă „1" apare în articol. „1 milion de lei" rămâne.
+ *       Bump regenerează cache-ul v11 (puține rânduri, abia lansat).
  */
-export const AI_SUMMARY_VERSION = 11;
+export const AI_SUMMARY_VERSION = 12;

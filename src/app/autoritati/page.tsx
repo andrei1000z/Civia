@@ -24,7 +24,8 @@ export const revalidate = 86400;
 
 export default function AutoritatiPage() {
   return (
-    <>
+    // container-narrow pe TOT (incl. hero) — pattern-ul canonic (/sesizari).
+    <div className="container-narrow py-8 md:py-12">
       <PageHero
         title="Portal pentru autorități"
         icon={Building2}
@@ -39,7 +40,7 @@ export default function AutoritatiPage() {
         tagline="OG 27/2002 art. 8 — Răspunsul în 30 de zile devine simplu"
       />
 
-      <div className="container-narrow space-y-10 pb-16">
+      <div className="space-y-10 pb-16">
         {/* CE OBȚII */}
         <section className="grid md:grid-cols-2 gap-4">
           <FeatureCard
@@ -115,7 +116,7 @@ export default function AutoritatiPage() {
           Pentru întrebări: <a href="mailto:autoritati@civia.ro" className="text-[var(--color-primary)] hover:underline">autoritati@civia.ro</a>.
         </p>
       </div>
-    </>
+    </div>
   );
 }
 

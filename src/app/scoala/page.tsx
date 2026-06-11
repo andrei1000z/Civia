@@ -16,7 +16,8 @@ export const revalidate = 86400;
 
 export default function ScoalaPage() {
   return (
-    <>
+    // container-narrow pe TOT (incl. hero) — pattern-ul canonic (/sesizari).
+    <div className="container-narrow py-8 md:py-12">
       <PageHero
         title="Civia pentru școli"
         icon={GraduationCap}
@@ -30,7 +31,7 @@ export default function ScoalaPage() {
         tagline="Educație civică reală — nu doar teorie"
       />
 
-      <div className="container-narrow space-y-6 pb-16 max-w-3xl">
+      <div className="space-y-6 pb-16 max-w-3xl">
         <Section title="🎯 Pentru cine">
           <ul className="list-disc list-inside space-y-1">
             <li><strong>Profesori liceu</strong> — clase de Educație Antreprenorială, Cultură Civică, Consiliere</li>
@@ -158,7 +159,7 @@ export default function ScoalaPage() {
           </a>
         </p>
       </div>
-    </>
+    </div>
   );
 }
 

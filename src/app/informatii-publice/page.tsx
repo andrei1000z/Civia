@@ -37,7 +37,8 @@ const FAPTE: Array<{ icon: typeof Clock; titlu: string; text: string }> = [
 
 export default function InformatiiPublicePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
+    // container-narrow = pattern-ul canonic (ca /sesizari): hero ÎN container.
+    <div className="container-narrow py-8 md:py-12">
       <PageHero
         title="Cere informații publice"
         description="Generează o cerere oficială în temeiul Legii 544/2001 către orice primărie, consiliu sau instituție — cu temei legal și termene incluse."
@@ -46,7 +47,7 @@ export default function InformatiiPublicePage() {
         tagline="Transparența e un drept, nu un favor"
       />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+      <main>
         {/* Fapte cheie */}
         <div className="mb-8 grid gap-3 sm:grid-cols-3">
           {FAPTE.map((f) => {

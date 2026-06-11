@@ -84,6 +84,21 @@ Text.`;
     expect(out2).toContain("Eugen Tomac");
   });
 
+  it("anti-filler: taie bullet-urile de numărat banalități (1 mesaj / 1 funcție)", () => {
+    const source = "Ciucu a refuzat 1 propunere. A publicat 1 mesaj pe Facebook. Bugetul e de 1 milion de lei.";
+    const summary = `Cifre cheie:
+- **1** mesaj publicat pe Facebook de Ciucu.
+- **1** funcție de primar general ocupată.
+- **1 milion de lei** — bugetul alocat.
+
+Context:
+Text.`;
+    const out = stripInventedCifre(summary, source);
+    expect(out).not.toContain("mesaj publicat");
+    expect(out).not.toContain("funcție de primar");
+    expect(out).toContain("1 milion de lei"); // are unitate → cifră reală
+  });
+
   it("sumare fără secțiunea de cifre trec neatinse", () => {
     const summary = `Pe scurt:\nText.\n\nContext:\nAlt text.`;
     expect(stripInventedCifre(summary, "sursă")).toBe(summary);

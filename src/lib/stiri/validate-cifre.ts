@@ -82,8 +82,24 @@ export function stripInventedCifre(summary: string, sourceText: string): string 
         continue;
       }
       const allFound = tokens.every((t) => numberInSource(t, normSource));
-      if (allFound) kept.push(line);
-      else dropped += 1;
+      if (!allFound) {
+        dropped += 1;
+        continue;
+      }
+      // Anti-filler (v12): bullet-uri de numărat banalități — „1 mesaj publicat
+      // pe Facebook", „1 funcție ocupată" — nu sunt cifre-cheie chiar dacă „1"
+      // apare în sursă. Dacă TOATE numerele sunt 0/1 și bulletul n-are un
+      // cuvânt de magnitudine/unitate (milioane, lei, km, ani…), îl tăiem.
+      const allTrivial = tokens.every((t) => t === "0" || t === "1");
+      const hasUnit =
+        /milio[an]|miliard|\bmii?\b|%|\blei\b|euro|\bkm\b|metri|m²|\bani\b|\ban\b|zile|\bzi\b|luni|\blun[aă]\b|ore|or[aă]|paturi|locuri|hectare|tone/i.test(
+          line,
+        );
+      if (allTrivial && !hasUnit) {
+        dropped += 1;
+        continue;
+      }
+      kept.push(line);
     }
 
     if (dropped === 0) continue; // nimic inventat — secțiunea rămâne ca atare

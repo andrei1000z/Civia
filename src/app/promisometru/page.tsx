@@ -23,7 +23,10 @@ export default function PromisometruPage() {
   const grupuri = groupByAutoritate(PROMISIUNI);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
+    // container-narrow = pattern-ul canonic al site-ului (ca /sesizari,
+    // /petitii): hero-ul stă ÎN container, cu margini + colțuri vizibile —
+    // nu full-bleed până în marginile ecranului.
+    <div className="container-narrow py-8 md:py-12">
       <PageHero
         title="Promisometru"
         description="Promisiunile publice ale primarilor, urmărite cu sursă, termen și verdict factual. Ce s-a promis vs. ce s-a livrat — totul verificabil, cu link la sursă."
@@ -32,7 +35,7 @@ export default function PromisometruPage() {
         tagline="Memoria civică nu expiră"
       />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+      <main>
         {/* Statistici pe status — stagger + count-up */}
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-children">
           {(Object.keys(PROMISIUNE_STATUS_META) as Array<keyof typeof PROMISIUNE_STATUS_META>).map(
