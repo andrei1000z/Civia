@@ -37,10 +37,16 @@ export interface Promisiune {
   verificatLa: string;
 }
 
+// Intrările BULK (research la scară, verificate adversarial) sunt generate
+// PROGRAMATIC în promisiuni-bulk.json de scripts/qa/convert-promisiuni.mjs —
+// JSON ca să fie imun la capcanele de ghilimele din string-urile TS. Validate
+// de aceleași teste ca intrările curate (sursă https, notă factuală, county…).
+import PROMISIUNI_BULK from "./promisiuni-bulk.json";
+
 // Seed 2026-06-11 — 5 promisiuni verificate adversarial (research 32 agenți:
 // fiecare sursă citită + confirmată; statusurile ajustate pe principiul minimei
 // afirmații — „întârziată" în loc de „încălcată" când livrarea e re-promisă).
-export const PROMISIUNI: Promisiune[] = [
+const PROMISIUNI_CURATE: Promisiune[] = [
   {
     id: "ciucu-spitale-noi-2027",
     autoritate: "Ciprian Ciucu",
@@ -400,6 +406,13 @@ export const PROMISIUNI: Promisiune[] = [
       "La 7 mai 2026, stadiul execuției era de 75%, cu termen de finalizare august 2026 — proiectul se află în ultimele luni ale perioadei asumate.",
     verificatLa: "2026-06-11",
   },
+];
+
+/** Toate promisiunile: curate (TS, scrise manual) + bulk (JSON, generate de
+ *  convertor din research-ul verificat). Testele validează ÎNTREGUL set. */
+export const PROMISIUNI: Promisiune[] = [
+  ...PROMISIUNI_CURATE,
+  ...(PROMISIUNI_BULK as Promisiune[]),
 ];
 
 export const PROMISIUNE_STATUS_META: Record<
