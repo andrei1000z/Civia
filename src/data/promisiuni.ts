@@ -218,6 +218,79 @@ export const PROMISIUNI: Promisiune[] = [
       "Drumul expres (562,6 milioane lei, 9 structuri de artă) a fost deschis circulației pe 10 iulie 2025 — cu 4 zile după data anunțată inițial, dar în interiorul lunii asumate.",
     verificatLa: "2026-06-11",
   },
+  // ─── Val 3 (research v3, 45 agenți — profiluri per persoană) ───
+  {
+    id: "baluta-pasaj-aparatorii-patriei",
+    autoritate: "Daniel Băluță",
+    functie: "Primar Sector 4",
+    county: "B",
+    promisiune:
+      "Deschiderea Pasajului Apărătorii Patriei (860 m, două benzi pe sens + linie de tramvai) cel târziu la sfârșitul lui 2026.",
+    termen: "sfârșitul lui 2026",
+    termenIso: "2026-12-31",
+    sursaUrl:
+      "https://www.bucurestifm.ro/2025/09/11/pana-la-finalul-lui-2026-pasajul-aparatorii-patriei-va-fi-deschis-circulatiei/",
+    publicatie: "Radio București FM",
+    dataSursa: "2025-09-11",
+    status: "in-curs",
+    nota:
+      "Promisiune din septembrie 2025: deschiderea „cel mai târziu la sfârșitul lui 2026”. La data verificării, lucrările erau în faza de structură (turnare beton, tablier metalic comandat), fără anunț de finalizare.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "negoita-hala-laminor",
+    autoritate: "Robert Negoiță",
+    functie: "Primar Sector 3",
+    county: "B",
+    promisiune:
+      "Reabilitarea și transformarea Halei Laminor (monument industrial din 1938) în spațiu expozițional și cultural, cu parcare subterană (~600 de milioane de lei).",
+    termen: "inaugurată pe 9 noiembrie 2022",
+    termenIso: "2022-11-09",
+    sursaUrl:
+      "https://www.primarie3.ro/index.php/presa/comunicat/primarul-robert-negoi-a-inaugurat-hala-istorica-laminor-invitatul-special-al-evenimentului-presedintele-camerei-deputatilor-marcel-ciolacu/5076",
+    publicatie: "Primăria Sectorului 3 (comunicat oficial)",
+    dataSursa: "2022-11-09",
+    status: "respectata",
+    nota:
+      "Hala Laminor a fost reabilitată, consolidată și inaugurată oficial pe 9 noiembrie 2022; funcționează ca spațiu multifuncțional cu parcare subterană.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "negoita-bulevard-hatieganu",
+    autoritate: "Robert Negoiță",
+    functie: "Primar Sector 3",
+    county: "B",
+    promisiune:
+      "Lărgirea Bulevardului Iuliu Hațieganu de la 2 la 4 benzi (legătura Sector 3 – Sector 4), cu finalizare în 60 de zile.",
+    termen: "60 de zile (deschis pe 1 septembrie 2023)",
+    termenIso: "2023-09-01",
+    sursaUrl:
+      "https://www.primarie3.ro/index.php/presa/comunicat/lucrare-finalizata-in-60-de-zile-a-fost-deschis-traficul-pe-noul-bulevard-iuliu-hatieganu/5924",
+    publicatie: "Primăria Sectorului 3 (comunicat oficial)",
+    dataSursa: "2023-09-01",
+    status: "respectata",
+    nota:
+      "Lucrarea a fost finalizată în termenul anunțat de 60 de zile, iar traficul a fost deschis pe 1 septembrie 2023.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "s6-prelungirea-ghencea",
+    autoritate: "Primăria Sectorului 6",
+    functie: "Primărie",
+    county: "B",
+    promisiune:
+      "Finalizarea Prelungirii Ghencea (5 km, 4 benzi, linie dublă de tramvai, piste de biciclete): sistematizarea drumurilor până în 2027, tramvai + park&ride până în primăvara lui 2029.",
+    termen: "drumuri 2027 · tramvai primăvara 2029",
+    termenIso: "2029-03-01",
+    sursaUrl:
+      "https://primarie6.ro/primarie_sector6/vesti-despre-prelungirea-ghencea-situatia-lucrarilor-pe-fiecare-tronson",
+    publicatie: "Primăria Sectorului 6 (comunicat oficial)",
+    dataSursa: "2026-01-28",
+    status: "in-curs",
+    nota:
+      "Conform raportării oficiale din ianuarie 2026, tronsoanele 1-2 sunt recepționate, iar utilitățile pentru tronsoanele 3-4 sunt în curs — proiectul urmează calendarul anunțat (drumuri 2027, tramvai 2029).",
+    verificatLa: "2026-06-11",
+  },
   {
     id: "s4-centrul-marius-nasta",
     autoritate: "Primăria Sectorului 4",
