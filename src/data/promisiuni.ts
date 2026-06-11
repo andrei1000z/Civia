@@ -131,6 +131,97 @@ export const PROMISIUNI: Promisiune[] = [
       "Proiect anunțat în noiembrie 2025, cu durată estimată de 2 ani (termen noiembrie 2027). În iunie 2026 se află la circa o treime din perioada asumată, fără anunțuri publice recente despre stadiul execuției.",
     verificatLa: "2026-06-11",
   },
+  // ─── Val 3b (resume research v3 — PMB, Metrorex, încălcate documentate) ───
+  {
+    id: "pmb-semaforizare-inteligenta",
+    autoritate: "Primăria Municipiului București",
+    functie: "Primărie (mandatul Ciucu)",
+    county: "B",
+    promisiune:
+      "Semaforizare inteligentă cu AI în 580 de intersecții: senzori magnetometrici, 300+ camere video, 1.500 de senzori, prioritate pentru transportul public (investiție ~52 de milioane de euro, nerambursabilă).",
+    termen: "etapizat (faza 1: ~14 luni de la start)",
+    termenIso: null,
+    sursaUrl:
+      "https://cursdeguvernare.ro/primaria-capitalei-investeste-52-de-milioane-de-euro-pentru-a-introduce-semafoare-inteligente-in-580-de-intersectii.html",
+    publicatie: "Curs de Guvernare",
+    dataSursa: "2026-02-14",
+    status: "in-curs",
+    nota:
+      "Proiect anunțat în februarie 2026 (studii de fezabilitate ~95% la acel moment) și aprobat de Consiliul General în mai 2026. Termenele pe faze nu au fost asumate public cu date fixe.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "ciucu-park-ride-domnesti",
+    autoritate: "Ciprian Ciucu",
+    functie: "Primar General al Bucureștiului",
+    county: "B",
+    promisiune:
+      "Nod intermodal Park & Ride la Pasajul Domnești (Prelungirea Ghencea): 470 de locuri acoperite + 20 pentru persoane cu dizabilități + 50 cu stații de încărcare electrică (investiție 62,2 milioane lei).",
+    termen: "primăvara 2028",
+    termenIso: "2028-05-31",
+    sursaUrl:
+      "https://b365.ro/prelungirea-ghencea-va-fi-gata-anul-acesta-promite-ciprian-ciucu-cand-au-termen-lucrarile-la-noua-sina-de-tramvai-si-park-ride-ul-de-aici-593456/",
+    publicatie: "B365",
+    dataSursa: "2026-01-28",
+    status: "in-curs",
+    nota:
+      "Promisiune din ianuarie 2026, cu termen primăvara 2028 și detalii tehnice asumate public. La data verificării nu există încă raportări de execuție pentru nodul intermodal.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "metrorex-13-trenuri-noi",
+    autoritate: "Metrorex",
+    functie: "Compania de metrou (Min. Transporturilor)",
+    county: "B",
+    promisiune:
+      "Achiziția a 13 trenuri de metrou noi în perioada 2026-2029, cu opțiune pentru încă 50, cu finanțare din fonduri europene (plan inclus în bugetul de stat).",
+    termen: "2026-2029",
+    termenIso: "2029-12-31",
+    sursaUrl:
+      "https://buletin.de/bucuresti/planul-metrorex-pentru-2026-2029-inclus-in-bugetul-de-stat-extinderi-de-magistrale-si-achizitia-de-zeci-trenuri-noi/",
+    publicatie: "Buletin de București",
+    dataSursa: "2026-03-10",
+    status: "in-curs",
+    nota:
+      "Planul de achiziție (13 trenuri + opțiune 50) a fost inclus în bugetul de stat și confirmat public în martie 2026; perioada asumată e 2026-2029.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "negoita-pasaj-unirii",
+    autoritate: "Robert Negoiță",
+    functie: "Primar Sector 3",
+    county: "B",
+    promisiune:
+      "Pasaj subteran de 2 km sub Bulevardul Unirii, cu parcare subterană de 3.000 de locuri și transformarea suprafeței în zonă pietonală („street mall”).",
+    termen: "~2023 (2 ani de la startul estimat în 2021)",
+    termenIso: "2023-12-31",
+    sursaUrl:
+      "https://hotnews.ro/stiri-administratie_locala-24185099-dezbatere-publica-primarul-sectorului-3-robert-negoita-vrea-construiasca-pasaj-2km-sub-bulevarul-unirii-zona-suprafata-deveni-pietonala-street-mall.htm",
+    publicatie: "HotNews",
+    dataSursa: "2020-07-21",
+    status: "incalcata",
+    nota:
+      "Anunțat în iulie 2020, cu execuție estimată la 2 ani de la un start în 2021. Proiectul nu a fost aprobat și nu a fost realizat — la șase ani de la anunț nu există progres documentat.",
+    verificatLa: "2026-06-11",
+  },
+  {
+    id: "negoita-derdelus-pantelimon",
+    autoritate: "Robert Negoiță",
+    functie: "Primar Sector 3",
+    county: "B",
+    promisiune:
+      "Derdeluș (pârtie de sanie) în Parcul Pantelimon, ca parte din amenajările recreative — construcție începută în vara lui 2019, promis pentru 2020.",
+    termen: "2020",
+    termenIso: "2020-12-31",
+    sursaUrl:
+      "https://buletin.de/bucuresti/bilantul-lui-robert-negoita-ce-n-a-realizat-edilul-de-la-3-derdelusul-si-fantanile-care-vantura-apa/",
+    publicatie: "Buletin de București",
+    dataSursa: "2019-06-01",
+    status: "incalcata",
+    nota:
+      "Construcția a început în vara lui 2019, cu finalizare promisă în 2020. Proiectul a fost abandonat, iar molozul a fost ridicat în 2023, conform bilanțului documentat de presă.",
+    verificatLa: "2026-06-11",
+  },
   // ─── Val 2 (research v2, 36 agenți — alte orașe + naționale + respectate) ───
   {
     id: "iasi-tramvaie-bozankaya",
