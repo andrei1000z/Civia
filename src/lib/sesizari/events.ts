@@ -149,6 +149,16 @@ export function dedupeConsecutiveEvents<
         }
         continue;
       }
+
+      // 2026-06-12 — În afara ferestrei (>24h), dar rândul nou e GENERIC (fără
+      // descriere reală): e un duplicat redundant al aceluiași tip (ex. backf-ill
+      // care a re-scris un status deja existent → două „Înregistrată" identice la
+      // 11 zile distanță pe 00044). Oglindim regula din appendTimelineEvent
+      // („generic + același event_type ca ultimul → skip") și îl ascundem
+      // SILENȚIOS (păstrăm rândul anterior, fără badge „×N în 24h" înșelător).
+      if (!currHasReal) {
+        continue;
+      }
     }
     out.push(row);
   }
