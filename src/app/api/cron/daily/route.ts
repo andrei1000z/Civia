@@ -50,6 +50,10 @@ export async function GET(req: Request) {
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
   if (day === 2) jobs.push("/api/newsletter/digest-local"); // Marți (Faza 2 — digest local pe zonă)
   if (day === 5) jobs.push("/api/newsletter/weekly-rezolvate"); // Vineri
+  // 2026-06-12 (FAZA 4 it.2) — ziua 1 a lunii: transmiterea formală a topului
+  // „Prioritățile orașului" către primării. Pragurile anti-„cameră goală" +
+  // idempotența (28 zile) sunt ÎN endpoint — fără voturi suficiente nu pleacă nimic.
+  if (new Date().getUTCDate() === 1) jobs.push("/api/bp/transmite");
 
   const run = (path: string) =>
     fetch(`${SITE}${path}`, { method: "GET", headers: { Authorization: `Bearer ${secret}` } })
