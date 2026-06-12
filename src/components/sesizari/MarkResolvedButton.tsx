@@ -90,9 +90,9 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-sm font-medium hover:brightness-110 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+        className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-sm font-medium hover:brightness-110 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
       >
-        <CheckCircle2 size={15} aria-hidden="true" />
+        <CheckCircle2 size={16} aria-hidden="true" />
         S-a rezolvat — marchează ca rezolvată
       </button>
       {error && !open && (

@@ -61,10 +61,10 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
       <button
         type="button"
         onClick={() => setConfirm(true)}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] border border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] border border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
         title="Șterge sesizarea"
       >
-        <Trash2 size={14} aria-hidden="true" />
+        <Trash2 size={16} aria-hidden="true" />
         Șterge
       </button>
 

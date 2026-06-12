@@ -241,7 +241,7 @@ export function SignSesizareButton({
         className={cn(
           "inline-flex items-center gap-2 rounded-[var(--radius-xs)] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
           variant === "primary"
-            ? "h-11 px-5 text-sm bg-[var(--color-secondary)] text-white hover:brightness-110 shadow-md"
+            ? "h-11 px-4 text-sm bg-[var(--color-secondary)] text-white hover:brightness-110 shadow-md"
             : "h-9 px-3 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface)]",
         )}
         title="Trimite același email la autorități cu identitatea ta — direct prin Civia."

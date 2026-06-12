@@ -339,35 +339,37 @@ export default async function SesizareDetailPage({
                 title={sesizare.titlu}
                 size="lg"
               />
+              {/* 2026-06-12 — utilitarele autorului (reamintire + șterge) stau
+                  pe ACELAȘI rând, cu aceeași mărime/stil ca restul acțiunilor
+                  (cerere user: toate butoanele uniforme). flex-wrap = pe ecrane
+                  înguste trec pe rândul următor natural. */}
+              {isAuthor && (
+                <>
+                  <ReminderButton
+                    emailInput={{
+                      tip: sesizare.tip,
+                      titlu: sesizare.titlu,
+                      locatie: sesizare.locatie,
+                      sector: sesizare.sector,
+                      descriere: sesizare.descriere,
+                      formal_text: sesizare.formal_text,
+                      author_name: sesizare.author_name,
+                      author_email: null,
+                      author_address: null,
+                      imagini: sesizare.imagini,
+                      code: sesizare.code,
+                    }}
+                    createdAt={sesizare.created_at}
+                    status={sesizare.status}
+                    officialResponseAt={sesizare.official_response_at ?? null}
+                  />
+                  <DeleteSesizareButton
+                    code={sesizare.code}
+                    isAuthor={isAuthor}
+                  />
+                </>
+              )}
             </div>
-            {/* Secondary actions: author-only utility row, mai jos pentru
-                separare vizuala de actiunile primary. */}
-            {isAuthor && (
-              <div className="flex flex-wrap items-stretch gap-2 mt-2">
-                <ReminderButton
-                  emailInput={{
-                    tip: sesizare.tip,
-                    titlu: sesizare.titlu,
-                    locatie: sesizare.locatie,
-                    sector: sesizare.sector,
-                    descriere: sesizare.descriere,
-                    formal_text: sesizare.formal_text,
-                    author_name: sesizare.author_name,
-                    author_email: null,
-                    author_address: null,
-                    imagini: sesizare.imagini,
-                    code: sesizare.code,
-                  }}
-                  createdAt={sesizare.created_at}
-                  status={sesizare.status}
-                  officialResponseAt={sesizare.official_response_at ?? null}
-                />
-                <DeleteSesizareButton
-                  code={sesizare.code}
-                  isAuthor={isAuthor}
-                />
-              </div>
-            )}
           </header>
         );
       })()}

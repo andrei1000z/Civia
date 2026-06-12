@@ -83,7 +83,7 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
 
   const qrUrl = `${QR_API_BASE_URL}?size=300x300&data=${encodeURIComponent(shareUrl)}`;
 
-  const iconSize = size === "sm" ? 13 : 15;
+  const iconSize = size === "sm" ? 13 : size === "lg" ? 16 : 15;
   // „lg" = h-11 px-4 — la fel ca butoanele de acțiune (SignSesizare, Status etc.)
   const px = size === "sm" ? "px-2 py-1" : size === "lg" ? "h-11 px-4" : "px-3 py-1.5";
   const textSize = size === "lg" ? "text-sm" : "text-xs";
