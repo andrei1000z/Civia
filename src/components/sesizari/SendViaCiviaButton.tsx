@@ -204,7 +204,7 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
       {/* Modal identity — apare cand backend zice needs_identity (5/22/2026). */}
       {state === "needs-identity" && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center p-4 overflow-y-auto bg-black/70 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Completează identitatea"
@@ -212,7 +212,7 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
             if (e.target === e.currentTarget) setState("idle");
           }}
         >
-          <div className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] p-5 sm:p-6 animate-fade-in">
+          <div className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] p-5 sm:p-6 my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-fade-in">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <h2 className="font-[family-name:var(--font-sora)] text-lg font-bold mb-1">

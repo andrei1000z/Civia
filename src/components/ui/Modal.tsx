@@ -138,14 +138,17 @@ export function Modal({ open, onClose, title, children, size = "md", className }
         tabIndex={-1}
         className={cn(
           // Liquid Civic glass-3 — premium floating surface.
-          "w-full lc-glass-3 rounded-[var(--radius-lg)] my-8 outline-none animate-modal-pop",
+          // flex-col + max-h + overflow-hidden: header rămâne fix, conținutul
+          // derulează intern → pe modale înalte partea de sus NU mai iese din
+          // ecran (bug flex-center+overflow, raportat 2026-06-12).
+          "w-full lc-glass-3 rounded-[var(--radius-lg)] my-8 outline-none animate-modal-pop flex flex-col max-h-[calc(100dvh-4rem)] overflow-hidden",
           sizeClass,
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--color-border)]">
+          <div className="shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--color-border)]">
             {/* 2026-05-24 (P1.366) line-clamp-2 pentru long titles ca să nu
                 rupă layout-ul cu close button. */}
             <h2 className="text-xl font-semibold text-[var(--color-text)] line-clamp-2 min-w-0">{title}</h2>
@@ -162,7 +165,7 @@ export function Modal({ open, onClose, title, children, size = "md", className }
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );

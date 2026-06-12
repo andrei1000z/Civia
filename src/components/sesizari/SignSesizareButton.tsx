@@ -261,9 +261,9 @@ export function SignSesizareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="sign-modal-title"
-            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 overflow-hidden animate-modal-pop"
+            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 overflow-hidden animate-modal-pop flex flex-col max-h-[calc(100dvh-4rem)]"
           >
-            <header className="bg-gradient-to-r from-[var(--color-secondary)] to-emerald-700 text-white p-5 relative">
+            <header className="shrink-0 bg-gradient-to-r from-[var(--color-secondary)] to-emerald-700 text-white p-5 relative">
               <button
                 type="button"
                 onClick={handleClose}
@@ -285,6 +285,7 @@ export function SignSesizareButton({
               </p>
             </header>
 
+            <div className="flex-1 overflow-y-auto">
             {state === "sent" ? (
               <div className="p-6 space-y-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-emerald-500/15 text-emerald-500 grid place-items-center mx-auto">
@@ -454,6 +455,7 @@ export function SignSesizareButton({
                 </p>
               </form>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -472,10 +474,10 @@ export function SignSesizareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cosign-preview-title"
-            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-4 md:my-8 animate-modal-pop flex flex-col max-h-[calc(100vh-2rem)]"
+            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-4 md:my-8 animate-modal-pop flex flex-col max-h-[calc(100dvh-4rem)]"
           >
             {/* Header — gradient cu eyebrow + titlu + close */}
-            <header className="relative bg-gradient-to-br from-[var(--color-secondary)] via-emerald-700 to-emerald-800 text-white px-5 md:px-6 py-5">
+            <header className="shrink-0 relative bg-gradient-to-br from-[var(--color-secondary)] via-emerald-700 to-emerald-800 text-white px-5 md:px-6 py-5">
               <button
                 type="button"
                 onClick={() => setShowPreview(false)}
@@ -580,7 +582,7 @@ export function SignSesizareButton({
             </div>
 
             {/* Footer — back + send */}
-            <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-5 md:px-6 py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+            <footer className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-5 md:px-6 py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed text-center sm:text-left">
                 🇪🇺 Date stocate în UE · Conform OG 27/2002
               </p>
