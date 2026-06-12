@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import {
+  sendEmail,
+  emailTemplate,
+  emailGreeting,
+  emailSectionTitle,
+  emailListCard,
+  emailNoteCallout,
+  emailDivider,
+  escapeEmailHtml,
+} from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 import { areaUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import {
   listAreaEmailSubscribers,
@@ -13,7 +23,7 @@ import {
 } from "@/lib/area/subscriptions";
 import { getInterruptionsForCounty } from "@/lib/intreruperi/store";
 import { SESIZARE_TIPURI } from "@/lib/constants";
-import { escapeHtml } from "@/lib/sanitize";
+import { SESIZARE_STATUS_META, isSesizareStatus } from "@/lib/sesizari/status";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
@@ -78,17 +88,17 @@ async function buildAreaContent(
   };
 }
 
-function renderList(items: SesizareItem[], siteUrl: string): string {
-  return items
-    .map(
-      (s) => `
-      <li style="padding:10px 0;border-bottom:1px solid #e2e8f0">
-        <div style="font-weight:600;color:#0f172a;font-size:14px">${tipIcon(s.tip)} ${escapeHtml(s.titlu)}</div>
-        <div style="color:#64748b;font-size:12px;margin-top:2px">📍 ${escapeHtml(s.locatie)} · ${escapeHtml(s.status)}</div>
-        <a href="${siteUrl}/sesizari/${s.code}" style="color:#1C4ED8;font-size:12px;text-decoration:none">Vezi sesizarea →</a>
-      </li>`,
-    )
-    .join("");
+/** Rând de listă iOS (emailListCard) pentru o sesizare — badge = statusul
+ *  oficial, cu eticheta + culoarea din SESIZARE_STATUS_META (sursa unică). */
+function toListItem(s: SesizareItem, siteUrl: string) {
+  const meta = isSesizareStatus(s.status) ? SESIZARE_STATUS_META[s.status] : null;
+  return {
+    title: `${tipIcon(s.tip)} ${s.titlu}`,
+    meta: s.locatie,
+    url: `${siteUrl}/sesizari/${s.code}`,
+    badge: meta?.label ?? s.status,
+    badgeColor: meta?.color ?? "#6B7280",
+  };
 }
 
 export async function GET(req: Request) {
@@ -159,21 +169,25 @@ export async function GET(req: Request) {
       }
 
       const unsubUrl = areaUnsubscribeUrl(email, sub.id, siteUrl);
+      const label = areaLabel(sub);
       sections.push(`
-        <div style="margin:0 0 28px">
-          <h2 style="font-size:18px;margin:0 0 10px;color:#0f172a">📍 ${escapeHtml(areaLabel(sub))}</h2>
-          ${newItems.length > 0 ? `
-            <h3 style="font-size:14px;margin:14px 0 6px;color:#0f172a">Sesizări noi</h3>
-            <ul style="margin:0;padding-left:0;list-style:none">${renderList(newItems, siteUrl)}</ul>` : ""}
-          ${resolvedItems.length > 0 ? `
-            <h3 style="font-size:14px;margin:16px 0 6px;color:#059669">🎉 Rezolvate</h3>
-            <ul style="margin:0;padding-left:0;list-style:none">${renderList(resolvedItems, siteUrl)}</ul>` : ""}
-          ${content.interruptionsCount > 0 ? `
-            <p style="margin:12px 0 0;font-size:13px;color:#b45309">⚡ ${content.interruptionsCount} ${content.interruptionsCount === 1 ? "întrerupere activă" : "întreruperi active"} în ${escapeHtml(countyName(sub.county))} — <a href="${siteUrl}/intreruperi/${countySlug(sub.county)}" style="color:#1C4ED8;text-decoration:none">vezi →</a></p>` : ""}
-          <p style="margin:10px 0 0;font-size:11px;color:#94a3b8">
-            <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline">Nu mai urmări ${escapeHtml(areaLabel(sub))}</a>
-          </p>
-        </div>`);
+        ${emailSectionTitle(`📍 ${label}`)}
+        ${newItems.length > 0 ? `
+          <p style="margin:12px 0 4px;font-size:13px;font-weight:600;color:#1d1d1f;letter-spacing:-0.1px">Sesizări noi în zonă</p>
+          ${emailListCard(newItems.map((s) => toListItem(s, siteUrl)))}` : ""}
+        ${resolvedItems.length > 0 ? `
+          <p style="margin:16px 0 4px;font-size:13px;font-weight:600;color:#059669;letter-spacing:-0.1px">Rezolvate săptămâna asta</p>
+          ${emailListCard(resolvedItems.map((s) => toListItem(s, siteUrl)))}` : ""}
+        ${content.interruptionsCount > 0 ? `
+          ${emailNoteCallout({
+            label: "Întreruperi utilități",
+            text: `${content.interruptionsCount} ${content.interruptionsCount === 1 ? "întrerupere planificată activă" : "întreruperi planificate active"} în ${countyName(sub.county)}. Verifică dacă te afectează.`,
+            tone: "muted",
+          })}
+          <p style="margin:4px 0 0;font-size:13px"><a href="${siteUrl}/intreruperi/${countySlug(sub.county)}" style="color:#0EA5E9;text-decoration:none;font-weight:600">Vezi întreruperile planificate →</a></p>` : ""}
+        <p style="margin:12px 0 0;font-size:11px;color:#a1a1a6">
+          <a href="${unsubUrl}" style="color:#a1a1a6;text-decoration:underline">Nu mai urmări ${escapeEmailHtml(label)}</a>
+        </p>`);
     }
 
     if (sections.length === 0) return false; // nimic nou în niciuna din arii → skip
@@ -181,11 +195,15 @@ export async function GET(req: Request) {
     const primaryArea = areaLabel(subs[0]!);
     const html = emailTemplate({
       title: `Ce s-a întâmplat în ${primaryArea}`,
-      preheader: `Activitatea civică din zona ta pe Civia, ultima săptămână`,
+      preheader: "Sesizări noi, probleme rezolvate și întreruperi din zona ta — ultimele 7 zile.",
+      kicker: "DIGESTUL ZONEI TALE",
+      icon: "📍",
+      accent: "#7C3AED",
       body: `
-        <p style="color:#64748b;margin:0 0 20px;line-height:1.6">Iată ce s-a întâmplat în zona pe care o urmărești, în ultimele 7 zile.</p>
-        ${sections.join("")}
-        <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;text-align:center">Gestionează toate zonele urmărite din <a href="${siteUrl}/cont" style="color:#94a3b8;text-decoration:underline">contul tău</a>.</p>`,
+        ${emailGreeting(buildSalutation({ email }), "Ce s-a mișcat în ultimele 7 zile în zonele pe care le urmărești. Vezi mai jos, pe scurt.")}
+        ${sections.join(emailDivider())}
+        ${emailDivider()}
+        <p style="margin:0;font-size:12px;color:#86868b;text-align:center">Gestionezi toate zonele urmărite din <a href="${siteUrl}/cont" style="color:#86868b;text-decoration:underline">contul tău</a>.</p>`,
       ctaText: "Fă o sesizare în zona ta",
       ctaUrl: `${siteUrl}/sesizari`,
     });

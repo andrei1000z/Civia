@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { sendEmail, emailTemplate, emailGreeting, emailSectionTitle, emailListCard } from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import { ALL_COUNTIES } from "@/data/counties";
 import { SESIZARE_TIPURI } from "@/lib/constants";
-import { escapeHtml } from "@/lib/sanitize";
+import { SESIZARE_STATUS_META } from "@/lib/sesizari/status";
 import { isWinbackEligible } from "@/lib/sesizari/winback";
 import * as Sentry from "@sentry/nextjs";
 
@@ -128,33 +129,37 @@ export async function GET(req: Request) {
 
     const oras = countyName(c.county);
     const unsubUrl = newsletterUnsubscribeUrl(c.author_email!, siteUrl);
-    const list = items
-      .map(
-        (s) => `
-        <li style="padding:12px 0;border-bottom:1px solid #e2e8f0">
-          <div style="font-weight:600;color:#0f172a;font-size:14px">${tipIcon(s.tip)} ${escapeHtml(s.titlu)}</div>
-          <div style="color:#64748b;font-size:12px;margin-top:2px">📍 ${escapeHtml(s.locatie)} · ${escapeHtml(s.status)}</div>
-          <a href="${siteUrl}/sesizari/${s.code}" style="color:#1C4ED8;font-size:12px;text-decoration:none">Vezi sesizarea →</a>
-        </li>`,
-      )
-      .join("");
+    const statusMeta = (s: string) => SESIZARE_STATUS_META[s as keyof typeof SESIZARE_STATUS_META];
+    const listCard = emailListCard(
+      items.map((s) => ({
+        title: `${tipIcon(s.tip)} ${s.titlu}`,
+        meta: s.locatie,
+        url: `${siteUrl}/sesizari/${s.code}`,
+        badge: statusMeta(s.status)?.label ?? s.status,
+        badgeColor: statusMeta(s.status)?.color,
+      })),
+    );
 
     const body = `
-      <h2 style="font-size:20px;margin:0 0 8px;color:#0f172a">Ce s-a mai raportat în ${escapeHtml(oras)}</h2>
-      <p style="color:#64748b;margin:0 0 20px;line-height:1.6">
-        Ai depus prima ta sesizare acum câteva zile — mulțumim! Iată ce au mai
-        semnalat alți cetățeni din zona ta. Poți co-semna cu un click ca să crești
-        presiunea, sau să depui o sesizare nouă.
+      ${emailGreeting(
+        buildSalutation({ fullName: null, email: c.author_email }),
+        "Ai depus prima ta sesizare acum câteva zile — mulțumim! Uite ce au mai semnalat vecinii tăi.",
+      )}
+      ${emailSectionTitle(`Recent în ${oras}`)}
+      ${listCard}
+      <p style="margin:14px 0 0;font-size:14px;line-height:1.65;color:#424245">
+        Poți co-semna oricare dintre ele cu un click — fiecare semnătură crește presiunea pe autoritate.
       </p>
-      <ul style="margin:0 0 24px;padding-left:0;list-style:none">${list}</ul>
-      <p style="margin:28px 0 0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center">
+      <p style="margin:26px 0 0;font-size:11px;line-height:1.6;color:#a1a1a6;text-align:center">
         Primești acest email pentru că ești abonat la actualizările civice Civia.
-        <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline">Dezabonează-te</a>.
+        <a href="${unsubUrl}" style="color:#86868b;text-decoration:underline">Dezabonează-te</a>.
       </p>`;
 
     const html = emailTemplate({
       title: `Ce s-a mai raportat în ${oras}`,
       preheader: `${items.length} sesizări noi din zona ta pe Civia`,
+      kicker: "ÎN ZONA TA",
+      icon: "📍",
       body,
       ctaText: "Vezi sesizările din zona ta",
       ctaUrl: `${siteUrl}/sesizari-publice`,

@@ -1,4 +1,5 @@
 import { statusRank } from "../sesizari/state-machine";
+import { emailTemplate, emailSectionTitle, emailListCard, emailNoteCallout } from "../email/resend";
 
 /**
  * 2026-06-12 — Digest „coada de inbox neprocesată".
@@ -201,52 +202,71 @@ export function shouldSendDigest(args: {
   return args.nowMs - args.lastSentAtMs >= DIGEST_REMINDER_MS;
 }
 
-function row(i: DigestItem, siteUrl: string): string {
-  const link = `${siteUrl}/admin/inbox/${i.replyId}`;
-  const codeLabel = i.code ? `#${i.code}` : "ORFAN";
-  const conf = i.confidence != null ? ` · ${i.confidence}%` : "";
-  const date = i.receivedAt ? i.receivedAt.slice(0, 10) : "";
-  return `<tr>
-    <td style="padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top">
-      <a href="${link}" style="font-weight:700;color:#2563eb;text-decoration:none">${codeLabel}</a>
-      <span style="color:#888;font-size:12px"> ${date}</span><br>
-      <span style="font-size:13px;color:#111">${escapeHtml(i.motiv)}${conf}</span><br>
-      <span style="font-size:12px;color:#555">${escapeHtml(i.summary)}</span><br>
-      <span style="font-size:11px;color:#999">${escapeHtml(i.from || "")}</span>
-    </td>
-  </tr>`;
+/** Badge semantic per tip de element — culoarea spune dintr-o privire ce fel de muncă e. */
+const KIND_BADGE: Record<DigestItemKind, { label: string; color: string }> = {
+  "progres-neaplicat": { label: "Progres", color: "#F59E0B" },
+  "orfan-progres": { label: "Orfan", color: "#0EA5E9" },
+  "ocr-esuat": { label: "OCR", color: "#6B7280" },
+};
+
+/** Un element de digest → rând de emailListCard (escaparea o face emailListCard). */
+function listItem(i: DigestItem, siteUrl: string) {
+  const badge = KIND_BADGE[i.kind];
+  const date = i.receivedAt ? i.receivedAt.slice(0, 10) : null;
+  const conf = i.confidence != null ? `${i.confidence}% încredere` : null;
+  const meta = [i.summary, i.from, date, conf].filter(Boolean).join(" · ");
+  return {
+    title: `${i.code ? `#${i.code}` : "ORFAN"} — ${i.motiv}`,
+    meta,
+    url: `${siteUrl}/admin/inbox/${i.replyId}`,
+    badge: badge.label,
+    badgeColor: badge.color,
+  };
 }
 
-function section(titlu: string, emoji: string, items: DigestItem[], siteUrl: string): string {
+function sectionBlock(titlu: string, items: DigestItem[], siteUrl: string): string {
   if (!items.length) return "";
-  return `<h3 style="margin:18px 0 6px;font-size:15px;color:#111">${emoji} ${titlu} (${items.length})</h3>
-  <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden">
-    ${items.map((i) => row(i, siteUrl)).join("")}
-  </table>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c));
+  return emailSectionTitle(`${titlu} (${items.length})`) + emailListCard(items.map((i) => listItem(i, siteUrl)));
 }
 
 /** Construiește emailul digest. Presupune `totalActionable > 0`. */
 export function buildDigestEmail(sections: DigestSections, siteUrl: string): { subject: string; html: string } {
-  const subject = `🔔 Civia inbox: ${sections.totalActionable} răspuns${sections.totalActionable === 1 ? "" : "uri"} de procesat`;
-  const noiseLine =
+  const n = sections.totalActionable;
+  const plural = n === 1 ? "răspuns" : "răspunsuri";
+  const subject = `🔔 Civia inbox: ${n} ${plural} de procesat`;
+
+  const intro = `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#424245">Autoritățile au răspuns, dar ${n === 1 ? "un răspuns așteaptă" : `${n} răspunsuri așteaptă`} în coada de revizuire — nu s-au aplicat automat (match incert, orfan sau status terminal care maschează un răspuns).</p>
+<p style="margin:0 0 8px;font-size:13.5px;line-height:1.6;color:#86868b">Apasă pe orice element ca să-l deschizi direct în inboxul admin.</p>`;
+
+  const noise =
     sections.orfaniInregistrareCount > 0
-      ? `<p style="font-size:12px;color:#999;margin-top:14px">+ ${sections.orfaniInregistrareCount} confirmări de portal orfane (low-priority, doar de legat când ai timp).</p>`
+      ? emailNoteCallout({
+          label: "Zgomot de fundal",
+          text: `+ ${sections.orfaniInregistrareCount} confirmări de portal orfane — low-priority, de legat când ai timp.`,
+          tone: "muted",
+        })
       : "";
-  const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;margin:0 auto;color:#111">
-    <h2 style="font-size:18px;margin:0 0 4px">Răspunsuri de autoritate care așteaptă în coada de revizuire</h2>
-    <p style="font-size:13px;color:#555;margin:0 0 8px">
-      Astea NU s-au aplicat automat (match incert, orfan, sau status terminal care maschează un răspuns).
-      Procesează-le în <a href="${siteUrl}/admin/inbox" style="color:#2563eb">/admin/inbox</a>.
-    </p>
-    ${section("Răspuns de progres neaplicat", "🟠", sections.progresNeaplicat, siteUrl)}
-    ${section("Orfani de legat (răspuns substanțial)", "🔗", sections.orfaniProgres, siteUrl)}
-    ${section("OCR eșuat — verifică manual", "📎", sections.ocrEsuat, siteUrl)}
-    ${noiseLine}
-    <p style="font-size:11px;color:#bbb;margin-top:20px">Civia.ro — digest automat (zilnic, doar când e ceva de făcut). Te re-anunț săptămânal dacă rămâne neprocesat.</p>
-  </div>`;
+
+  const cadence = `<p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#a1a1a6">Digest automat — vine zilnic doar când e ceva de procesat și revine săptămânal dacă coada rămâne neatinsă.</p>`;
+
+  const body = [
+    intro,
+    sectionBlock("Răspunsuri de progres neaplicate", sections.progresNeaplicat, siteUrl),
+    sectionBlock("Orfani de legat — răspuns substanțial", sections.orfaniProgres, siteUrl),
+    sectionBlock("OCR eșuat — verifică manual", sections.ocrEsuat, siteUrl),
+    noise,
+    cadence,
+  ].join("");
+
+  const html = emailTemplate({
+    title: "Coada de inbox",
+    preheader: `${n} ${plural} de autoritate de procesat în coada de revizuire`,
+    kicker: "ADMIN · INBOX",
+    icon: "🔔",
+    accent: "#F59E0B",
+    body,
+    ctaText: "Deschide inboxul admin",
+    ctaUrl: `${siteUrl}/admin/inbox`,
+  });
   return { subject, html };
 }

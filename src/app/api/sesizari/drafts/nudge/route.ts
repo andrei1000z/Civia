@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
-import { escapeHtml } from "@/lib/sanitize";
+import { sendEmail, emailTemplate, emailGreeting, emailListCard, emailNoteCallout } from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -61,17 +61,25 @@ export async function GET(req: Request) {
         to: d.email!,
         subject: `🔔 Ai început o sesizare ieri — vrei să o termini?`,
         html: emailTemplate({
-          title: "Continuă sesizarea ta",
-          kicker: "Draft salvat",
+          title: "Un minut și pleacă la primărie",
+          kicker: "SESIZAREA TA TE AȘTEAPTĂ",
           icon: "📝",
-          preheader: `Ai început o sesizare despre „${titleHint}". E nevoie de încă 1 minut.`,
+          accent: "#F59E0B",
+          preheader: `Draftul tău despre „${titleHint}” e salvat — completezi doar ce lipsește.`,
           body: `
-            <p>Salut,</p>
-            <p>Ai început ieri o sesizare prin Civia despre <strong>„${escapeHtml(titleHint)}"</strong>, dar nu ai apucat să o termini.</p>
-            <p>Datele sunt încă salvate — apasă butonul de jos și completezi doar restul. 1 minut și pleacă oficial către primărie.</p>
-            <p style="font-size:13px;color:#64748b;margin-top:24px">Dacă nu mai e nevoie, ignoră emailul ăsta. Draftul va dispărea automat în 72h.</p>
+            ${emailGreeting(
+              buildSalutation({ email: d.email }),
+              "Ai început ieri o sesizare pe Civia, dar nu ai apucat să o termini. E salvată exact unde ai rămas.",
+            )}
+            ${emailListCard([{ title: titleHint, meta: "Draft salvat · început ieri", url: resumeUrl }])}
+            <p style="margin:14px 0 0">Apasă butonul de mai jos și completează ce lipsește — sesizarea pleacă apoi oficial către primărie, în baza OG 27/2002.</p>
+            ${emailNoteCallout({
+              label: "Bine de știut",
+              text: "Draftul se șterge automat la 72 de ore de la creare. Dacă nu mai e nevoie, poți ignora liniștit acest email.",
+              tone: "muted",
+            })}
           `,
-          ctaText: "Continuă sesizarea →",
+          ctaText: "Continuă sesizarea",
           ctaUrl: resumeUrl,
         }),
       });

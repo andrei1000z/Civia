@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
-import { sendEmail, emailTemplate, emailGreeting, escapeEmailHtml } from "@/lib/email/resend";
+import { sendEmail, emailTemplate, emailGreeting, emailNoteCallout } from "@/lib/email/resend";
 
 export const dynamic = "force-dynamic";
 
@@ -152,22 +152,26 @@ export async function POST(req: Request) {
       to: email,
       subject: "Confirmă abonarea la alerte întreruperi · Civia",
       html: emailTemplate({
-        title: "Confirmă abonarea",
-        preheader: `Adresă monitorizată: ${address}`,
-        kicker: "🔔 ALERTE ÎNTRERUPERI",
+        title: "Un click și ești abonat",
+        preheader: `Confirmă alertele de întreruperi pentru adresa ta — durează 5 secunde.`,
+        kicker: "ALERTE ÎNTRERUPERI",
         icon: "📍",
+        accent: "#0EA5E9",
         body: `${emailGreeting(
           "Salut!",
-          `Te-ai înscris pentru alerte automate la întreruperi (apă, curent, gaz, lucrări) pentru adresa <strong>${escapeEmailHtml(address)}</strong>.`,
+          `Ai cerut alerte automate pentru întreruperi de apă, curent, gaz și lucrări. Mai e un singur pas: confirmă abonarea cu butonul de mai jos.`,
         )}
-        <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#64748b">
-          Apasă butonul de mai jos ca să confirmi abonarea. După confirmare, primești email automat doar când e o întrerupere care îți afectează adresa — nimic mai mult.
+        ${emailNoteCallout({
+          label: "Adresa monitorizată",
+          text: address,
+          tone: "muted",
+        })}
+        <p style="margin:18px 0 0;font-size:14px;line-height:1.7;color:#424245">
+          După confirmare, primești email doar când apare o întrerupere care îți afectează adresa. Nimic altceva — zero spam.
         </p>
-        <p style="margin:24px 0 8px;font-size:12px;color:#94a3b8">
-          Dacă n-ai cerut tu această abonare, ignoră acest email. Record-ul se șterge automat după 48h.
-        </p>
-        <p style="margin:24px 0 0;font-size:12px;color:#94a3b8">
-          Te poți dezabona oricând: <a href="${unsubscribeUrl}" style="color:#059669">click aici</a>.
+        <p style="margin:22px 0 0;font-size:12px;line-height:1.6;color:#86868b">
+          Nu tu ai cerut abonarea? Ignoră acest email — cererea se șterge automat după 48 de ore.
+          Și te poți dezabona oricând <a href="${unsubscribeUrl}" style="color:#0EA5E9;text-decoration:none;font-weight:600">de aici</a>.
         </p>`,
         ctaText: "Confirmă abonarea",
         ctaUrl: confirmUrl,

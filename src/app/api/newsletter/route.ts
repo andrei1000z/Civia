@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { analyticsRedis } from "@/lib/analytics/redis";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { sendEmail, emailTemplate, emailNoteCallout } from "@/lib/email/resend";
 
 export const dynamic = "force-dynamic";
 
@@ -20,23 +20,22 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
 
 function buildConfirmEmail(confirmUrl: string): string {
   return emailTemplate({
-    title: "Confirmă abonarea la Civia",
-    kicker: "CIVIA · NEWSLETTER",
-    preheader: "Un click și ești pe listă. Fără click, nu te trimitem nimic.",
+    title: "Confirmă abonarea",
+    kicker: "UN SINGUR PAS",
+    icon: "✉️",
+    accent: "#7C3AED",
+    preheader: "Un click și ești pe listă. Fără confirmare, nu îți trimitem nimic.",
     body: `
-      <p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#0f172a;">
-        Mulțumim! Mai e un singur pas — confirmă că emailul îți aparține, ca să fim siguri că nu te-a abonat altcineva pe șest.
-      </p>
-      <p style="margin:24px 0;text-align:center;">
-        <a href="${confirmUrl}" style="display:inline-block;background:#059669;color:#ffffff;font-size:15px;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;">Confirmă abonarea</a>
-      </p>
-      <p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#64748b;">
-        Link-ul e valabil 7 zile. Dacă nu confirmi, ștergem cererea automat.
-      </p>
-      <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">
-        Dacă nu tu ai cerut asta, ignoră acest mesaj — emailul tău nu va fi adăugat nicăieri.
-      </p>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7">Primești acest email pentru că cineva — sperăm că tu — a cerut abonarea acestei adrese la newsletterul Civia.</p>
+      <p style="margin:0 0 6px;font-size:15px;line-height:1.7">Confirmă cu un click că adresa îți aparține. Așa ne asigurăm că nu te-a abonat altcineva în locul tău.</p>
+      ${emailNoteCallout({
+        label: "Bine de știut",
+        text: "Linkul e valabil 7 zile — dacă nu confirmi, ștergem cererea automat. Nu tu ai cerut abonarea? Ignoră acest mesaj: adresa ta nu va fi adăugată nicăieri.",
+        tone: "muted",
+      })}
     `,
+    ctaText: "Confirmă abonarea",
+    ctaUrl: confirmUrl,
   });
 }
 

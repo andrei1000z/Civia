@@ -2,7 +2,8 @@ import { NextResponse, after } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { analyticsRedis } from "@/lib/analytics/redis";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import { sendEmail, emailTemplate, emailGreeting, emailSectionTitle, emailListCard } from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 
 export const dynamic = "force-dynamic";
 
@@ -118,21 +119,37 @@ export async function GET(req: Request) {
   after(async () => {
     try {
       const html = emailTemplate({
-        title: "Bine ai venit pe Civia 👋",
-        preheader: "Abonarea ta e confirmată — iată ce poți face pe Civia.",
-        kicker: "NEWSLETTER · CONFIRMAT",
-        icon: "🎉",
+        title: "Bine ai venit pe Civia",
+        preheader: "Abonarea e confirmată. Iată ce poți face chiar acum.",
+        kicker: "BINE AI VENIT",
+        icon: "👋",
         body: `
-          <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.6">Mulțumim că te-ai abonat! Civia e platforma civică independentă pentru România — te ajută să <strong>acționezi</strong>, nu doar să te informezi.</p>
-          <p style="margin:0 0 8px;color:#0f172a;font-size:15px;font-weight:600">Ce poți face acum:</p>
-          <ul style="margin:0 0 16px;padding-left:20px;color:#475569;font-size:15px;line-height:1.7">
-            <li><strong>Fă o sesizare</strong> — o problemă din oraș (groapă, gunoi, parcare ilegală)? AI-ul o formulează oficial și o trimite autorității potrivite, conform OG 27/2002.</li>
-            <li><strong>Semnează o petiție</strong> — cauze civice reale, cu impact.</li>
-            <li><strong>Citește știrile</strong> — rezumate AI clare, fără zgomot.</li>
-          </ul>
-          <p style="margin:0 0 8px;color:#475569;font-size:14px;line-height:1.6">În newsletter primești update-uri când se mișcă lucruri — sesizări rezolvate, petiții noi, progres real. Fără spam, te poți dezabona oricând.</p>
+          ${emailGreeting(
+            buildSalutation({ email: existing.email }),
+            "Abonarea ta e confirmată. De acum primești vești când lucrurile se mișcă — sesizări rezolvate, petiții noi, progres real.",
+          )}
+          <p style="margin:0 0 4px;font-size:15px;line-height:1.7">Civia e platforma civică independentă a României. Aici nu doar te informezi — <strong>acționezi</strong>.</p>
+          ${emailSectionTitle("Ce poți face chiar acum")}
+          ${emailListCard([
+            {
+              title: "Fă o sesizare",
+              meta: "O groapă, gunoi, o parcare ilegală? AI-ul o formulează oficial și o trimite autorității potrivite, conform OG 27/2002.",
+              url: `${SITE_URL}/sesizari`,
+            },
+            {
+              title: "Semnează o petiție",
+              meta: "Cauze civice reale, atent selectate, cu impact.",
+              url: `${SITE_URL}/petitii`,
+            },
+            {
+              title: "Vezi știrile",
+              meta: "Rezumate AI clare, fără zgomot și fără clickbait.",
+              url: `${SITE_URL}/stiri`,
+            },
+          ])}
+          <p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:#86868b">Fără spam. Te poți dezabona oricând, dintr-un click.</p>
         `,
-        ctaText: "Fă o sesizare acum",
+        ctaText: "Fă o sesizare",
         ctaUrl: `${SITE_URL}/sesizari`,
       });
       await sendEmail({

@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import {
+  sendEmail,
+  emailTemplate,
+  emailGreeting,
+  emailSectionTitle,
+  emailStatCards,
+  emailListCard,
+  emailNoteCallout,
+  escapeEmailHtml,
+} from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 import { SESIZARE_TIPURI } from "@/lib/constants";
 import { safeTitlu } from "@/lib/sesizari/titlu";
 
@@ -101,87 +111,168 @@ export async function GET(req: Request) {
     const tipLabel = tipMeta?.label ?? sez.tip;
     const link = `${SITE_URL}/sesizari/${sez.code}`;
     const titluSafe = safeTitlu(sez.titlu, { descriere: sez.descriere });
+    const titluHtml = escapeEmailHtml(titluSafe);
+    const preheader = `Sesizarea ${sez.code} · ${tipLabel} · ${sez.locatie ?? ""}`;
+    const greeting = emailGreeting(
+      buildSalutation({ fullName: sez.author_name, email: sez.author_email }),
+      `${escapeEmailHtml(tipLabel)} · ${escapeEmailHtml(sez.locatie ?? "")}`,
+    );
 
-    let bodyHtml = "";
-    let subject = "";
+    // Nuanță pentru `inregistrata`: autoritatea A confirmat primirea, dar
+    // confirmarea de înregistrare NU e răspuns pe fond (OG 27/2002 cere
+    // soluționare, nu doar ack) — fără nuanță, „nu a răspuns" ar suna fals.
+    const ackNote =
+      sez.status === "inregistrata"
+        ? emailNoteCallout({
+            label: "Ai primit doar confirmarea de înregistrare",
+            text: `Un număr de înregistrare nu e un răspuns. OG 27/2002 cere soluționarea sesizării, nu doar confirmarea că a ajuns.`,
+            tone: "muted",
+          })
+        : "";
 
     if (step === "d7") {
-      subject = `Sesizarea ta — „${titluSafe}" — 7 zile fără răspuns`;
-      bodyHtml = `
-        <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>7 zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong> (${tipLabel}, ${sez.locatie}).</p>
-        <p>E inca devreme — primaria are <strong>30 de zile legale</strong> sa raspunda (OG 27/2002 art. 14). Daca primesti un raspuns intre timp, raporteaza-l pe Civia ca sa-l vada toata lumea.</p>
-        <p style="margin:24px 0;text-align:center;">
-          <a href="${link}" style="background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Vezi sesizarea</a>
-        </p>
-      `;
-    } else if (step === "d14") {
-      subject = `Sesizare „${titluSafe}" — la jumătate din termen, niciun răspuns`;
-      bodyHtml = `
-        <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>14 zile</strong> (jumate din termenul legal) si autoritatea inca nu a raspuns la sesizarea <strong>"${titluSafe}"</strong>.</p>
-        <p>Ce poti face acum:</p>
-        <ul>
-          <li>Daca cunosti un consilier local, forwardeaza-i sesizarea (link de mai jos)</li>
-          <li>Marcheaza ca rezolvata daca s-a rezolvat fara raspuns oficial</li>
-          <li>Asteapta inca 16 zile inainte de escaladare</li>
-        </ul>
-        <p style="margin:24px 0;text-align:center;">
-          <a href="${link}" style="background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Vezi sesizarea</a>
-        </p>
-      `;
-    } else if (step === "d30") {
-      // Copy nuanțat pentru `inregistrata`: autoritatea A confirmat primirea,
-      // dar confirmarea de înregistrare NU e răspuns pe fond (OG 27/2002 cere
-      // soluționare, nu doar ack) — fără nuanță, „nu a răspuns" ar suna fals.
-      const ackLine = sez.status === "inregistrata"
-        ? `<p>Autoritatea ți-a <strong>confirmat înregistrarea</strong>, dar o confirmare nu e un răspuns pe fond — legea cere <strong>soluționarea</strong> sesizării, nu doar numar de înregistrare.</p>`
-        : "";
-      subject = `Sesizare „${titluSafe}" — termen legal expirat, escaladează`;
-      bodyHtml = `
-        <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>30 de zile</strong> de cand ai depus sesizarea <strong>"${titluSafe}"</strong>. Asta e termenul maxim legal prevazut de <strong>OG 27/2002 art. 14</strong>.</p>
-        ${ackLine}
-        <p>Daca autoritatea nu a raspuns pe fond, ai dreptul sa escaladezi:</p>
-        <ul>
-          <li><strong>Avocatul Poporului</strong> — petitie online <a href="https://avp.ro">avp.ro</a></li>
-          <li><strong>Sesizare in instanta</strong> — Legea contenciosului administrativ 554/2004</li>
-          <li><strong>Plangere la prefectul judetului</strong> — controleaza primariile din zona</li>
-        </ul>
-        <p>Sau, daca s-a rezolvat informal, marcheaza ca rezolvata cu o poza after.</p>
-        <p style="margin:24px 0;text-align:center;">
-          <a href="${link}" style="background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Vezi sesizarea</a>
-        </p>
-      `;
-    } else {
-      const ackLine60 = sez.status === "inregistrata"
-        ? `<p>(Autoritatea a confirmat înregistrarea, dar confirmarea nu e răspuns pe fond — legea cere soluționare.)</p>`
-        : "";
-      subject = `Sesizare „${titluSafe}" — 60 zile fără răspuns`;
-      bodyHtml = `
-        <p>Salut${sez.author_name ? ` ${sez.author_name.split(" ")[0]}` : ""},</p>
-        <p>Au trecut <strong>60 de zile</strong> de la depunerea sesizarii <strong>"${titluSafe}"</strong> si niciun raspuns pe fond de la autoritate.</p>
-        ${ackLine60}
-        <p>Asta inseamna ca:</p>
-        <ul>
-          <li>Termenul legal e dublu depasit</li>
-          <li>Daca decizi sa actionezi in instanta, ai dovada de pasivitate</li>
-          <li>Public, sesizarea ramane vizibila ca rusine institutionala</li>
-        </ul>
-        <p>Acesta e ultimul reminder automat din partea Civia.</p>
-        <p style="margin:24px 0;text-align:center;">
-          <a href="${link}" style="background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Vezi sesizarea</a>
-        </p>
-      `;
+      const subject = `Sesizarea „${titluSafe}" — ziua 7, încă în termen`;
+      return {
+        subject,
+        html: emailTemplate({
+          title: `Ziua 7 — încă în termen`,
+          kicker: `REAMINTIRE · ZIUA 7`,
+          icon: `⏳`,
+          preheader,
+          body: `
+            ${greeting}
+            <p style="margin:0 0 12px">Acum o săptămână ai trimis sesizarea <strong>„${titluHtml}"</strong>. Autoritatea nu a răspuns încă — și e în regulă: legea îi dă <strong>30 de zile</strong> (OG 27/2002 art. 14).</p>
+            ${emailStatCards([
+              { value: `7`, label: `zile de la trimitere` },
+              { value: `23`, label: `zile rămase din termen` },
+            ])}
+            <p style="margin:14px 0 0">Dacă primești un răspuns între timp, adaugă-l pe pagina sesizării — îl văd și ceilalți care urmăresc problema.</p>
+          `,
+          ctaText: `Vezi sesizarea`,
+          ctaUrl: link,
+        }),
+      };
     }
 
+    if (step === "d14") {
+      const subject = `Sesizarea „${titluSafe}" — jumătate din termen, niciun răspuns`;
+      return {
+        subject,
+        html: emailTemplate({
+          title: `Jumătate din termen a trecut`,
+          kicker: `REAMINTIRE · ZIUA 14`,
+          icon: `🔔`,
+          accent: `#F59E0B`,
+          preheader,
+          body: `
+            ${greeting}
+            <p style="margin:0 0 12px">Au trecut <strong>14 zile</strong> — jumătate din termenul legal — și sesizarea <strong>„${titluHtml}"</strong> nu are încă niciun răspuns.</p>
+            ${emailStatCards([
+              { value: `14`, label: `zile de la trimitere` },
+              { value: `16`, label: `zile până la termenul legal` },
+            ])}
+            ${emailSectionTitle(`Ce poți face acum`)}
+            ${emailListCard([
+              {
+                title: `Dă sesizarea mai departe`,
+                meta: `Trimite linkul unui consilier local sau pe grupul cartierului`,
+                url: link,
+              },
+              {
+                title: `Marchează ca rezolvată`,
+                meta: `Dacă problema s-a rezolvat între timp, chiar fără răspuns oficial`,
+                url: link,
+              },
+              {
+                title: `Mai așteaptă 16 zile`,
+                meta: `La ziua 30 expiră termenul legal și îți arătăm cum escaladezi`,
+              },
+            ])}
+          `,
+          ctaText: `Vezi sesizarea`,
+          ctaUrl: link,
+        }),
+      };
+    }
+
+    if (step === "d30") {
+      const subject = `Sesizarea „${titluSafe}" — termenul legal a expirat`;
+      return {
+        subject,
+        html: emailTemplate({
+          title: `Termenul legal a expirat`,
+          kicker: `TERMEN LEGAL EXPIRAT`,
+          icon: `⚖️`,
+          accent: `#C2410C`,
+          preheader,
+          body: `
+            ${greeting}
+            <p style="margin:0 0 12px">Au trecut <strong>30 de zile</strong> de când ai trimis sesizarea <strong>„${titluHtml}"</strong> — termenul maxim în care <strong>OG 27/2002 art. 14</strong> obliga autoritatea să răspundă. Nu a făcut-o.</p>
+            ${ackNote}
+            ${emailSectionTitle(`Unde poți escalada`)}
+            ${emailListCard([
+              {
+                title: `Avocatul Poporului`,
+                meta: `Petiție online, gratuită — instituția care verifică pasivitatea autorităților`,
+                url: `https://avp.ro`,
+                badge: `GRATUIT`,
+              },
+              {
+                title: `Prefectul județului`,
+                meta: `Controlează legalitatea activității primăriilor din județ`,
+              },
+              {
+                title: `Instanța de contencios administrativ`,
+                meta: `Legea 554/2004 — tăcerea autorității e dovadă de pasivitate`,
+              },
+            ])}
+            <p style="margin:14px 0 0">Iar dacă problema s-a rezolvat între timp, fără hârtii — marchează sesizarea ca rezolvată și adaugă o poză.</p>
+          `,
+          ctaText: `Vezi sesizarea`,
+          ctaUrl: link,
+        }),
+      };
+    }
+
+    // d60 — ultimul reminder automat.
+    const subject = `Sesizarea „${titluSafe}" — 60 de zile fără răspuns`;
     return {
       subject,
       html: emailTemplate({
-        title: subject,
-        kicker: "CIVIA · REMINDER",
-        preheader: `Sesizare ${sez.code}: ${tipLabel} - ${sez.locatie}`,
-        body: bodyHtml,
+        title: `60 de zile de tăcere`,
+        kicker: `REAMINTIRE · ZIUA 60`,
+        icon: `🚨`,
+        accent: `#d70015`,
+        preheader,
+        body: `
+          ${greeting}
+          <p style="margin:0 0 12px">Au trecut <strong>60 de zile</strong> de la trimiterea sesizării <strong>„${titluHtml}"</strong> — dublul termenului legal din <strong>OG 27/2002 art. 14</strong>. Tăcerea autorității nu mai e o întârziere, e o dovadă.</p>
+          ${ackNote}
+          ${emailStatCards([
+            { value: `60`, label: `zile fără răspuns` },
+            { value: `2×`, label: `termenul legal, depășit` },
+          ])}
+          ${emailSectionTitle(`Ce poți face cu această dovadă`)}
+          ${emailListCard([
+            {
+              title: `Avocatul Poporului`,
+              meta: `Petiție online, gratuită — instituția care verifică pasivitatea autorităților`,
+              url: `https://avp.ro`,
+              badge: `GRATUIT`,
+            },
+            {
+              title: `Instanța de contencios administrativ`,
+              meta: `Legea 554/2004 — 60 de zile de tăcere e exact dovada de care ai nevoie`,
+            },
+            {
+              title: `Prefectul județului`,
+              meta: `Controlează legalitatea activității primăriilor din județ`,
+            },
+          ])}
+          <p style="margin:14px 0 0">Sesizarea rămâne publică pe Civia, cu termenul depășit la vedere. Acesta e ultimul reminder automat — de aici încolo, pagina sesizării îți stă la dispoziție oricând.</p>
+        `,
+        ctaText: `Vezi sesizarea`,
+        ctaUrl: link,
       }),
     };
   }

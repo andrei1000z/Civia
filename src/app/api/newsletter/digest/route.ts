@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import {
+  sendEmail,
+  emailTemplate,
+  emailGreeting,
+  emailSectionTitle,
+  emailStatCards,
+  emailListCard,
+} from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import { getUpcomingEvents } from "@/data/calendar-civic";
-import { SESIZARE_TIPURI } from "@/lib/constants";
-import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -101,72 +107,78 @@ export async function GET(req: Request) {
   const upcomingEvents = getUpcomingEvents(3);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
 
-  function tipIcon(tip: string): string {
-    return SESIZARE_TIPURI.find((t) => t.value === tip)?.icon ?? "📮";
-  }
-
-  function pctChange(curr: number, prev: number): string {
-    if (prev === 0) return curr > 0 ? "+∞%" : "±0%";
+  /** Delta % față de săptămâna trecută — copy curat, fără „+∞%". */
+  function deltaLabel(curr: number, prev: number): string {
+    if (prev === 0) return curr > 0 ? "în creștere" : "la fel ca săpt. trecută";
     const diff = ((curr - prev) / prev) * 100;
     const sign = diff >= 0 ? "+" : "";
-    return `${sign}${diff.toFixed(0)}%`;
+    return `${sign}${diff.toFixed(0)}% vs săpt. trecută`;
   }
 
+  function deltaTone(curr: number, prev: number): "up" | "down" | "flat" {
+    if (curr === prev) return "flat";
+    return curr > prev ? "up" : "down";
+  }
+
+  /** Numeral românesc corect: „1 sesizare nouă", „5 sesizări noi", „20 de sesizări noi". */
+  function roCount(n: number, singular: string, plural: string): string {
+    if (n === 1) return `1 ${singular}`;
+    const rem = n % 100;
+    const needsDe = n >= 20 && !(rem >= 1 && rem <= 19);
+    return `${n}${needsDe ? " de" : ""} ${plural}`;
+  }
+
+  const noiTxt = roCount(weekTotal, "sesizare nouă", "sesizări noi");
+  const rezTxt = roCount(weekResolved, "rezolvată", "rezolvate");
+
   const body = `
-    <h2 style="font-size:20px;margin:0 0 8px;color:#0f172a">Săptămâna civică</h2>
-    <p style="color:#64748b;margin:0 0 20px">Iată cum au contribuit cetățenii în ultimele 7 zile.</p>
+    ${emailGreeting(
+      buildSalutation({}),
+      "Bilanțul ultimelor 7 zile pe Civia: ce au raportat cetățenii și ce au obținut.",
+    )}
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px">
-      <tr>
-        <td style="background:#f1f5f9;border-radius:8px;padding:16px;width:48%;vertical-align:top">
-          <div style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Sesizări noi</div>
-          <div style="font-size:28px;font-weight:800;color:#1C4ED8">${weekTotal}</div>
-          <div style="color:#64748b;font-size:12px;margin-top:4px">${pctChange(weekTotal, prevTotal)} vs săpt. trecută</div>
-        </td>
-        <td width="16"></td>
-        <td style="background:#ecfdf5;border-radius:8px;padding:16px;width:48%;vertical-align:top">
-          <div style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Rezolvate</div>
-          <div style="font-size:28px;font-weight:800;color:#059669">${weekResolved}</div>
-          <div style="color:#64748b;font-size:12px;margin-top:4px">${pctChange(weekResolved, prevResolved)} vs săpt. trecută</div>
-        </td>
-      </tr>
-    </table>
+    ${emailStatCards([
+      {
+        value: String(weekTotal),
+        label: "Sesizări noi",
+        delta: deltaLabel(weekTotal, prevTotal),
+        deltaTone: deltaTone(weekTotal, prevTotal),
+      },
+      {
+        value: String(weekResolved),
+        label: "Rezolvate",
+        delta: deltaLabel(weekResolved, prevResolved),
+        deltaTone: deltaTone(weekResolved, prevResolved),
+      },
+    ])}
 
-    ${topResolved.length > 0 ? `
-    <h3 style="font-size:16px;margin:24px 0 12px;color:#0f172a">🎉 Rezolvate săptămâna asta</h3>
-    <ul style="margin:0 0 24px;padding-left:0;list-style:none">
-      ${topResolved
-        .map(
-          (s) => `
-        <li style="padding:12px 0;border-bottom:1px solid #e2e8f0">
-          <div style="font-weight:600;color:#0f172a;font-size:14px">${tipIcon(s.tip)} ${escapeHtml(s.titlu)}</div>
-          <div style="color:#64748b;font-size:12px;margin-top:2px">📍 ${escapeHtml(s.locatie)}</div>
-          <a href="${siteUrl}/sesizari/${s.code}" style="color:#1C4ED8;font-size:12px;text-decoration:none">Vezi sesizarea →</a>
-        </li>`
-        )
-        .join("")}
-    </ul>
-    ` : ""}
+    ${
+      topResolved.length > 0
+        ? `${emailSectionTitle("Rezolvate săptămâna asta")}
+    ${emailListCard(
+      topResolved.map((s) => ({
+        title: s.titlu,
+        meta: s.locatie,
+        url: `${siteUrl}/sesizari/${s.code}`,
+        badge: "REZOLVAT",
+        badgeColor: "#059669",
+      })),
+    )}`
+        : ""
+    }
 
-    ${upcomingEvents.length > 0 ? `
-    <h3 style="font-size:16px;margin:24px 0 12px;color:#0f172a">📅 Urmează</h3>
-    <ul style="margin:0 0 24px;padding-left:0;list-style:none">
-      ${upcomingEvents
-        .map(
-          (e) => `
-        <li style="padding:12px 0;border-bottom:1px solid #e2e8f0">
-          <div style="font-weight:600;color:#0f172a;font-size:14px">${escapeHtml(e.title)}</div>
-          <div style="color:#64748b;font-size:12px;margin-top:2px">${new Date(e.date).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}</div>
-        </li>`
-        )
-        .join("")}
-    </ul>
-    ` : ""}
-
-    <p style="color:#64748b;font-size:12px;margin-top:24px">
-      Primești acest email pentru că te-ai abonat la Civia. Nu mai vrei?
-      <a href="${siteUrl}/legal/confidentialitate" style="color:#1C4ED8">gestionează preferințele</a>.
-    </p>
+    ${
+      upcomingEvents.length > 0
+        ? `${emailSectionTitle("Urmează în calendarul civic")}
+    ${emailListCard(
+      upcomingEvents.map((e) => ({
+        title: e.title,
+        meta: new Date(e.date).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" }),
+        ...(e.url ? { url: e.url } : {}),
+      })),
+    )}`
+        : ""
+    }
   `;
 
   // Send to all subscribers (sequential with tiny gap — Resend rate limit ~10/s free tier)
@@ -175,13 +187,15 @@ export async function GET(req: Request) {
   // audit fix: înainte serial cu sleep 120ms/email (lent pe liste mari). Acum
   // loturi PARALELE (Promise.allSettled) — latențele de send se suprapun → mult
   // mai rapid wall-clock, cu un gap între loturi ca să rămânem sub ~10/s (free tier).
-  const subject = `Civia — ${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta`;
+  const subject = `Săptămâna civică — ${noiTxt}, ${rezTxt}`;
   const sendOne = async (sub: { email: string }): Promise<boolean> => {
     const unsubUrl = newsletterUnsubscribeUrl(sub.email, siteUrl);
     const html = emailTemplate({
-      title: "Săptămâna civică",
-      preheader: `${weekTotal} sesizări noi, ${weekResolved} rezolvate săptămâna asta pe Civia`,
-      body: `${body}<p style="margin:28px 0 0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center">Primești acest email pentru că ești abonat la newsletter-ul Civia. <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline">Dezabonează-te</a>.</p>`,
+      title: `${noiTxt}, ${rezTxt}`,
+      kicker: "SĂPTĂMÂNA CIVICĂ",
+      icon: "🗞️",
+      preheader: `Bilanțul săptămânii pe Civia: top rezolvări și ce urmează în calendarul civic.`,
+      body: `${body}<p style="margin:28px 0 0;font-size:12px;line-height:1.6;color:#86868b;text-align:center">Primești acest email pentru că ești abonat la newsletter-ul Civia. <a href="${unsubUrl}" style="color:#86868b;text-decoration:underline">Dezabonează-te</a>.</p>`,
       ctaText: "Vezi sesizările publice",
       ctaUrl: `${siteUrl}/sesizari-publice`,
     });

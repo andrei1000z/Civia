@@ -147,9 +147,9 @@ export const escapeEmailHtml = escapeAttr;
  * line from `buildSalutation()` (e.g. „Salut, Eduard," or „Bună!").
  */
 export function emailGreeting(salutation: string, sub?: string): string {
-  return `<p style="font-size:16px;margin:0 0 8px;font-weight:600;color:#0f172a">${escapeAttr(salutation)}</p>${
+  return `<p style="font-size:16px;margin:0 0 6px;font-weight:600;color:#1d1d1f;letter-spacing:-0.2px">${escapeAttr(salutation)}</p>${
     sub
-      ? `<p style="margin:0 0 24px;color:#64748b;font-size:14px;line-height:1.6">${sub}</p>`
+      ? `<p style="margin:0 0 24px;color:#86868b;font-size:14px;line-height:1.6">${sub}</p>`
       : ""
   }`;
 }
@@ -167,15 +167,80 @@ export function emailNoteCallout(opts: {
   tone?: "primary" | "muted";
 }): string {
   const tone = opts.tone ?? "primary";
-  const accent = tone === "primary" ? "#059669" : "#94a3b8";
-  const bg = tone === "primary" ? "#ecfdf5" : "#f1f5f9";
+  const accent = tone === "primary" ? "#059669" : "#86868b";
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 8px">
-      <tr><td style="background:${bg};border-left:3px solid ${accent};border-radius:0 8px 8px 0;padding:12px 16px">
-        <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:${accent};letter-spacing:0.6px;text-transform:uppercase">${escapeAttr(opts.label)}</p>
-        <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;white-space:pre-wrap">${escapeAttr(opts.text)}</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 8px">
+      <tr><td style="background:#f5f5f7;border-radius:14px;padding:14px 18px">
+        <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:${accent};letter-spacing:0.8px;text-transform:uppercase">${escapeAttr(opts.label)}</p>
+        <p style="margin:0;font-size:14px;line-height:1.65;color:#3a3a3c;white-space:pre-wrap">${escapeAttr(opts.text)}</p>
       </td></tr>
     </table>`;
+}
+
+/** Titlu de secțiune mic, caps, muted — Apple-style eyebrow pentru digest-uri. */
+export function emailSectionTitle(text: string): string {
+  return `<p style="margin:28px 0 10px;font-size:11px;font-weight:700;color:#86868b;letter-spacing:1.2px;text-transform:uppercase">${escapeAttr(text)}</p>`;
+}
+
+/** Linie subțire de separare (hairline) — folosită între secțiuni. */
+export function emailDivider(): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0"><tr><td style="border-top:1px solid #e8e8ed;font-size:0;line-height:0">&nbsp;</td></tr></table>`;
+}
+
+/**
+ * Rând de statistici „carduri" (2–3) pentru digest-uri — valoare mare + etichetă
+ * + delta opțional. Table-based, sigure în Gmail/Outlook.
+ */
+export function emailStatCards(
+  stats: Array<{ value: string; label: string; delta?: string; deltaTone?: "up" | "down" | "flat" }>,
+): string {
+  const cells = stats
+    .slice(0, 3)
+    .map((s) => {
+      const deltaColor = s.deltaTone === "down" ? "#d70015" : s.deltaTone === "flat" ? "#86868b" : "#059669";
+      return `<td valign="top" width="${Math.floor(100 / Math.min(stats.length, 3))}%" style="padding:4px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="background:#f5f5f7;border-radius:16px;padding:18px 16px;text-align:center">
+            <p style="margin:0;font-size:28px;font-weight:700;color:#1d1d1f;letter-spacing:-0.8px;line-height:1.1">${escapeAttr(s.value)}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#86868b;font-weight:500">${escapeAttr(s.label)}</p>
+            ${s.delta ? `<p style="margin:4px 0 0;font-size:11.5px;font-weight:600;color:${deltaColor}">${escapeAttr(s.delta)}</p>` : ""}
+          </td>
+        </tr></table>
+      </td>`;
+    })
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 6px"><tr>${cells}</tr></table>`;
+}
+
+/**
+ * Listă „inset grouped" (stil iOS Settings) — rânduri cu titlu + meta + link,
+ * separate de hairline, în container rotunjit. Pentru topuri/digest-uri.
+ */
+export function emailListCard(
+  items: Array<{ title: string; meta?: string; url?: string; badge?: string; badgeColor?: string }>,
+): string {
+  if (!items.length) return "";
+  const rows = items
+    .map((it, i) => {
+      const titleHtml = it.url
+        ? `<a href="${escapeAttr(it.url)}" style="color:#1d1d1f;text-decoration:none;font-weight:600">${escapeAttr(it.title)}</a>`
+        : `<span style="color:#1d1d1f;font-weight:600">${escapeAttr(it.title)}</span>`;
+      const badge = it.badge
+        ? `<span style="display:inline-block;padding:3px 9px;border-radius:980px;background:${it.badgeColor ?? "#059669"}14;color:${it.badgeColor ?? "#059669"};font-size:10.5px;font-weight:700;letter-spacing:0.3px;white-space:nowrap">${escapeAttr(it.badge)}</span>`
+        : it.url
+          ? `<span style="color:#c7c7cc;font-size:15px">›</span>`
+          : "";
+      return `<tr>
+        <td style="padding:13px 18px;${i > 0 ? "border-top:1px solid #e8e8ed" : ""}">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="font-size:14px;line-height:1.45">${titleHtml}${it.meta ? `<br><span style="font-size:12px;color:#86868b">${escapeAttr(it.meta)}</span>` : ""}</td>
+            <td align="right" valign="middle" style="padding-left:12px">${badge}</td>
+          </tr></table>
+        </td>
+      </tr>`;
+    })
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e8e8ed;border-radius:16px;margin:6px 0 10px"><tbody>${rows}</tbody></table>`;
 }
 
 /**
@@ -183,8 +248,7 @@ export function emailNoteCallout(opts: {
  * styles so Gmail/Outlook render correctly without external CSS.
  */
 export function emailStatusPill(opts: { label: string; emoji: string; color: string }): string {
-  const tint = `${opts.color}1a`;
-  return `<span style="display:inline-block;padding:5px 12px;border-radius:999px;background:${tint};color:${opts.color};font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase">${escapeAttr(opts.emoji)} ${escapeAttr(opts.label)}</span>`;
+  return `<span style="display:inline-block;padding:6px 14px;border-radius:980px;background:${opts.color}14;border:1px solid ${opts.color}26;color:${opts.color};font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase">${escapeAttr(opts.emoji)} ${escapeAttr(opts.label)}</span>`;
 }
 
 /**
@@ -213,11 +277,11 @@ export function emailPhotoBlock(opts: { images: string[]; label?: string; max?: 
   const cells = imgs
     .map(
       (u) =>
-        `<td valign="top" style="padding:4px"><img src="${escapeAttr(u)}" alt="" width="100%" style="width:100%;max-width:280px;border-radius:10px;border:1px solid #e5e7eb;display:block" /></td>`,
+        `<td valign="top" style="padding:4px"><img src="${escapeAttr(u)}" alt="" width="100%" style="width:100%;max-width:280px;border-radius:14px;border:1px solid #e8e8ed;display:block" /></td>`,
     )
     .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 18px">
-    ${opts.label ? `<tr><td colspan="${imgs.length}" style="padding:0 0 6px;font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.6px;text-transform:uppercase">${escapeAttr(opts.label)}</td></tr>` : ""}
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 18px">
+    ${opts.label ? `<tr><td colspan="${imgs.length}" style="padding:0 4px 7px;font-size:11px;font-weight:700;color:#86868b;letter-spacing:0.8px;text-transform:uppercase">${escapeAttr(opts.label)}</td></tr>` : ""}
     <tr>${cells}</tr>
   </table>`;
 }
@@ -233,11 +297,11 @@ export function emailBeforeAfter(opts: { before?: string[] | null; after?: strin
   if (!before && !after) return "";
   const col = (url: string, label: string, accent: string) =>
     `<td width="50%" valign="top" style="padding:4px">
-       <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:${accent};letter-spacing:0.6px;text-transform:uppercase">${label}</p>
-       <img src="${escapeAttr(url)}" alt="${label}" width="100%" style="width:100%;border-radius:10px;border:1px solid #e5e7eb;display:block" />
+       <p style="margin:0 0 7px;font-size:11px;font-weight:700;color:${accent};letter-spacing:0.8px;text-transform:uppercase">${label}</p>
+       <img src="${escapeAttr(url)}" alt="${label}" width="100%" style="width:100%;border-radius:14px;border:1px solid #e8e8ed;display:block" />
      </td>`;
   if (before && after) {
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 18px"><tr>${col(before, "Înainte", "#b91c1c")}${col(after, "După", "#059669")}</tr></table>`;
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 18px"><tr>${col(before, "Înainte", "#d70015")}${col(after, "După", "#059669")}</tr></table>`;
   }
   const single = (before ?? after) as string;
   return emailPhotoBlock({ images: [single], label: before ? "Înainte" : "După" });
@@ -273,24 +337,23 @@ export function emailTemplate(params: {
   const ctaText = params.ctaText ? escapeAttr(params.ctaText) : undefined;
   const ctaUrl = params.ctaUrl ? escapeAttr(params.ctaUrl) : undefined;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
-  // Brand palette. Kept in sync with globals.css (light mode). Email
-  // clients generally ignore prefers-color-scheme so we commit to the
-  // light-mode palette — good enough for both Gmail + Outlook + iOS Mail.
+  // 2026-06-12 — redesign „liquid glass" (Apple-style): fundal #f5f5f7, card alb
+  // cu colțuri mari, hero = spălătură de accent translucidă (nu bloc saturat),
+  // chip de icon „frosted", CTA pastilă, share minimal, footer centrat.
+  // Email clients ignoră backdrop-filter → sticla e simulată cu straturi
+  // translucide + gradiente fine (sigur în Gmail/Outlook/iOS Mail).
   const PRIMARY = "#059669";
-  const PRIMARY_DARK = "#047857";
   const PRIMARY_DARKER = "#065f46";
-  const PRIMARY_SOFT = "#ecfdf5";
+  const BG = "#f5f5f7"; // Apple gray
   const SURFACE = "#ffffff";
-  const BG = "#f8fafc";
-  const BORDER = "#e5e7eb";
-  const TEXT = "#0f172a";
-  const TEXT_MUTED = "#64748b";
-  const TEXT_DIM = "#94a3b8";
-  // Accent semantic — gradientul de hero + butonul CTA se adaptează la culoarea
-  // emailului. Validăm strict #rrggbb; altfel cădem pe emerald-ul de brand.
+  const HAIR = "#e8e8ed"; // hairline
+  const INK = "#1d1d1f"; // Apple ink
+  const BODY_TX = "#424245";
+  const MUTED = "#86868b";
+  const DIM = "#a1a1a6";
+  // Accent semantic — hero-ul + butonul CTA se adaptează la culoarea emailului.
   const ACCENT = params.accent && /^#[0-9a-fA-F]{6}$/.test(params.accent) ? params.accent : PRIMARY;
-  const ACCENT_D = darkenHex(ACCENT, 0.22);
-  const ACCENT_DD = darkenHex(ACCENT, 0.42);
+  const ACCENT_D = darkenHex(ACCENT, 0.18);
 
   return `<!DOCTYPE html>
 <html lang="ro">
@@ -302,80 +365,76 @@ export function emailTemplate(params: {
 <title>${title}</title>
 ${preheader ? `<span style="display:none;max-height:0;overflow:hidden;visibility:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;mso-hide:all">${preheader}</span>` : ""}
 </head>
-<body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:${TEXT};-webkit-font-smoothing:antialiased">
+<body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;color:${INK};-webkit-font-smoothing:antialiased">
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:40px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:48px 16px 40px">
 <tr><td align="center">
 
 <!-- Wordmark -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin-bottom:16px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin-bottom:20px">
   <tr><td align="center">
-    <a href="${siteUrl}" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
-      <span style="display:inline-block;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,${PRIMARY},${PRIMARY_DARKER});color:#fff;font-weight:800;font-size:16px;line-height:30px;text-align:center;vertical-align:middle">C</span>
-      <span style="font-weight:800;font-size:18px;color:${TEXT};letter-spacing:-0.3px;vertical-align:middle;margin-left:8px">Civia</span>
+    <a href="${siteUrl}" style="text-decoration:none">
+      <span style="display:inline-block;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,${PRIMARY},${PRIMARY_DARKER});color:#fff;font-weight:800;font-size:15px;line-height:28px;text-align:center;vertical-align:middle">C</span>
+      <span style="font-weight:700;font-size:17px;color:${INK};letter-spacing:-0.4px;vertical-align:middle;margin-left:8px">Civia</span>
     </a>
   </td></tr>
 </table>
 
 <!-- Card -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:${SURFACE};border-radius:16px;overflow:hidden;box-shadow:0 2px 4px rgba(15,23,42,0.04),0 8px 24px rgba(15,23,42,0.06);max-width:600px;border:1px solid ${BORDER}">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:${SURFACE};border-radius:24px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.07);max-width:600px;border:1px solid rgba(0,0,0,0.05)">
 
-  <!-- Hero header -->
-  <tr><td style="background:linear-gradient(135deg,${ACCENT} 0%,${ACCENT_D} 55%,${ACCENT_DD} 100%);padding:40px 40px 44px;text-align:center">
-    ${icon ? `<div style="width:60px;height:60px;line-height:60px;border-radius:16px;background:rgba(255,255,255,0.16);font-size:30px;text-align:center;margin:0 auto 16px">${icon}</div>` : ""}
-    ${kicker ? `<p style="color:rgba(255,255,255,0.85);font-size:11px;margin:0 0 8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${kicker}</p>` : ""}
-    <h1 style="color:#fff;font-size:26px;margin:0;font-weight:800;letter-spacing:-0.5px;line-height:1.2">${title}</h1>
+  <!-- Hero — liquid-glass wash în culoarea accentului -->
+  <tr><td style="background:linear-gradient(180deg,${ACCENT}1c 0%,${ACCENT}0a 60%,rgba(255,255,255,0) 100%);padding:44px 40px 26px;text-align:center">
+    ${icon ? `<div style="width:64px;height:64px;line-height:64px;border-radius:18px;background:linear-gradient(145deg,#ffffff,${ACCENT}12);border:1px solid ${ACCENT}2e;box-shadow:0 6px 20px ${ACCENT}1f;font-size:30px;text-align:center;margin:0 auto 18px;display:inline-block">${icon}</div><br>` : ""}
+    ${kicker ? `<p style="color:${ACCENT};font-size:11px;margin:0 0 10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${kicker}</p>` : ""}
+    <h1 style="color:${INK};font-size:27px;margin:0;font-weight:700;letter-spacing:-0.6px;line-height:1.18">${title}</h1>
   </td></tr>
 
   <!-- Body -->
-  <tr><td style="padding:36px 40px 24px;color:${TEXT};font-size:15px;line-height:1.7">
+  <tr><td style="padding:10px 44px 8px;color:${BODY_TX};font-size:15px;line-height:1.7">
     ${params.body}
     ${ctaText && ctaUrl ? `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:32px 0 8px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0 12px">
       <tr><td align="center">
-        <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,${ACCENT},${ACCENT_D});color:#fff;padding:15px 40px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.2px;box-shadow:0 4px 14px ${ACCENT}40">${ctaText} →</a>
+        <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,${ACCENT},${ACCENT_D});color:#fff;padding:14px 38px;border-radius:980px;text-decoration:none;font-weight:600;font-size:15px;letter-spacing:-0.1px;box-shadow:0 4px 16px ${ACCENT}38">${ctaText}</a>
       </td></tr>
     </table>` : ""}
   </td></tr>
 
-  <!-- Share CTA — virality nudge in every email Civia trimite. User
-       already cares (they engaged enough to get an email), so this is
-       the highest-conversion moment to ask for a friend share. -->
-  <tr><td style="padding:0 40px 24px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PRIMARY_SOFT};border:1px solid #a7f3d0;border-radius:12px;padding:18px 20px">
-      <tr><td>
-        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${PRIMARY_DARKER}">Cunoști pe cineva care s-ar bate cu primăria?</p>
-        <p style="margin:0 0 12px;font-size:12px;color:${TEXT_MUTED};line-height:1.5">Distribuie Civia. Cu cât suntem mai mulți, cu atât răspund mai repede.</p>
-        <a href="https://wa.me/?text=${encodeURIComponent(`Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-right:6px">WhatsApp</a>
-        <a href="https://t.me/share/url?url=${encodeURIComponent(siteUrl)}&text=${encodeURIComponent("Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul.")}" style="display:inline-block;background:#0088cc;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-right:6px">Telegram</a>
-        <a href="https://bsky.app/intent/compose?text=${encodeURIComponent(`Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="display:inline-block;background:#0085ff;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600">Bluesky</a>
+  <!-- Share — minimal, hairline + text links (nudge de viralitate, discret) -->
+  <tr><td style="padding:22px 44px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="border-top:1px solid ${HAIR};padding-top:20px;text-align:center">
+        <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:${INK};letter-spacing:-0.1px">Cunoști pe cineva care s-ar bate cu primăria?</p>
+        <p style="margin:0 0 10px;font-size:12px;color:${MUTED};line-height:1.5">Cu cât suntem mai mulți, cu atât autoritățile răspund mai repede.</p>
+        <a href="https://wa.me/?text=${encodeURIComponent(`Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="color:${PRIMARY};text-decoration:none;font-size:12.5px;font-weight:600">WhatsApp</a>
+        <span style="color:${HAIR};margin:0 8px">·</span>
+        <a href="https://t.me/share/url?url=${encodeURIComponent(siteUrl)}&text=${encodeURIComponent("Am descoperit Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul.")}" style="color:${PRIMARY};text-decoration:none;font-size:12.5px;font-weight:600">Telegram</a>
+        <span style="color:${HAIR};margin:0 8px">·</span>
+        <a href="https://bsky.app/intent/compose?text=${encodeURIComponent(`Civia — sesizezi gratis la primărie cu AI și urmărești răspunsul. ${siteUrl}`)}" style="color:${PRIMARY};text-decoration:none;font-size:12.5px;font-weight:600">Bluesky</a>
       </td></tr>
     </table>
   </td></tr>
 
-  <!-- Footer (inside card) -->
-  <tr><td style="padding:24px 40px 28px;border-top:1px solid ${BORDER};background:${BG}">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="font-size:12px;color:${TEXT_MUTED};line-height:1.5">
-          <a href="${siteUrl}" style="color:${PRIMARY};text-decoration:none;font-weight:600">civia.ro</a> · platforma civică a României
-          <br><span style="color:${TEXT_DIM};font-size:11px">Gratuit · Fără reclame · Open-source · 🇪🇺 GDPR</span>
-        </td>
-        <td align="right" style="font-size:11px;color:${TEXT_DIM}">
-          <a href="${siteUrl}/cont" style="color:${TEXT_MUTED};text-decoration:none">Contul meu</a>
-          <span style="color:${BORDER};margin:0 6px">·</span>
-          <a href="${siteUrl}/legal/confidentialitate" style="color:${TEXT_MUTED};text-decoration:none">Confidențialitate</a>
-        </td>
-      </tr>
-    </table>
+  <!-- Footer — centrat, minimal -->
+  <tr><td style="padding:22px 44px 28px;text-align:center">
+    <p style="margin:0 0 4px;font-size:12px;color:${MUTED}">
+      <a href="${siteUrl}" style="color:${PRIMARY};text-decoration:none;font-weight:600">civia.ro</a> — platforma civică a României
+    </p>
+    <p style="margin:0 0 8px;font-size:11px;color:${DIM}">Gratuit · Fără reclame · Open-source · 🇪🇺 GDPR</p>
+    <p style="margin:0;font-size:11px">
+      <a href="${siteUrl}/cont" style="color:${MUTED};text-decoration:none">Contul meu</a>
+      <span style="color:${HAIR};margin:0 6px">·</span>
+      <a href="${siteUrl}/legal/confidentialitate" style="color:${MUTED};text-decoration:none">Confidențialitate</a>
+    </p>
   </td></tr>
 </table>
 
 <!-- Meta line under the card -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin-top:20px">
-  <tr><td align="center" style="color:${TEXT_DIM};font-size:11px;line-height:1.6;padding:0 16px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin-top:18px">
+  <tr><td align="center" style="color:${DIM};font-size:11px;line-height:1.6;padding:0 16px">
     Primești acest email pentru că ai trimis o sesizare, te-ai abonat la newsletter, sau ai acțiuni în contul Civia.<br>
-    Dacă nu mai vrei mesaje de la noi, <a href="${siteUrl}/cont?unsubscribe=1" style="color:${TEXT_MUTED};text-decoration:underline">dezabonează-te</a>.
+    Dacă nu mai vrei mesaje de la noi, <a href="${siteUrl}/cont?unsubscribe=1" style="color:${MUTED};text-decoration:underline">dezabonează-te</a>.
   </td></tr>
 </table>
 

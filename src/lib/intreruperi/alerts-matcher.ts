@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate, emailGreeting, escapeEmailHtml } from "@/lib/email/resend";
+import { sendEmail, emailTemplate, emailGreeting, emailListCard, emailNoteCallout, emailSectionTitle } from "@/lib/email/resend";
 import { TYPE_LABELS } from "@/data/intreruperi";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civia.ro";
@@ -160,21 +160,25 @@ export async function dispatchAlertsForIntreruperi(
         ? `🔔 Întrerupere ${TYPE_LABELS[newMatches[0]!.type as keyof typeof TYPE_LABELS] ?? newMatches[0]!.type} pe adresa ta — Civia`
         : `🔔 ${newMatches.length} întreruperi pe adresa ta — Civia`;
 
-      const itemsHtml = newMatches
-        .map((m) => {
-          const typeLabel = TYPE_LABELS[m.type as keyof typeof TYPE_LABELS] ?? m.type;
-          const start = new Date(m.start_at).toLocaleString("ro-RO");
-          const end = new Date(m.end_at).toLocaleString("ro-RO");
-          const detailUrl = `${SITE_URL}/intreruperi/${m.id}`;
-          return `<div style="margin:0 0 18px;padding:14px 16px;background:#f8fafc;border-left:4px solid #f59e0b;border-radius:8px">
-  <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#92400e;font-weight:600">${escapeEmailHtml(typeLabel)} · ${escapeEmailHtml(m.provider)}</p>
-  <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#0f172a">${escapeEmailHtml(m.reason)}</p>
-  <p style="margin:0 0 4px;font-size:13px;color:#475569">📅 <strong>${escapeEmailHtml(start)}</strong> → <strong>${escapeEmailHtml(end)}</strong></p>
-  <p style="margin:0 0 8px;font-size:13px;color:#475569">📍 ${escapeEmailHtml(m.addresses.slice(0, 3).join(", "))}${m.addresses.length > 3 ? ` (+${m.addresses.length - 3})` : ""}</p>
-  <a href="${detailUrl}" style="color:#059669;font-size:13px;font-weight:600">Vezi detalii →</a>
-</div>`;
-        })
-        .join("");
+      const fmtMoment = (iso: string) =>
+        new Date(iso).toLocaleString("ro-RO", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+      const listItems = newMatches.map((m) => {
+        const typeLabel = TYPE_LABELS[m.type as keyof typeof TYPE_LABELS] ?? m.type;
+        const shortAddresses =
+          m.addresses.slice(0, 2).join(", ") +
+          (m.addresses.length > 2 ? ` (+${m.addresses.length - 2})` : "");
+        return {
+          title: `${typeLabel} · ${m.provider}`,
+          meta: `${fmtMoment(m.start_at)} → ${fmtMoment(m.end_at)} · ${shortAddresses}`,
+          url: `${SITE_URL}/intreruperi/${m.id}`,
+        };
+      });
 
       await sendEmail({
         to: sub.email,
@@ -182,15 +186,24 @@ export async function dispatchAlertsForIntreruperi(
         html: emailTemplate({
           title: newMatches.length === 1 ? "Întrerupere pe adresa ta" : `${newMatches.length} întreruperi pe adresa ta`,
           preheader: `Adresă monitorizată: ${sub.address_raw}`,
-          kicker: "🔔 ALERTĂ CIVIA",
-          icon: "📍",
+          kicker: "ALERTE ÎNTRERUPERI",
+          icon: "🔔",
+          accent: "#0EA5E9",
           body: `${emailGreeting(
             "Salut!",
-            `Am detectat <strong>${newMatches.length === 1 ? "o întrerupere" : `${newMatches.length} întreruperi`}</strong> care îți afectează adresa <strong>${escapeEmailHtml(sub.address_raw)}</strong>.`,
+            newMatches.length === 1
+              ? `A fost anunțată o întrerupere care îți afectează adresa. Vezi mai jos intervalul și zona vizată.`
+              : `Au fost anunțate ${newMatches.length} întreruperi care îți afectează adresa. Vezi mai jos intervalele și zonele vizate.`,
           )}
-${itemsHtml}
-<p style="margin:24px 0 0;font-size:12px;color:#94a3b8;text-align:center">
-  Te poți dezabona oricând: <a href="${unsubscribeUrl}" style="color:#059669">click aici</a>
+${emailSectionTitle(newMatches.length === 1 ? "Întreruperea anunțată" : "Întreruperile anunțate")}
+${emailListCard(listItems)}
+${emailNoteCallout({
+  label: "Adresa monitorizată",
+  text: sub.address_raw,
+  tone: "muted",
+})}
+<p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:#86868b;text-align:center">
+  Nu mai vrei aceste alerte? <a href="${unsubscribeUrl}" style="color:#0EA5E9;text-decoration:none;font-weight:600">Dezabonează-te aici</a>.
 </p>`,
           ctaText: "Vezi toate întreruperile",
           ctaUrl: `${SITE_URL}/intreruperi`,

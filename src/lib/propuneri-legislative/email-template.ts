@@ -1,4 +1,11 @@
-import { emailTemplate, escapeEmailHtml } from "@/lib/email/resend";
+import {
+  emailTemplate,
+  escapeEmailHtml,
+  emailListCard,
+  emailSectionTitle,
+  emailStatCards,
+  emailNoteCallout,
+} from "@/lib/email/resend";
 import { SITE_URL } from "@/lib/constants";
 import type { Authority } from "./authorities";
 import type { LegislativeFormalResult } from "./prompts";
@@ -114,33 +121,44 @@ export function buildConfirmationEmail(params: {
 }): { subject: string; html: string } {
   const { propunereId, titlu, destinatarName, votesThreshold } = params;
   const publicUrl = `${SITE_URL}/propuneri-legislative/${propunereId}`;
-  const e = escapeEmailHtml;
 
   const body = `
-<p style="font-size:15px;line-height:1.7;color:#334155;margin:0 0 16px">
-  Propunerea ta a fost publicată pe Civia.ro și este acum deschisă pentru susținere.
+<p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#424245">
+  Propunerea ta tocmai a fost publicată pe Civia.ro. Din acest moment, orice cetățean o poate susține cu un click.
 </p>
-<p style="font-size:15px;line-height:1.7;color:#334155;margin:0 0 16px">
-  📋 <strong>${e(titlu)}</strong>
-</p>
-<p style="font-size:14px;line-height:1.7;color:#64748b;margin:0 0 16px">
-  Destinatar: ${e(destinatarName)}<br>
-  Prag trimitere automată: <strong>${votesThreshold} susținători</strong>
-</p>
-<p style="font-size:14px;line-height:1.7;color:#334155;margin:0">
-  Când ${votesThreshold} cetățeni o susțin, Civia o trimite automat prin email oficial
-  la ${e(destinatarName)} cu referință la Legea 52/2003. Distribuie link-ul
-  ca să aduni susțineri mai rapid.
+${emailListCard([
+  {
+    title: titlu,
+    meta: `Adresată: ${destinatarName}`,
+    url: publicUrl,
+    badge: "LIVE",
+    badgeColor: "#7C3AED",
+  },
+])}
+${emailSectionTitle("Drumul până la decident")}
+${emailStatCards([
+  { value: "0", label: "susținători acum" },
+  { value: String(votesThreshold), label: "prag de trimitere automată" },
+])}
+${emailNoteCallout({
+  label: "Ce urmează",
+  text: `La ${votesThreshold} susținători, Civia trimite automat propunerea, în format oficial, către ${destinatarName} — în baza Legii 52/2003 privind transparența decizională. Instituția are apoi 30 de zile să răspundă, conform OG 27/2002.`,
+  tone: "muted",
+})}
+<p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#424245">
+  Un singur lucru contează acum: distribuie link-ul. Fiecare susținere o aduce mai aproape de prag.
 </p>`;
 
   const html = emailTemplate({
-    title: "Propunerea ta a fost publicată",
-    preheader: `${votesThreshold} susținători → trimitere automată la ${destinatarName}`,
-    icon: "📋",
+    title: "Acum adună susținători",
+    preheader: `De la 0 la ${votesThreshold} susținători — apoi merge oficial la ${destinatarName}.`,
+    kicker: "PROPUNEREA TA E LIVE",
+    icon: "📣",
+    accent: "#7C3AED",
     body,
     ctaText: "Distribuie propunerea",
     ctaUrl: publicUrl,
   });
 
-  return { subject: `Propunerea ta pe Civia — „${titlu}"`, html };
+  return { subject: `Propunerea ta e live pe Civia — „${titlu}”`, html };
 }

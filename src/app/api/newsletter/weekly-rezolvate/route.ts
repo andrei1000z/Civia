@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/constant-time";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendEmail, emailTemplate } from "@/lib/email/resend";
+import {
+  sendEmail,
+  emailTemplate,
+  emailGreeting,
+  emailSectionTitle,
+  emailStatCards,
+  emailListCard,
+  emailNoteCallout,
+  emailPhotoBlock,
+} from "@/lib/email/resend";
+import { buildSalutation } from "@/lib/email/format";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
-import { escapeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -80,19 +89,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, recipients: 0, skipped: "no_subscribers" });
   }
 
-  const itemsHtml = rezolvate.map((s) => `
-    <tr><td style="padding:12px 0;border-bottom:1px solid #e5e7eb">
-      <p style="font-size:13px;font-weight:600;color:#0f172a;margin:0 0 4px">
-        <a href="${SITE_URL}/sesizari/${s.code}" style="color:#059669;text-decoration:none">${escapeHtml(s.titlu)}</a>
-      </p>
-      <p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(s.locatie ?? "")}</p>
-      <p style="font-size:11px;color:#94a3b8;margin:4px 0 0">✓ Rezolvat ${formatRelative(s.resolved_at)}</p>
-    </td></tr>
-  `).join("");
+  const nRezolvate = rezolvate.length;
+  const nNoi = totalSesizariWeek ?? 0;
+
+  // Lista „inset grouped" (stil iOS) — top 5 rezolvate, cu badge verde.
+  const listHtml = emailListCard(
+    rezolvate.map((s) => ({
+      title: s.titlu,
+      meta: [s.locatie, `rezolvată ${formatRelative(s.resolved_at)}`].filter(Boolean).join(" · "),
+      url: `${SITE_URL}/sesizari/${s.code}`,
+      badge: "REZOLVAT",
+      badgeColor: "#059669",
+    })),
+  );
+
+  // Prima poză a primei sesizări rezolvate — dovada vizuală că platforma livrează.
+  const firstImage = (rezolvate[0]?.imagini as string[] | null | undefined)?.filter(Boolean)?.[0];
+  const photoHtml = firstImage
+    ? emailPhotoBlock({ images: [firstImage], label: "Una dintre problemele rezolvate" })
+    : "";
+
+  const statsHtml = emailStatCards([
+    { value: String(nRezolvate), label: nRezolvate === 1 ? "problemă rezolvată" : "probleme rezolvate" },
+    { value: String(nNoi), label: nNoi === 1 ? "sesizare nouă" : "sesizări noi" },
+  ]);
 
   let sent = 0;
   let failed = 0;
-  const subject = `🎉 ${rezolvate.length} sesizări rezolvate săptămâna asta`;
+  const subject =
+    nRezolvate === 1
+      ? "🎉 O problemă rezolvată săptămâna asta"
+      : `🎉 ${nRezolvate} probleme rezolvate săptămâna asta`;
 
   for (const r of recipients as Array<{ email: string }>) {
     if (!r.email) continue;
@@ -103,26 +130,31 @@ export async function GET(req: Request) {
         subject,
         listUnsubscribe: unsubUrl,
         html: emailTemplate({
-          title: "Săptămâna în Civia",
-          kicker: "Rezolvate săptămâna asta",
-          icon: "✅",
-          preheader: `${rezolvate.length} probleme reparate, ${totalSesizariWeek ?? 0} sesizări noi. Vezi detaliile.`,
+          title: "Săptămâna asta s-a reparat ceva",
+          kicker: "DIGESTUL DE VINERI",
+          icon: "🎉",
+          accent: "#059669",
+          preheader: `${nRezolvate} probleme reparate și ${nNoi} sesizări noi. Vezi ce s-a rezolvat.`,
           body: `
-            <p>Salut,</p>
-            <p>Iată ce s-a rezolvat săptămâna asta în comunitatea Civia:</p>
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0">
-              ${itemsHtml}
-            </table>
-            <p style="margin-top:20px;color:#64748b;font-size:13px">
-              Plus ${totalSesizariWeek ?? 0} sesizări noi depuse săptămâna asta.
-              <a href="${SITE_URL}/impact" style="color:#059669">Vezi toate cifrele →</a>
-            </p>
-            <p style="margin-top:24px;font-size:12px;color:#94a3b8">
-              Primești acest email pentru că ești abonat la newsletter-ul Civia.
-              <a href="${unsubUrl}" style="color:#94a3b8">Dezabonează-te</a>.
+            ${emailGreeting(
+              buildSalutation({ email: r.email }),
+              "Vinerea tragem linie: ce au reparat autoritățile în urma sesizărilor trimise prin Civia.",
+            )}
+            ${statsHtml}
+            ${photoHtml}
+            ${emailSectionTitle("Rezolvate săptămâna asta")}
+            ${listHtml}
+            ${emailNoteCallout({
+              label: "Cum funcționează",
+              text: "Fiecare sesizare ajunge oficial la autoritatea responsabilă, în baza OG 27/2002. Când vine răspunsul, statusul se actualizează public.",
+              tone: "muted",
+            })}
+            <p style="margin:18px 0 0;font-size:12px;color:#a1a1a6;line-height:1.6">
+              Primești acest email pentru că ești abonat la newsletterul Civia.
+              <a href="${unsubUrl}" style="color:#a1a1a6">Dezabonează-te</a>.
             </p>
           `,
-          ctaText: "Vezi impactul săptămânal",
+          ctaText: "Vezi impactul săptămânii",
           ctaUrl: `${SITE_URL}/impact`,
         }),
       });
