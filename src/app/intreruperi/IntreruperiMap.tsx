@@ -419,7 +419,7 @@ export default function IntreruperiMap({ items }: { items: Interruption[] }) {
                       href={`/intreruperi/${i.id}`}
                       className="text-blue-600 hover:underline font-medium"
                     >
-                      Detalii →
+                      Vezi detalii
                     </a>
                   </p>
                 </div>

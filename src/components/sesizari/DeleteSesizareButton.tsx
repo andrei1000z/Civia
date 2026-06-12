@@ -70,7 +70,7 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
 
       {confirm && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto animate-fade-in"
           onClick={() => !deleting && setConfirm(false)}
           role="presentation"
         >
@@ -79,7 +79,7 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-sesizare-title"
-            className="w-full max-w-sm bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden animate-modal-pop"
+            className="w-full max-w-sm bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
           >
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-5 relative">
               {!deleting && (

@@ -99,7 +99,7 @@ export function ParkingHotspotModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="hotspot-title"
-        className="w-full max-w-xl my-8 bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] outline-none animate-modal-pop"
+        className="w-full max-w-xl my-8 bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] outline-none max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-[var(--color-border)]">

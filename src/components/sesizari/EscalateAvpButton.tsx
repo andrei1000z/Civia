@@ -101,7 +101,7 @@ export function EscalateAvpButton({
 
       {open && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto animate-fade-in"
           onClick={() => !busy && setOpen(false)}
           role="presentation"
         >
@@ -111,7 +111,7 @@ export function EscalateAvpButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="avp-title"
-            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] overflow-hidden animate-modal-pop"
+            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
           >
             <header className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
               <h2 id="avp-title" className="font-bold text-base inline-flex items-center gap-2">

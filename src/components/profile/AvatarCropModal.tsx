@@ -154,10 +154,10 @@ export function AvatarCropModal({ file, onCancel, onCrop }: AvatarCropModalProps
       role="dialog"
       aria-modal="true"
       aria-label="Decupează poza de profil"
-      className="fixed inset-0 z-[var(--z-modal)] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[var(--z-modal)] bg-black/70 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] max-w-md w-full overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] max-w-md w-full my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
           <h2 className="font-[family-name:var(--font-sora)] font-bold text-base">

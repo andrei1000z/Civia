@@ -110,7 +110,7 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="resolve-modal-title"
-            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden animate-modal-pop"
+            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
           >
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-5 relative">
               <button
