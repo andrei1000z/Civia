@@ -124,6 +124,23 @@ export default function BugetareParticipativaPage() {
           <CerereBPGenerator />
         </section>
 
+        {/* Simulatorul educațional — cârligul viral către date */}
+        <section className="mb-10 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 p-5">
+          <h2 className="mb-1 text-base font-bold text-[var(--color-text)]">
+            🎮 Tu cum ai împărți bugetul?
+          </h2>
+          <p className="mb-3 text-sm text-[var(--color-text-muted)]">
+            Joc de 90 de secunde: împarte bugetul orașului pe categorii, apoi compară cu alocarea
+            reală a primăriei. Spoiler: diferența ta cea mai mare e exact locul unde merită să acționezi.
+          </p>
+          <a
+            href="/buget/simulator"
+            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
+          >
+            Joacă simulatorul →
+          </a>
+        </section>
+
         <p className="text-xs text-[var(--color-text-muted)]">
           Index curatoriat manual de Civia — corecturi sau programe lipsă:{" "}
           <a href="mailto:contact@civia.ro" className="font-semibold text-[var(--color-primary)] underline">
