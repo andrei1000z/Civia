@@ -1,101 +1,142 @@
 import { SESIZARE_STATUS_META } from "@/lib/sesizari/status";
+import {
+  emailTemplate,
+  emailGreeting,
+  emailStatusPill,
+  emailNoteCallout,
+  emailPhotoBlock,
+  emailBeforeAfter,
+  escapeEmailHtml,
+} from "./resend";
+import { buildSalutation } from "./format";
 
 /**
  * 2026-06-08 — Email de notificare către cetățean când statusul sesizării sale
- * se schimbă (înregistrată → în lucru → rezolvat etc.). Trimis pe lângă push,
- * fiindcă emailul prinde mai mulți oameni (nu toți au push activat).
+ * se schimbă (înregistrată → în lucru → rezolvat etc.). Trimis pe lângă push.
+ *
+ * 2026-06-12 — REFĂCUT: folosește layout-ul partajat `emailTemplate` (înainte
+ * avea HTML hand-rolled propriu, divergent de restul emailurilor) + accent
+ * SEMANTIC (culoarea statusului în hero/buton — un „Respins" nu mai e verde) +
+ * poze (înainte/după la rezolvat, poza raportată la celelalte).
  */
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro").replace(/\/$/, "");
 
+/** Mesaj uman, per status — ce înseamnă concret pentru cetățean. */
 const STATUS_MSG: Record<string, string> = {
-  inregistrata: "Autoritatea a confirmat înregistrarea sesizării tale și are termen legal de 30 de zile să răspundă (OG 27/2002).",
-  "in-lucru": "Autoritatea a luat măsuri și lucrează la sesizarea ta.",
-  "actiune-autoritate": "Autoritatea a întreprins acțiuni concrete pe sesizarea ta.",
-  rezolvat: "Sesizarea ta a fost marcată ca rezolvată. Verifică în teren și, dacă problema persistă, poți redeschide.",
-  redirectionata: "Sesizarea ta a fost redirecționată către autoritatea competentă.",
-  respins: "Autoritatea a respins sesizarea ta. Vezi motivul și opțiunile de escaladare.",
+  nou: "Sesizarea ta a fost creată pe Civia.",
+  trimis:
+    "Sesizarea ta a fost trimisă oficial autorității responsabile. Termenul legal de răspuns este de 30 de zile (OG 27/2002).",
+  inregistrata:
+    "Autoritatea a confirmat înregistrarea sesizării tale și are termen legal de 30 de zile să răspundă (OG 27/2002). Înregistrarea ≠ rezolvare — urmărim mai departe.",
+  redirectionata:
+    "Sesizarea ta a fost redirecționată către autoritatea competentă. Termenul de răspuns curge în continuare.",
+  "in-lucru": "Vești bune: autoritatea a luat măsuri și lucrează la sesizarea ta.",
+  "actiune-autoritate":
+    "Autoritatea a întreprins acțiuni concrete pe sesizarea ta — control, sancțiuni sau o intervenție planificată.",
+  interventie: "Autoritatea a intervenit în teren pe sesizarea ta.",
+  amanata:
+    "Autoritatea a amânat rezolvarea, de regulă pentru a o include într-un proiect mai mare. Civia urmărește mai departe.",
+  rezolvat:
+    "Problema a fost rezolvată. Verifică în teren și, dacă mai persistă ceva, poți redeschide sesizarea cu un click.",
+  respins:
+    "Autoritatea a respins sesizarea ta. Vezi motivul invocat — dacă ți se pare neîntemeiat, poți escalada la Avocatul Poporului.",
+  ignorat:
+    "Au trecut peste 60 de zile fără un răspuns pe fond. Ai dreptul să escaladezi la Avocatul Poporului — îți arătăm cum.",
 };
 
 export function buildStatusUpdateEmail(args: {
   code: string;
   titlu: string | null;
   newStatus: string;
+  /** Sumar/răspuns substanțial al autorității (callout primary). */
   summary?: string | null;
+  /** Notă internă (callout muted). */
+  note?: string | null;
+  authorName?: string | null;
+  authorEmail?: string | null;
+  /** Pozele raportate de cetățean (înainte). */
+  imagini?: string[] | null;
+  /** Pozele primăriei de la rezolvare (după). */
+  resolvedPhotos?: string[] | null;
 }): { subject: string; html: string } {
   const meta = SESIZARE_STATUS_META[args.newStatus as keyof typeof SESIZARE_STATUS_META];
   const label = meta?.label ?? args.newStatus;
-  const color = meta?.color ?? "#16a34a";
+  const color = meta?.color ?? "#059669";
+  const emoji = meta?.emoji ?? "📨";
   const url = `${SITE}/sesizari/${args.code}`;
-  const subject = `Sesizarea ${args.code} — ${label}`;
+  const isResolved = args.newStatus === "rezolvat";
+  const subject = `${emoji} ${label} · Sesizarea ${args.code} · Civia`;
+  const salutation = buildSalutation({ fullName: args.authorName ?? null, email: args.authorEmail ?? null });
   const msg = STATUS_MSG[args.newStatus] ?? "Statusul sesizării tale s-a actualizat.";
-  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const titlu = args.titlu ? esc(args.titlu) : `Sesizarea ${args.code}`;
-  const summaryHtml = args.summary
-    ? `<tr><td style="padding:0 32px 8px"><div style="background:#f8fafc;border-left:3px solid ${color};border-radius:8px;padding:12px 16px;color:#334155;font-size:14px;line-height:1.5">${esc(args.summary.slice(0, 400))}</div></td></tr>`
-    : "";
+  const titlu = args.titlu ? escapeEmailHtml(args.titlu) : `Sesizarea ${args.code}`;
 
-  const html = `<!doctype html>
-<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
-        <tr><td style="background:linear-gradient(135deg,#0f766e,#16a34a);padding:24px 32px">
-          <span style="color:#fff;font-size:20px;font-weight:800;letter-spacing:-.02em">Civia</span>
-        </td></tr>
-        <tr><td style="padding:28px 32px 8px">
-          <span style="display:inline-block;background:${color};color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:5px 12px;border-radius:999px">${esc(label)}</span>
-          <h1 style="margin:16px 0 6px;font-size:20px;color:#0f172a;line-height:1.3">${titlu}</h1>
-          <p style="margin:0;color:#64748b;font-size:13px">Sesizarea <strong>${args.code}</strong></p>
-        </td></tr>
-        <tr><td style="padding:12px 32px 4px;color:#334155;font-size:15px;line-height:1.6">${msg}</td></tr>
-        ${summaryHtml}
-        <tr><td style="padding:20px 32px 28px">
-          <a href="${url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px">Vezi sesizarea</a>
-        </td></tr>
-        <tr><td style="padding:16px 32px;border-top:1px solid #f1f5f9;color:#94a3b8;font-size:12px;line-height:1.5">
-          Primești acest email pentru că ai depus această sesizare prin Civia. Statusul se actualizează automat când autoritatea răspunde.
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+  const photos = isResolved
+    ? emailBeforeAfter({ before: args.imagini, after: args.resolvedPhotos })
+    : args.imagini && args.imagini.length
+      ? emailPhotoBlock({ images: args.imagini, label: "Ce ai raportat", max: 2 })
+      : "";
+
+  const body = `${emailGreeting(
+    salutation,
+    `Statusul sesizării tale <strong>${escapeEmailHtml(args.code)}</strong> a fost actualizat.`,
+  )}
+    <p style="margin:0 0 6px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;font-weight:600">Status nou</p>
+    <p style="margin:0 0 16px">${emailStatusPill({ label, emoji, color })}</p>
+    <p style="margin:0 0 12px;font-size:16px;line-height:1.5;color:#0f172a;font-weight:600">${titlu}</p>
+    <p style="margin:0 0 8px;font-size:15px;line-height:1.65;color:#334155">${msg}</p>
+    ${args.note ? emailNoteCallout({ label: "Notă", text: args.note, tone: "muted" }) : ""}
+    ${args.summary ? emailNoteCallout({ label: "Răspunsul autorității", text: args.summary, tone: "primary" }) : ""}
+    ${photos}`;
+
+  const html = emailTemplate({
+    title: label,
+    preheader: args.titlu ?? `Sesizarea ${args.code}`,
+    kicker: `STATUS · ${label.toUpperCase()}`,
+    icon: emoji,
+    accent: color,
+    body,
+    ctaText: isResolved ? "Vezi rezultatul" : "Vezi sesizarea",
+    ctaUrl: url,
+  });
   return { subject, html };
 }
 
 /**
  * 2026-06-09 (roadmap Faza 0 — celebrarea victoriei) — email festiv către
  * CO-SEMNATARI când o sesizare e rezolvată. „Ai contribuit — problema e gata."
+ * 2026-06-12 — refăcut pe `emailTemplate` + poze după (dovada rezolvării).
  */
-export function buildVictoryEmail(args: { code: string; titlu: string | null }): { subject: string; html: string } {
-  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const titlu = args.titlu ? esc(args.titlu) : `Sesizarea ${args.code}`;
+export function buildVictoryEmail(args: {
+  code: string;
+  titlu: string | null;
+  cosignerName?: string | null;
+  cosignerEmail?: string | null;
+  imagini?: string[] | null;
+  resolvedPhotos?: string[] | null;
+}): { subject: string; html: string } {
   const url = `${SITE}/sesizari/${args.code}`;
   const subject = `🎉 Victorie! Sesizarea ${args.code} a fost rezolvată`;
-  const html = `<!doctype html>
-<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px"><tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
-      <tr><td style="background:linear-gradient(135deg,#16a34a,#15803d);padding:36px 32px;text-align:center">
-        <div style="font-size:48px;line-height:1">🎉</div>
-        <div style="color:#fff;font-size:22px;font-weight:800;margin-top:8px">Problema a fost rezolvată!</div>
-      </td></tr>
-      <tr><td style="padding:28px 32px 8px;text-align:center">
-        <h1 style="margin:0 0 8px;font-size:18px;color:#0f172a;line-height:1.3">${titlu}</h1>
-        <p style="margin:0;color:#64748b;font-size:13px">Sesizarea <strong>${args.code}</strong></p>
-      </td></tr>
-      <tr><td style="padding:12px 32px;color:#334155;font-size:15px;line-height:1.6;text-align:center">
-        <strong>Ai contribuit la asta.</strong> Ai co-semnat această sesizare, iar autoritatea a rezolvat-o. Vocea ta a contat — împreună ați adus presiunea care a făcut diferența. 💪
-      </td></tr>
-      <tr><td style="padding:20px 32px 28px;text-align:center">
-        <a href="${url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px">Vezi victoria</a>
-      </td></tr>
-      <tr><td style="padding:16px 32px;border-top:1px solid #f1f5f9;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center">
-        Primești acest email pentru că ai co-semnat această sesizare prin Civia.
-      </td></tr>
-    </table>
-  </td></tr></table>
-</body></html>`;
+  const salutation = buildSalutation({ fullName: args.cosignerName ?? null, email: args.cosignerEmail ?? null });
+  const titlu = args.titlu ? escapeEmailHtml(args.titlu) : `Sesizarea ${args.code}`;
+  const photos = emailBeforeAfter({ before: args.imagini, after: args.resolvedPhotos });
+
+  const body = `${emailGreeting(salutation, "O sesizare pe care ai co-semnat-o tocmai a fost rezolvată. 🎉")}
+    <p style="margin:0 0 12px;font-size:16px;line-height:1.5;color:#0f172a;font-weight:600">${titlu}</p>
+    <p style="margin:0 0 8px;font-size:15px;line-height:1.65;color:#334155">
+      <strong>Ai contribuit la asta.</strong> Ai co-semnat această sesizare, iar autoritatea a rezolvat-o.
+      Vocea ta a contat — împreună ați adus presiunea care a făcut diferența. 💪
+    </p>
+    ${photos}`;
+
+  const html = emailTemplate({
+    title: "Problema a fost rezolvată!",
+    preheader: args.titlu ?? `Sesizarea ${args.code} a fost rezolvată`,
+    kicker: "VICTORIE CIVICĂ",
+    icon: "🎉",
+    accent: "#059669",
+    body,
+    ctaText: "Vezi rezultatul",
+    ctaUrl: url,
+  });
   return { subject, html };
 }

@@ -184,7 +184,63 @@ export function emailNoteCallout(opts: {
  */
 export function emailStatusPill(opts: { label: string; emoji: string; color: string }): string {
   const tint = `${opts.color}1a`;
-  return `<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${tint};color:${opts.color};font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase">${escapeAttr(opts.emoji)} ${escapeAttr(opts.label)}</span>`;
+  return `<span style="display:inline-block;padding:5px 12px;border-radius:999px;background:${tint};color:${opts.color};font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase">${escapeAttr(opts.emoji)} ${escapeAttr(opts.label)}</span>`;
+}
+
+/**
+ * Întunecă un hex #rrggbb cu `amount` (0..1). Folosit pentru gradientul de hero
+ * care se adaptează la culoarea semantică a emailului (`accent`).
+ */
+export function darkenHex(hex: string, amount: number): string {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1]!, 16);
+  const f = Math.max(0, Math.min(1, 1 - amount));
+  const r = Math.round(((n >> 16) & 255) * f);
+  const g = Math.round(((n >> 8) & 255) * f);
+  const b = Math.round((n & 255) * f);
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
+/**
+ * Galerie de poze inline pentru email (1–3 imagini, table-based ca să meargă
+ * în Gmail/Outlook/iOS Mail). URL-uri publice Supabase. Folosit pentru pozele
+ * sesizării (dovada problemei) în emailuri.
+ */
+export function emailPhotoBlock(opts: { images: string[]; label?: string; max?: number }): string {
+  const imgs = opts.images.filter(Boolean).slice(0, opts.max ?? 3);
+  if (!imgs.length) return "";
+  const cells = imgs
+    .map(
+      (u) =>
+        `<td valign="top" style="padding:4px"><img src="${escapeAttr(u)}" alt="" width="100%" style="width:100%;max-width:280px;border-radius:10px;border:1px solid #e5e7eb;display:block" /></td>`,
+    )
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 18px">
+    ${opts.label ? `<tr><td colspan="${imgs.length}" style="padding:0 0 6px;font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.6px;text-transform:uppercase">${escapeAttr(opts.label)}</td></tr>` : ""}
+    <tr>${cells}</tr>
+  </table>`;
+}
+
+/**
+ * Comparație „Înainte / După" pentru emailurile de sesizare rezolvată — pozele
+ * raportate (înainte) lângă pozele primăriei de la rezolvare (după). Dacă există
+ * doar o latură, randăm o singură imagine etichetată corespunzător.
+ */
+export function emailBeforeAfter(opts: { before?: string[] | null; after?: string[] | null }): string {
+  const before = (opts.before ?? []).filter(Boolean)[0];
+  const after = (opts.after ?? []).filter(Boolean)[0];
+  if (!before && !after) return "";
+  const col = (url: string, label: string, accent: string) =>
+    `<td width="50%" valign="top" style="padding:4px">
+       <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:${accent};letter-spacing:0.6px;text-transform:uppercase">${label}</p>
+       <img src="${escapeAttr(url)}" alt="${label}" width="100%" style="width:100%;border-radius:10px;border:1px solid #e5e7eb;display:block" />
+     </td>`;
+  if (before && after) {
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 18px"><tr>${col(before, "Înainte", "#b91c1c")}${col(after, "După", "#059669")}</tr></table>`;
+  }
+  const single = (before ?? after) as string;
+  return emailPhotoBlock({ images: [single], label: before ? "Înainte" : "După" });
 }
 
 /**
@@ -204,6 +260,10 @@ export function emailTemplate(params: {
   kicker?: string;
   /** Optional emoji / status icon displayed large in the header. */
   icon?: string;
+  /** Optional semantic accent color (#rrggbb) for hero + CTA. Defaults to
+   *  brand emerald. Status emails pass the status color so a „Respins" email
+   *  nu mai e verde-festiv, ci roșu/gri — corect emoțional. */
+  accent?: string;
 }): string {
   // Defense-in-depth: escape toate atributele/text-urile non-body
   const title = escapeAttr(params.title);
@@ -226,6 +286,11 @@ export function emailTemplate(params: {
   const TEXT = "#0f172a";
   const TEXT_MUTED = "#64748b";
   const TEXT_DIM = "#94a3b8";
+  // Accent semantic — gradientul de hero + butonul CTA se adaptează la culoarea
+  // emailului. Validăm strict #rrggbb; altfel cădem pe emerald-ul de brand.
+  const ACCENT = params.accent && /^#[0-9a-fA-F]{6}$/.test(params.accent) ? params.accent : PRIMARY;
+  const ACCENT_D = darkenHex(ACCENT, 0.22);
+  const ACCENT_DD = darkenHex(ACCENT, 0.42);
 
   return `<!DOCTYPE html>
 <html lang="ro">
@@ -246,7 +311,7 @@ ${preheader ? `<span style="display:none;max-height:0;overflow:hidden;visibility
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin-bottom:16px">
   <tr><td align="center">
     <a href="${siteUrl}" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
-      <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,${PRIMARY},${PRIMARY_DARKER});vertical-align:middle"></span>
+      <span style="display:inline-block;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,${PRIMARY},${PRIMARY_DARKER});color:#fff;font-weight:800;font-size:16px;line-height:30px;text-align:center;vertical-align:middle">C</span>
       <span style="font-weight:800;font-size:18px;color:${TEXT};letter-spacing:-0.3px;vertical-align:middle;margin-left:8px">Civia</span>
     </a>
   </td></tr>
@@ -256,9 +321,9 @@ ${preheader ? `<span style="display:none;max-height:0;overflow:hidden;visibility
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:${SURFACE};border-radius:16px;overflow:hidden;box-shadow:0 2px 4px rgba(15,23,42,0.04),0 8px 24px rgba(15,23,42,0.06);max-width:600px;border:1px solid ${BORDER}">
 
   <!-- Hero header -->
-  <tr><td style="background:linear-gradient(135deg,${PRIMARY} 0%,${PRIMARY_DARK} 60%,${PRIMARY_DARKER} 100%);padding:40px 40px 44px;text-align:center;position:relative">
-    ${icon ? `<div style="font-size:44px;line-height:1;margin-bottom:14px">${icon}</div>` : ""}
-    ${kicker ? `<p style="color:${PRIMARY_SOFT};font-size:11px;margin:0 0 6px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;opacity:0.9">${kicker}</p>` : ""}
+  <tr><td style="background:linear-gradient(135deg,${ACCENT} 0%,${ACCENT_D} 55%,${ACCENT_DD} 100%);padding:40px 40px 44px;text-align:center">
+    ${icon ? `<div style="width:60px;height:60px;line-height:60px;border-radius:16px;background:rgba(255,255,255,0.16);font-size:30px;text-align:center;margin:0 auto 16px">${icon}</div>` : ""}
+    ${kicker ? `<p style="color:rgba(255,255,255,0.85);font-size:11px;margin:0 0 8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${kicker}</p>` : ""}
     <h1 style="color:#fff;font-size:26px;margin:0;font-weight:800;letter-spacing:-0.5px;line-height:1.2">${title}</h1>
   </td></tr>
 
@@ -268,7 +333,7 @@ ${preheader ? `<span style="display:none;max-height:0;overflow:hidden;visibility
     ${ctaText && ctaUrl ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:32px 0 8px">
       <tr><td align="center">
-        <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,${PRIMARY},${PRIMARY_DARK});color:#fff;padding:15px 40px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;letter-spacing:0.2px;box-shadow:0 4px 12px rgba(5,150,105,0.3);transition:all 0.2s">${ctaText} →</a>
+        <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,${ACCENT},${ACCENT_D});color:#fff;padding:15px 40px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.2px;box-shadow:0 4px 14px ${ACCENT}40">${ctaText} →</a>
       </td></tr>
     </table>` : ""}
   </td></tr>

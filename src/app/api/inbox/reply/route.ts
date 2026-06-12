@@ -581,6 +581,10 @@ export async function POST(req: Request) {
               titlu: (cur as { titlu?: string | null } | null)?.titlu ?? null,
               newStatus: updates.status,
               summary: classification.summary,
+              authorName: (cur as { author_name?: string | null } | null)?.author_name ?? null,
+              authorEmail,
+              imagini: (cur as { imagini?: string[] | null } | null)?.imagini ?? null,
+              resolvedPhotos: (cur as { resolved_photos?: string[] | null } | null)?.resolved_photos ?? null,
             });
             await sendEmail({ to: authorEmail, subject, html });
           } catch (e) {
@@ -613,6 +617,8 @@ export async function POST(req: Request) {
               const { subject: vSubject, html: vHtml } = buildVictoryEmail({
                 code: matchedCode ?? extraction.code ?? "",
                 titlu: (cur as { titlu?: string | null } | null)?.titlu ?? null,
+                imagini: (cur as { imagini?: string[] | null } | null)?.imagini ?? null,
+                resolvedPhotos: (cur as { resolved_photos?: string[] | null } | null)?.resolved_photos ?? null,
               });
               await Promise.allSettled([...emails].slice(0, 100).map((e) => sendEmail({ to: e, subject: vSubject, html: vHtml })));
             }

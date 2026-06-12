@@ -5,15 +5,8 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
-import {
-  sendEmail,
-  emailTemplate,
-  emailGreeting,
-  emailNoteCallout,
-  emailStatusPill,
-  escapeEmailHtml,
-} from "@/lib/email/resend";
-import { buildSalutation } from "@/lib/email/format";
+import { sendEmail } from "@/lib/email/resend";
+import { buildStatusUpdateEmail } from "@/lib/email/status-update";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { logAdminAction } from "@/lib/audit";
 import {
@@ -237,51 +230,22 @@ export async function POST(
   // ─── Notify author by email (best-effort) ────────────────────
   const recipient = sesizare.author_email;
   if (recipient && statusChanged) {
-    const sesizareUrl = `${SITE_URL}/sesizari/${sesizare.code}`;
-    const meta = SESIZARE_STATUS_META[newStatus];
-    const salutation = buildSalutation({
-      // The submitted name is the cleanest signal for the author's
-      // first name. `email` is passed so we can drop a display value
-      // that's actually just the email's local part.
-      fullName: sesizare.author_name,
-      email: recipient,
-    });
-    const responseCallout = parsed.data.official_response
-      ? emailNoteCallout({
-          label: "Răspunsul autorității",
-          text: parsed.data.official_response,
-          tone: "primary",
-        })
-      : "";
-    const noteCallout = parsed.data.note
-      ? emailNoteCallout({
-          label: "Notă",
-          text: parsed.data.note,
-          tone: "muted",
-        })
-      : "";
     try {
-      await sendEmail({
-        to: recipient,
-        subject: `${meta.emoji} ${meta.label} · Sesizarea ${sesizare.code} · Civia`,
-        html: emailTemplate({
-          title: meta.label,
-          preheader: sesizare.titlu,
-          kicker: `STATUS · ${meta.label.toUpperCase()}`,
-          icon: meta.emoji,
-          body: `${emailGreeting(
-            salutation,
-            `Statusul sesizării tale <strong>${escapeEmailHtml(sesizare.code)}</strong> a fost actualizat.`,
-          )}
-                 <p style="margin:0 0 6px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;font-weight:600">Status nou</p>
-                 <p style="margin:0 0 16px">${emailStatusPill({ label: meta.label, emoji: meta.emoji, color: meta.color })}</p>
-                 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#0f172a"><strong>${escapeEmailHtml(sesizare.titlu)}</strong></p>
-                 ${noteCallout}
-                 ${responseCallout}`,
-          ctaText: "Vezi sesizarea",
-          ctaUrl: sesizareUrl,
-        }),
+      const { subject, html } = buildStatusUpdateEmail({
+        code: sesizare.code,
+        titlu: sesizare.titlu,
+        newStatus,
+        summary: parsed.data.official_response ?? null,
+        note: parsed.data.note ?? null,
+        authorName: sesizare.author_name,
+        authorEmail: recipient,
+        // poze înainte (raportate) + după (de la rezolvare) → comparație în email
+        imagini: (sesizare as { imagini?: string[] | null }).imagini ?? null,
+        resolvedPhotos:
+          parsed.data.resolved_photos ??
+          (parsed.data.resolved_photo_url ? [parsed.data.resolved_photo_url] : null),
       });
+      await sendEmail({ to: recipient, subject, html });
     } catch (emailErr) {
       Sentry.captureException(emailErr, {
         tags: { kind: "status_email" },
