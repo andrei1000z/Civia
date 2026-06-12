@@ -46,6 +46,10 @@ export async function GET(req: Request) {
     // 2026-06-10 (conformitate UE) — aplică retenția promisă: anonimizează
     // co-semnatari la sesizări închise >90z + sesizări anonime >3 ani.
     "/api/cron/purge-retention",
+    // 2026-06-12 — digest „coada de inbox neprocesată": răspunsuri de autoritate
+    // (sancțiuni/intervenții/orfani) care nu s-au auto-aplicat → email admin.
+    // Are throttle intern (trimite la schimbare sau săptămânal; zero pe coadă curată).
+    "/api/inbox/pending-digest",
   ];
   if (day === 1) jobs.push("/api/newsletter/digest"); // Luni
   if (day === 2) jobs.push("/api/newsletter/digest-local"); // Marți (Faza 2 — digest local pe zonă)
