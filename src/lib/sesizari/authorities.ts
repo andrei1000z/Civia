@@ -303,6 +303,17 @@ export function getAuthoritiesFor(
       if (sectorPrimarie) addTo(sectorPrimarie);
       break;
 
+    case "amenajare_parcare":
+      // 2026-06-13 (feedback) — cerere de AMENAJARE/creare locuri de parcare
+      // (nu parcare ilegală). Competență (research civia.ro/web): primăria de
+      // SECTOR administrează parcările (atribuire reședință, domeniu public);
+      // ASB pe domeniul stradal; PMB coordonare. Pentru alt județ →
+      // sectorPrimarie e null, cade pe primăria locală via PRIMARII[county].
+      if (sectorPrimarie) addTo(sectorPrimarie);
+      addTo(AUTH.pmb);
+      addTo(AUTH.adminStrazi);
+      break;
+
     case "canalizare":
       addTo(AUTH.apanova);
       addTo(AUTH.pmb);

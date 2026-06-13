@@ -35,6 +35,10 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     problema_ghid: "autovehicule parcate ilegal (pe trotuar, pe pistă de bicicletă, blocând accesul) contrar prevederilor HCGMB",
     propunere: "intervenția Poliției Locale pentru sancționarea și, dacă e cazul, ridicarea vehiculelor",
   },
+  amenajare_parcare: {
+    problema_ghid: "lipsa locurilor de parcare amenajate în zonă, care duce la parcări neregulamentare pe trotuar/spațiu verde și la blocarea circulației",
+    propunere: "analiza posibilității de amenajare a unor locuri de parcare reglementate (parcare de reședință sau locuri suplimentare) cu marcaj și semnalizare conforme normelor în vigoare",
+  },
   stalpisori: {
     problema_ghid: "lipsa elementelor de protecție (stâlpișori / parapeți) care permit parcarea ilegală pe trotuar și pune în pericol pietonii",
     propunere: "montarea de stâlpișori anti-parcare pentru a delimita carosabilul de trotuar",

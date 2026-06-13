@@ -204,6 +204,7 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "copac" — copaci periculoși, căzuți, ramuri rupte, uscați, NETOALETAȚI / crengi joase care împiedică trecerea pietonilor ori acoperă semne/iluminat, vegetație neîngrijită pe trotuar
 - "gunoi" — tomberoane pline, depozitare ilegală, containere, salubrizare
 - "parcare" — mașini parcate ilegal, pe trotuar, blocaje, parcare sălbatică, CIRCULAȚIE/condus pe trotuar sau pe spațiul pietonal (vehicul unde n-ar trebui să fie)
+- "amenajare_parcare" — CERERE DE AMENAJARE/creare de locuri de parcare NOI (parcare de reședință, locuri suplimentare, marcaj parcare). Cuvinte cheie: „amenajare parcare", „locuri de parcare", „să facă/facem parcare", „nevoie de parcare", „mai multe locuri de parcare". DISTINCȚIE STRICTĂ vs „parcare": „parcare" = reclamarea unei mașini parcate ILEGAL (sancționare); „amenajare_parcare" = cererea de a CREA locuri, nu de a sancționa.
 - "stalpisori" — cerere de montare stâlpișori anti-parcare PE TROTUAR (bollards). REGULĂ STRICTĂ: doar dacă descrierea menționează EXPLICIT „stâlpișori" / „stâlpisor" / „bollards" ȘI contextul e CLAR despre trotuar / parcare pe trotuar. NU alege „stalpisori" pentru: gard pe linie tramvai (→ transport), barieră drum (→ semafor), separator carosabil (→ transport sau altele).
 - "canalizare" — inundație, capace lipsă, gură canal înfundată
 - "semafor" — semafor defect, semnalizare stricată, indicatoare rutiere (INCL. zebră ștearsă, marcaj rutier necitiibil — distincție de „trecere_pietoni" care e CERERE NOUĂ)

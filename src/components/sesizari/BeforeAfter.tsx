@@ -57,7 +57,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
           </span>
         </div>
 
-        <div className="relative grid grid-cols-2 gap-3 md:gap-4">
+        <div className="relative grid grid-cols-2 gap-3 md:gap-4 items-start">
           {/* BEFORE */}
           <figure>
             <p className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-2 inline-flex items-center gap-1.5">
@@ -68,13 +68,13 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
               type="button"
               onClick={() => openLightbox(0)}
               aria-label={`Vezi poza „înainte" la mărime mare`}
-              className="aspect-video w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-rose-300/40 dark:ring-rose-900/40"
+              className="w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-rose-300/40 dark:ring-rose-900/40"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={beforeUrl}
                 alt="Starea problemei înainte de rezolvare"
-                className="w-full h-full object-contain group-hover:scale-[1.04] transition-transform duration-500"
+                className="w-full h-auto max-h-[70vh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
                 loading="lazy"
               />
               <span
@@ -97,13 +97,13 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
                 type="button"
                 onClick={() => openLightbox(1)}
                 aria-label={`Vezi poza „după" la mărime mare`}
-                className="aspect-video w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-emerald-300/40 dark:ring-emerald-900/40"
+                className="w-full rounded-[var(--radius-sm)] overflow-hidden bg-[var(--color-surface-2)] block group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ring-1 ring-emerald-300/40 dark:ring-emerald-900/40"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={afterUrl}
                   alt="Starea după rezolvare — dovadă vizuală"
-                  className="w-full h-full object-contain group-hover:scale-[1.04] transition-transform duration-500"
+                  className="w-full h-auto max-h-[70vh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
                   loading="lazy"
                 />
                 <span

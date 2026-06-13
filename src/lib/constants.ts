@@ -177,6 +177,7 @@ export const SESIZARE_TIPURI = [
   { value: "transport", label: "Problemă transport public", short: "Transport", icon: "🚌", active: true },
   { value: "afisaj", label: "Afișaj/publicitate ilegală", short: "Afișaj", icon: "📢", active: true },
   // Tipuri NOI — propuneri de amenajare/creare (nu probleme, ci cereri).
+  { value: "amenajare_parcare", label: "Amenajare locuri de parcare — cerere", short: "Parcare nouă", icon: "🅿️", active: true },
   { value: "banda_transport", label: "Bandă transport public — cerere", short: "Bandă bus", icon: "🚌", active: true },
   { value: "trecere_pietoni", label: "Trecere pietoni — cerere amenajare", short: "Zebră nouă", icon: "🚸", active: true },
   { value: "rampa_acces", label: "Rampă acces persoane cu dizabilități", short: "Rampă", icon: "♿", active: true },
