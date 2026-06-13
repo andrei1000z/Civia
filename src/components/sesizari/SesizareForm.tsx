@@ -1664,11 +1664,11 @@ export function SesizareForm() {
             de trimitere: userul vede exact ce pleacă și poate scoate solicitări
             nedorite / corecta ce a ratat AI-ul. Apare după ce AI-ul a generat. */}
         {data.formal_text && !submitted && (
-          <div className="rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface-2)]/40 p-3">
+          <div className="rounded-[var(--radius-md)] border-2 border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 p-4 shadow-[var(--shadow-1)]">
             <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-              <label htmlFor="formal-text-edit" className="text-sm font-medium inline-flex items-center gap-1.5">
-                <Sparkles size={13} className="text-purple-500" aria-hidden="true" />
-                Textul oficial — citește și ajustează
+              <label htmlFor="formal-text-edit" className="text-sm font-bold inline-flex items-center gap-1.5 text-purple-800 dark:text-purple-300">
+                <Sparkles size={14} className="text-purple-500" aria-hidden="true" />
+                ✏️ Textul oficial — citește și ajustează (exact ce se trimite)
               </label>
               <button
                 type="button"
