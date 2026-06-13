@@ -24,6 +24,7 @@ import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/tit
 // Gender-detection helpers are no longer needed — the new email template uses
 // the neutral "Mă numesc X, locuiesc în Y" opening instead of Subsemnatul(a).
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
 import nextDynamic from "next/dynamic";
 import { PhotoUploader } from "./PhotoUploader";
 // FormField primitive extras la sprint 10 — local Field e acum alias.
@@ -2158,9 +2159,9 @@ export function SesizareForm() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-[family-name:var(--font-sora)] font-semibold text-lg">Previzualizare</h3>
             {data.formal_text && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-medium">
+              <Badge variant="petition" className="px-2 py-0.5">
                 <Sparkles size={10} aria-hidden="true" /> Formal
-              </span>
+              </Badge>
             )}
           </div>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 mb-4 text-sm leading-relaxed text-[var(--color-text)] max-h-[60vh] sm:max-h-[420px] overflow-y-auto shadow-inner">
