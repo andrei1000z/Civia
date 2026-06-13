@@ -30,6 +30,7 @@ export const SESIZARE_TIP_TO_CATEGORIE: Record<string, string | null> = {
   copac: "Mediu",
   gunoi: "Mediu",
   parcare: "Transport",
+  amenajare_parcare: "Transport",
   stalpisori: "Transport",
   canalizare: "Mediu",
   semafor: "Transport",
