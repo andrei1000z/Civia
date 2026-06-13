@@ -56,7 +56,7 @@ export default function GhiduriPage() {
               <Link
                 key={ghid.id}
                 href={`/ghiduri/${ghid.slug}`}
-                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] overflow-hidden hover:-translate-y-1 hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] overflow-hidden card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
                 aria-label={`${ghid.titlu} — ${dificultateMap[ghid.dificultate].label}, ${ghid.timpCitire} minute citire, ${ghid.capitole} capitole`}
               >
                 <div className={`relative h-48 bg-gradient-to-br ${ghid.gradient} overflow-hidden`}>
