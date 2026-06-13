@@ -428,9 +428,9 @@ html { scroll-behavior: smooth; }
 
 /* Scroll-padding pentru sticky navbar (h-16 = 4rem) — anchor links
    nu mai aterizează ascunse sub bară. */
-html { scroll-padding-top: 4.5rem; }
+html { scroll-padding-top: calc(4.5rem + env(safe-area-inset-top, 0px)); }
 @media (min-width: 1024px) {
-  html { scroll-padding-top: 5rem; }
+  html { scroll-padding-top: calc(5rem + env(safe-area-inset-top, 0px)); }
 }
 
 /* Mobile safety net — prevent horizontal overflow from forcing

@@ -271,7 +271,8 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Geocodin
 
     const parts: string[] = [];
     if (addr.road) parts.push(addr.road);
-    if (addr.house_number) parts.push(`nr. ${addr.house_number}`);
+    // 2026-06-14 — NU adăugăm house_number din reverse: în RO Nominatim dă cea
+    // mai apropiată casă indexată, nu numărul real (vezi reverse-geocode.ts).
     if (addr.neighbourhood) parts.push(addr.neighbourhood);
 
     const address = parts.join(", ") || data.display_name?.split(",").slice(0, 3).join(",") || "";

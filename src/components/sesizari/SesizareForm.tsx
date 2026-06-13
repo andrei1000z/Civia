@@ -1576,7 +1576,10 @@ export function SesizareForm() {
   return (
     <div className="grid lg:grid-cols-[1fr_1.1fr] gap-8">
       {/* Form */}
-      <div className="space-y-5">
+      {/* pb pe mobil = înălțimea barei sticky „Trimite" (h-12 + py-3 + offset +
+          safe-area) ca să NU acopere ultimele câmpuri / banner. sm:pb-0 — de la
+          sm bara e static (flow normal), nu mai trebuie clearance. */}
+      <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] sm:pb-0">
         {/* Honeypot — hidden from humans, bots fill it.
             name="website" tricks autofill into ignoring it (no real "website" field).
             autocomplete="new-password" prevents mobile autofill. */}
@@ -1592,7 +1595,8 @@ export function SesizareForm() {
         </div>
 
         {draftRestoredAt && !draftDismissed && (
-          <div className="mb-4 p-3 rounded-[var(--radius-xs)] border border-emerald-500/30 bg-emerald-500/5 flex items-start gap-3">
+          <div className="p-3 rounded-[var(--radius-xs)] border border-emerald-500/30 bg-emerald-500/5 flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
+            <div className="flex items-start gap-3 w-full">
             <span className="text-lg" aria-hidden>📝</span>
             <div className="flex-1 text-xs">
               <p className="font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1601,6 +1605,7 @@ export function SesizareForm() {
               <p className="text-[var(--color-text-muted)] mt-0.5">
                 Am recuperat sesizarea la care lucrai — salvată pe {draftRestoredAt}. Verifică și trimite sau golește formularul.
               </p>
+            </div>
             </div>
             <button
               type="button"
@@ -1619,7 +1624,7 @@ export function SesizareForm() {
                 setDraftDismissed(true);
                 setDraftRestoredAt(null);
               }}
-              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 self-end sm:self-auto underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
             >
               Golește
             </button>
@@ -1649,7 +1654,9 @@ export function SesizareForm() {
               placeholder="Ex: Groapă pe trotuar la blocul H12"
               autoCapitalize="sentences"
               spellCheck
-              className={cn(inputClass, "resize-y min-h-[120px] py-3 pr-12")}
+              // h-auto anulează h-11/sm:h-10 din inputClass (gândit pt. <input>
+              // de o linie) — altfel pe mobil textarea se colapsa la ~44px.
+              className={cn(inputClass, "h-auto sm:h-auto resize-y min-h-[120px] py-3 pr-12")}
             />
             <div className="absolute top-2 right-2">
               <VoiceInput
@@ -1716,8 +1723,10 @@ export function SesizareForm() {
                 setEditedText(e.target.value);
                 formalEditedRef.current = true;
               }}
-              rows={10}
-              className={cn(inputClass, "resize-y min-h-[200px] py-3 text-[13px] leading-relaxed")}
+              rows={8}
+              // h-auto anulează height-ul fix din inputClass (vezi textarea de
+              // mai sus) — pe mobil se colapsa la o linie („Bună ziua,").
+              className={cn(inputClass, "h-auto sm:h-auto resize-y min-h-[200px] py-3 text-[13px] leading-relaxed")}
               aria-label="Textul oficial generat — editabil"
             />
             <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
@@ -1917,7 +1926,9 @@ export function SesizareForm() {
             nu mai trebuie să-l completeze manual — era redundant. */}
 
         <Field label="Unde exact se află problema?" required>
-          <div className="flex gap-2">
+          {/* Pe mobil: input adresă pe rândul lui (lățime completă pt. o adresă
+              lungă), butoanele GPS/Pe hartă pe rândul de sub, cu etichete. */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <input
                 type="text"
@@ -1944,7 +1955,7 @@ export function SesizareForm() {
               {showSugg && addrSugg.length > 0 && (
                 <ul
                   role="listbox"
-                  className="absolute z-30 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
+                  className="absolute z-40 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
                 >
                   {addrSugg.map((sg, i) => (
                     <li key={`${sg.lat}-${sg.lng}-${i}`} role="option" aria-selected={false}>
@@ -1962,35 +1973,37 @@ export function SesizareForm() {
                 </ul>
               )}
             </div>
-            <button
-              type="button"
-              onClick={getLocation}
-              disabled={geoLoading}
-              className="shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2 text-sm disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              aria-label={geoLoading ? "Se detectează locația" : "Folosește GPS-ul pentru a prinde locația actuală"}
-              title="Folosește GPS-ul pentru a prinde locația actuală"
-            >
-              {geoLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Locate size={16} aria-hidden="true" />}
-              <span className="hidden sm:inline tabular-nums">
-                {geoLoading
-                  ? gpsAccuracy != null
-                    ? `±${Math.round(gpsAccuracy)}m…`
-                    : "Detectez…"
-                  : "GPS"}
-              </span>
-            </button>
-            {/* 2026-06-13 — Alternativă la GPS pentru cei care nu dau permisiune
-                browserului: alegi locația apăsând direct pe hartă. */}
-            <button
-              type="button"
-              onClick={() => setMapPickerOpen(true)}
-              className="shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              aria-label="Alege locația pe hartă"
-              title="Alege locația apăsând pe hartă (fără permisiune GPS)"
-            >
-              <MapIcon size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">Pe hartă</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={getLocation}
+                disabled={geoLoading}
+                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                aria-label={geoLoading ? "Se detectează locația" : "Folosește GPS-ul pentru a prinde locația actuală"}
+                title="Folosește GPS-ul pentru a prinde locația actuală"
+              >
+                {geoLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Locate size={16} aria-hidden="true" />}
+                <span className="tabular-nums">
+                  {geoLoading
+                    ? gpsAccuracy != null
+                      ? `±${Math.round(gpsAccuracy)}m…`
+                      : "Detectez…"
+                    : "GPS"}
+                </span>
+              </button>
+              {/* 2026-06-13 — Alternativă la GPS pentru cei care nu dau permisiune
+                  browserului: alegi locația apăsând direct pe hartă. */}
+              <button
+                type="button"
+                onClick={() => setMapPickerOpen(true)}
+                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                aria-label="Alege locația pe hartă"
+                title="Alege locația apăsând pe hartă (fără permisiune GPS)"
+              >
+                <MapIcon size={16} aria-hidden="true" />
+                <span>Pe hartă</span>
+              </button>
+            </div>
           </div>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
             <strong>Scrie adresa</strong> și alege din sugestii (cel mai precis) · sau <strong>GPS</strong> · sau <strong>Pe hartă</strong>. GPS-ul pe desktop e aproximativ — dacă pune altă stradă, scrie tu adresa exactă.
@@ -2336,8 +2349,10 @@ export function SesizareForm() {
         )}
       </div>
 
-      {/* Preview */}
-      <div>
+      {/* Preview — DOAR pe desktop (lg+). Pe mobil coloanele se stivuiesc, iar
+          caseta editabilă „Textul oficial" din formular arată DEJA exact ce se
+          trimite → panoul read-only ar dubla textul (scroll dublu, confuz). */}
+      <div className="hidden lg:block">
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 sticky top-24">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-[family-name:var(--font-sora)] font-semibold text-lg">Previzualizare</h3>

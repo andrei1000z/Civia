@@ -122,7 +122,13 @@ export function Navbar() {
           // 2026-05-19 Liquid Civic: glass-1 layer (chrome subtle).
           // Inset specular top highlight pentru depth.
           "lc-glass-1",
-          scrolled ? "lc-glow-emerald" : "",
+          // 2026-06-14 — glass-1 e doar 55% opac → pe mobil conținutul derulat
+          // se vedea „estompat" pe sub bară. Punem un fundal semantic peste
+          // glass: ~88% în top, solid la scroll. (override local — NU atingem
+          // tokenul global --glass-1-bg, folosit de alte sticky bars.)
+          scrolled
+            ? "lc-glow-emerald bg-[var(--color-surface)]"
+            : "bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)]",
         )}
       >
         <div className="container-narrow flex items-center justify-between h-16">

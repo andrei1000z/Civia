@@ -248,10 +248,16 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Geocoded
     const street = addr.road || addr.pedestrian || addr.footway || null;
     const houseNumber = addr.house_number || null;
 
-    // Build clean short address: "Strada X nr. Y, Sector Z, București"
+    // Build clean short address: "Strada X, Sector Z, București".
+    // 2026-06-14 — NU includem house_number la REVERSE: Nominatim întoarce
+    // numărul celei mai apropiate case INDEXATE (acoperire sparse în RO), NU
+    // numărul de la coordonată. La ±20m strada e corectă, dar numărul e des
+    // greșit („Novaci 12" → nearest indexed „Novaci 11") și contrazice
+    // domiciliul → arată neserios. Numărul exact îl scrie userul (autocomplete
+    // forward în searchAddress îl păstrează deja, sau alegerea pe hartă).
     const parts: string[] = [];
     if (street) {
-      parts.push(houseNumber ? `${street} nr. ${houseNumber}` : street);
+      parts.push(street);
     }
     // Add sector for București
     if (sector) {
