@@ -2063,7 +2063,7 @@ export function SesizareForm() {
         {/* 2026-05-24 Faza 4: Sticky bottom CTA pe mobile — butonul rămâne
             mereu vizibil pe scrolling. Personas cer „să văd butonul tot
             timpul". Desktop: comportament normal flow (sm:static). */}
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4rem)] sm:static sm:bottom-auto z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-3 sm:py-0 bg-[var(--color-bg)]/95 sm:bg-transparent backdrop-blur sm:backdrop-blur-none border-t border-[var(--color-border)] sm:border-0">
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:static sm:bottom-auto z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-3 sm:py-0 bg-[var(--color-bg)]/95 sm:bg-transparent backdrop-blur sm:backdrop-blur-none border-t border-[var(--color-border)] sm:border-0">
           <button
             type="button"
             disabled={!canSubmit}

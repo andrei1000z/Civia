@@ -115,6 +115,10 @@ export function Navbar() {
           // anulează sticky). Body's pt-16 din layout creează spațiul
           // ocupat anterior de sticky în normal flow.
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          // 2026-06-13: safe-area-inset-top — pe iOS standalone (PWA) chrome-ul
+          // intra sub notch/status bar (logo „Civia" suprapus peste ceas).
+          // Glass-ul umple zona de notch, conținutul (h-16) coboară sub el.
+          "pt-[env(safe-area-inset-top)]",
           // 2026-05-19 Liquid Civic: glass-1 layer (chrome subtle).
           // Inset specular top highlight pentru depth.
           "lc-glass-1",
@@ -256,7 +260,11 @@ export function Navbar() {
       {/* Mobile menu — CSS transitions instead of framer-motion */}
       <div
         className={cn(
-          "fixed inset-0 z-[60] bg-[var(--color-surface)] lg:hidden transition-opacity duration-200",
+          // 2026-06-13: overflow-y-auto + overscroll-contain — pe iOS, body
+          // overflow:hidden NU oprește scroll-ul în spate; meniul derulează
+          // intern și `overscroll-contain` blochează scroll-chaining-ul către
+          // pagina de dedesubt. pt/pb safe-area pt. notch + home indicator.
+          "fixed inset-0 z-[60] bg-[var(--color-surface)] lg:hidden transition-opacity duration-200 overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         aria-hidden={!mobileOpen}

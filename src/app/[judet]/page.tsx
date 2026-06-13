@@ -215,7 +215,7 @@ function HeroQuickTiles({
           <Link
             key={t.label}
             href={t.href}
-            className="group bg-white/10 backdrop-blur-md border border-white/15 rounded-[var(--radius-md)] p-4 hover:bg-white/15 hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="group bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)] rounded-[var(--radius-md)] p-4 hover:shadow-[var(--shadow-2)] hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
             <div className="flex items-center gap-2 mb-1.5">
               <span
@@ -225,17 +225,17 @@ function HeroQuickTiles({
               >
                 <Icon size={13} />
               </span>
-              <p className="text-[10px] uppercase tracking-wider text-emerald-100/80 font-semibold">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
                 {t.label}
               </p>
             </div>
             <p
-              className="text-base lg:text-xl font-extrabold leading-tight tabular-nums truncate"
+              className="text-base lg:text-xl font-extrabold leading-tight tabular-nums truncate text-[var(--color-text)]"
               title={String(t.value)}
             >
               {t.value}
             </p>
-            <p className="text-[11px] text-emerald-100/70 mt-0.5 truncate">
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 truncate">
               {t.hint}
             </p>
           </Link>

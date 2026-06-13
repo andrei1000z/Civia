@@ -271,7 +271,7 @@
      (pt-16) la ~7rem ca primul element vizibil pe pagina sa nu fie
      ascuns sub bandă. */
   body:has([data-alert-banner]) {
-    padding-top: 7rem;
+    padding-top: calc(7rem + env(safe-area-inset-top, 0px));
   }
 }
 
@@ -461,10 +461,15 @@ html.dark {
   }
 }
 
-/* Safe area for notched devices */
+/* Safe area for notched devices. padding-top: navbar-ul fix (h-16 = 4rem) +
+   inset-ul de notch, ca pe iOS standalone (PWA) conținutul + chrome-ul să nu
+   intre sub status bar/notch. Pe device-uri fără notch env() = 0 → exact 4rem
+   (identic cu pt-16 de dinainte). Override-uiește utilitarul Tailwind pt-16
+   (regulă plain > @layer). */
 body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  padding-top: calc(4rem + env(safe-area-inset-top, 0px));
 }
 
 /* Smooth theme transition — applied via class to avoid flash on initial load.
