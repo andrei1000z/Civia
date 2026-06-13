@@ -68,7 +68,7 @@ export function VoteButtonClient({ propunereId, currentCount, threshold }: Props
         <button
           onClick={handleVote}
           disabled={voted || loading}
-          className={`flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-[var(--radius-button)] font-semibold text-sm transition-all ${
+          className={`flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-[var(--radius-button)] font-semibold text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
             voted
               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 cursor-default"
               : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] active:scale-[0.98]"
@@ -85,7 +85,7 @@ export function VoteButtonClient({ propunereId, currentCount, threshold }: Props
         </button>
         <button
           onClick={handleShare}
-          className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm hover:bg-[var(--color-surface)] transition-colors"
+          className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         >
           {copied ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
           {copied ? "Copiat!" : "Distribuie"}

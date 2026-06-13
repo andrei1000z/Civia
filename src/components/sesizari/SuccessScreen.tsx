@@ -142,7 +142,7 @@ export function SuccessScreen({
           onClick={() => router.push(`/sesizari/${code}`)}
           className="h-11 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
         >
-          Vezi sesizarea ta →
+          Vezi sesizarea
         </button>
         <button
           onClick={onAnother}

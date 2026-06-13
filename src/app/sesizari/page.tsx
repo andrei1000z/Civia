@@ -195,7 +195,7 @@ export default async function SesizariPage() {
           href="/propuneri-legislative"
           className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline whitespace-nowrap"
         >
-          ⚖️ Propune →
+          ⚖️ Propune o modificare
         </a>
       </div>
 

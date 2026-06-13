@@ -450,7 +450,7 @@ export function SesizariPublice() {
                   href={county ? `/${county.slug}/sesizari` : "/sesizari"}
                   className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
                 >
-                  Fă o sesizare acum →
+                  Fă o sesizare acum
                 </Link>
               </div>
             </div>

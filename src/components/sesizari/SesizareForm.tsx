@@ -1258,19 +1258,19 @@ export function SesizareForm() {
         // Server-side error fara JSON. Citim textul ca sa il logam la Sentry
         // (via tracker) si afisam un mesaj user-friendly.
         const text = await res.text().catch(() => "");
-        json = { error: text.slice(0, 200) || `Serverul a raspuns ${res.status}` };
+        json = { error: text.slice(0, 200) || `Serverul a răspuns cu eroarea ${res.status}` };
       }
       if (!res.ok) {
         trackFunnelStep("sesizare-create", "error");
         throw new Error(
           json.error ||
             (res.status >= 500
-              ? "Serverul intampina o problema temporara. Te rugam reincearca in cateva secunde."
-              : "Eroare trimitere"),
+              ? "Serverul întâmpină o problemă temporară. Te rugăm să reîncerci în câteva secunde."
+              : "Trimiterea a eșuat. Reîncearcă te rog."),
         );
       }
       if (!json.data?.code) {
-        throw new Error("Raspuns invalid de la server. Te rugam reincearca.");
+        throw new Error("Răspuns neașteptat de la server. Reîncearcă te rog.");
       }
       // Save user data for anonymous users (so next submission auto-fills)
       if (!user && typeof window !== "undefined") {
@@ -1286,7 +1286,7 @@ export function SesizareForm() {
       }
       setSubmitted({ code: json.data.code });
       // A11y: announce success cu codul pentru screen readers
-      announce(`Sesizare inregistrata cu succes. Codul tau este ${json.data.code.split("").join(" ")}`);
+      announce(`Sesizare înregistrată cu succes. Codul tău este ${json.data.code.split("").join(" ")}`);
       trackFunnelStep("sesizare-create", "submitted", { hasPhotos: imagini.length > 0 ? 1 : 0 });
       // 2026-05-28 — Auto-trigger send-via-civia IMEDIAT pentru TOATĂ
       // lumea (logați + anonimi). User request: 1-click submit, nu doi.
@@ -1299,7 +1299,7 @@ export function SesizareForm() {
         body: "{}",
       }).catch(() => { /* SuccessScreen retry-uiește */ });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Eroare trimitere";
+      const msg = e instanceof Error ? e.message : "Trimiterea a eșuat";
       setError(msg);
       // A11y: anunta eroarea asertiv (intrerupe screen reader)
       announce(`Eroare la trimitere: ${msg}`, "assertive");

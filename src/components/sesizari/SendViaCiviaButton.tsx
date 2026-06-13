@@ -128,7 +128,7 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
       }, 800);
     } catch {
       setState("error");
-      setErrorMsg("Eroare de retea. Mai incearca.");
+      setErrorMsg("Conexiune întreruptă. Mai încearcă o dată.");
       playSound("error");
     }
   };

@@ -426,14 +426,14 @@ export default async function PetitiePage({
             return (
               <div className="mt-6 p-4 sm:p-5 rounded-[var(--radius-md)] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-300 mb-2 inline-flex items-center gap-1">
-                  <Sparkles size={11} aria-hidden="true" /> Si la nivel local?
+                  <Sparkles size={11} aria-hidden="true" /> Și la nivel local?
                 </p>
                 <h3 className="font-semibold text-sm sm:text-base mb-2 text-[var(--color-text)]">
                   {mapped.pitch}
                 </h3>
                 <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
-                  Depune o sesizare concreta catre primaria ta — Civia
-                  formalizeaza textul, gaseste autoritatile si trimite. 90 secunde.
+                  Depune o sesizare concretă către primăria ta — Civia
+                  formalizează textul, găsește autoritățile și o trimite. 90 de secunde.
                 </p>
                 <Link
                   href={`/sesizari?tip=${mapped.tip}`}
