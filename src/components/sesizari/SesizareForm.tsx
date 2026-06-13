@@ -759,6 +759,7 @@ export function SesizareForm() {
     // formal_text — the vision pass will generate it fresh.
     if (data.descriere.length < 10 || !data.tip) return;
     if (aiLoading) return; // audit fix: nu porni generări AI concurente (race pe formal_text)
+    if (formalEditedRef.current) return; // userul a editat manual — nu suprascriem
     void handleAIImprove({ withPhotos: true, silent: true });
     // Intentionally omit handleAIImprove — it reads latest state via closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -780,8 +781,13 @@ export function SesizareForm() {
   // profileLoaded devine true imediat dupa fallback-ul localStorage.
   const prewarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastGenSigRef = useRef<string>("");
+  // 2026-06-13 (feedback licarazvan90): userul a cerut să poată EDITA textul
+  // oficial înainte de trimitere. Odată editat manual, NU mai auto-regenerăm
+  // (altfel AI-ul i-ar șterge modificările). Butonul „Regenerează" resetează.
+  const formalEditedRef = useRef(false);
   useEffect(() => {
     if (aiLoading) return; // deja ruleaza
+    if (formalEditedRef.current) return; // userul a editat manual textul — nu regenerăm
     if (!profileLoaded) return; // așteptăm identity de pe profile/localStorage
     if (data.descriere.length < 30) return; // not enough context
     if (!data.tip) return;
@@ -1581,6 +1587,48 @@ export function SesizareForm() {
             >{data.descriere.length}/2000 · minim 10</span>
           </p>
         </Field>
+
+        {/* 2026-06-13 (feedback licarazvan90) — textul oficial EDITABIL înainte
+            de trimitere: userul vede exact ce pleacă și poate scoate solicitări
+            nedorite / corecta ce a ratat AI-ul. Apare după ce AI-ul a generat. */}
+        {data.formal_text && !submitted && (
+          <div className="rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface-2)]/40 p-3">
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <label htmlFor="formal-text-edit" className="text-sm font-medium inline-flex items-center gap-1.5">
+                <Sparkles size={13} className="text-purple-500" aria-hidden="true" />
+                Textul oficial — citește și ajustează
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  formalEditedRef.current = false;
+                  lastGenSigRef.current = "";
+                  void handleAIImprove({ withPhotos: imagini.length > 0 });
+                }}
+                disabled={aiLoading}
+                className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                title="Generează textul din nou cu AI (pierzi modificările manuale)"
+              >
+                {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
+                Regenerează
+              </button>
+            </div>
+            <textarea
+              id="formal-text-edit"
+              value={data.formal_text}
+              onChange={(e) => {
+                update("formal_text", e.target.value);
+                formalEditedRef.current = true;
+              }}
+              rows={8}
+              className={cn(inputClass, "resize-y min-h-[180px] py-3 text-[13px] leading-relaxed")}
+              aria-label="Textul oficial generat — editabil"
+            />
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
+              <strong>Exact acest text se trimite</strong> autorității (temei OG 27/2002). Scoate ce nu vrei, corectează orice — e al tău.
+            </p>
+          </div>
+        )}
 
         <Field label="Tip problemă (opțional — completăm noi)">
           {/* 5/22/2026 — tip nu mai e required. 2026-06-06: AI detectează tipul
