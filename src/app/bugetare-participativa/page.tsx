@@ -134,7 +134,7 @@ export default function BugetareParticipativaPage() {
             reală a primăriei. Spoiler: diferența ta cea mai mare e exact locul unde merită să acționezi.
           </p>
           <a
-            href="/buget/simulator"
+            href="/bugetare-participativa/simulator"
             className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
           >
             Joacă simulatorul →

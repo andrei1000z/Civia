@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Tu împarți bugetul — simulator pe alocările reale ale primăriei",
   description:
     "Joc de 90 de secunde: împarte bugetul orașului pe categorii, apoi compară cu alocarea reală a unei primării de capitală. Cât de aproape ești de realitate?",
-  alternates: { canonical: "/buget/simulator" },
+  alternates: { canonical: "/bugetare-participativa/simulator" },
 };
 
 export const revalidate = 86400;
@@ -21,8 +21,8 @@ export default function BugetSimulatorPage() {
         icon={PiggyBank}
         gradient={HERO_GRADIENT.data}
         tagline="Întâi alegi, apoi vezi — fără să tragi cu ochiul"
-        backHref="/buget/personal"
-        backLabel="Bugetul tău personal"
+        backHref="/bugetare-participativa"
+        backLabel="Bugetare participativă"
       />
 
       <main className="mx-auto max-w-2xl">
@@ -30,11 +30,7 @@ export default function BugetSimulatorPage() {
 
         <p className="mt-8 text-xs text-[var(--color-text-muted)]">
           Metodologie: procentele „reale” sunt distribuția tipică a bugetului unei primării de
-          capitală (2024) — aceeași folosită de calculatorul{" "}
-          <a href="/buget/personal" className="font-semibold text-[var(--color-primary)] underline">
-            „unde se duc taxele tale”
-          </a>
-          . E o simplificare educațională, nu execuția bugetară exactă a unui an anume.
+          capitală (2024). E o simplificare educațională, nu execuția bugetară exactă a unui an anume.
         </p>
       </main>
     </div>

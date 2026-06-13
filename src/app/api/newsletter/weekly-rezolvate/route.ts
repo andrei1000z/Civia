@@ -154,8 +154,8 @@ export async function GET(req: Request) {
               <a href="${unsubUrl}" style="color:#a1a1a6">Dezabonează-te</a>.
             </p>
           `,
-          ctaText: "Vezi impactul săptămânii",
-          ctaUrl: `${SITE_URL}/impact`,
+          ctaText: "Vezi sesizările rezolvate",
+          ctaUrl: `${SITE_URL}/sesizari-rezolvate`,
         }),
       });
       sent += 1;

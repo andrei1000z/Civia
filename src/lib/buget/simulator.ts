@@ -73,7 +73,7 @@ export function echilibreazaLa100(user: Record<string, number>, keys: string[]):
 /** Textul de share (cârligul viral): diferența personală cea mai mare. */
 export function shareText(r: RezultatComparatie): string {
   const d = r.ceaMaiMareDiferenta;
-  if (!d || d.delta === 0) return `Am împărțit bugetul orașului ${r.similaritate}% la fel ca primăria. Tu cum l-ai împărți? civia.ro/buget/simulator`;
+  if (!d || d.delta === 0) return `Am împărțit bugetul orașului ${r.similaritate}% la fel ca primăria. Tu cum l-ai împărți? civia.ro/bugetare-participativa/simulator`;
   const verb = d.delta > 0 ? "aș da mai mult" : "aș da mai puțin";
-  return `Eu ${verb} pe ${d.label.toLowerCase()}: ${d.userPct}% vs ${d.realPct}% cât alocă primăria. Tu cum ai împărți bugetul? civia.ro/buget/simulator`;
+  return `Eu ${verb} pe ${d.label.toLowerCase()}: ${d.userPct}% vs ${d.realPct}% cât alocă primăria. Tu cum ai împărți bugetul? civia.ro/bugetare-participativa/simulator`;
 }

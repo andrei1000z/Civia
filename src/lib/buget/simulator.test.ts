@@ -48,6 +48,6 @@ describe("shareText", () => {
     const user = Object.fromEntries(cats.map((c) => [c.key, c.key === "invatamant" ? c.realPct + 20 : c.realPct]));
     const t = shareText(compara(user, cats));
     expect(t).toContain("învățământ");
-    expect(t).toContain("civia.ro/buget/simulator");
+    expect(t).toContain("civia.ro/bugetare-participativa/simulator");
   });
 });

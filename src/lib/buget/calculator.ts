@@ -80,7 +80,7 @@ export interface BugetCategory {
   amount_lei: number;
 }
 
-// 2026-06-12 — exportat pentru simulatorul „Tu împarți bugetul" (/buget/simulator).
+// 2026-06-12 — exportat pentru simulatorul „Tu împarți bugetul" (/bugetare-participativa/simulator).
 export const DEFAULT_BUGET_DISTRIBUTION: Array<{ key: string; label: string; emoji: string; share: number }> = [
   { key: "salarizare", label: "Salarizare angajați primărie", emoji: "👔", share: 0.25 },
   { key: "investitii", label: "Investiții (asfaltări, lucrări)", emoji: "🏗️", share: 0.18 },

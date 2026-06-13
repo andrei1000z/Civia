@@ -92,7 +92,7 @@ export default function ScoalaPage() {
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm">
             <li>
-              <Link href="/impact" className="text-[var(--color-primary)] hover:underline">/impact</Link>
+              <Link href="/statistici-sesizari-romania" className="text-[var(--color-primary)] hover:underline">statistici sesizări România</Link>
               {" "}— număr sesizări depuse, % rezolvate, top județe active
             </li>
             <li>
