@@ -55,6 +55,10 @@ const createSchema = z.object({
   lng: z.number().min(20.2).max(29.7).optional().nullable(),
   descriere: z.string().min(10, "Descrierea trebuie să aibă minim 10 caractere").max(2000),
   formal_text: z.string().max(5000).optional().nullable(),
+  // 2026-06-14 — true când userul a EDITAT manual textul oficial în formular.
+  // Atunci NU regenerăm din template server-side (i-am pierde editările) — îl
+  // onorăm verbatim, doar prin pipeline-ul de siguranță (objectify/anti-minim.).
+  formal_text_edited: z.boolean().optional(),
   // AI auto-generated category cand tip="altele". Admin vede grupari.
   custom_category: z.string().max(50).optional().nullable(),
   custom_category_confidence: z.number().int().min(0).max(100).optional().nullable(),
@@ -437,7 +441,11 @@ export async function POST(req: Request) {
     // template-ul determinist. Garantează text formal curat, consistent, care
     // NU mai oglindește 1:1 ce a tastat user-ul. Pipeline de siguranță aplicat.
     let identityHardenedFormalText = safeFormalText;
-    try {
+    // 2026-06-14 — dacă userul a EDITAT manual textul în formular, îl ONORĂM
+    // (safeFormalText = textul lui trecut prin pipeline-ul de siguranță) și
+    // NU regenerăm din template — altfel i-am pierde modificările (ex. a scos
+    // o solicitare nedorită). Default (needitat): regenerare canonică server-side.
+    if (!parsed.formal_text_edited) try {
       const { generateFormalText } = await import("@/lib/sesizari/formal-template");
       const regenerated = generateFormalText({
         tip: parsed.tip,

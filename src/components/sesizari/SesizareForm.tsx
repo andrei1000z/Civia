@@ -411,10 +411,14 @@ export function SesizareForm() {
       return;
     }
     const detected = detectCountyFromLocatie(text);
-    // Dacă text-ul are oraș clar identificabil, folosim asta.
-    // Dacă nu match nimic, fallback la county-context (nu rămânem
-    // pe vechea valoare detected).
-    setDetectedCounty(detected ?? county?.id ?? null);
+    // 2026-06-14 FIX: când userul a TASTAT o adresă, NU mai cădem pe
+    // county-context din COOKIE. Cookie-ul reflectă județul pe care l-a
+    // RĂSFOIT (ex: Cluj), nu unde e problema. Pe „Strada Novaci 12" (stradă
+    // bucureșteană pe care regex-ul nu o știe) cădeam pe Cluj și rutam la
+    // Primăria Cluj-Napoca — inadmisibil. Acum: oraș clar din text → îl
+    // folosim; altfel null → fallback-ul AI (detect-city) rulează sau userul
+    // alege o sugestie de adresă (care setează județul definitiv).
+    setDetectedCounty(detected);
   }, [data.locatie, county?.id, data.lat, data.lng]);
 
   // 2026-05-26 — AI city detection FALLBACK via Groq pentru adrese pe care
@@ -801,6 +805,12 @@ export function SesizareForm() {
   // oficial înainte de trimitere. Odată editat manual, NU mai auto-regenerăm
   // (altfel AI-ul i-ar șterge modificările). Butonul „Regenerează" resetează.
   const formalEditedRef = useRef(false);
+  // 2026-06-14 — textul oficial EDITAT de user (full email, exact ce se trimite).
+  // null = needitat → folosim textul auto-generat (preview). Non-null = userul a
+  // ajustat → îl trimitem VERBATIM cu flag-ul `formal_text_edited` (serverul
+  // sare regenerarea). Astfel editarea chiar are efect (înainte serverul regenera
+  // mereu din template și pierdea modificările).
+  const [editedText, setEditedText] = useState<string | null>(null);
   useEffect(() => {
     if (aiLoading) return; // deja ruleaza
     if (formalEditedRef.current) return; // userul a editat manual textul — nu regenerăm
@@ -1317,7 +1327,10 @@ export function SesizareForm() {
           lat,
           lng,
           descriere: data.descriere.trim(),
-          formal_text: formalTextForDb,
+          // Userul a editat manual textul → trimitem VERBATIM ce a scris +
+          // flag (serverul sare regenerarea din template). Altfel, textul auto.
+          formal_text: editedText != null ? editedText : formalTextForDb,
+          formal_text_edited: editedText != null,
           custom_category: customCategory,
           custom_category_confidence: customCategoryConfidence,
           imagini,
@@ -1467,6 +1480,12 @@ export function SesizareForm() {
      parkingJurisdiction, parkingObservedAt],
   );
 
+  // Textul auto-generat, curățat de markerii [[BOLD]] (apar doar la parcare).
+  const autoFormalText = previewText.replace(/\[\[\/?BOLD]]/g, "");
+  // Ce se AFIȘEAZĂ în preview + în caseta editabilă + ce se TRIMITE: editarea
+  // userului dacă a ajustat, altfel textul auto. O singură sursă de adevăr.
+  const finalFormalText = editedText ?? autoFormalText;
+
   const mailtoLink = () => {
     if (!recipients) return "#";
     let subject = `Sesizare — ${tipInfo?.label ?? "problemă"} — ${data.locatie}`;
@@ -1475,7 +1494,7 @@ export function SesizareForm() {
     }
     const to = recipients.primary.map((a) => a.email).join(",");
     const cc = recipients.cc.length > 0 ? `&cc=${recipients.cc.map((a) => a.email).join(",")}` : "";
-    const body = previewText.replace(/\[\[BOLD]]([^[]+?)\[\[\/BOLD]]/g, "$1");
+    const body = finalFormalText;
     return `mailto:${to}?subject=${encodeURIComponent(subject)}${cc}&body=${encodeURIComponent(body)}`;
   };
 
@@ -1660,44 +1679,51 @@ export function SesizareForm() {
           </p>
         </Field>
 
-        {/* 2026-06-13 (feedback licarazvan90) — textul oficial EDITABIL înainte
-            de trimitere: userul vede exact ce pleacă și poate scoate solicitări
-            nedorite / corecta ce a ratat AI-ul. Apare după ce AI-ul a generat. */}
-        {data.formal_text && !submitted && (
+        {/* 2026-06-13 (feedback licarazvan90), refăcut 2026-06-14 — textul oficial
+            EDITABIL: userul vede EXACT ce pleacă și poate scoate solicitări
+            nedorite / corecta ce a ratat AI-ul. Apare imediat ce există o
+            descriere (nu mai așteaptă AI-ul) și editarea chiar se trimite
+            (flag formal_text_edited → serverul nu mai regenerează din template). */}
+        {!submitted && data.descriere.trim().length >= 10 && (
           <div className="rounded-[var(--radius-md)] border-2 border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 p-4 shadow-[var(--shadow-1)]">
             <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
               <label htmlFor="formal-text-edit" className="text-sm font-bold inline-flex items-center gap-1.5 text-purple-800 dark:text-purple-300">
                 <Sparkles size={14} className="text-purple-500" aria-hidden="true" />
                 ✏️ Textul oficial — citește și ajustează (exact ce se trimite)
               </label>
-              <button
-                type="button"
-                onClick={() => {
-                  formalEditedRef.current = false;
-                  lastGenSigRef.current = "";
-                  void handleAIImprove({ withPhotos: imagini.length > 0 });
-                }}
-                disabled={aiLoading}
-                className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                title="Generează textul din nou cu AI (pierzi modificările manuale)"
-              >
-                {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
-                Regenerează
-              </button>
+              {editedText != null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditedText(null);
+                    formalEditedRef.current = false;
+                    lastGenSigRef.current = "";
+                    void handleAIImprove({ withPhotos: imagini.length > 0 });
+                  }}
+                  disabled={aiLoading}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  title="Aruncă modificările manuale și regenerează textul cu AI"
+                >
+                  {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
+                  Regenerează
+                </button>
+              )}
             </div>
             <textarea
               id="formal-text-edit"
-              value={data.formal_text}
+              value={finalFormalText}
               onChange={(e) => {
-                update("formal_text", e.target.value);
+                setEditedText(e.target.value);
                 formalEditedRef.current = true;
               }}
-              rows={8}
-              className={cn(inputClass, "resize-y min-h-[180px] py-3 text-[13px] leading-relaxed")}
+              rows={10}
+              className={cn(inputClass, "resize-y min-h-[200px] py-3 text-[13px] leading-relaxed")}
               aria-label="Textul oficial generat — editabil"
             />
             <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
-              <strong>Exact acest text se trimite</strong> autorității (temei OG 27/2002). Scoate ce nu vrei, corectează orice — e al tău.
+              {editedText != null
+                ? <><strong className="text-purple-700 dark:text-purple-300">✓ Text modificat de tine.</strong> Exact asta se trimite. Apasă „Regenerează" dacă vrei varianta AI înapoi.</>
+                : <><strong>Exact acest text se trimite</strong> autorității (temei OG 27/2002). Scrie direct aici ca să scoți ce nu vrei sau să corectezi orice — e al tău.</>}
             </p>
           </div>
         )}
@@ -2322,7 +2348,7 @@ export function SesizareForm() {
             )}
           </div>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 mb-4 text-sm leading-relaxed text-[var(--color-text)] max-h-[60vh] sm:max-h-[420px] overflow-y-auto shadow-inner">
-            {previewText.split(/\n\n+/).map((paragraph, i) => (
+            {finalFormalText.split(/\n\n+/).map((paragraph, i) => (
               <p key={i} className="mb-3 last:mb-0 whitespace-pre-line">
                 {paragraph}
               </p>

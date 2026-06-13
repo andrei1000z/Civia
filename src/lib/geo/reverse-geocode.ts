@@ -110,25 +110,41 @@ export interface AddressSuggestion {
 export async function searchAddress(query: string): Promise<AddressSuggestion[]> {
   const q = query.trim();
   if (q.length < 3) return [];
+  // Numărul casei din CE A TASTAT userul (număr la finalul query-ului).
+  // Nominatim adesea NU are date la nivel de număr pentru străzile din RO →
+  // întoarce centroidul străzii fără `house_number`. Păstrăm numărul scris de
+  // user („Strada Novaci 12" → „Strada Novaci 12", nu „Strada Novaci").
+  // Doar număr TRAILING — ca să nu confundăm „Strada 13 Septembrie" (13 = nume).
+  const qNum = q.match(/\b(\d{1,4}[a-z]?)\b\s*$/i)?.[1] ?? "";
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&addressdetails=1&accept-language=ro&countrycodes=ro&limit=6`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&addressdetails=1&accept-language=ro&countrycodes=ro&limit=8`;
     const res = await fetch(url, { headers: { "User-Agent": "Civia/1.0 (civia.ro)" }, next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = (await res.json()) as Array<Record<string, unknown>>;
-    return data.map((item) => {
+    const mapped = data.map((item) => {
       const addr = (item.address ?? {}) as Record<string, string>;
       const displayName = String(item.display_name ?? "");
       const lat = Number(item.lat);
       const lng = Number(item.lon);
       const { countyCode, sector } = countyFromNominatim(addr, displayName, lat, lng);
-      // Label curat: stradă + nr + sector/localitate (max 4 segmente din display_name).
+      // Label curat: stradă + nr + sector/localitate.
       const street = addr.road || addr.pedestrian || addr.footway || addr.neighbourhood || "";
-      const num = addr.house_number ? ` ${addr.house_number}` : "";
+      // nr: din Nominatim dacă există, altfel din ce-a scris userul.
+      const num = addr.house_number ? ` ${addr.house_number}` : (street && qNum ? ` ${qNum}` : "");
       const loc = countyCode === "B" ? `${sector ? `Sector ${sector.replace("S", "")}, ` : ""}București`
         : (addr.city || addr.town || addr.village || addr.municipality || addr.county || "");
       const label = [street ? `${street}${num}` : "", loc].filter(Boolean).join(", ") || displayName.split(",").slice(0, 3).join(",");
       return { label, lat, lng, countyCode, sector };
     }).filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+    // Dedupe pe label (Nominatim întoarce des același rezultat de 2× — ex.
+    // „Strada Novaci, Sector 5, București" apărea duplicat).
+    const seen = new Set<string>();
+    return mapped.filter((s) => {
+      const key = s.label.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 6);
   } catch {
     return [];
   }
