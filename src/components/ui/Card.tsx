@@ -22,7 +22,7 @@ export function Card({ children, hover, accentColor, variant = "solid", classNam
         "relative rounded-[var(--radius-md)] p-4 sm:p-5",
         variantClass,
         "transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
-        hover && variant !== "glass-strong" && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/40 active:translate-y-0 active:duration-75",
+        hover && variant !== "glass-strong" && "card-lift hover:border-[var(--color-primary)]/40",
         hover && (variant === "glass" || variant === "glass-strong") && "lc-magnetic lc-glow-hover-emerald",
         accentColor && "border-l-4",
         className

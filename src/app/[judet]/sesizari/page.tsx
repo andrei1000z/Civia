@@ -133,7 +133,7 @@ export default async function SesizariPage({
             <Link
               key={link.href}
               href={link.href}
-              className="group flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="group flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/40 card-lift transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <span
                 className="w-9 h-9 rounded-[var(--radius-xs)] grid place-items-center shrink-0"

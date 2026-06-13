@@ -5,6 +5,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { ALL_COUNTIES } from "@/data/counties";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
+import { CountUp } from "@/components/ui/CountUp";
 import { Badge } from "@/components/ui/Badge";
 import { leaderboardAuthorName } from "@/lib/sesizari/display-name";
 import { extractLocality } from "@/lib/sesizari/extract-locality";
@@ -297,7 +298,7 @@ export default async function ClasamentPage() {
           className="font-[family-name:var(--font-sora)] text-5xl sm:text-6xl font-extrabold tabular-nums"
           style={{ color: scoreTint(nationalScore).color }}
         >
-          {nationalScore}%
+          <CountUp value={nationalScore} />%
         </p>
         <p className="text-sm text-[var(--color-text-muted)] mt-2">
           {nationalResolved.toLocaleString("ro-RO")} rezolvate din{" "}
@@ -319,7 +320,7 @@ export default async function ClasamentPage() {
                 <Link
                   key={c.countyId}
                   href={`/${c.countySlug}/sesizari`}
-                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 hover:-translate-y-1 transition-all text-center group"
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/30 card-lift text-center group"
                 >
                   <div className="text-4xl mb-2" aria-hidden="true">{MEDAL_EMOJI[i]}</div>
                   <p className="font-semibold text-base group-hover:text-[var(--color-primary)] transition-colors">

@@ -459,7 +459,7 @@ export default async function StireDetailPage({
                 <li key={r.id}>
                   <Link
                     href={`/stiri/${r.id}`}
-                    className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-2)] hover:border-[var(--color-primary)]/30 hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                    className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-2)] hover:border-[var(--color-primary)]/30 card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
                   >
                     <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
                       {r.image_url ? (

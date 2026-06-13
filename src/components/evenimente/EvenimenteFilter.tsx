@@ -99,7 +99,7 @@ export function EvenimenteFilter({ evenimente }: { evenimente: Eveniment[] }) {
             <Link
               key={ev.id}
               href={`/evenimente/${ev.slug}`}
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] transition-all"
+              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden card-lift"
             >
               <div className={`relative h-48 bg-gradient-to-br ${ev.gradient} overflow-hidden`}>
                 {ev.image ? (

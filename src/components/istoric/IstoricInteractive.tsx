@@ -186,7 +186,7 @@ export function IstoricInteractive({ primari }: Props) {
             role="button"
             tabIndex={0}
             className={cn(
-              "group relative bg-[var(--color-surface)] border rounded-[var(--radius-md)] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
+              "group relative bg-[var(--color-surface)] border rounded-[var(--radius-md)] p-4 cursor-pointer transition-all card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
               compareIds.includes(primar.id)
                 ? "border-[var(--color-primary)] border-2"
                 : "border-[var(--color-border)]"

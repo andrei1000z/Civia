@@ -130,7 +130,7 @@ export default async function SesizariResolvatePage() {
                     <Link
                       key={s.id}
                       href={`/sesizari/${s.code}`}
-                      className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 hover:border-[var(--color-primary)]/30 transition-all"
+                      className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden card-lift hover:border-[var(--color-primary)]/30 transition-all"
                     >
                       <div className="grid grid-cols-2">
                         <div className="relative h-44 sm:h-48">

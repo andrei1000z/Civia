@@ -215,7 +215,7 @@ function HeroQuickTiles({
           <Link
             key={t.label}
             href={t.href}
-            className="group bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)] rounded-[var(--radius-md)] p-4 hover:shadow-[var(--shadow-2)] hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            className="group bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)] rounded-[var(--radius-md)] p-4 hover:shadow-[var(--shadow-2)] card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
             <div className="flex items-center gap-2 mb-1.5">
               <span
@@ -548,7 +548,7 @@ function AuthorityCard({
   href?: string;
 }) {
   const inner = (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 rounded-[var(--radius-md)] shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 p-5 transition-all">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 rounded-[var(--radius-md)] shadow-[var(--shadow-1)] card-lift p-5 transition-all">
       <div className="flex items-center gap-3 mb-3">
         <span
           className="w-10 h-10 rounded-[var(--radius-xs)] grid place-items-center shrink-0"
@@ -896,7 +896,7 @@ export default async function CountyHomePage({
                   key={s.path}
                   href={`/${judet}${s.path}`}
                   prefetch={s.prefetch}
-                  className="group relative overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all"
+                  className="group relative overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 hover:border-[var(--color-primary)]/30 card-lift transition-all"
                 >
                   <div
                     className="w-10 h-10 rounded-[var(--radius-xs)] flex items-center justify-center mb-3"
@@ -933,7 +933,7 @@ export default async function CountyHomePage({
                 <Link
                   key={s.path}
                   href={`/${judet}${s.path}`}
-                  className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-4 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-3)] hover:-translate-y-0.5 transition-all text-center"
+                  className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-4 hover:border-[var(--color-primary)]/30 card-lift transition-all text-center"
                 >
                   <div
                     className="w-9 h-9 rounded-[var(--radius-xs)] flex items-center justify-center mx-auto mb-2"
