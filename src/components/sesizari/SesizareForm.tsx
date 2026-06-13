@@ -388,6 +388,13 @@ export function SesizareForm() {
   // GPS coords nu mai override aici — geocode-ul cheamă explicit setDetectedCounty
   // în alt useEffect (reverse geocode). Aici doar text-based.
   useEffect(() => {
+    // 2026-06-13 FIX: când avem coords din GPS/hartă, reverse-geocode-ul e
+    // SURSA DE ADEVĂR pentru județ (setează detectedCounty în effect-ul de
+    // geocode). Detecția din TEXT nu trebuie să-l suprascrie — altfel, pe un
+    // text de coordonate (geocode în curs/eșuat), detectCountyFromLocatie dă
+    // null și cădeam pe county-context din COOKIE (ex: TM dacă userul a navigat
+    // pe Timișoara înainte), rutând o sesizare din București GREȘIT la Timișoara.
+    if (data.lat != null && data.lng != null) return;
     const text = data.locatie?.trim() ?? "";
     if (text.length < 4) {
       // Locatia goală/scurtă → fallback la county-context (county prop)
@@ -399,7 +406,7 @@ export function SesizareForm() {
     // Dacă nu match nimic, fallback la county-context (nu rămânem
     // pe vechea valoare detected).
     setDetectedCounty(detected ?? county?.id ?? null);
-  }, [data.locatie, county?.id]);
+  }, [data.locatie, county?.id, data.lat, data.lng]);
 
   // 2026-05-26 — AI city detection FALLBACK via Groq pentru adrese pe care
   // regex-ul detectCountyFromLocatie nu le poate identifica (ex: „lângă
@@ -894,12 +901,17 @@ export function SesizareForm() {
         }));
       }
 
-      // Trigger reverse geocode pe trei praguri de acuratețe
-      // — ~2000m (city level, vine primul, sub 500ms)
+      // Trigger reverse geocode pe praguri de acuratețe.
+      // 2026-06-13 FIX: primul geocode rulează la ORICE acuratețe rezonabilă
+      // (era `acc < 2000` → pe fix-uri grosiere de desktop/wifi ±3-4km NU rula
+      // niciodată, deci adresa nu se rezolva și rămânea „lat,lng (se detectează
+      // adresa…)" pe veci). Chiar și un fix de 4km dă o adresă utilă la nivel de
+      // zonă/sector; refinarea sub 100m/target o îmbunătățește când vine.
+      // — primul: nivel zonă (vine primul, sub 500ms)
       // — ~100m (stradă, dacă vine)
       // — ≤target (număr clar, dacă vine)
       // Fiecare apel îl anulează pe cel anterior ca să nu dăm înapoi.
-      if (acc < 2000 && geocodeCount === 0) doReverseGeocode(lat, lng);
+      if (acc < 20000 && geocodeCount === 0) doReverseGeocode(lat, lng);
       else if (acc < 100 && geocodeCount === 1) doReverseGeocode(lat, lng);
       else if (acc <= target && geocodeCount <= 2) doReverseGeocode(lat, lng);
 
