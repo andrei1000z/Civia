@@ -98,7 +98,7 @@ export async function StiriWidget() {
           {/* Featured article */}
           <Link
             href={`/stiri/${hero.id}`}
-            className="group relative bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:shadow-[var(--shadow-3)] hover:border-[var(--color-primary)]/40 transition-all"
+            className="group relative bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:border-[var(--color-primary)]/40 card-lift"
           >
             <div className="relative aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
               {hero.image_url ? (

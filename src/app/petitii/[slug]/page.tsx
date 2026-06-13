@@ -257,7 +257,7 @@ export default async function PetitiePage({
               href={petitie.external_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="lg:hidden w-full inline-flex items-center justify-center gap-2 h-12 px-5 mb-6 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+              className="lg:hidden w-full inline-flex items-center justify-center gap-2 h-12 px-5 mb-6 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
             >
               <Megaphone size={16} aria-hidden="true" />
               {externalHost ? `Semnează pe ${externalHost}` : "Semnează acum"}
@@ -477,7 +477,7 @@ export default async function PetitiePage({
                 href={petitie.external_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-700 hover:from-purple-700 hover:to-fuchsia-800 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
               >
                 <Megaphone size={16} aria-hidden="true" />
                 Mergi pe {externalHost}
@@ -522,7 +522,7 @@ export default async function PetitiePage({
               href={petitie.external_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 h-12 px-5 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:brightness-110 active:scale-[0.97] text-white text-sm font-bold transition-all shadow-[0_8px_24px_-4px_rgba(147,51,234,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 px-5 rounded-[var(--radius-full)] bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
             >
               <Megaphone size={18} aria-hidden="true" />
               {externalHost ? `Semnează pe ${externalHost}` : "Semnează acum"}
