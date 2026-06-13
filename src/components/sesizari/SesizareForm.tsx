@@ -19,6 +19,7 @@ import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { ALL_COUNTIES } from "@/data/counties";
 import { capitalizeName, formatAddress } from "@/lib/sesizari/format-helpers";
 import { detectSectorFromCoords } from "@/lib/geo/sector-from-coords";
+import type { AddressSuggestion } from "@/lib/geo/reverse-geocode";
 import { detectSectorFromText } from "@/lib/sesizari/sector-detect";
 import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/titlu";
 // Gender-detection helpers are no longer needed — the new email template uses
@@ -129,6 +130,14 @@ export function SesizareForm() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  // 2026-06-14 — Autocomplete adresă (forward-geocode). Pe GPS imprecis,
+  // userul scrie strada lui și alege locul EXACT din sugestii (nu o stradă
+  // apropiată ghicită). Sursa de adevăr pt. locație când GPS-ul nu poate.
+  const [addrSugg, setAddrSugg] = useState<AddressSuggestion[]>([]);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [showSugg, setShowSugg] = useState(false);
+  const addrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addrCtrlRef = useRef<AbortController | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<{ code: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -823,6 +832,46 @@ export function SesizareForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.descriere, data.tip, data.locatie, data.nume, data.adresa, data.sector, profileLoaded]);
 
+  // 2026-06-14 — Autocomplete adresă (forward-geocode). Debounce 350ms + abort
+  // cererea anterioară. Apare doar când userul TASTEAZĂ (nu când GPS-ul setează).
+  const runAddressSearch = (query: string) => {
+    if (addrTimerRef.current) clearTimeout(addrTimerRef.current);
+    if (addrCtrlRef.current) addrCtrlRef.current.abort();
+    const q = query.trim();
+    if (q.length < 4) { setAddrSugg([]); setAddrLoading(false); setShowSugg(false); return; }
+    setAddrLoading(true);
+    addrTimerRef.current = setTimeout(async () => {
+      const ctrl = new AbortController();
+      addrCtrlRef.current = ctrl;
+      try {
+        const res = await fetch(`/api/geocode/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+        const json = await res.json();
+        setAddrSugg(Array.isArray(json.data) ? json.data : []);
+        setShowSugg(true);
+      } catch { /* abort/silent */ } finally { setAddrLoading(false); }
+    }, 350);
+  };
+
+  // Userul alege o sugestie → locație + coords EXACTE + județ/sector.
+  const pickSuggestion = (sg: AddressSuggestion) => {
+    formalEditedRef.current = false; // adresă nouă → permite regenerarea textului
+    setData((d) => ({ ...d, locatie: sg.label, lat: sg.lat, lng: sg.lng, sector: sg.sector || d.sector }));
+    if (sg.countyCode) {
+      setDetectedCounty(sg.countyCode);
+      setDetectedCountyName(ALL_COUNTIES.find((c) => c.id === sg.countyCode)?.name ?? null);
+    }
+    setDetectedLocality(sg.countyCode === "B" ? "București" : null);
+    setGpsAccuracy(null);
+    setShowSugg(false);
+    setAddrSugg([]);
+  };
+
+  // Cleanup la unmount: timer + abort.
+  useEffect(() => () => {
+    if (addrTimerRef.current) clearTimeout(addrTimerRef.current);
+    if (addrCtrlRef.current) addrCtrlRef.current.abort();
+  }, []);
+
   const getLocation = () => {
     if (!navigator.geolocation) {
       setError("Geolocația nu e disponibilă în browser");
@@ -854,15 +903,26 @@ export function SesizareForm() {
         const res = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`, { signal: ctrl.signal });
         const json = await res.json();
         if (json.data && thisCall === geocodeCount) {
-          const addr = json.data.shortAddress || json.data.address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-          setData((d) => ({
-            ...d,
-            locatie: addr,
-            sector: json.data.sector || d.sector,
-          }));
-          if (json.data.countyCode) setDetectedCounty(json.data.countyCode);
-          if (json.data.countyName) setDetectedCountyName(json.data.countyName);
-          if (json.data.locality) setDetectedLocality(json.data.locality);
+          const g = json.data;
+          // 2026-06-14 — GPS imprecis (>100m): NU afișa strada+numărul ghicite
+          // din coordonate grosiere (pot fi la km distanță — „Strada Ileana
+          // Cosânzeana 2" în loc de „Novaci 12"). Afișăm doar ZONA (sector/
+          // localitate) ca punct de plecare; userul completează strada exactă
+          // (scris cu autocomplete sau pe hartă). Sub 100m → adresa completă.
+          let addr: string;
+          if (lastAccuracy > 100) {
+            const area =
+              g.countyCode === "B"
+                ? g.sector ? `Sector ${String(g.sector).replace("S", "")}, București` : "București"
+                : g.locality || g.countyName || "";
+            addr = area || g.shortAddress || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          } else {
+            addr = g.shortAddress || g.address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          }
+          setData((d) => ({ ...d, locatie: addr, sector: g.sector || d.sector }));
+          if (g.countyCode) setDetectedCounty(g.countyCode);
+          if (g.countyName) setDetectedCountyName(g.countyName);
+          if (g.locality) setDetectedLocality(g.locality);
         }
       } catch {
         setData((d) => ({ ...d, locatie: d.locatie || `${lat.toFixed(5)}, ${lng.toFixed(5)}` }));
@@ -1832,13 +1892,50 @@ export function SesizareForm() {
 
         <Field label="Unde exact se află problema?" required>
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={data.locatie}
-              onChange={(e) => update("locatie", e.target.value)}
-              placeholder="Calea Victoriei 45, în fața clădirii BCR"
-              className={cn(inputClass, "flex-1")}
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={data.locatie}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // User tastează → e sursa de adevăr: golim coords-urile vechi
+                  // din GPS (locația lor reală vine din ce scriu/aleg) și căutăm.
+                  setData((d) => ({ ...d, locatie: val, lat: null, lng: null }));
+                  runAddressSearch(val);
+                }}
+                onFocus={() => { if (addrSugg.length) setShowSugg(true); }}
+                onBlur={() => { setTimeout(() => setShowSugg(false), 150); }}
+                placeholder="Scrie adresa: ex. Strada Novaci 12, București"
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={showSugg && addrSugg.length > 0}
+                aria-autocomplete="list"
+                className={cn(inputClass, "w-full")}
+              />
+              {addrLoading && (
+                <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[var(--color-text-muted)]" aria-hidden="true" />
+              )}
+              {showSugg && addrSugg.length > 0 && (
+                <ul
+                  role="listbox"
+                  className="absolute z-30 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
+                >
+                  {addrSugg.map((sg, i) => (
+                    <li key={`${sg.lat}-${sg.lng}-${i}`} role="option" aria-selected={false}>
+                      <button
+                        type="button"
+                        // onMouseDown (nu onClick) ca să ruleze ÎNAINTE de onBlur.
+                        onMouseDown={(e) => { e.preventDefault(); pickSuggestion(sg); }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--color-surface-2)] focus:bg-[var(--color-surface-2)] focus:outline-none flex items-start gap-2"
+                      >
+                        <MapIcon size={13} className="mt-0.5 shrink-0 text-[var(--color-primary)]" aria-hidden="true" />
+                        <span className="min-w-0">{sg.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <button
               type="button"
               onClick={getLocation}
@@ -1870,7 +1967,7 @@ export function SesizareForm() {
             </button>
           </div>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-            Nu dai voie la GPS? Apasă <strong>Pe hartă</strong> și alege locul direct pe hartă.
+            <strong>Scrie adresa</strong> și alege din sugestii (cel mai precis) · sau <strong>GPS</strong> · sau <strong>Pe hartă</strong>. GPS-ul pe desktop e aproximativ — dacă pune altă stradă, scrie tu adresa exactă.
           </p>
           {/* 2026-06-08 — Helper național: cere orașul/sectorul + arată județul
               detectat din adresă, ca să nu cadă pe județul din profil (ex: adresă
