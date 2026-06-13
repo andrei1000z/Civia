@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { Coins, ExternalLink, Clock } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -97,12 +98,13 @@ export default async function CompassUEPage() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h2 className="text-base font-bold">{p.name}</h2>
                   {days !== null && days >= 0 && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 inline-flex items-center gap-1 ${days <= 7 ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" : days <= 30 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"}`}
+                    <Badge
+                      variant={days <= 7 ? "error" : days <= 30 ? "warning" : "success"}
+                      className="text-[10px] px-2 py-0.5 font-semibold shrink-0"
                     >
                       <Clock size={10} aria-hidden="true" />
                       {days === 0 ? "Ultima zi" : `${days} zile`}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 {p.ai_summary && (

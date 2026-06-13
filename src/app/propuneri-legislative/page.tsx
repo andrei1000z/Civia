@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { Scale, Plus, ChevronRight, Send } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -115,10 +116,10 @@ export default async function PropuneriLegislativePage() {
                       </span>
                     )}
                     {isSent && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 font-semibold inline-flex items-center gap-1">
+                      <Badge variant="success" className="text-[10px] px-2 py-0.5 font-semibold">
                         <Send size={8} />
                         Trimisă oficial
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <span className="text-xs text-[var(--color-text-muted)] shrink-0">

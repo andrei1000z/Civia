@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/Badge";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Scale, ExternalLink, Send, ChevronLeft } from "lucide-react";
@@ -112,10 +113,10 @@ export default async function PropunereLegislativaPage({ params }: Props) {
           </span>
         )}
         {isSent && (
-          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold inline-flex items-center gap-1">
+          <Badge variant="success" className="font-semibold">
             <Send size={10} />
             Trimisă oficial
-          </span>
+          </Badge>
         )}
       </div>
 

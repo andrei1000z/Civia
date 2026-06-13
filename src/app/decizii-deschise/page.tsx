@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { Vote, ExternalLink } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -94,9 +95,9 @@ export default async function DeciziiDeschisePage() {
                     </span>
                   )}
                   {p.vote_result && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${p.vote_result === "aprobat" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"}`}>
+                    <Badge variant={p.vote_result === "aprobat" ? "success" : "error"} className="text-[10px] px-2 py-0.5 font-semibold">
                       {p.vote_result}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <span className="text-xs text-[var(--color-text-muted)] shrink-0">
