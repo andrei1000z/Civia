@@ -60,7 +60,7 @@ export function AlertsSubscribeForm() {
           <div>
             <p className="font-semibold text-[var(--color-text)] mb-1">Email trimis!</p>
             <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-              Verifică inbox-ul tău și apasă „Confirmă abonarea". Dacă nu vezi
+              Verifică inbox-ul tău și apasă „Confirmă abonarea”. Dacă nu vezi
               emailul în 5 minute, verifică folderul Spam.
             </p>
           </div>

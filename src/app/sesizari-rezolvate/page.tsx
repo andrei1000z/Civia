@@ -12,7 +12,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 export const metadata: Metadata = {
   title: "Probleme rezolvate",
   description:
-    `Galerie "înainte / după" cu sesizări rezolvate efectiv de primării și autorități. Dovada că implicarea civică mișcă lucrurile în România.`,
+    `Galerie „înainte / după” cu sesizări rezolvate efectiv de primării și autorități. Dovada că implicarea civică mișcă lucrurile în România.`,
   alternates: { canonical: "/sesizari-rezolvate" },
 };
 

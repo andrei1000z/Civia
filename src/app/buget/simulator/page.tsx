@@ -29,10 +29,10 @@ export default function BugetSimulatorPage() {
         <BugetSimulator />
 
         <p className="mt-8 text-xs text-[var(--color-text-muted)]">
-          Metodologie: procentele „reale" sunt distribuția tipică a bugetului unei primării de
+          Metodologie: procentele „reale” sunt distribuția tipică a bugetului unei primării de
           capitală (2024) — aceeași folosită de calculatorul{" "}
           <a href="/buget/personal" className="font-semibold text-[var(--color-primary)] underline">
-            „unde se duc taxele tale"
+            „unde se duc taxele tale”
           </a>
           . E o simplificare educațională, nu execuția bugetară exactă a unui an anume.
         </p>

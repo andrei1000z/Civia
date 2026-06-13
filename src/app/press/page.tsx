@@ -141,7 +141,7 @@ export default function PressPage() {
             { fapt: "Acoperire orașe", val: "220+ municipii și orașe" },
             { fapt: "Autorități indexate", val: "1500+ primării, prefecturi, agenții" },
             { fapt: "Modele AI folosite", val: "Groq Llama 3.3-70b (text), Llama 4 Scout (vision)" },
-            { fapt: "Servere", val: "Frankfurt (Vercel + Supabase EU)" },
+            { fapt: "Găzduire date", val: "UE — Vercel + Supabase (Frankfurt); procesatori AI/email/cache în SUA, cu clauze contractuale standard (SCC)" },
             { fapt: "Licență date", val: "CC BY 4.0 (Open Data)" },
             { fapt: "Tehnologie", val: "Next.js 16 + React 19 + TypeScript + Supabase + Groq AI" },
             { fapt: "Finanțare", val: "Donații + voluntariat. Zero bani de la primării/partide/guvern" },

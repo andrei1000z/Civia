@@ -88,7 +88,7 @@ const FAQ = [
   {
     question: "Pot folosi datele într-un articol / cercetare?",
     answer:
-      `Da, gratuit, cu atribuire: „Sursa: Civia.ro, licență CC BY 4.0". Pentru extragere bulk: API public la /api/v1/stats sau /dezvoltatori.`,
+      `Da, gratuit, cu atribuire: „Sursa: Civia.ro, licență CC BY 4.0”. Pentru extragere bulk: API public la /api/v1/stats sau /dezvoltatori.`,
   },
   {
     question: "Cât de des se actualizează?",
@@ -103,7 +103,7 @@ const FAQ = [
   {
     question: "Pot vedea date pe județul meu?",
     answer:
-      `Da, în secțiunea „Top județe" + pagini per județ: /[judet]/sesizari.`,
+      `Da, în secțiunea „Top județe” + pagini per județ: /[judet]/sesizari.`,
   },
 ];
 
@@ -312,7 +312,7 @@ export default async function StatisticiPage() {
             <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-3">
               Toate datele sunt sub licență <strong>CC BY 4.0</strong> — gratuite
               pentru jurnaliști, cercetători, ONG-uri, dezvoltatori. Atribuire:{" "}
-              <em>„Sursa: Civia.ro, CC BY 4.0".</em>
+              <em>„Sursa: Civia.ro, CC BY 4.0”.</em>
             </p>
           </div>
         </div>

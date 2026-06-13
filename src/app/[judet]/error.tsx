@@ -17,7 +17,7 @@ export default function JudetError({ reset }: { error: Error; reset: () => void 
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
         {slug
-          ? `Pagina pentru „${slug}" e momentan indisponibilă. Datele se reactualizează — încearcă din nou într-un minut.`
+          ? `Pagina pentru „${slug}” e momentan indisponibilă. Datele se reactualizează — încearcă din nou într-un minut.`
           : "Pagina e momentan indisponibilă. Încearcă din nou într-un minut."}
       </p>
       <div className="flex gap-3 justify-center flex-wrap">

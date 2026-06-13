@@ -126,7 +126,7 @@ export async function CountyIntreruperiContent({ county }: { county: County }) {
         <p className="text-sm text-amber-800 dark:text-amber-300">
           Catalogul pentru {county.name} poate fi incomplet dacă nu avem
           încă un scraper pentru operatorul tău local. Folosește
-          formularul „Știi o întrerupere?" de pe pagina națională să ne
+          formularul „Știi o întrerupere?” de pe pagina națională să ne
           spui despre operatorul tău — îl adăugăm la următorul update.
         </p>
       </section>

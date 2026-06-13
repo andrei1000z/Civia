@@ -167,7 +167,7 @@ export default function PromisometruPage() {
             </li>
             <li>
               Verdictele sunt <strong>factuale</strong>: „termenul anunțat a trecut, nu există anunț de
-              finalizare" — nu speculăm intenții.
+              finalizare” — nu speculăm intenții.
             </li>
             <li>
               O promisiune <strong>în curs</strong> nu e judecată înainte de termen.

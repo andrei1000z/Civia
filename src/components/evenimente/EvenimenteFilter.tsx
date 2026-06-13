@@ -157,7 +157,7 @@ export function EvenimenteFilter({ evenimente }: { evenimente: Eveniment[] }) {
       {filtered.length === 0 && (
         <div className="text-center py-12">
           <p className="text-[var(--color-text-muted)] mb-3">
-            Niciun eveniment în categoria „{categoryLabels[category as EvenimentCategory] ?? "selectată"}".
+            Niciun eveniment în categoria „{categoryLabels[category as EvenimentCategory] ?? "selectată"}”.
           </p>
           <button
             type="button"

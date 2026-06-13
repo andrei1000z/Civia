@@ -383,7 +383,7 @@ export default async function IntreruperiPage() {
         </div>
 
         <p className="text-xs text-[var(--color-text-muted)] mt-5 leading-relaxed pt-4 border-t border-[var(--color-border)]">
-          Lipsește operatorul tău local? Spune-ne via formularul „Știi o întrerupere?"
+          Lipsește operatorul tău local? Spune-ne via formularul „Știi o întrerupere?”
           de mai sus, sau direct la <a href="#footer-feedback" className="text-[var(--color-primary)] hover:underline">feedback footer</a> — îl adăugăm la
           următorul update.
         </p>
