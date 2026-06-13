@@ -94,7 +94,7 @@ export default async function DeciziiDeschisePage() {
                     </span>
                   )}
                   {p.vote_result && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${p.vote_result === "aprobat" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${p.vote_result === "aprobat" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"}`}>
                       {p.vote_result}
                     </span>
                   )}

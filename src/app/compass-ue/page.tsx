@@ -98,7 +98,7 @@ export default async function CompassUEPage() {
                   <h2 className="text-base font-bold">{p.name}</h2>
                   {days !== null && days >= 0 && (
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 inline-flex items-center gap-1 ${days <= 7 ? "bg-red-100 text-red-700" : days <= 30 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 inline-flex items-center gap-1 ${days <= 7 ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" : days <= 30 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"}`}
                     >
                       <Clock size={10} aria-hidden="true" />
                       {days === 0 ? "Ultima zi" : `${days} zile`}

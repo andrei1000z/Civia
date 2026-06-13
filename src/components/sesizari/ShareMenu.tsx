@@ -237,16 +237,16 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="qr-modal-title"
-            className="bg-white rounded-[var(--radius-md)] p-6 max-w-sm shadow-2xl animate-modal-pop"
+            className="bg-[var(--color-surface)] rounded-[var(--radius-md)] p-6 max-w-sm shadow-[var(--shadow-4)] animate-modal-pop"
           >
-            <h3 id="qr-modal-title" className="font-semibold text-lg mb-3 text-slate-900 text-center">Scanează codul</h3>
+            <h3 id="qr-modal-title" className="font-semibold text-lg mb-3 text-[var(--color-text)] text-center">Scanează codul</h3>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qrUrl} alt={`Cod QR pentru ${shareUrl}`} className="mx-auto" width={300} height={300} />
-            <p className="text-xs text-center text-slate-600 mt-3 truncate" title={shareUrl}>{shareUrl}</p>
+            <p className="text-xs text-center text-[var(--color-text-muted)] mt-3 truncate" title={shareUrl}>{shareUrl}</p>
             <button
               type="button"
               onClick={() => setQrOpen(false)}
-              className="mt-4 w-full h-10 rounded-[var(--radius-xs)] bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              className="mt-4 w-full h-10 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
               Închide
             </button>

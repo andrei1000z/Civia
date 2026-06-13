@@ -112,7 +112,7 @@ export default async function PropunereLegislativaPage({ params }: Props) {
           </span>
         )}
         {isSent && (
-          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold inline-flex items-center gap-1">
+          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold inline-flex items-center gap-1">
             <Send size={10} />
             Trimisă oficial
           </span>
