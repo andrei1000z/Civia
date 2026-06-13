@@ -11,8 +11,9 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Map as MapIcon,
 } from "lucide-react";
-import { SESIZARE_TIPURI, SESIZARE_TIPURI_ACTIVE } from "@/lib/constants";
+import { SESIZARE_TIPURI, SESIZARE_TIPURI_ACTIVE, BUCHAREST_CENTER } from "@/lib/constants";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -59,6 +60,9 @@ const SuccessScreen = nextDynamic(
     ),
   },
 );
+// 2026-06-13 — Picker de locație pe hartă (feedback tester): alternativă la GPS
+// pentru cei care nu dau permisiune browserului. Lazy (leaflet ~heavy).
+const MapLocationPicker = nextDynamic(() => import("./MapLocationPicker"), { ssr: false });
 import { PARKING_JURISDICTION_OPTIONS, type ParkingJurisdiction } from "@/lib/sesizari/parking";
 import { VoiceInput } from "./VoiceInput";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -123,6 +127,7 @@ export function SesizareForm() {
   const [aiLoading, setAiLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<{ code: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -1790,7 +1795,22 @@ export function SesizareForm() {
                   : "GPS"}
               </span>
             </button>
+            {/* 2026-06-13 — Alternativă la GPS pentru cei care nu dau permisiune
+                browserului: alegi locația apăsând direct pe hartă. */}
+            <button
+              type="button"
+              onClick={() => setMapPickerOpen(true)}
+              className="shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              aria-label="Alege locația pe hartă"
+              title="Alege locația apăsând pe hartă (fără permisiune GPS)"
+            >
+              <MapIcon size={16} aria-hidden="true" />
+              <span className="hidden sm:inline">Pe hartă</span>
+            </button>
           </div>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
+            Nu dai voie la GPS? Apasă <strong>Pe hartă</strong> și alege locul direct pe hartă.
+          </p>
           {/* 2026-06-08 — Helper național: cere orașul/sectorul + arată județul
               detectat din adresă, ca să nu cadă pe județul din profil (ex: adresă
               din Craiova trimisă greșit la Cluj fiindcă userul n-a scris orașul). */}
@@ -1834,6 +1854,35 @@ export function SesizareForm() {
             </div>
           )}
         </Field>
+
+        {mapPickerOpen && (
+          <MapLocationPicker
+            open
+            onClose={() => setMapPickerOpen(false)}
+            initialCenter={
+              data.lat != null && data.lng != null
+                ? [data.lat, data.lng]
+                : (() => {
+                    const c = ALL_COUNTIES.find((x) => x.id === detectedCounty)?.center;
+                    return c ? [c[0], c[1]] : [BUCHAREST_CENTER[0], BUCHAREST_CENTER[1]];
+                  })()
+            }
+            initialZoom={data.lat != null ? 16 : 13}
+            onConfirm={(loc) => {
+              setData((d) => ({
+                ...d,
+                locatie: loc.locatie,
+                lat: loc.lat,
+                lng: loc.lng,
+                sector: loc.sector || d.sector,
+              }));
+              if (loc.countyCode) setDetectedCounty(loc.countyCode);
+              if (loc.countyName) setDetectedCountyName(loc.countyName);
+              if (loc.locality) setDetectedLocality(loc.locality);
+              setGpsAccuracy(null);
+            }}
+          />
+        )}
 
         {data.tip === "parcare" ? (
           <>
