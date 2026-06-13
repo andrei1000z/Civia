@@ -955,7 +955,7 @@ export default async function CountyHomePage({
       {/* ─── CTA ─── */}
       <section className="pb-14">
         <div className="container-narrow">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#065f46] to-[#0a0a0a] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-8 md:p-12 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[var(--color-primary)] via-emerald-800 to-[#0a0a0a] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-8 md:p-12 text-white">
             <div
               className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_110%,rgba(120,119,198,0.2),transparent)]"
               aria-hidden="true"

@@ -130,7 +130,7 @@ function EventCard({ ev }: { ev: Eveniment }) {
               <span>{ev.echipaje} echipaje</span>
             )}
             <span className="ml-auto flex items-center gap-1 text-[var(--color-primary)] font-medium group-hover:gap-2 transition-all">
-              Detalii <ArrowRight size={12} />
+              Vezi detalii <ArrowRight size={12} />
             </span>
           </div>
         )}

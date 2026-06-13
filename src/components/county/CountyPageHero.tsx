@@ -81,7 +81,7 @@ export function CountyPageHero({
           <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className="w-11 h-11 rounded-[var(--radius-xs)] bg-white/15 backdrop-blur-sm border border-white/25 grid place-items-center shrink-0"
+                className="w-11 h-11 rounded-[var(--radius-xs)] bg-white/15 backdrop-blur-sm border border-white/25 grid place-items-center shrink-0 animate-scale-in"
                 aria-hidden="true"
               >
                 <Icon size={20} />
@@ -91,7 +91,7 @@ export function CountyPageHero({
                   <MapPin size={10} aria-hidden="true" />
                   {countyName}
                 </p>
-                <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight break-words">
+                <h1 className="font-[family-name:var(--font-sora)] text-2xl md:text-4xl font-extrabold leading-tight break-words hero-enter-1">
                   {title}
                 </h1>
               </div>
@@ -105,19 +105,19 @@ export function CountyPageHero({
           </div>
 
           {description && (
-            <p className="text-white/85 max-w-2xl leading-relaxed text-sm md:text-base mb-3 break-words">
+            <p className="text-white/85 max-w-2xl leading-relaxed text-sm md:text-base mb-3 break-words hero-enter-2">
               {description}
             </p>
           )}
 
           {tagline && (
-            <p className="inline-flex items-start gap-1.5 text-xs text-white/75 leading-relaxed break-words">
+            <p className="inline-flex items-start gap-1.5 text-xs text-white/75 leading-relaxed break-words hero-enter-3">
               <Sparkles size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
               <span>{tagline}</span>
             </p>
           )}
 
-          {children && <div className="mt-5">{children}</div>}
+          {children && <div className="mt-5 hero-enter-3">{children}</div>}
         </div>
       </div>
     </header>
