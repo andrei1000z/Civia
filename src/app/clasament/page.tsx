@@ -355,7 +355,7 @@ export default async function ClasamentPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-2" role="list">
+          <div className="grid gap-2 stagger-children" role="list">
             {counties.slice(3).map((c, i) => {
               const t = scoreTint(c.fixScore);
               return (
@@ -453,7 +453,7 @@ export default async function ClasamentPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2" role="list">
+          <div className="grid gap-2 sm:grid-cols-2 stagger-children" role="list">
             {cities.map((c, i) => {
               const t = scoreTint(c.fixScore);
               return (
@@ -500,7 +500,7 @@ export default async function ClasamentPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-2" role="list">
+          <div className="grid gap-2 stagger-children" role="list">
             {topUsers.map((u) => (
               <div
                 key={u.name}
@@ -542,7 +542,7 @@ export default async function ClasamentPage() {
             Cei care au adus cei mai mulți cetățeni noi pe Civia. Distribuie o
             sesizare sau o petiție și apari și tu aici.
           </p>
-          <div className="grid gap-2">
+          <div className="grid gap-2 stagger-children">
             {topAmbassadors.map((u) => (
               <Link
                 key={u.slug}
