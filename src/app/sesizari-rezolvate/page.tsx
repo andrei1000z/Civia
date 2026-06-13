@@ -77,7 +77,7 @@ export default async function SesizariResolvatePage() {
         title="Probleme rezolvate — dovada că funcționează"
         icon={CheckCircle2}
         gradient={HERO_GRADIENT.success}
-        description={`Fiecare poză „înainte / după" de mai jos este o sesizare trimisă prin Civia, acționată de primărie sau de autoritate. Scris-am, au răspuns, au reparat. Așa arată implicarea civică reală.`}
+        description={`Fiecare poză „înainte / după" de mai jos este o sesizare trimisă prin Civia, acționată de primărie sau de autoritate. Am scris, au răspuns, au reparat. Așa arată implicarea civică reală.`}
         tagline={
           <>
             {withPhotos.length} {withPhotos.length === 1 ? "poveste" : "povești"} reparate cu

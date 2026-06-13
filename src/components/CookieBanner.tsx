@@ -170,7 +170,7 @@ export function CookieBanner() {
       // să-l evite). FAB-ul (butonul „+") se ascunde cât timp banner-ul e
       // deschis (vezi data-cookie-open în useEffect + regula din globals.css)
       // ca să nu se ciocnească.
-      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-40 rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]"
+      className="glass-surface-strong fixed left-2 right-2 md:left-auto md:right-6 md:max-w-md z-[var(--z-cookie)] rounded-[var(--radius-md)] md:rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-3 md:p-5 animate-fade-in-up bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]"
     >
       <div className="flex items-start gap-2 md:gap-3">
         <Cookie size={18} className="text-[var(--color-primary)] mt-0.5 shrink-0" aria-hidden="true" />

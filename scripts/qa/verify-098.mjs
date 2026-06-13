@@ -1,0 +1,13 @@
+import { config } from "dotenv";
+import { existsSync } from "fs";
+import { createClient } from "@supabase/supabase-js";
+config({ path: existsSync(".env.vercel.local") ? ".env.vercel.local" : ".env.local" });
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const { count: total } = await admin.from("profiles").select("id", { count: "exact", head: true });
+const { count: withCode } = await admin.from("profiles").select("id", { count: "exact", head: true }).not("referral_code", "is", null);
+const { count: nullCode } = await admin.from("profiles").select("id", { count: "exact", head: true }).is("referral_code", null);
+const { data: sample } = await admin.from("profiles").select("referral_code, referred_by, referred_at").not("referral_code","is",null).limit(3);
+console.log("profiles total:", total);
+console.log("cu referral_code:", withCode, "| fara:", nullCode);
+console.log("sample coduri:", sample?.map(s => s.referral_code));
+console.log("coloane referred_by/referred_at OK:", sample?.length ? ("referred_by" in sample[0] && "referred_at" in sample[0]) : "n/a");

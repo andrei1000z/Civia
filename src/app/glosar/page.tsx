@@ -48,7 +48,7 @@ const FAQ_GLOSAR = [
   {
     question: "Trebuie să mă identific cu numele real pentru sesizare?",
     answer:
-      "Da. OG 27/2002 art. 12 spune că petițiile anonime pot fi clasate fără răspuns. Numele și adresa sunt obligatorii pentru ca autoritatea să fie obligată legal să răspundă.",
+      "Da. OG 27/2002 art. 7 spune că petițiile anonime pot fi clasate fără răspuns. Numele și adresa sunt obligatorii pentru ca autoritatea să fie obligată legal să răspundă.",
   },
 ];
 

@@ -155,7 +155,7 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
         className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
       >
         {signing ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Megaphone size={16} aria-hidden="true" />}
-        Semnează petiția
+        Semnează acum
       </button>
       {!showComment && (
         <button

@@ -48,7 +48,7 @@ const SECTIUNI: FAQSection[] = [
       },
       {
         q: "Pot face sesizare anonim?",
-        a: "Sesizările anonime pot fi clasate fără răspuns (OG 27/2002 art. 12). Pe Civia poți ascunde public numele, dar în emailul oficial trebuie identificare.",
+        a: "Sesizările anonime pot fi clasate fără răspuns (OG 27/2002 art. 7). Pe Civia poți ascunde public numele, dar în emailul oficial trebuie identificare.",
       },
       {
         q: "Ce fac dacă primăria nu răspunde?",

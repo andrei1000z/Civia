@@ -87,7 +87,6 @@ export default async function CalendarPage() {
   const events = await loadEvenimente();
 
   // Group by week
-  const today = new Date().toISOString().slice(0, 10);
   const byWeek: Record<string, EvenimentRow[]> = {};
   for (const ev of events) {
     const weekStart = getWeekStart(ev.date);
@@ -106,7 +105,7 @@ export default async function CalendarPage() {
             <strong>consultări publice</strong>, <strong>proteste programate</strong>.
           </>
         }
-        tagline="Awareness → participare."
+        tagline="De la informare la participare."
       />
 
       <div className="my-6 flex flex-wrap gap-3 text-xs text-[var(--color-text-muted)]">
@@ -180,10 +179,6 @@ export default async function CalendarPage() {
           </section>
         ))
       )}
-
-      <p className="text-xs text-[var(--color-text-muted)] mt-12 text-center">
-        Today: {today}
-      </p>
     </div>
   );
 }

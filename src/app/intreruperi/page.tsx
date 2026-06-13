@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Întreruperi programate — Civia",
-    description: "Apă, caldură, gaz, curent + lucrări de stradă. Subscribe RSS sau iCal.",
+    description: "Apă, căldură, gaz, curent + lucrări de stradă. Abonează-te RSS sau iCal.",
   },
   keywords: [
     "întreruperi apă",
@@ -132,7 +132,7 @@ export default async function IntreruperiPage() {
         tagline={
           <>
             {all.length} {all.length === 1 ? "întrerupere activă" : "întreruperi active"}
-            {scrapedCount > 0 && ` · ${scrapedCount} entry scrapuite în ultimele 7 zile`}
+            {scrapedCount > 0 && ` · ${scrapedCount} anunțuri colectate în ultimele 7 zile`}
             {lastUpdateLabel && (
               <>
                 {" · ultima actualizare "}<strong>{lastUpdateLabel}</strong>
@@ -246,7 +246,7 @@ export default async function IntreruperiPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-bg)] transition-colors"
             >
-              <Rss size={14} aria-hidden="true" /> Subscribe RSS
+              <Rss size={14} aria-hidden="true" /> Abonează-te RSS
             </a>
           </div>
         </div>

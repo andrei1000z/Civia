@@ -74,7 +74,7 @@ export default async function DeciziiDeschisePage() {
         <div className="text-center py-16 text-sm text-[var(--color-text-muted)]">
           <Vote size={32} className="mx-auto mb-3 opacity-40" aria-hidden="true" />
           <p>Niciun set de propuneri încă în baza de date.</p>
-          <p className="text-xs mt-2">Scrapers încep să ruleze post-deploy mig 090.</p>
+          <p className="text-xs mt-2">Propunerile apar în curând.</p>
         </div>
       ) : (
         <ul className="space-y-4">

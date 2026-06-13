@@ -355,7 +355,7 @@ export function StiriList() {
                       )}
                       {featured.source}
                     </Badge>
-                    <Badge className="bg-black/40 text-white border border-white/20 uppercase tracking-wider text-[10px] font-bold">Featured</Badge>
+                    <Badge className="bg-black/40 text-white border border-white/20 uppercase tracking-wider text-[10px] font-bold">Recomandat</Badge>
                   </div>
                 </div>
                 <div className="p-5 md:p-8 flex flex-col min-w-0">

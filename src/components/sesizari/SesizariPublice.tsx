@@ -566,7 +566,7 @@ export function SesizariPublice() {
                           )}
                           {i === 0 && s.resolved_photo_url && (
                             <span className="absolute bottom-0 inset-x-0 bg-red-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
-                              BEFORE
+                              ÎNAINTE
                             </span>
                           )}
                         </div>
@@ -575,7 +575,7 @@ export function SesizariPublice() {
                         <div className="relative w-14 h-14 rounded-[var(--radius-xs)] overflow-hidden ring-2 ring-emerald-500 shrink-0">
                           <Image src={s.resolved_photo_url} alt="După" fill sizes="56px" className="object-cover" />
                           <span className="absolute bottom-0 inset-x-0 bg-emerald-500/90 text-white text-[8px] font-bold text-center leading-tight py-0.5">
-                            AFTER
+                            DUPĂ
                           </span>
                         </div>
                       )}

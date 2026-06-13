@@ -108,7 +108,7 @@ export default async function SesizareOrasPage({
           <>
             Trimite sesizare oficială la <strong>{primariaName}</strong> —
             gratuit, în 90 secunde. AI Civia formalizează emailul și îl trimite
-            direct. Răspuns garantat în <strong>30 de zile</strong>.
+            direct. Termen legal de răspuns: <strong>30 de zile</strong> (OG 27/2002).
           </>
         }
         tagline={`${o.judetNume} · Populație ${o.populatie.toLocaleString("ro-RO")} · Conform OG 27/2002`}

@@ -19,7 +19,7 @@ export default function UrmarestePage() {
         title="Unde a ajuns sesizarea ta?"
         icon={Search}
         gradient={HERO_GRADIENT.primary}
-        description="Introdu codul de 6 caractere primit la trimitere. Vezi statusul oficial, comentariile și dacă a fost marcată drept rezolvată."
+        description="Introdu codul de 5 cifre primit la trimitere. Vezi statusul oficial, comentariile și dacă a fost marcată drept rezolvată."
         tagline="Codul îl ai pe email și pe pagina sesizării imediat după trimitere."
       />
 

@@ -1,0 +1,14 @@
+import { chromium } from "playwright";
+const b = await chromium.launch();
+const p = await (await b.newContext({ viewport:{width:1280,height:860}, deviceScaleFactor:2 })).newPage();
+await p.goto("http://localhost:3100", { waitUntil:"domcontentloaded", timeout:60000 });
+await p.waitForTimeout(2500);
+await p.keyboard.press("Control+K");
+await p.waitForTimeout(1500);
+await p.screenshot({ path:"C:/tmp/shots/05-popular.png" });
+console.log("shot empty/popular");
+await p.keyboard.type("masini parcate", { delay:35 });
+await p.waitForTimeout(1600);
+await p.screenshot({ path:"C:/tmp/shots/06-masini.png" });
+console.log("shot masini");
+await b.close(); console.log("DONE");

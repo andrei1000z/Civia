@@ -18,7 +18,8 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const limit = Math.min(Number(searchParams.get("limit") ?? 10), 50);
+  const rawLimit = Number(searchParams.get("limit"));
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(1, rawLimit), 50) : 10;
   try {
     const supabase = await createSupabaseServer();
     const { data, error } = await supabase

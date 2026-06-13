@@ -33,7 +33,7 @@ const FAQ = [
   {
     question: "Trebuie să mă identific cu numele real?",
     answer:
-      "DA, pentru ca primăria să fie OBLIGATĂ să răspundă (OG 27/2002 art. 12). Sesizările anonime pot fi clasificate fără răspuns. Pe Civia poți alege să-ți ascunzi numele de pe pagina publică, dar în emailul oficial către primărie numele apare obligatoriu.",
+      "DA, pentru ca primăria să fie OBLIGATĂ să răspundă (OG 27/2002 art. 7). Sesizările anonime pot fi clasificate fără răspuns. Pe Civia poți alege să-ți ascunzi numele de pe pagina publică, dar în emailul oficial către primărie numele apare obligatoriu.",
   },
   {
     question: "Cât durează până primesc răspuns?",

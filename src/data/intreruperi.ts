@@ -642,7 +642,7 @@ export { getActiveInterruptions, getAllInterruptions, getInterruptionsForCounty,
 
 export const TYPE_LABELS: Record<InterruptionType, string> = {
   apa: "Apă",
-  caldura: "Caldură",
+  caldura: "Căldură",
   gaz: "Gaz",
   electricitate: "Electricitate",
   "lucrari-strazi": "Lucrări la stradă",

@@ -20,7 +20,7 @@ export default function BugetSimulatorPage() {
         description="Ai în față bugetul orașului. Împarte-l pe categorii cum crezi tu — apoi vezi cum îl împarte primăria în realitate. 90 de secunde."
         icon={PiggyBank}
         gradient={HERO_GRADIENT.data}
-        tagline="Commit, apoi reveal — fără să tragi cu ochiul"
+        tagline="Întâi alegi, apoi vezi — fără să tragi cu ochiul"
         backHref="/buget/personal"
         backLabel="Bugetul tău personal"
       />

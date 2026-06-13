@@ -58,7 +58,7 @@ type SortMode = "timp" | "distanta";
 const TYPE_TABS: Array<{ value: TypeFilter; label: string }> = [
   { value: "toate", label: "Toate" },
   { value: "apa", label: "Apă" },
-  { value: "caldura", label: "Caldură" },
+  { value: "caldura", label: "Căldură" },
   { value: "gaz", label: "Gaz" },
   { value: "electricitate", label: "Curent" },
   { value: "lucrari-strazi", label: "Stradă" },

@@ -26,7 +26,7 @@ const HOMEPAGE_FAQ = [
   {
     question: "Cum trimit o sesizare la primărie prin Civia?",
     answer:
-      "Intri pe civia.ro/sesizari, descrii problema în 1-2 fraze, optional adaugi 1-5 poze, alegi tipul (groapă, parcare, gunoi, etc.). AI-ul Civia generează automat o sesizare formală cu temei legal OG 27/2002 și detectează autoritatea competentă (primărie, prefectură, poliție locală). Tu apeși Trimite și se deschide aplicația ta de email cu totul completat. Primești un cod unic pentru urmărirea răspunsului.",
+      "Intri pe civia.ro/sesizari, descrii problema în 1-2 fraze, opțional adaugi 1-5 poze, alegi tipul (groapă, parcare, gunoi, etc.). AI-ul Civia generează automat o sesizare formală cu temei legal OG 27/2002 și detectează autoritatea competentă (primărie, prefectură, poliție locală). Tu apeși Trimite și se deschide aplicația ta de email cu totul completat. Primești un cod unic pentru urmărirea răspunsului.",
   },
   {
     question: "Care e temeiul legal pentru sesizările civice?",

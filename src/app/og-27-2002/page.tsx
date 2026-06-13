@@ -46,7 +46,7 @@ const FAQ = [
   {
     question: "Pot trimite anonim?",
     answer:
-      "OG 27/2002 art. 12 permite primăriei să clasifice fără răspuns petițiile anonime sau cele fără identificare clară. Pentru a primi răspuns OBLIGATORIU, trebuie să incluzi numele și adresa.",
+      "OG 27/2002 art. 7 permite primăriei să clasifice fără răspuns petițiile anonime sau cele fără identificare clară. Pentru a primi răspuns OBLIGATORIU, trebuie să incluzi numele și adresa.",
   },
   {
     question: "Ce fac dacă primăria nu răspunde în 30 zile?",

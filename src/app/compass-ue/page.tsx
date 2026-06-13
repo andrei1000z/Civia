@@ -75,21 +75,15 @@ export default async function CompassUEPage() {
         tagline="Banii UE pe care îi pierdem doar pentru că nu știm."
       />
 
-      <div className="my-6 flex items-center justify-between gap-3 text-sm">
+      <div className="my-6 text-sm">
         <p className="text-[var(--color-text-muted)]">{items.length} programe deschise</p>
-        <Link
-          href="/compass-ue/profil"
-          className="text-[var(--color-primary)] font-medium hover:underline"
-        >
-          Setează preferințe →
-        </Link>
       </div>
 
       {items.length === 0 ? (
         <div className="text-center py-16 text-sm text-[var(--color-text-muted)]">
           <Coins size={32} className="mx-auto mb-3 opacity-40" aria-hidden="true" />
           <p>Niciun program în baza de date.</p>
-          <p className="text-xs mt-2">Scrapers încep să ruleze post-deploy mig 090.</p>
+          <p className="text-xs mt-2">Programele apar în curând.</p>
         </div>
       ) : (
         <ul className="space-y-4">

@@ -135,7 +135,7 @@ export default async function SesizareStradaPage({
             {strada.sector ? `, Sector ${strada.sector.replace("S", "")}, București` : ""}.
           </>
         }
-        tagline={`${strada.descriere} · Conform OG 27/2002 · Răspuns garantat 30 zile`}
+        tagline={`${strada.descriere} · Conform OG 27/2002 · Termen legal de răspuns 30 de zile (OG 27/2002)`}
       />
 
       {/* Stats + CTA */}

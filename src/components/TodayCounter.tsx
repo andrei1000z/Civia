@@ -27,8 +27,9 @@ export function TodayCounter() {
     const load = async () => {
       try {
         const r = await fetch("/api/stats/today");
+        if (!r.ok) return;
         const data = (await r.json()) as Stats;
-        if (mounted) setStats(data);
+        if (mounted && data && typeof data === "object") setStats(data);
       } catch {
         /* silent */
       }

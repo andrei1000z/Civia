@@ -157,7 +157,7 @@ export default async function ImpactPage() {
         gradient={HERO_GRADIENT.data}
         description={
           <>
-            Toate datele publice. Actualizat la fiecare 2 minute.{" "}
+            Toate datele publice. Actualizat la fiecare 30 de minute.{" "}
             <strong>Transparență totală — și unde nu funcționează, și unde merge.</strong>
           </>
         }

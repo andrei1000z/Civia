@@ -70,7 +70,7 @@ export default function AutoritatiPage() {
           <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-4">Cum primești cont</h2>
           <ol className="space-y-3 text-sm">
             <Step n={1} title="Cerere cont">
-              Trimiteți o cerere pe pagina <Link href="/autoritati/inregistrare" className="text-[var(--color-primary)] underline hover:no-underline">/autoritati/inregistrare</Link> de pe emailul oficial (@primaria*.ro, @prefectura*.ro, etc.).
+              Trimiteți o cerere pe pagina <a href="mailto:contact@civia.ro?subject=Cerere%20cont%20oficial%20autoritate" className="text-[var(--color-primary)] underline hover:no-underline">contact@civia.ro</a> de pe emailul oficial (@primaria*.ro, @prefectura*.ro, etc.).
             </Step>
             <Step n={2} title="Verificare manuală Civia">
               Echipa Civia verifică emailul + autoritatea în maximum 48h.
@@ -96,7 +96,7 @@ export default function AutoritatiPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/autoritati/inregistrare"
+              href="mailto:contact@civia.ro?subject=Cerere%20cont%20oficial%20autoritate"
               className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
               Solicită cont oficial

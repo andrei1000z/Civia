@@ -135,7 +135,7 @@ Severitate: P0 = blocker/încalcă grav convenția sau e greșit gramatical vizi
 
 ### src/app/petitii/page.tsx
 
-- [P2] · petitii/page.tsx:288 · Card categorie afișează `cat.value` (slug-ul brut, ex „mediu"/„educatie") în loc de `cat.label`. · FIX: `{cat.label}` (verifică shape PETITIE_CATEGORII — dacă `.label` există e clar un bug de afișare).
+- [P3] · petitii/page.tsx:288 · Card categorie afișează `cat.value` (forma scurtă, ex „Mediu", „Transport") în loc de `cat.label` (forma descriptivă „Mediu și natură"). NU e bug (value e lizibil), dar pe badge-ul scurt poate fi intenționat. Notabil: dacă se dorește forma completă, folosește `{cat.label}`. Verificat: PETITIE_CATEGORII are `{value, label, icon}` (constants.ts:61).
 - [P3] · petitii/page.tsx:226 · EmptyState CTA „Fă o sesizare" + ArrowRight — conform convenție. OK.
 - [P3] · petitii/page.tsx:331 · Card link „Vezi detalii" + ArrowRight — conform convenție. OK.
 - [P3] · petitii/page.tsx:43 · Metadata: „Click → vezi argumentele…" — „Click" anglicism. · FIX: „Apasă → vezi argumentele, semnezi pe site-ul oficial." (și L89 la fel).
@@ -164,7 +164,7 @@ Severitate: P0 = blocker/încalcă grav convenția sau e greșit gramatical vizi
 
 - [P1] · petitii/[slug]/page.tsx:435-436 · Card „și la nivel local": „Depune o sesizare **concreta catre** primaria ta — Civia **formalizeaza** textul, **gaseste autoritatile si** trimite. 90 **secunde**." — **lipsesc diacriticele complet** pe toată propoziția. · FIX: „Depune o sesizare concretă către primăria ta — Civia formalizează textul, găsește autoritățile și o trimite. 90 de secunde."
 - [P1] · petitii/[slug]/page.tsx:429 · „Si la nivel local?" — lipsă diacritică „Și". · FIX: „Și la nivel local?".
-- [P2] · petitii/[slug]/page.tsx:178 · Badge categorie afișează `cat.value` (slug brut) în loc de `cat.label`. Același bug ca în listing (L288). · FIX: `{cat.label}`.
+- [P3] · petitii/[slug]/page.tsx:178 · Badge categorie afișează `cat.value` (forma scurtă) — la fel ca în listing. Consecvent intern; opțional `{cat.label}` pt. forma descriptivă. Nu e bug.
 - [P2] · petitii/[slug]/page.tsx:387 · „Civia agregă petițiile civice. **Click** → semnezi pe site-ul oficial…" — anglicism „Click". · FIX: „…Apasă → semnezi pe site-ul oficial unde petiția a fost lansată. O secundă, niciun spam, nu stocăm date despre semnătura ta."
 - [P3] · petitii/[slug]/page.tsx:263,384,528 · „Semnează acum" (când nu există externalHost) — conform convenției buton acțiune. OK.
 - [P3] · petitii/[slug]/page.tsx:397 · Buton „Semnează" (când fără host) / „Mergi pe {host}" — ușor inconsecvent cu „Semnează acum" de mai sus. · FIX (opțional): unifică la „Semnează acum".
@@ -320,8 +320,40 @@ Multe componente afișează literalmente „Eroare" / „Eroare {status}" ca fal
 - [P3] · sesizare/page.tsx:98 · „Fă o sesizare acum" — conform. OK.
 - [P3] · sesizare/[oras]/page.tsx:67 · FAQ: „Vezi /statistici-sesizari-romania pentru date **live**." — anglicism „live". · FIX: „…pentru date actualizate."
 
+### src/components/sesizari/* (restul)
+
+- [P2] · BeforeAfter.tsx:119 · „Poza **«după»** nu a fost încărcată încă" — folosește **guillemete «»** în loc de ghilimelele românești „". Inconsecvent cu restul aplicației. · FIX: „Poza „după" nu a fost încărcată încă".
+- [P1] · StatusTicketButton.tsx:142 · title (tooltip, user-facing): „Ai **vazut** progres **in** teren sau ai primit **raspuns**? **Raporteaza** si admin-ul **verifica**." — **fără diacritice complet**. · FIX: „Ai văzut progres în teren sau ai primit răspuns? Raportează și un moderator verifică."
+- [P2] · StatusTicketButton.tsx:266 · „**Foto „after”** cu zona rezolvată — primăria n-o mai poate contesta." — „Foto" + „after" (englezesc) în ghilimele RO. · FIX: „Poză „după" cu zona rezolvată — primăria n-o mai poate contesta."
+- [P2] · StatusTicketButton.tsx:115,127 · „Eroare la trimitere" / „Eroare" — telegrafic. · FIX: „Nu am putut trimite propunerea. Reîncearcă te rog."
+- [P3] · StatusTicketButton.tsx:117 · „Propunere trimisă spre aprobare. Te anunțăm când **admin-ul** decide." — „admin-ul" jargon. · FIX: „…Te anunțăm când un moderator decide."
+- [P2] · MarkResolvedButton.tsx:74,82 · „Eroare" (×2) — telegrafic (deja notat în pattern). · FIX: „Nu am putut marca rezolvarea. Reîncearcă te rog."
+- [P3] · MarkResolvedButton.tsx:78 · „Sesizare marcată ca rezolvată! 🎉" — bun, uman. OK.
+- [P2] · QuickCameraCTA.tsx:29 · „**AI Powered** · 30 secunde" — anglicism „AI Powered". · FIX: „Cu ajutorul AI · 30 de secunde".
+- [P3] · QuickCameraCTA.tsx:33-36 · „Vezi o problemă pe stradă? / Fă o poză → AI completează tipul + autoritatea → tu doar apeși Trimite." — bun, dinamic. OK.
+- [P3] · EmailChoicePanel.tsx:164 · „Copiat în **clipboard**" / „Copiază emailul" — anglicism „clipboard". · FIX: „Copiat" / „Copiază emailul" (scoate „în clipboard").
+- [P3] · EmailChoicePanel.tsx:172 · „Apasă Deschide în aplicația de Email…" — bun, clar. OK.
+
 ---
 
 ## Top 10
 
-(la final)
+1. **[P1] „Răspuns garantat" — claim fals** · `sesizare/[oras]/page.tsx:111` + `sesizari/strada/[slug]/page.tsx:138` · „Răspuns garantat în 30 de zile" promite ceva ce platforma însăși contrazice (statusul „fără răspuns"). · FIX: „Termen legal de răspuns: 30 de zile (OG 27/2002)".
+2. **[P1] „Scris-am, au răspuns, au reparat."** · `sesizari-rezolvate/page.tsx:80` · greșeală gramaticală vizibilă pe pagina-vitrină. · FIX: „Am scris, au răspuns, au reparat."
+3. **[P1] Propoziție fără diacritice pe pagina petiției** · `petitii/[slug]/page.tsx:435-436` + `:429` · „Depune o sesizare concreta catre primaria ta — Civia formalizeaza textul, gaseste autoritatile si trimite." + „Si la nivel local?". · FIX: text complet cu diacritice (vezi constatarea).
+4. **[P1] Hero `/urmareste` spune greșit „cod de 6 caractere"** · `urmareste/page.tsx:22` · codurile sunt de 5 cifre („00007"). Derutează userul care urmărește sesizarea. · FIX: „codul de 5 cifre".
+5. **[P1] Ghilimele MIXTE „…" cu ASCII** · `InitiatePetitieForm.tsx:186` (`(„Vrem ca...", „Cerem...", „Stop...")`) + `sesizari-rezolvate/page.tsx:15` (metadata `"înainte / după"`) · încalcă regula „NU ASCII după „" din AGENTS.md. · FIX: pereche „ … " + elipsă `…`.
+6. **[P1] Badge-uri în engleză pe UI RO** · `SesizariPublice.tsx:569,578` „BEFORE"/„AFTER" + `StiriList.tsx:358` „Featured". · FIX: „ÎNAINTE"/„DUPĂ"; „Recomandat".
+7. **[P1] Tooltip-uri/mesaje fără diacritice** · `StatusTicketButton.tsx:142` („Ai vazut progres in teren…Raporteaza si admin-ul verifica") + `SendViaCiviaButton.tsx:131` („Eroare de retea. Mai incearca."). · FIX: text cu diacritice complete.
+8. **[P1] „Vezi sesizarea ta →" cu bare arrow** · `SuccessScreen.tsx:145` (+ alte CTA cu „ →": `SesizariPublice.tsx:453`, `strada/[slug]:210`, `sesizari/page.tsx:198`) · încalcă convenția „nu Detalii →". · FIX: „Vezi sesizarea" (fără săgeată).
+9. **[P1] Buton acțiune petiție „Semnează petiția" în loc de „Semnează acum"** · `SignPetitieButton.tsx:158` · convenția cere „Semnează acum" pe butonul de acțiune (hero = „Semnează petiția"). · FIX: „Semnează acum".
+10. **[P2 sistemic] Mesaje de eroare telegrafice „Eroare" + ASCII `...` peste tot** · ~20+ locuri în `components/sesizari/*` și formulare (CommentsSection, DeleteSesizareButton, MarkResolvedButton, PhotoUploader, ParkingProofUploader, EscalateAvpButton, FooterFeedback, StiriList etc.) · „Eroare" gol e robotic; `...` ≠ `…`. · FIX: helper comun uman („Ceva n-a mers. Reîncearcă te rog.") + elipsă tipografică `…`.
+
+### Teme transversale (pattern-uri)
+
+- **Anglicisme user-facing** de scos: „Featured", „BEFORE/AFTER", „Live", „refresh", „Click", „target", „cover/header/Preview", „share-uită/paste-uiește/story/DM", „hate speech", „feedback", „bug", „clipboard", „AI Powered", „1-click", „QR code", „Login/magic link", „scrape". (zeci de instanțe — listate per fișier mai sus)
+- **ASCII `...` în loc de `…`** — prezent în ~15 fișiere (toate butoanele „Se trimite...", „Se încarcă...", placeholder-e). Recomand un sweep global: `...` user-facing → `…`.
+- **„Eroare" gol** ca fallback — pattern în ~15 componente. Un singur helper `humanError()` ar rezolva tot.
+- **CTA „… →" cu bare arrow** — încalcă convenția în ~6 locuri (homepage, feed, succes, pagini SEO).
+- **Diacritice lipsă** în câteva propoziții întregi (petiții chaining, tooltips) — P1, vizibile.
+- **Convenții CTA respectate corect** în majoritatea locurilor cheie: „Distribuie"/„Copiază link", „Vezi detalii" pe carduri petiții, „Trimite sesizarea…", PageHero canonic — bună disciplină generală.

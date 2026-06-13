@@ -264,7 +264,7 @@ export function Navbar() {
           // overflow:hidden NU oprește scroll-ul în spate; meniul derulează
           // intern și `overscroll-contain` blochează scroll-chaining-ul către
           // pagina de dedesubt. pt/pb safe-area pt. notch + home indicator.
-          "fixed inset-0 z-[60] bg-[var(--color-surface)] lg:hidden transition-opacity duration-200 overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
+          "fixed inset-0 z-[var(--z-mobile-menu)] bg-[var(--color-surface)] lg:hidden transition-opacity duration-200 overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         aria-hidden={!mobileOpen}
