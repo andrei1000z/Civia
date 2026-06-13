@@ -72,7 +72,7 @@ export function PageHero({
         </Link>
       )}
       <header
-        className={`relative mb-4 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br ${gradient} px-4 py-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
+        className={`relative mb-4 md:mb-8 overflow-hidden rounded-[var(--radius-xl)] bg-gradient-to-br ${gradient} px-4 py-3.5 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]`}
       >
         <div
           className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"

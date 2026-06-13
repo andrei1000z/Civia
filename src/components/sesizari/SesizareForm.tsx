@@ -25,7 +25,6 @@ import { deriveTitluFromDescriere, isPlaceholderTitlu } from "@/lib/sesizari/tit
 // Gender-detection helpers are no longer needed — the new email template uses
 // the neutral "Mă numesc X, locuiesc în Y" opening instead of Subsemnatul(a).
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/Badge";
 import nextDynamic from "next/dynamic";
 import { PhotoUploader } from "./PhotoUploader";
 // FormField primitive extras la sprint 10 — local Field e acum alias.
@@ -158,6 +157,14 @@ export function SesizareForm() {
       errorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [error]);
+  // 2026-06-14 — erori la nivel de CÂMP (sub fiecare câmp), setate doar când
+  // userul apasă „Trimite". Butonul nu mai e disabled pe câmpuri goale: la
+  // click, validăm și ducem userul (scroll + focus) la primul câmp incomplet.
+  const [fieldErrors, setFieldErrors] = useState<{
+    descriere?: string; locatie?: string; nume?: string; adresa?: string;
+  }>({});
+  const clearFieldError = (k: "descriere" | "locatie" | "nume" | "adresa") =>
+    setFieldErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
 
   // National geocoding state — pre-fill from county context if available
   const [detectedCounty, setDetectedCounty] = useState<string | null>(county?.id ?? null);
@@ -167,7 +174,9 @@ export function SesizareForm() {
   // n-a setat încă valoarea. Critical pentru flow /sesizari (national) unde
   // userul scrie „Cluj-Napoca" în locatie dar nu a făcut click pe GPS.
   // Fără asta, routing-ul cade pe București default → email gresit.
-  const [detectedLocality, setDetectedLocality] = useState<string | null>(null);
+  // valoarea nu mai e afișată (am scos blocul „detectat automat"); setter-ul
+  // rămâne folosit de geocode/pick ca să nu rescriem fluxul.
+  const [, setDetectedLocality] = useState<string | null>(null);
 
   // Parcare-specific state. Only used (and only rendered) when
   // data.tip === "parcare". Living in the main form so the AI-classifier
@@ -811,6 +820,9 @@ export function SesizareForm() {
   // sare regenerarea). Astfel editarea chiar are efect (înainte serverul regenera
   // mereu din template și pierdea modificările).
   const [editedText, setEditedText] = useState<string | null>(null);
+  // Previzualizarea de dinainte de „Trimite" e read-only by default; butonul
+  // „Modifică textul" o deschide într-un textarea editabil (editOpen).
+  const [editOpen, setEditOpen] = useState(false);
   useEffect(() => {
     if (aiLoading) return; // deja ruleaza
     if (formalEditedRef.current) return; // userul a editat manual textul — nu regenerăm
@@ -1146,26 +1158,39 @@ export function SesizareForm() {
     if (!data.tip && data.descriere.length >= 10) {
       setData((d) => ({ ...d, tip: "altele" }));
     }
-    if (!canSubmit) {
-      // 2026-05-25 #7 — track validation drop-off step
+    // 2026-06-14 — validare pe submit cu erori la nivel de CÂMP (scroll + focus
+    // la primul câmp invalid). Câmpurile speciale (sector/email/parcare) rămân
+    // în banner-ul general de eroare. Butonul nu mai e disabled pe câmpuri goale.
+    if (submitting) return;
+    const fe: typeof fieldErrors = {};
+    if (data.descriere.trim().length < 10) fe.descriere = "Scrie problema — minim 10 caractere.";
+    if (data.locatie.trim().length < 3) fe.locatie = "Adaugă unde se află problema (adresă sau oraș).";
+    if (data.nume.trim().length < 2) fe.nume = "Scrie numele tău complet.";
+    if (data.adresa.trim().length < 3) fe.adresa = "Adaugă adresa ta de domiciliu.";
+    const bannerMissing: string[] = [];
+    if (sectorRequired && !sectorValid) bannerMissing.push("Sectorul (S1–S6) pentru București");
+    if (!emailLooksValid) bannerMissing.push("Email de contact valid");
+    if (data.tip === "parcare") {
+      if (!parkingSlots.plate) bannerMissing.push("Poza numărului de înmatriculare");
+      if (!parkingSlots.vehicle) bannerMissing.push("Poza mașinii fără șofer");
+      if (parkingPlateText.trim().length < 5) bannerMissing.push("Numărul de înmatriculare");
+      if (!parkingJurisdiction) bannerMissing.push("Ce blochează vehiculul");
+    }
+    if (Object.keys(fe).length > 0 || bannerMissing.length > 0) {
       trackFunnelStep("sesizare-create", "validation-failed");
-      const missing: string[] = [];
-      if (data.nume.length < 2) missing.push("Numele tău");
-      if (data.adresa.trim().length < 3) missing.push("Adresa ta de domiciliu");
-      // Tip eliminat din list — fallback la "altele" deja făcut sus.
-      if (data.descriere.length < 10) missing.push("Descrierea problemei (min 10 caractere)");
-      if (data.locatie.length < 3) missing.push("Locația problemei");
-      if (sectorRequired && !sectorValid) missing.push("Sectorul (S1-S6) — obligatoriu pentru București");
-      if (!emailLooksValid) missing.push("Email de contact (format corect, ex: nume@exemplu.ro)");
-      if (data.tip === "parcare") {
-        if (!parkingSlots.plate) missing.push("Poza numărului de înmatriculare");
-        if (!parkingSlots.vehicle) missing.push("Poza mașinii fără șofer");
-        if (parkingPlateText.trim().length < 5) missing.push("Numărul de înmatriculare");
-        if (!parkingJurisdiction) missing.push("Ce blochează vehiculul");
+      setFieldErrors(fe);
+      setError(bannerMissing.length > 0 ? `Completează: ${bannerMissing.join(", ")}` : null);
+      const firstId = fe.descriere ? "descriere-input" : fe.locatie ? "locatie-input" : fe.nume ? "nume-input" : fe.adresa ? "adresa-input" : null;
+      if (firstId && typeof document !== "undefined") {
+        const el = document.getElementById(firstId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(() => (el as HTMLElement | null)?.focus?.(), 300);
+      } else if (bannerMissing.length > 0 && errorRef.current) {
+        errorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      setError(missing.length > 0 ? `Completează: ${missing.join(", ")}` : "Completează toate câmpurile obligatorii");
       return;
     }
+    setFieldErrors({});
     setSubmitting(true);
     setError(null);
 
@@ -1573,13 +1598,12 @@ export function SesizareForm() {
     );
   }
 
+  // 2026-06-14 — o singură coloană centrată (stil iOS/One UI). Previzualizarea
+  // s-a mutat inline, chiar înainte de „Trimite" → nu mai e nevoie de panoul
+  // lateral. Butonul nu mai e sticky.
   return (
-    <div className="grid lg:grid-cols-[1fr_1.1fr] gap-8">
-      {/* Form */}
-      {/* pb pe mobil = înălțimea barei sticky „Trimite" (h-12 + py-3 + offset +
-          safe-area) ca să NU acopere ultimele câmpuri / banner. sm:pb-0 — de la
-          sm bara e static (flow normal), nu mai trebuie clearance. */}
-      <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] sm:pb-0">
+    <div className="max-w-2xl mx-auto">
+      <div className="space-y-5">
         {/* Honeypot — hidden from humans, bots fill it.
             name="website" tricks autofill into ignoring it (no real "website" field).
             autocomplete="new-password" prevents mobile autofill. */}
@@ -1595,18 +1619,11 @@ export function SesizareForm() {
         </div>
 
         {draftRestoredAt && !draftDismissed && (
-          <div className="p-3 rounded-[var(--radius-xs)] border border-emerald-500/30 bg-emerald-500/5 flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
-            <div className="flex items-start gap-3 w-full">
-            <span className="text-lg" aria-hidden>📝</span>
-            <div className="flex-1 text-xs">
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400">
-                Ciornă restaurată
-              </p>
-              <p className="text-[var(--color-text-muted)] mt-0.5">
-                Am recuperat sesizarea la care lucrai — salvată pe {draftRestoredAt}. Verifică și trimite sau golește formularul.
-              </p>
-            </div>
-            </div>
+          <div className="px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center gap-2.5 text-xs">
+            <span aria-hidden>📝</span>
+            <p className="flex-1 min-w-0 text-[var(--color-text-muted)] truncate">
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">Ciornă restaurată</span> — salvată {draftRestoredAt}.
+            </p>
             <button
               type="button"
               onClick={() => {
@@ -1624,7 +1641,7 @@ export function SesizareForm() {
                 setDraftDismissed(true);
                 setDraftRestoredAt(null);
               }}
-              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 self-end sm:self-auto underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
             >
               Golește
             </button>
@@ -1645,11 +1662,12 @@ export function SesizareForm() {
             the friendly "describe the problem" field is the first
             thing the user sees; personal info is collected at the end
             once they're committed. */}
-        <Field label="Descrie problema" required>
+        <Field label="Descrie problema" error={fieldErrors.descriere}>
           <div className="relative">
             <textarea
+              id="descriere-input"
               value={data.descriere}
-              onChange={(e) => update("descriere", e.target.value.slice(0, 2000))}
+              onChange={(e) => { update("descriere", e.target.value.slice(0, 2000)); clearFieldError("descriere"); }}
               rows={mode === "complet" ? 7 : 5}
               placeholder="Ex: Groapă pe trotuar la blocul H12"
               autoCapitalize="sentences"
@@ -1671,73 +1689,19 @@ export function SesizareForm() {
               />
             </div>
           </div>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
-            Scrie liber. Punem textul în formă oficială.{" "}
-            <span
-              className={cn(
-                "whitespace-nowrap tabular-nums font-medium",
-                data.descriere.length >= 1900
-                  ? "text-red-500"
-                  : data.descriere.length >= 1600
-                    ? "text-amber-500"
-                    : "text-[var(--color-text-muted)]"
-              )}
-            >{data.descriere.length}/2000 · minim 10</span>
-          </p>
+          {/* 2026-06-14 — fără helper mereu-vizibil. Contorul apare DOAR aproape
+              de limită. „minim 10" devine eroare pe câmp, doar la submit. */}
+          {data.descriere.length >= 1600 && (
+            <p className="text-xs mt-1 text-right tabular-nums font-medium text-amber-500">
+              {data.descriere.length}/2000
+            </p>
+          )}
         </Field>
 
-        {/* 2026-06-13 (feedback licarazvan90), refăcut 2026-06-14 — textul oficial
-            EDITABIL: userul vede EXACT ce pleacă și poate scoate solicitări
-            nedorite / corecta ce a ratat AI-ul. Apare imediat ce există o
-            descriere (nu mai așteaptă AI-ul) și editarea chiar se trimite
-            (flag formal_text_edited → serverul nu mai regenerează din template). */}
-        {!submitted && data.descriere.trim().length >= 10 && (
-          <div className="rounded-[var(--radius-md)] border-2 border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20 p-4 shadow-[var(--shadow-1)]">
-            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-              <label htmlFor="formal-text-edit" className="text-sm font-bold inline-flex items-center gap-1.5 text-purple-800 dark:text-purple-300">
-                <Sparkles size={14} className="text-purple-500" aria-hidden="true" />
-                ✏️ Textul oficial — citește și ajustează (exact ce se trimite)
-              </label>
-              {editedText != null && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditedText(null);
-                    formalEditedRef.current = false;
-                    lastGenSigRef.current = "";
-                    void handleAIImprove({ withPhotos: imagini.length > 0 });
-                  }}
-                  disabled={aiLoading}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                  title="Aruncă modificările manuale și regenerează textul cu AI"
-                >
-                  {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
-                  Regenerează
-                </button>
-              )}
-            </div>
-            <textarea
-              id="formal-text-edit"
-              value={finalFormalText}
-              onChange={(e) => {
-                setEditedText(e.target.value);
-                formalEditedRef.current = true;
-              }}
-              rows={8}
-              // h-auto anulează height-ul fix din inputClass (vezi textarea de
-              // mai sus) — pe mobil se colapsa la o linie („Bună ziua,").
-              className={cn(inputClass, "h-auto sm:h-auto resize-y min-h-[200px] py-3 text-[13px] leading-relaxed")}
-              aria-label="Textul oficial generat — editabil"
-            />
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
-              {editedText != null
-                ? <><strong className="text-purple-700 dark:text-purple-300">✓ Text modificat de tine.</strong> Exact asta se trimite. Apasă „Regenerează" dacă vrei varianta AI înapoi.</>
-                : <><strong>Exact acest text se trimite</strong> autorității (temei OG 27/2002). Scrie direct aici ca să scoți ce nu vrei sau să corectezi orice — e al tău.</>}
-            </p>
-          </div>
-        )}
+        {/* Textul oficial editabil s-a MUTAT jos, chiar înainte de „Trimite":
+            previzualizare read-only + buton „Modifică textul". Vezi mai jos. */}
 
-        <Field label="Tip problemă (opțional — completăm noi)">
+        <Field label="Tip problemă">
           {/* 5/22/2026 — tip nu mai e required. 2026-06-06: AI detectează tipul
               STRICT din DESCRIERE (text classifier), NU din poză. Dacă rămâne
               gol, backend setează „altele" + categoria se generează din
@@ -1789,31 +1753,23 @@ export function SesizareForm() {
         )}
 
         {recipients && (
-          <div className="rounded-[var(--radius-xs)] bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-3 text-xs">
-            <p className="font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-1">
-              <Mail size={12} aria-hidden="true" /> Emailul tău va ajunge la {recipients.primary.length + recipients.cc.length} destinatari oficiali:
+          <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/70 p-3.5 text-xs">
+            <p className="font-semibold text-blue-900 dark:text-blue-300 mb-2.5 flex items-center gap-1.5">
+              <Mail size={13} aria-hidden="true" /> Ajunge la {recipients.primary.length + recipients.cc.length} {recipients.primary.length + recipients.cc.length === 1 ? "autoritate" : "autorități"}
             </p>
-            <ul className="space-y-1">
-              {recipients.primary.map((a) => (
-                <li key={a.email} className="text-blue-800 dark:text-blue-300 flex items-start gap-2">
-                  <span className="inline-block w-4 text-[10px] text-blue-500 mt-0.5">TO</span>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{a.name}</span>
-                    <span className="block text-[10px] font-mono text-blue-700/70 dark:text-blue-500 break-all">
-                      {a.email}
-                    </span>
-                  </div>
-                </li>
-              ))}
-              {recipients.cc.map((a) => (
-                <li key={a.email} className="text-blue-700/80 dark:text-blue-400 flex items-start gap-2">
-                  <span className="inline-block w-4 text-[10px] text-blue-500 mt-0.5">CC</span>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{a.name}</span>
-                    <span className="block text-[10px] font-mono text-blue-700/70 dark:text-blue-500 break-all">
-                      {a.email}
-                    </span>
-                  </div>
+            <ul className="space-y-1.5">
+              {[
+                ...recipients.primary.map((a) => ({ a, cc: false })),
+                ...recipients.cc.map((a) => ({ a, cc: true })),
+              ].map(({ a, cc }) => (
+                <li key={a.email} className="flex items-center justify-between gap-3 min-w-0">
+                  <span className="font-medium text-blue-900 dark:text-blue-200 truncate">
+                    {a.name}
+                    {cc && <span className="ml-1.5 font-normal text-blue-500 dark:text-blue-400">· copie</span>}
+                  </span>
+                  <span className="shrink-0 max-w-[42%] truncate text-[10px] font-mono text-blue-600/60 dark:text-blue-400/60">
+                    {a.email}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1925,19 +1881,21 @@ export function SesizareForm() {
             automat din tipLabel sau AI (vezi `effectiveTitlu` mai sus). User
             nu mai trebuie să-l completeze manual — era redundant. */}
 
-        <Field label="Unde exact se află problema?" required>
+        <Field label="Unde exact se află problema?" error={fieldErrors.locatie}>
           {/* Pe mobil: input adresă pe rândul lui (lățime completă pt. o adresă
               lungă), butoanele GPS/Pe hartă pe rândul de sub, cu etichete. */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <input
                 type="text"
+                id="locatie-input"
                 value={data.locatie}
                 onChange={(e) => {
                   const val = e.target.value;
                   // User tastează → e sursa de adevăr: golim coords-urile vechi
                   // din GPS (locația lor reală vine din ce scriu/aleg) și căutăm.
                   setData((d) => ({ ...d, locatie: val, lat: null, lng: null }));
+                  clearFieldError("locatie");
                   runAddressSearch(val);
                 }}
                 onFocus={() => { if (addrSugg.length) setShowSugg(true); }}
@@ -2005,51 +1963,20 @@ export function SesizareForm() {
               </button>
             </div>
           </div>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
-            <strong>Scrie adresa</strong> și alege din sugestii (cel mai precis) · sau <strong>GPS</strong> · sau <strong>Pe hartă</strong>. GPS-ul pe desktop e aproximativ — dacă pune altă stradă, scrie tu adresa exactă.
-          </p>
-          {/* 2026-06-08 — Helper național: cere orașul/sectorul + arată județul
-              detectat din adresă, ca să nu cadă pe județul din profil (ex: adresă
-              din Craiova trimisă greșit la Cluj fiindcă userul n-a scris orașul). */}
+          {/* 2026-06-14 — fără helper lung, fără lat/long, fără „detectat
+              automat" (cerere user: minimalism). Păstrăm DOAR confirmarea scurtă
+              a județului dedus din text, ca userul să știe că ajunge unde trebuie. */}
           {!(data.lat && data.lng) && (() => {
             const txt = data.locatie?.trim() ?? "";
             const fromText = txt.length >= 4 ? detectCountyFromLocatie(txt) : null;
-            if (fromText) {
-              const nm = ALL_COUNTIES.find((c) => c.id === fromText)?.name;
-              return (
-                <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1">
-                  ✓ Trimitem către <span className="font-semibold">{fromText === "B" ? "București" : `județul ${nm}`}</span> — detectat din adresă.
-                </p>
-              );
-            }
+            if (!fromText) return null;
+            const nm = ALL_COUNTIES.find((c) => c.id === fromText)?.name;
             return (
-              <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
-                💡 Scrie și <span className="font-semibold text-[var(--color-text)]">orașul și/sau sectorul</span> după adresă — ex: „Strada Frății Golești, <span className="font-semibold text-[var(--color-text)]">Craiova</span>" sau „Calea Victoriei 45, <span className="font-semibold text-[var(--color-text)]">Sector 1</span>". Așa ajunge la autoritatea corectă, nu la județul din profil.
+              <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1">
+                ✓ Trimitem către <span className="font-semibold">{fromText === "B" ? "București" : `județul ${nm}`}</span>
               </p>
             );
           })()}
-          {data.lat && data.lng && (
-            <div className="mt-1 space-y-0.5">
-              <p className={cn(
-                "text-xs flex items-center gap-1.5",
-                gpsAccuracy != null && gpsAccuracy <= 15 ? "text-emerald-600" : "text-amber-600"
-              )}>
-                📍 {data.lat.toFixed(5)}, {data.lng.toFixed(5)}
-                {gpsAccuracy != null && (
-                  <span className="font-medium">
-                    · precizie ±{Math.round(gpsAccuracy)}m
-                    {geoLoading && <span className="ml-1 italic opacity-70">(se rafinează...)</span>}
-                    {!geoLoading && gpsAccuracy <= 15 && " ✓"}
-                  </span>
-                )}
-              </p>
-              {(detectedCountyName || detectedLocality || data.sector) && (
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  🏙️ {detectedLocality ?? ""}{detectedCountyName ? `, jud. ${detectedCountyName}` : ""}{data.sector && detectedCounty === "B" ? ` (${data.sector})` : ""} — detectat automat
-                </p>
-              )}
-            </div>
-          )}
         </Field>
 
         {mapPickerOpen && (
@@ -2143,7 +2070,7 @@ export function SesizareForm() {
             </Field>
           </>
         ) : (
-          <Field label="Fotografii (max 5)">
+          <Field label="Fotografii">
             <PhotoUploader urls={imagini} onChange={setImagini} max={5} />
             <p className="text-xs text-[var(--color-text-muted)] mt-2">
               O poză apropiată + una de context.
@@ -2177,33 +2104,35 @@ export function SesizareForm() {
             justified. */}
         <div className="pt-2 mt-4 border-t border-[var(--color-border)]">
           <h3 className="font-[family-name:var(--font-sora)] font-bold text-base mb-1">
-            Cine ești
+            Date de identificare
           </h3>
           <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
             Apar în email, nu pe site. <strong>Rămân private.</strong>
           </p>
         </div>
 
-        <Field label="Numele tău complet" required>
+        <Field label="Numele tău complet" error={fieldErrors.nume}>
           <input
             type="text"
+            id="nume-input"
             autoComplete="name"
             autoCapitalize="words"
             value={data.nume}
-            onChange={(e) => update("nume", e.target.value)}
+            onChange={(e) => { update("nume", e.target.value); clearFieldError("nume"); }}
             onBlur={() => { if (data.nume) update("nume", capitalizeName(data.nume)); }}
             placeholder="Maria Popescu"
             className={inputClass}
           />
         </Field>
 
-        <Field label="Adresa ta de domiciliu" required>
+        <Field label="Adresa ta de domiciliu" error={fieldErrors.adresa}>
           <input
             type="text"
+            id="adresa-input"
             autoComplete="street-address"
             autoCapitalize="words"
             value={data.adresa}
-            onChange={(e) => update("adresa", e.target.value)}
+            onChange={(e) => { update("adresa", e.target.value); clearFieldError("adresa"); }}
             onBlur={() => { if (data.adresa) update("adresa", formatAddress(data.adresa)); }}
             placeholder="Str. Matei Voievod 12"
             className={inputClass}
@@ -2279,20 +2208,9 @@ export function SesizareForm() {
           </div>
         ) : null}
 
-        <label className="flex items-center gap-3 p-4 bg-[var(--color-surface-2)] rounded-[var(--radius-md)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={data.publica}
-            onChange={(e) => update("publica", e.target.checked)}
-            className="w-5 h-5 rounded accent-[var(--color-primary)]"
-          />
-          <div className="flex-1">
-            <p className="text-sm font-medium">Publică pe Civia (recomandat)</p>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Alții o pot <strong>vota</strong> și <strong>trimite și ei</strong>. Mai multe voci = răspuns mai rapid.
-            </p>
-          </div>
-        </label>
+        {/* 2026-06-14 — checkbox-ul „Publică pe Civia" scos: sesizarea apare
+            oricum public (alții o pot vota / trimite). Notă scurtă de
+            transparență (datele de identificare rămân private). */}
 
         {error && (
           <div ref={errorRef} role="alert" className="p-3 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
@@ -2301,85 +2219,131 @@ export function SesizareForm() {
           </div>
         )}
 
-        {/* 2026-06-08 (audit): bannerul nearbyDuplicates (80m) a fost eliminat —
-            era redundant cu <DuplicateDetector> (50m, mai sus) ȘI buggy (ref
-            duplicateCheckRef nu se reseta → rula o singură dată, rezultate stale).
-            O singură sursă de adevăr pentru detectarea duplicatelor. */}
+        {/* PREVIZUALIZARE + MODIFICĂ — exact ce se trimite, chiar înainte de
+            „Trimite" (mutat aici din mijlocul formularului: review-before-send).
+            Read-only by default; „Modifică textul" deschide editorul; editarea
+            se trimite verbatim (flag formal_text_edited). */}
+        {data.descriere.trim().length >= 10 && (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/40 p-4">
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <span className="text-sm font-semibold inline-flex items-center gap-1.5">
+                <Sparkles size={14} className="text-purple-500" aria-hidden="true" />
+                Previzualizare
+                {editedText != null && (
+                  <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">· modificat</span>
+                )}
+              </span>
+              {editOpen ? (
+                <div className="flex items-center gap-1.5">
+                  {editedText != null && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditedText(null); formalEditedRef.current = false; lastGenSigRef.current = ""; void handleAIImprove({ withPhotos: imagini.length > 0 }); }}
+                      disabled={aiLoading}
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors"
+                      title="Aruncă modificările și regenerează cu AI"
+                    >
+                      {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
+                      Resetează
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(false)}
+                    className="inline-flex items-center gap-1 h-8 px-4 rounded-full bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+                  >
+                    Gata
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                >
+                  ✏️ Modifică textul
+                </button>
+              )}
+            </div>
+            {editOpen ? (
+              <textarea
+                id="formal-text-edit"
+                value={finalFormalText}
+                onChange={(e) => { setEditedText(e.target.value); formalEditedRef.current = true; }}
+                rows={9}
+                className={cn(inputClass, "h-auto sm:h-auto resize-y min-h-[220px] py-3 text-[13px] leading-relaxed rounded-xl")}
+                aria-label="Textul oficial — editabil"
+              />
+            ) : (
+              <div className="text-[13px] leading-relaxed text-[var(--color-text)] max-h-72 overflow-y-auto rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5">
+                {finalFormalText.split(/\n\n+/).map((paragraph, i) => (
+                  <p key={i} className="mb-2.5 last:mb-0 whitespace-pre-line">{paragraph}</p>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+              Exact acest text ajunge la autorități (temei OG 27/2002). Apasă <strong>Modifică textul</strong> ca să scoți ce nu vrei sau să corectezi.
+            </p>
+          </div>
+        )}
 
-        {/* 2026-05-24 Faza 4: Sticky bottom CTA pe mobile — butonul rămâne
-            mereu vizibil pe scrolling. Personas cer „să văd butonul tot
-            timpul". Desktop: comportament normal flow (sm:static). */}
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:static sm:bottom-auto z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-3 sm:py-0 bg-[var(--color-bg)]/95 sm:bg-transparent backdrop-blur sm:backdrop-blur-none border-t border-[var(--color-border)] sm:border-0">
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={handleSubmit}
-            aria-busy={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-          >
-            {submitting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
-            {submitting ? "Se generează textul și se salvează..." : "Trimite sesizarea la autorități"}
-          </button>
-        </div>
+        {error && (
+          <div ref={errorRef} role="alert" className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
 
-        {/* roadmap F0 — reasigurare onboarding la momentul deciziei: adresează
-            abandonul #1 (frica de „trebuie cont"). Sesizarea se face 100% anonim. */}
+        {/* CTA — buton rotund liquid-glass. NU mai e sticky (urmărea scroll-ul):
+            stă în flow normal, unde e formularul. Gradient brand emerald→cyan +
+            highlight inset + sheen la hover. */}
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={handleSubmit}
+          aria-busy={submitting}
+          className="group relative w-full inline-flex items-center justify-center gap-2 h-[54px] rounded-full text-white font-semibold text-[15px] overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-cyan-500 transition-transform active:scale-[0.985] disabled:opacity-60 disabled:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+          style={{
+            boxShadow:
+              "0 12px 30px -10px color-mix(in srgb, var(--color-primary) 65%, transparent), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.12)",
+          }}
+        >
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-white/15" />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full motion-reduce:hidden transition-transform duration-700 ease-out"
+            style={{ background: "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%)" }}
+          />
+          <span className="relative inline-flex items-center gap-2">
+            {submitting ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <Send size={17} aria-hidden="true" />}
+            {submitting ? "Se trimite…" : "Trimite sesizarea la autorități"}
+          </span>
+        </button>
+
+        {/* Reasigurări — compacte, un singur rând discret. */}
         {!submitting && !submitted && (
-          <p className="text-[11px] text-center text-emerald-700 dark:text-emerald-400 mt-2 font-medium">
-            ✓ Fără cont · 100% gratuit · ~90 de secunde
-          </p>
-        )}
-
-        {!data.formal_text && !aiLoading && !submitting && (
-          <p className="text-[11px] text-center text-[var(--color-text-muted)] mt-2 inline-flex items-center justify-center gap-1.5 w-full">
-            <Sparkles size={11} className="text-purple-500" aria-hidden="true" />
-            AI rescrie automat textul în limbaj oficial — apeși doar Trimite.
-          </p>
-        )}
-
-        {draftSavedAt && !submitting && !submitted && (
-          <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-2 flex items-center justify-center gap-1">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500"
-              aria-hidden="true"
-            />
-            Formularul se salvează automat — dacă închizi pagina, îl găsești la
-            revenire
-          </p>
-        )}
-      </div>
-
-      {/* Preview — DOAR pe desktop (lg+). Pe mobil coloanele se stivuiesc, iar
-          caseta editabilă „Textul oficial" din formular arată DEJA exact ce se
-          trimite → panoul read-only ar dubla textul (scroll dublu, confuz). */}
-      <div className="hidden lg:block">
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 sticky top-24">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-[family-name:var(--font-sora)] font-semibold text-lg">Previzualizare</h3>
-            {data.formal_text && (
-              <Badge variant="petition" className="px-2 py-0.5">
-                <Sparkles size={10} aria-hidden="true" /> Formal
-              </Badge>
+          <div className="flex flex-col items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+            <p className="inline-flex items-center gap-x-1.5 flex-wrap justify-center text-center">
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Fără cont</span>
+              <span aria-hidden="true" className="opacity-40">·</span>
+              <span>100% gratuit</span>
+              <span aria-hidden="true" className="opacity-40">·</span>
+              <span>~90 sec</span>
+              {!data.formal_text && !aiLoading && (
+                <>
+                  <span aria-hidden="true" className="opacity-40">·</span>
+                  <span className="inline-flex items-center gap-1"><Sparkles size={10} className="text-purple-500" aria-hidden="true" /> AI scrie textul oficial</span>
+                </>
+              )}
+            </p>
+            {draftSavedAt && (
+              <p className="inline-flex items-center gap-1 opacity-70">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                Salvat automat
+              </p>
             )}
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 mb-4 text-sm leading-relaxed text-[var(--color-text)] max-h-[60vh] sm:max-h-[420px] overflow-y-auto shadow-inner">
-            {finalFormalText.split(/\n\n+/).map((paragraph, i) => (
-              <p key={i} className="mb-3 last:mb-0 whitespace-pre-line">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-          {/* 2026-05-18: scoase butoanele Email + Copiază — flow oficial
-              e Trimite Sesizarea la Autorități (de jos), nu copy-paste.
-              EmailChoicePanel apare in SuccessScreen dupa submit, cu UX
-              mult mai clar (Gmail / Outlook / Yahoo / mailto / etc). */}
-          {recipients && (
-            <p className="text-xs text-[var(--color-text-muted)] mt-4">
-              <strong>Se trimite la:</strong> {recipients.primary.map((a) => a.name).join(", ")}
-              {recipients.cc.length > 0 && <><br /><strong>CC:</strong> {recipients.cc.map((a) => a.name).join(", ")}</>}
-            </p>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

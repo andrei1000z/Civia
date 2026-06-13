@@ -14,7 +14,6 @@ import { useId, cloneElement, isValidElement } from "react";
  */
 export function FormField({
   label,
-  required,
   children,
   hint,
   error,
@@ -44,13 +43,11 @@ export function FormField({
 
   return (
     <div>
-      <label htmlFor={fieldId} className="block text-sm font-medium mb-1.5 text-[var(--color-text)]">
+      {/* 2026-06-14 — fără asterisc de „obligatoriu": aproape tot formularul e
+          obligatoriu, deci steluța roșie e zgomot. Convenție modernă (iOS/One UI):
+          nu marcăm required, validăm pe submit. `required` rămâne pt. aria. */}
+      <label htmlFor={fieldId} className="block text-sm font-semibold mb-1.5 text-[var(--color-text)]">
         {label}
-        {required && (
-          <span className="text-[var(--color-accent,#DC2626)] ml-0.5" aria-label="câmp obligatoriu">
-            *
-          </span>
-        )}
       </label>
       {child}
       {hint && !error && (
@@ -72,4 +69,4 @@ export function FormField({
  * - focus ring tokens-based
  */
 export const FORM_INPUT_CLASS =
-  "w-full h-11 sm:h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
+  "w-full h-11 sm:h-10 px-4 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
