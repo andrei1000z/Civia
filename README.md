@@ -1,10 +1,26 @@
-# Civia — Platforma civică a României
+<h1 align="center">Civia — Platforma civică a României</h1>
+
+<p align="center">
+  <a href="https://civia.ro"><img alt="Live" src="https://img.shields.io/badge/live-civia.ro-059669?style=flat-square"></a>
+  <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green?style=flat-square"></a>
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?style=flat-square&logo=react">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white">
+  <img alt="Tailwind v4" src="https://img.shields.io/badge/Tailwind-v4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white">
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=flat-square&logo=supabase&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-1113%20passing-success?style=flat-square">
+  <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square">
+</p>
 
 Platformă civică independentă, gratuită, pentru cetățenii din România. Sesizări AI-formalizate către primării, petiții civice, calitatea aerului live, hărți de mobilitate, știri agregate, ghiduri practice și date publice — pentru toate cele 42 de județe.
 
-**Live:** [civia.ro](https://civia.ro)
+**🌐 Live:** [civia.ro](https://civia.ro) · **📱 PWA** instalabilă (Android/iOS) · **🆓 100% gratuit, fără reclame, fără partid**
 
 > Civia.ro nu promovează niciun partid politic, nicio poziționare ideologică. Militam pentru o lume corectă, modernă și pentru oameni.
+
+## Cuprins
+
+[Funcționalități](#funcționalități) · [Stack](#stack) · [Arhitectură](#arhitectură--cum-funcționează) · [Setup local](#setup-local) · [Structură](#structură) · [Convenții](#convenții-pentru-contributori) · [Date și surse](#date-și-surse) · [Confidențialitate](#privacy--analytics-transparență) · [Contribuie](#contribuie) · [Licență](#licență)
 
 ---
 
@@ -48,11 +64,44 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 
 ---
 
+## Arhitectură — cum funcționează
+
+**Pipeline-ul unei sesizări** (de la o frază a cetățeanului la un email oficial urmărit):
+
+```
+descriere + poză
+   │
+   ├─▶ clasificare tip (Groq, text classifier)         → ce fel de problemă e
+   ├─▶ rutare autoritate (tip × sector/județ)          → cine e competent (OG 27/2002, legi pe domeniu)
+   ├─▶ generare text formal (Groq, prompt cu temei      → scrisoarea oficială, în numele cetățeanului
+   │     legal + reguli anti-cliché + anti-minimizare)
+   ▼
+trimitere email (Resend, server-side, From: numele cetățeanului)
+   │
+   ▼
+răspunsul autorității → Cloudflare Email Routing → Worker → /api/inbox/reply
+   │
+   ├─▶ AI extrage nr. de înregistrare + clasifică răspunsul
+   ▼
+update status sesizare (nou → trimis → înregistrată → în lucru → rezolvat) + notificare cetățean
+```
+
+**Decizii cheie de inginerie:**
+
+- **Cascadă AI multi-provider, rezistentă la rate-limits.** Sinteza (știri/petiții) și clasificarea trec prin Gemini → Groq → Cloudflare Workers AI, iar dacă toate sunt epuizate, cade pe un **rezumat extractiv determinist** (TextRank, 0 cost, 0 rețea). Niciodată „se generează, revino".
+- **Adresa de domiciliu criptată la nivel de câmp** (AES-256-GCM, cheie separată de DB) — o scurgere a bazei nu expune unde locuiesc cetățenii; decriptată doar la trimiterea către autoritate. Pe pagina publică, numele + adresa sunt **șterse automat** (scrub).
+- **Background work pe Vercel Hobby (1 cron/zi).** Un singur dispatcher zilnic (`/api/cron/daily`) fan-out la reminders, auto-status, retenție, newsletter. Plus *self-healing pe traffic*: fiecare vizită la `/api/stiri` reîmprospătează RSS-ul în `after()`, throttled cu un lock Redis NX — articolele apar în minute, fără cron extern.
+- **Design system „Liquid Glass" (iOS 26-style).** Tokens CSS (`--color-*`, `--radius-*`, `--shadow-*`), `<PageHero>` canonic, material `.lc-nav-glass`, dark mode complet, bottom nav mobil flotant + navbar desktop — un singur set de tokens pe ambele.
+- **Conformitate EU = exact baseline-ul** (GDPR / ePrivacy / OWASP ASVS L2), nici sub, nici peste. Retenția nu e doar *declarată*, ci **aplicată** (`/api/cron/purge-retention`: sesizări anonimizate la 3 ani). Vezi [`docs/EU-COMPLIANCE.md`](./docs/EU-COMPLIANCE.md).
+- **Testat.** **1100+ teste** unitare (Vitest) pe `src/lib/**` (rutare autorități, extractoare AQI, anti-minimizare, format sesizări, chaining petiție↔sesizare…), `tsc --noEmit` strict pe tot proiectul. `npm run check` rulează ambele.
+
+---
+
 ## Setup local
 
 ```bash
-git clone https://github.com/<your-org>/civia.git
-cd civia
+git clone https://github.com/andrei1000z/Civia.git
+cd Civia
 npm install
 cp .env.local.example .env.local
 # Editează .env.local cu valorile reale
