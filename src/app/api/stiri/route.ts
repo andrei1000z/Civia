@@ -27,24 +27,23 @@ const FETCH_LOCK_KEY = "civia:stiri:fetch-lock";
 const FETCH_LOCK_TTL_S = 3 * 60;
 
 /**
- * Resolve baseUrl pentru server-to-server fetch INTERN, evitând
- * redirect-ul apex→www care strip-uiește Authorization.
+ * Resolve baseUrl pentru server-to-server fetch INTERN.
  * Ordine preferință:
  *   1. VERCEL_URL — auto-set pe Vercel, e mereu hostname-ul de deploy
  *      fără redirect. Forma: "civia-xyz.vercel.app" sau alias prod.
- *   2. NEXT_PUBLIC_SITE_URL — dacă e setat la www-form, OK; dacă e
- *      apex (civia.ro), îl convertim la www.civia.ro.
- *   3. fallback "https://www.civia.ro" — production direct.
+ *   2. NEXT_PUBLIC_SITE_URL — domeniul canonic (apex, civia.ro), care
+ *      servește direct 200.
+ *   3. fallback "https://civia.ro".
+ *
+ * 2026-06-14: apex (civia.ro) e domeniul PRIMARY care servește direct
+ * (aplicația TWA / Play Store targetează apex, deci apex nu mai redirectă
+ * la www; www→apex). Scoasă conversia veche apex→www — exista DOAR cât
+ * timp apex redirecta la www și undici strip-uia Authorization pe
+ * redirect cross-host. Fără redirect pe apex, nu mai e nevoie de ea.
  */
 function internalBaseUrl(): string {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  const env = process.env.NEXT_PUBLIC_SITE_URL;
-  if (env) {
-    // Apex → www (Vercel domains config redirect → ar strip Authorization).
-    if (/^https:\/\/civia\.ro\b/.test(env)) return env.replace("https://civia.ro", "https://www.civia.ro");
-    return env;
-  }
-  return "https://www.civia.ro";
+  return process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
 }
 
 /**

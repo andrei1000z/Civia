@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 function htmlPage(title: string, message: string, status: number): Response {
   return new Response(
-    `<!doctype html><html lang="ro"><head><title>${title}</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,sans-serif;max-width:480px;margin:48px auto;padding:24px;text-align:center;"><h1>${title}</h1><p>${message}</p><p style="margin-top:32px;color:#666;font-size:14px;">Dacă te răzgândești, te poți reabona oricând pe <a href="https://www.civia.ro" style="color:#059669;">civia.ro</a>.</p></body></html>`,
+    `<!doctype html><html lang="ro"><head><title>${title}</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,sans-serif;max-width:480px;margin:48px auto;padding:24px;text-align:center;"><h1>${title}</h1><p>${message}</p><p style="margin-top:32px;color:#666;font-size:14px;">Dacă te răzgândești, te poți reabona oricând pe <a href="https://civia.ro" style="color:#059669;">civia.ro</a>.</p></body></html>`,
     { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }

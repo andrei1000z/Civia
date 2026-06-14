@@ -76,11 +76,15 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   /**
-   * NU mai facem redirect www↔apex la nivel Next.js. Vercel-ul are
-   * configurat la CDN civia.ro → www.civia.ro (la nivel infrastructure)
-   * iar redirect-ul invers din Next.js cauza un loop infinit
-   * (307 civia.ro → www, 308 www → civia.ro). Vercel Domains tab
+   * NU facem redirect www↔apex la nivel Next.js — Vercel Domains tab
    * controlează canonical-ul; codeul rămâne neutru.
+   *
+   * 2026-06-14: domeniul PRIMARY e apex-ul `civia.ro` (servește direct
+   * 200), iar `www.civia.ro` → 308 → `civia.ro`. Asta aliniază infra cu
+   * `NEXT_PUBLIC_SITE_URL=https://civia.ro` (canonical-ul din cod) și
+   * permite aplicației TWA / Play Store (care targetează apex) să fie
+   * fullscreen — verificarea Digital Asset Links nu urmărește redirect-uri,
+   * deci `civia.ro/.well-known/assetlinks.json` TREBUIE să fie 200, nu 307.
    */
   async headers() {
     const csp = [
