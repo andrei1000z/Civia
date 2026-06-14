@@ -49,7 +49,7 @@ STRUCTURĂ — RESPECTĂ EXACT (fiecare titlu pe linie separată terminat cu „
 
 2. „Cifre cheie:" — listă de 3–5 bullet-uri cu „- ", fiecare începe cu majusculă, fiecare conține o cifră / un nume / un termen legal pus pe **bold**. Omite secțiunea dacă articolul chiar nu are cifre concrete; nu inventa. Pentru articole fără cifre, sari direct la „Context".
 
-3. „Context:" — 2–3 propoziții cu fundalul (ce s-a întâmplat înainte, ce lege se aplică, cine sunt actorii și ce rol au, ce instituție decide). Cititorul trebuie să înțeleagă povestea fără să fi urmărit subiectul. Dacă sursa nu dă context explicit, dedu din cunoștințele generale (NATO, instituții UE, legi românești) — dar fără să inventezi cifre sau evenimente specifice.
+3. „Context:" — 2–3 propoziții cu fundalul (ce s-a întâmplat înainte, ce lege se aplică, cine sunt actorii și ce rol au, ce instituție decide). Cititorul trebuie să înțeleagă povestea fără să fi urmărit subiectul. Dacă sursa nu dă context explicit, dedu DOAR generalități stabile din cunoștințele tale (cum funcționează o instituție UE, ce face NATO, ce prevede o lege românească) — dar NU atribui funcții, titluri sau roluri unei PERSOANE din memoria ta. Funcția unei persoane (primar, ministru, președinte de partid) o iei EXCLUSIV din textul-sursă, literal.
 
 4. „Ce urmează:" — 1–2 propoziții cu pașii imediat următori (vot, decizie, deadline, sesiune parlamentară etc.). Omite dacă articolul nu menționează nimic concret; nu specula data.
 
@@ -62,6 +62,7 @@ FORMATARE:
 
 INTERZIS:
 - NU inventa cifre, nume sau date care nu sunt în textul original.
+- FUNCȚIA / TITLUL unei persoane se preia LITERAL din sursă. NU schimba și NU inventa funcția din memoria ta (ex: dacă sursa scrie „primarul Capitalei / primarul general", NU scrie „primarul sectorului X"; dacă sursa scrie „ministrul", nu inventa ce minister). Funcțiile politice se schimbă des, iar memoria modelului e ÎNVECHITĂ — sursa are dreptate, nu memoria ta. Dacă sursa nu menționează funcția, scrie doar numele, fără funcție.
 - Dacă o cifră lipsește din sursă, scrie „nepublicat" — nu plasa o estimare.
 - NU repeta titlul sau excerpt-ul cuvânt cu cuvânt — reformulează.
 - NU folosi emoji-uri sau adjective evaluative („incredibil", „șocant", „dramatic").

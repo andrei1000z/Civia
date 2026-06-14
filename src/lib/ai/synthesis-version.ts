@@ -97,5 +97,11 @@
  *       km, ani…) sunt tăiate — „1 mesaj publicat pe Facebook" nu e cifră
  *       cheie chiar dacă „1" apare în articol. „1 milion de lei" rămâne.
  *       Bump regenerează cache-ul v11 (puține rânduri, abia lansat).
+ *  13 — Anti-halucinare de FUNCȚIE/TITLU: modelele scriau funcția unei
+ *       persoane din memoria lor învechită, IGNORÂND sursa (bug real
+ *       14.06.2026 — articolul „Ciprian Ciucu atac la Nicușor Dan": sursa
+ *       zicea corect „primarul Capitalei", AI-ul a scris „primarul
+ *       sectorului 3"). Promptul cere acum funcția LITERAL din sursă +
+ *       interzice deducerea ei din memorie. Bump regenerează tot cu regula nouă.
  */
-export const AI_SUMMARY_VERSION = 12;
+export const AI_SUMMARY_VERSION = 13;
