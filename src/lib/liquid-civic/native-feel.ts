@@ -115,7 +115,7 @@ export async function nativeShare(opts: {
  * Chrome browser. Util pentru a customiza UI: în app putem ascunde
  * link-uri „Download app" sau „Install PWA" (deja instalat).
  *
- * Cum: TWA setează referrer la „android-app://ro.civia.app" în prima
+ * Cum: TWA setează referrer la „android-app://ro.civia.twa" în prima
  * navigare. Plus display-mode standalone + user-agent specific.
  */
 export function isRunningInTwa(): boolean {
