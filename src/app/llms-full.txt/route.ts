@@ -179,7 +179,7 @@ A: Civia e platformă independentă, finanțată din donații + voluntariat. Ope
 A: Da. Servere în UE (Frankfurt). GDPR-compliant. Numele și adresa ta sunt folosite DOAR pentru emailul către primărie (cerință legală). Nu vindem datele.
 
 **Q: Pot șterge datele mele de pe Civia?**
-A: Da. /cont → „Șterge contul definitiv" → toate sesizările tale + comentariile + voturile se șterg ireversibil în 24h. Conform GDPR „dreptul la ștergere".
+A: Da. /cont → „Șterge contul definitiv" → toate sesizările tale + comentariile se șterg ireversibil în 24h. Conform GDPR „dreptul la ștergere".
 
 **Q: Cum particip la un protest pe Civia?**
 A: /proteste arată protestele programate cu dată, locație, motiv. Civia nu organizează proteste — agreghează evenimente publice anunțate de organizatori.

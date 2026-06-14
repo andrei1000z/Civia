@@ -106,7 +106,7 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
             </div>
             <div className="p-5 space-y-4">
               <p className="text-sm text-[var(--color-text)]">
-                Sesizarea, voturile, comentariile și toate datele asociate vor fi șterse definitiv.
+                Sesizarea, comentariile și toate datele asociate vor fi șterse definitiv.
               </p>
               <div className="flex gap-2">
                 <button
