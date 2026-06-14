@@ -391,23 +391,33 @@ export function IntreruperiFilters({
 
 function groupByDay(
   items: Interruption[],
+  nowMs: number | null,
 ): Array<{ label: string; items: Interruption[] }> {
   const buckets = new Map<string, Interruption[]>();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // nowMs e null pe SSR + prima randare client → folosim DOAR etichete de dată
+  // absolută (deterministe, identice server↔client) → zero hydration mismatch.
+  // După mount nowMs e setat → apar etichetele relative „Astăzi/Mâine".
+  const today = nowMs != null ? new Date(nowMs) : null;
+  if (today) today.setHours(0, 0, 0, 0);
 
   for (const item of items) {
     const start = new Date(item.startAt);
-    start.setHours(0, 0, 0, 0);
-    const days = Math.round((start.getTime() - today.getTime()) / 86_400_000);
     let key: string;
-    if (days < 0) key = "Deja în curs";
-    else if (days === 0) key = "Astăzi";
-    else if (days === 1) key = "Mâine";
-    else if (days < 7)
-      key = start.toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "short", timeZone: "Europe/Bucharest" });
-    else
+    if (today) {
+      const startDay = new Date(item.startAt);
+      startDay.setHours(0, 0, 0, 0);
+      const days = Math.round((startDay.getTime() - today.getTime()) / 86_400_000);
+      if (days < 0) key = "Deja în curs";
+      else if (days === 0) key = "Astăzi";
+      else if (days === 1) key = "Mâine";
+      else if (days < 7)
+        key = start.toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "short", timeZone: "Europe/Bucharest" });
+      else
+        key = start.toLocaleDateString("ro-RO", { day: "numeric", month: "long", timeZone: "Europe/Bucharest" });
+    } else {
+      // SSR / pre-mount: etichetă absolută timezone-pinned (fără „azi/mâine").
       key = start.toLocaleDateString("ro-RO", { day: "numeric", month: "long", timeZone: "Europe/Bucharest" });
+    }
 
     const arr = buckets.get(key) ?? [];
     arr.push(item);
@@ -423,12 +433,16 @@ function GroupedList({
   items: Interruption[];
   me: [number, number] | null;
 }) {
-  const groups = useMemo(() => groupByDay(items), [items]);
-  // groupByDay folosește data curentă pentru bucketing („Astăzi", „Mâine").
-  // Server SSR la 23:59 + client hydration la 00:01 = bucket-uri diferite.
-  // suppressHydrationWarning pe wrapper anulează eroarea pe rare midnight crossings.
+  // 2026-06-15 (audit, fix #418) — gruparea „Astăzi/Mâine" depindea de now-ul
+  // runtime-ului: pe SSR/ISR now-ul (UTC + vârsta cache-ului) diferă de now-ul
+  // clientului (România) → alt număr/etichete de secțiuni → hydration mismatch
+  // STRUCTURAL (suppressHydrationWarning nu-l acoperea). Acum nowMs e null pe
+  // SSR + prima randare → etichete absolute deterministe; relativele apar după mount.
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => setNowMs(Date.now()), []);
+  const groups = useMemo(() => groupByDay(items, nowMs), [items, nowMs]);
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="space-y-6">
       {groups.map((g) => (
         <section key={g.label}>
           <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3 flex items-center gap-2">
