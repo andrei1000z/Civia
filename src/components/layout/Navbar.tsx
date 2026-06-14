@@ -123,16 +123,12 @@ export function Navbar() {
           // intra sub notch/status bar (logo „Civia" suprapus peste ceas).
           // Glass-ul umple zona de notch, conținutul (h-16) coboară sub el.
           "pt-[env(safe-area-inset-top)]",
-          // 2026-05-19 Liquid Civic: glass-1 layer (chrome subtle).
-          // Inset specular top highlight pentru depth.
-          "lc-glass-1",
-          // 2026-06-14 — glass-1 e doar 55% opac → pe mobil conținutul derulat
-          // se vedea „estompat" pe sub bară. Punem un fundal semantic peste
-          // glass: ~88% în top, solid la scroll. (override local — NU atingem
-          // tokenul global --glass-1-bg, folosit de alte sticky bars.)
-          scrolled
-            ? "lc-glow-emerald bg-[var(--color-surface)]"
-            : "bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)]",
+          // 2026-06-15 (audit) — UNIFICAT cu BottomNav: același material glass
+          // `.lc-nav-glass` (88% opac + specular + rim, gândit pentru lizibilitate
+          // WCAG AA peste fundal aglomerat). Înlocuiește lc-glass-1 (55%, prea
+          // transparent) + hack-ul local bg-[color-mix]. La scroll devine solid.
+          "lc-nav-glass",
+          scrolled ? "lc-glow-emerald bg-[var(--color-surface)]" : "",
         )}
       >
         <div className="container-narrow flex items-center justify-between h-16">
