@@ -62,7 +62,15 @@ export async function POST(
   }
 
   const { code } = await params;
-  const sesizare = await getSesizareByCode(code);
+  // getSesizareByCode aruncă pe eroare DB — fără guard, un hiccup Postgres
+  // devenea unhandled rejection / white-screen 500 în loc de JSON curat.
+  let sesizare: Awaited<ReturnType<typeof getSesizareByCode>>;
+  try {
+    sesizare = await getSesizareByCode(code);
+  } catch (e) {
+    console.error("cosign getSesizareByCode error:", e);
+    return NextResponse.json({ error: "Eroare temporară. Mai încearcă." }, { status: 500 });
+  }
   if (!sesizare) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!sesizare.publica || sesizare.moderation_status !== "approved") {
     return NextResponse.json({ error: "Sesizare nedisponibila pentru co-semnare" }, { status: 403 });

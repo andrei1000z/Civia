@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { safeJsonLd } from "@/components/JsonLd";
 import {
   ArrowLeft,
   MapPin,
@@ -247,7 +248,7 @@ export default async function InterruptionDetail({
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       <Link

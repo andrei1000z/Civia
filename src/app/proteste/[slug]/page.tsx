@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { safeJsonLd } from "@/components/JsonLd";
 import {
   Megaphone,
   Calendar,
@@ -305,11 +306,11 @@ export default async function ProtestDetailPage({
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(eventLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
 
       <PageHero

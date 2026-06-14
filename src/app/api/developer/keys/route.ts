@@ -92,6 +92,10 @@ export async function DELETE(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id missing" }, { status: 400 });
+  // `id` e coloană UUID — un id ne-UUID făcea Postgres să arunce
+  // „invalid input syntax for type uuid" → 500. Validăm → 400 curat.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(id)) return NextResponse.json({ error: "id invalid" }, { status: 400 });
 
   const admin = createSupabaseAdmin();
   const { error } = await admin

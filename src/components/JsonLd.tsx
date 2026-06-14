@@ -14,7 +14,7 @@ import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 const LS_RE = new RegExp(String.fromCharCode(0x2028), "g");
 const PS_RE = new RegExp(String.fromCharCode(0x2029), "g");
 
-function safeJsonLd(obj: unknown): string {
+export function safeJsonLd(obj: unknown): string {
   return JSON.stringify(obj)
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")

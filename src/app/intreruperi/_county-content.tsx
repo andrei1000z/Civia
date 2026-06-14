@@ -7,6 +7,7 @@ import {
 } from "@/data/intreruperi";
 import type { County } from "@/data/counties";
 import { SITE_URL } from "@/lib/constants";
+import { safeJsonLd } from "@/components/JsonLd";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import {
   CountyPageHero,
@@ -43,7 +44,7 @@ export async function CountyIntreruperiContent({ county }: { county: County }) {
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       <CountyPageHero

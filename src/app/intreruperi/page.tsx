@@ -17,6 +17,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { safeJsonLd } from "@/components/JsonLd";
 import { AlertsSubscribeForm } from "@/components/intreruperi/AlertsSubscribeForm";
 import { IntreruperiQuickJump } from "@/components/intreruperi/IntreruperiQuickJump";
 
@@ -114,7 +115,7 @@ export default async function IntreruperiPage() {
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       <PageHero
