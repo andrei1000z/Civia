@@ -157,7 +157,7 @@ export async function aiScoreResponse(text: string): Promise<QualityScoreResult>
       max_tokens: 400,
     });
 
-    const raw = completion.choices[0]?.message.content ?? "{}";
+    const raw = completion.choices[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(raw) as Partial<QualityScoreResult>;
 
     const validQualities: ResponseQuality[] = ["substantive", "boilerplate", "redirect", "refusal", "acknowledgment"];

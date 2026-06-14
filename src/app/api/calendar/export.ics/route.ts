@@ -59,8 +59,13 @@ export async function GET() {
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     if (!ev) continue;
+    const baseDate = new Date(ev.date);
+    // Sari peste date malformate din DB — `new Date(NaN).toISOString()` ar
+    // arunca „Invalid time value" și ar rupe TOT feed-ul ICS (un rând stricat
+    // pică toată descărcarea).
+    if (Number.isNaN(baseDate.getTime())) continue;
     const dt = ev.date.replace(/-/g, "");
-    const dtEnd = new Date(new Date(ev.date).getTime() + 86400_000)
+    const dtEnd = new Date(baseDate.getTime() + 86400_000)
       .toISOString()
       .slice(0, 10)
       .replace(/-/g, "");

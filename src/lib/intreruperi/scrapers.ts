@@ -1152,6 +1152,7 @@ export async function scrapeFromNews(): Promise<Interruption[]> {
     }
 
     const startAt = new Date(r.published_at);
+    if (Number.isNaN(startAt.getTime())) continue; // published_at malformat → sari (toISOString ar arunca)
     const endAt = new Date(startAt);
     endAt.setHours(endAt.getHours() + 24); // assume same-day; user reads source for exact
 

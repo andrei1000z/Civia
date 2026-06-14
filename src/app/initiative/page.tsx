@@ -94,7 +94,10 @@ export default async function InitiativeListPage() {
         <ul className="space-y-4">
           {items.map((it) => {
             const signed = counts[it.id] ?? 0;
-            const pct = Math.min(100, Math.round((signed / it.signatures_target) * 100));
+            // guard împărțire la 0 → 0/0 = NaN → width stricat.
+            const pct = it.signatures_target > 0
+              ? Math.min(100, Math.round((signed / it.signatures_target) * 100))
+              : 0;
             return (
               <li
                 key={it.id}
