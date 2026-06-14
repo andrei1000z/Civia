@@ -104,14 +104,12 @@ export default async function HomePage() {
           în paralel cu HTML parsing, nu așteaptă să întâlnească CSS-ul
           care îl referă. ~200-500ms LCP improvement pe primul paint.
           Next 15+ hoistează automat <link> elements la <head>. */}
-      {/* HERO — `-mt-16` cancels body's pt-16 (compensare pentru navbar-ul
-          fixed h-16 = 64px) ca gradient-ul să înceapă la y=0 viewport,
-          iar navbar-ul să plutească pe el cu backdrop-blur.
-          5/22/2026 — scos imaginea de fundal hero-national.jpg la cererea
-          user-ului. Acum doar gradient curat emerald → dark + 2 radiale
-          subtle pentru profunzime. -300ms LCP (no image fetch) + look
-          mai curat. */}
-      <section className="relative overflow-hidden -mt-16 text-[var(--color-text)] dark:text-white">
+      {/* HERO — `lg:-mt-16` anulează pt-16 al body-ului DOAR pe desktop (unde
+          navbarul fix h-16 plutește peste gradient). Pe mobil navbarul de sus nu
+          mai există → fără -mt-16 (altfel hero-ul ar fi tras 64px în notch).
+          5/22/2026 — scos imaginea de fundal hero-national.jpg. Doar gradient
+          curat emerald → dark + 2 radiale subtle. -300ms LCP + look mai curat. */}
+      <section className="relative overflow-hidden lg:-mt-16 text-[var(--color-text)] dark:text-white">
         {/* 5/23/2026 v7 — bg solid scos. Animated body::before/::after gradient
             blob-urile se văd PRIN secțiunea hero (Liquid Glass). Vignette-ul
             de contrast text e DARK-ONLY (în light mode bg-ul e deja deschis,

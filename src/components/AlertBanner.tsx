@@ -141,7 +141,9 @@ export function AlertBanner() {
       // body padding-top de la pt-16 la pt-[7rem] cand bannerul e prezent —
       // altfel content-ul de sus al paginii ramane ascuns sub el.
       data-alert-banner
-      className={`${style.bg} ${style.text} fixed top-16 left-0 right-0 z-[var(--z-banner)] shadow-md`}
+      // 2026-06-14 — pe mobil navbarul de sus nu mai există: banda stă sub notch
+      // (top-0 + safe-area). Pe desktop rămâne sub navbarul fix (top-16).
+      className={`${style.bg} ${style.text} fixed top-[env(safe-area-inset-top)] lg:top-16 left-0 right-0 z-[var(--z-banner)] shadow-md`}
       role={alert.severity === "critical" ? "alert" : "status"}
       aria-live={alert.severity === "critical" ? "assertive" : "polite"}
     >

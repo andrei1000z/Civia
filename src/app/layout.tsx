@@ -230,10 +230,10 @@ export default function RootLayout({
             gate pe consimțământul cookie. Nu se mai încarcă necontrolat. */}
       </head>
       <body
-        // 2026-06-14 — pe MOBIL navbarul de sus dispare (nav e jos, în BottomNav):
-        // sus doar safe-area (notch), jos clearance pt. bara flotantă. Pe desktop
-        // (lg) rămâne pt-16 pentru navbarul fix de sus, fără padding jos.
-        className="min-h-full flex flex-col pt-[env(safe-area-inset-top)] lg:pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0"
+        // 2026-06-14 — padding-top e gestionat în globals.css (regulă plain,
+        // responsivă: mobil = doar notch, desktop = 4rem navbar + notch). Aici
+        // doar clearance JOS pt. bara flotantă BottomNav pe mobil (lg:pb-0).
+        className="min-h-full flex flex-col pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0"
         // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
         // injectează clase/atribute la body în timpul hydratation. Plus
         // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)

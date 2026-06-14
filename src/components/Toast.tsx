@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         role="status"
         aria-live="polite"
         aria-atomic="false"
-        className="fixed left-1/2 -translate-x-1/2 flex flex-col gap-2 pointer-events-none"
+        className="fixed left-1/2 -translate-x-1/2 flex flex-col gap-2 pointer-events-none lg:!bottom-4"
         style={{
           // z-toast = 200 → above modals (100/120) + nav (50). User feedback
           // (toast confirmation/error) trebuie să fie mereu vizibil.
@@ -72,7 +72,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           // Bottom offset respectă safe-area (notch/home-indicator) +
           // adaugă spațiu suplimentar dacă sunt prompts deschise (cookie/install)
           // pentru a evita overlap. Folosim `:has()` selector în CSS sub.
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+          // 2026-06-14 — pe mobil, deasupra barei BottomNav (~4.4rem). Pe desktop
+          // (fără bară) revine la 1rem prin `lg:!bottom-4` de pe className.
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)",
         }}
         data-toast-stack
       >

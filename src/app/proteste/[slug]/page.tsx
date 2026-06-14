@@ -554,8 +554,9 @@ export default async function ProtestDetailPage({
           Hide pe desktop + dacă protest e cancelled/finalizat. */}
       {p.status !== "incheiat" && (
         <div
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur border-t border-[var(--color-border)]"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 3.5rem)" }}
+          // 2026-06-14 — deasupra barei BottomNav (mobil): offset = înălțimea
+          // barei (~4.4rem) + gap, safe-area inclusă.
+          className="lg:hidden fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] left-0 right-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur border-t border-[var(--color-border)]"
         >
           <div className="container-narrow py-3 px-3 flex gap-2">
             <ShareProtestButton

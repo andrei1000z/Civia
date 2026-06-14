@@ -231,7 +231,7 @@ export function InstallPrompt() {
       <div
         role="status"
         className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-install-prompt)] animate-fade-in-up"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
       >
         <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4 flex items-start gap-3">
           <div className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white">
@@ -279,7 +279,7 @@ export function InstallPrompt() {
         role="dialog"
         aria-labelledby="install-prompt-ios-title"
         className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-install-prompt)] animate-fade-in-up"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
       >
         <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4">
           <div className="flex items-start gap-3 mb-3">
@@ -326,7 +326,7 @@ export function InstallPrompt() {
       role="dialog"
       aria-labelledby="install-prompt-title"
       className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-install-prompt)] animate-fade-in-up"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
     >
       {/* 5/22/2026 — rebrand cu beneficii concrete. Analytics arăta 0.5%
           install rate (3.7k prompts → 18 installs). Acum 3 beneficii
