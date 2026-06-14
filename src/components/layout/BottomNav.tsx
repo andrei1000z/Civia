@@ -13,62 +13,75 @@ import {
   Zap,
   User,
   X,
+  Target,
+  Mail,
+  BarChart3,
+  Euro,
+  BookOpen,
+  Scale,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
+import { ALL_COUNTIES } from "@/data/counties";
 import { SearchModal } from "@/components/ui/SearchModal";
 import { cn } from "@/lib/utils";
 
 /**
  * BottomNav — navigația principală pe MOBIL, stil iOS 26 „Liquid Glass".
- * Bară flotantă jos (4: Sesizări · Știri · Petiții · Meniu) + un sheet care se
- * deschide DEASUPRA barei cu restul destinațiilor. Înlocuiește navbarul de sus
- * pe mobil (Navbar.tsx e `hidden lg:block`); pe desktop bara asta e ascunsă.
+ * Bară flotantă jos (4: Sesizări · Știri · Petiții · Meniu) + sheet deasupra cu
+ * restul destinațiilor. Înlocuiește navbarul de sus pe mobil; ascunsă pe desktop.
  *
- * Material: `.lc-nav-glass` (opac cât trebuie pt. lizibilitate peste fundal
- * aglomerat + specular + rim + umbră). Animații CSS spring (transform/opacity =
- * 60fps), respectă reduced-motion. Bara se MINIMIZEAZĂ la scroll-down (iOS 26).
+ * Material: `.lc-nav-glass` (opac cât trebuie pt. lizibilitate + specular + rim).
+ * Animații CSS spring (transform/opacity = 60fps), respectă reduced-motion. Bara
+ * se MINIMIZEAZĂ la scroll-down (label colapsat via grid-template-rows, smooth).
  */
 
-// Spring catifelat (overshoot mic = clean, nu jucăuș) pt. sheet + pastilă.
+// Spring catifelat (overshoot ~12% = clean, nu jucăuș) pt. sheet + pastilă.
 const SPRING = "cubic-bezier(0.33, 1.28, 0.5, 1)";
 
-type Tab = { href: string; label: string; Icon: LucideIcon };
+type Item = { href: string; label: string; Icon: LucideIcon };
 
 // Cele 3 destinații principale (Meniu e al 4-lea, special).
-const TABS: Tab[] = [
+const TABS: Item[] = [
   { href: "/sesizari", label: "Sesizări", Icon: Send },
   { href: "/stiri", label: "Știri", Icon: Newspaper },
   { href: "/petitii", label: "Petiții", Icon: FileSignature },
 ];
 
-// Restul destinațiilor, în sheet. Etichete SCURTE (1 cuvânt) ca să încapă pe un
-// rând și grila să rămână aliniată (hrefs identice cu NAV_LINKS/NAV_MORE).
-const SHEET_LINKS: Array<{ href: string; label: string; emoji?: string; Icon?: LucideIcon }> = [
+// Restul destinațiilor, în sheet. Etichete SCURTE (1 cuvânt) + icoane LUCIDE
+// peste tot (monocrome, se colorează la activ — coerent cu bara). Hrefs = rutele
+// reale din NAV_LINKS/NAV_MORE.
+const SHEET_LINKS: Item[] = [
   { href: "/proteste", label: "Proteste", Icon: Megaphone },
   { href: "/intreruperi", label: "Întreruperi", Icon: Zap },
-  { href: "/provocari", label: "Provocare", emoji: "🎯" },
-  { href: "/informatii-publice", label: "Info 544", emoji: "📨" },
-  { href: "/promisometru", label: "Promisometru", emoji: "📊" },
-  { href: "/bugetare-participativa", label: "Bugetare", emoji: "💶" },
-  { href: "/ghiduri", label: "Ghiduri", emoji: "📚" },
-  { href: "/propuneri-legislative", label: "Legislativ", emoji: "⚖️" },
-  { href: "/clasament", label: "Clasament", emoji: "🏆" },
+  { href: "/provocari", label: "Provocare", Icon: Target },
+  { href: "/informatii-publice", label: "Info 544", Icon: Mail },
+  { href: "/promisometru", label: "Promisometru", Icon: BarChart3 },
+  { href: "/bugetare-participativa", label: "Bugetare", Icon: Euro },
+  { href: "/ghiduri", label: "Ghiduri", Icon: BookOpen },
+  { href: "/propuneri-legislative", label: "Legislativ", Icon: Scale },
+  { href: "/clasament", label: "Clasament", Icon: Trophy },
 ];
+
+const COUNTY_SLUGS = new Set(ALL_COUNTIES.map((c) => c.slug));
 
 export function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  // compact = bara minimizată (icon-only) la scroll-down; full la scroll-up/top.
+  // compact = bara minimizată (label colapsat) la scroll-down.
   const [compact, setCompact] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const lastY = useRef(0);
+  const accum = useRef(0); // delta cumulat (histerezis anti-flicker)
 
   const isActive = (href: string) => {
     if (pathname === href || pathname.startsWith(href + "/")) return true;
-    // variantă cu prefix de județ (ex: /cj/stiri) pentru tab-uri county-aware.
-    const noCounty = pathname.replace(/^\/[a-z]{1,2}(?=\/)/, "");
+    // variantă cu prefix de județ REAL (ex: /cj/stiri) pt. tab-uri county-aware.
+    const m = pathname.match(/^\/([a-z]{1,2})(?=\/)/);
+    if (!m || !COUNTY_SLUGS.has(m[1]!)) return false;
+    const noCounty = pathname.slice(m[0].length);
     return noCounty === href || noCounty.startsWith(href + "/");
   };
   const routeIndex = TABS.findIndex((t) => isActive(t.href));
@@ -77,10 +90,19 @@ export function BottomNav() {
   // Închide sheet-ul la schimbarea rutei.
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  // Minimizare la scroll-down (iOS 26 tab bar). Oprită cât e sheet-ul deschis.
+  // Minimizare la scroll-down (iOS 26). Oprită cât e sheet-ul deschis ȘI la
+  // prefers-reduced-motion (altfel bara ar sări în înălțime — exact ce evită
+  // reduced-motion). Histerezis pe delta cumulat (24px) ca să nu pâlpâie la flick.
   useEffect(() => {
     if (open) { setCompact(false); return; }
-    lastY.current = window.scrollY;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setCompact(false);
+      return;
+    }
+    const y0 = window.scrollY;
+    lastY.current = y0;
+    accum.current = 0;
+    setCompact(y0 >= 48); // reflectă imediat poziția reală (ex. după închiderea sheet-ului)
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
@@ -88,10 +110,12 @@ export function BottomNav() {
       requestAnimationFrame(() => {
         const y = window.scrollY;
         const dy = y - lastY.current;
-        if (y < 48) setCompact(false);            // aproape de top → mereu full
-        else if (dy > 6) setCompact(true);         // scroll-down clar → minimizat
-        else if (dy < -6) setCompact(false);       // scroll-up clar → full
         lastY.current = y;
+        if (y < 48) { setCompact(false); accum.current = 0; ticking = false; return; }
+        if ((dy > 0) !== (accum.current > 0)) accum.current = 0; // reset la schimbare de direcție
+        accum.current += dy;
+        if (accum.current > 24) { setCompact(true); accum.current = 24; }
+        else if (accum.current < -24) { setCompact(false); accum.current = -24; }
         ticking = false;
       });
     };
@@ -99,8 +123,7 @@ export function BottomNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [open]);
 
-  // Cât e sheet-ul deschis: lock scroll + Escape + FOCUS TRAP (focus pe primul
-  // element, Tab ciclează în sheet, focus restaurat la închidere).
+  // Cât e sheet-ul deschis: lock scroll + Escape + FOCUS TRAP.
   useEffect(() => {
     if (!open) return;
     const prevFocus = document.activeElement as HTMLElement | null;
@@ -128,13 +151,15 @@ export function BottomNav() {
     };
   }, [open]);
 
+  const activeColor = "text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]";
+
   return (
     <>
       {/* Backdrop — scrim întunecat (fundalul aglomerat dispare → un singur
           strat de sticlă citibil). Doar cu sheet-ul deschis. */}
       <div
         className={cn(
-          "lg:hidden fixed inset-0 z-[60] bg-black/45 backdrop-blur-[3px] transition-opacity duration-300 motion-reduce:transition-none",
+          "lg:hidden fixed inset-0 z-[60] bg-black/50 backdrop-blur-[3px] transition-opacity duration-300 motion-reduce:transition-none",
           open ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={() => setOpen(false)}
@@ -169,7 +194,7 @@ export function BottomNav() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Închide meniul"
-                className="w-11 h-11 grid place-items-center rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[var(--color-text)] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] active:scale-95 transition-[transform,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                className="w-11 h-11 grid place-items-center rounded-full bg-black/[0.05] dark:bg-white/[0.07] text-[var(--color-text)] hover:bg-black/[0.09] dark:hover:bg-white/[0.11] active:scale-95 transition-[scale,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -179,7 +204,7 @@ export function BottomNav() {
             <button
               type="button"
               onClick={() => { setOpen(false); setSearchOpen(true); }}
-              className="w-full h-11 mb-3 flex items-center gap-2.5 px-4 rounded-full bg-black/[0.04] dark:bg-white/[0.05] text-[var(--color-text-muted)] text-sm hover:bg-black/[0.07] dark:hover:bg-white/[0.08] active:scale-[0.99] transition-[transform,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="w-full h-11 mb-3 flex items-center gap-2.5 px-4 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[var(--color-text-muted)] text-sm hover:bg-black/[0.08] dark:hover:bg-white/[0.09] active:scale-[0.99] transition-[scale,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <SearchIcon size={16} aria-hidden="true" />
               Caută pe Civia…
@@ -197,16 +222,14 @@ export function BottomNav() {
                     aria-current={active ? "page" : undefined}
                     style={{ transitionDelay: open ? `${50 + i * 26}ms` : "0ms" }}
                     className={cn(
-                      "h-[78px] flex flex-col items-center justify-center gap-1.5 px-1.5 rounded-2xl text-center transition-[transform,opacity,background-color] duration-300 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] motion-reduce:!transition-none motion-reduce:!delay-0",
+                      "h-[78px] flex flex-col items-center justify-center gap-1.5 px-1.5 rounded-2xl text-center transition-[translate,scale,opacity,background-color] duration-300 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] motion-reduce:!transition-none motion-reduce:!delay-0",
                       open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
                       active
                         ? "bg-[var(--color-primary)]/15 ring-1 ring-[var(--color-primary)]/30"
-                        : "bg-black/[0.035] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.07]",
+                        : "bg-black/[0.04] dark:bg-white/[0.05] hover:bg-black/[0.07] dark:hover:bg-white/[0.08]",
                     )}
                   >
-                    <span className={cn("grid place-items-center", active ? "text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]" : "text-[var(--color-text)]")} aria-hidden="true">
-                      {l.Icon ? <l.Icon size={21} strokeWidth={active ? 2.4 : 1.9} /> : <span className="text-xl leading-none">{l.emoji}</span>}
-                    </span>
+                    <l.Icon size={21} strokeWidth={active ? 2.4 : 1.9} className={active ? activeColor : "text-[var(--color-text)]"} aria-hidden="true" />
                     <span className="text-[11px] font-medium leading-tight text-[var(--color-text)] line-clamp-1">{l.label}</span>
                   </Link>
                 );
@@ -217,7 +240,7 @@ export function BottomNav() {
             <Link
               href="/cont"
               onClick={() => setOpen(false)}
-              className="mt-3 w-full h-11 flex items-center gap-2.5 px-4 rounded-full bg-black/[0.04] dark:bg-white/[0.05] text-[var(--color-text)] text-sm font-medium hover:bg-black/[0.07] dark:hover:bg-white/[0.08] active:scale-[0.99] transition-[transform,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="mt-3 w-full h-11 flex items-center gap-2.5 px-4 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[var(--color-text)] text-sm font-medium hover:bg-black/[0.08] dark:hover:bg-white/[0.09] active:scale-[0.99] transition-[scale,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <User size={16} aria-hidden="true" />
               Contul meu
@@ -228,12 +251,9 @@ export function BottomNav() {
         {/* ===== BARĂ ===== */}
         <nav
           aria-label="Navigare"
-          className={cn(
-            "pointer-events-auto relative w-full max-w-md lc-nav-glass rounded-full grid grid-cols-4 px-1.5 transition-[height] duration-300 ease-out motion-reduce:transition-none",
-            compact ? "h-[52px]" : "h-[64px]",
-          )}
+          className="pointer-events-auto relative w-full max-w-md lc-nav-glass rounded-full grid grid-cols-4 px-1.5"
         >
-          {/* Pastila activă — alunecă springy între cele 4 sloturi. */}
+          {/* Pastila activă — o celulă lățime, alunecă springy între sloturi. */}
           <span
             aria-hidden="true"
             className={cn(
@@ -241,8 +261,8 @@ export function BottomNav() {
               pillIndex < 0 && "opacity-0",
             )}
             style={{
-              width: "calc(25% - 0.375rem)",
-              transform: `translateX(calc(${Math.max(pillIndex, 0)} * (100% + 0.5rem)))`,
+              width: "calc((100% - 0.75rem) / 4)",
+              transform: `translateX(calc(${Math.max(pillIndex, 0)} * 100%))`,
               transition: `transform 280ms ${SPRING}, opacity 200ms ease`,
             }}
           />
@@ -251,27 +271,27 @@ export function BottomNav() {
             const active = isMenu ? open : isActive(t!.href);
             const label = isMenu ? "Meniu" : t!.label;
             const Icon = isMenu ? MenuIcon : t!.Icon;
-            const colorCls = active ? "text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]" : "text-[var(--color-text-muted)]";
+            const colorCls = active ? activeColor : "text-[var(--color-text-muted)]";
             const inner = (
               <>
                 <Icon
                   size={22}
                   strokeWidth={active ? 2.4 : 1.9}
-                  className={cn("shrink-0 transition-[color,transform] duration-300 motion-reduce:!transition-none", colorCls, active && !compact && "scale-[1.06]")}
+                  className={cn("shrink-0 transition-[color,scale] duration-300 motion-reduce:!transition-none", colorCls, active && "scale-[1.06]")}
                   aria-hidden="true"
                 />
+                {/* Label colapsabil via grid-template-rows (smooth, fără clamp). */}
                 <span
-                  className={cn(
-                    "text-[10px] font-semibold leading-none transition-[color,opacity,max-height] duration-200 motion-reduce:!transition-none overflow-hidden",
-                    colorCls,
-                    compact ? "opacity-0 max-h-0" : "opacity-100 max-h-3",
-                  )}
+                  className="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out motion-reduce:!transition-none"
+                  style={{ gridTemplateRows: compact ? "0fr" : "1fr" }}
                 >
-                  {label}
+                  <span className={cn("min-h-0 overflow-hidden text-[10px] font-semibold leading-none transition-colors duration-300 motion-reduce:!transition-none", colorCls)}>
+                    {label}
+                  </span>
                 </span>
               </>
             );
-            const cls = "relative z-10 flex flex-col items-center justify-center gap-0.5 rounded-full transition-transform active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
+            const cls = "relative z-10 flex flex-col items-center justify-center gap-1 py-2.5 rounded-full transition-[scale] active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
             return isMenu ? (
               <button
                 key="meniu"
