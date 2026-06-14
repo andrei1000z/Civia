@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Navbar } from "@/components/layout/Navbar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { CookieBanner } from "@/components/CookieBanner";
@@ -19,7 +20,6 @@ import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { DeferredClientMount } from "@/components/DeferredClientMount";
 import { ToastProvider } from "@/components/Toast";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { MobileFab } from "@/components/layout/MobileFab";
 import { NewsletterNudge } from "@/components/NewsletterNudge";
 // AuroraBackground removed 5/22/2026 v5 — vezi globals.css `html` block.
 import { CiviaAssistant } from "@/components/liquid-civic/CiviaAssistant";
@@ -230,7 +230,10 @@ export default function RootLayout({
             gate pe consimțământul cookie. Nu se mai încarcă necontrolat. */}
       </head>
       <body
-        className="min-h-full flex flex-col pt-16"
+        // 2026-06-14 — pe MOBIL navbarul de sus dispare (nav e jos, în BottomNav):
+        // sus doar safe-area (notch), jos clearance pt. bara flotantă. Pe desktop
+        // (lg) rămâne pt-16 pentru navbarul fix de sus, fără padding jos.
+        className="min-h-full flex flex-col pt-[env(safe-area-inset-top)] lg:pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0"
         // Mobile in-app browsers (Reddit App, Facebook, Instagram, X)
         // injectează clase/atribute la body în timpul hydratation. Plus
         // extensii (Grammarly, LastPass, MetaMask wallet, Dark Reader)
@@ -266,6 +269,7 @@ export default function RootLayout({
               <ReferralSelfBridge />
               <AlertBanner />
               <Navbar />
+              <BottomNav />
               <main id="main-content" className="flex-1 flex flex-col">{children}</main>
               <Footer />
               {/* 2026-05-24 (P1.321) — banner ofline non-deferred, trebuie
@@ -277,7 +281,6 @@ export default function RootLayout({
                 <AuthModal />
                 <CookieBanner />
                 <InstallPrompt />
-                <MobileFab />
                 <NewsletterNudge />
                 {/* F1 Civia Assistant — AI civic chat (desktop floating button) */}
                 <CiviaAssistant />

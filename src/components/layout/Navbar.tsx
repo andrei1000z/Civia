@@ -110,6 +110,10 @@ export function Navbar() {
     <>
       <header
         className={cn(
+          // 2026-06-14 — pe MOBIL navbarul de sus e ascuns; navigația trece în
+          // <BottomNav> (bara liquid-glass flotantă jos). Aici rămâne doar
+          // pentru desktop (lg+).
+          "hidden lg:block",
           // FIXED (not sticky) — `sticky` cădea la scroll-depth pe browsere
           // unde body avea overflow-x: hidden (creează scroll container și
           // anulează sticky). Body's pt-16 din layout creează spațiul
