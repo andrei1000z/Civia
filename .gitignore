@@ -35,6 +35,9 @@ signing-key-info.txt
 *.aab
 *.apk
 
+# Audit working dir (screenshots etc.) — local only
+/audit/
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
