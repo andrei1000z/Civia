@@ -74,7 +74,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
               <img
                 src={beforeUrl}
                 alt="Starea problemei înainte de rezolvare"
-                className="w-full h-auto max-h-[70vh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                className="w-full h-auto max-h-[70dvh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
                 loading="lazy"
               />
               <span
@@ -103,7 +103,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
                 <img
                   src={afterUrl}
                   alt="Starea după rezolvare — dovadă vizuală"
-                  className="w-full h-auto max-h-[70vh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                  className="w-full h-auto max-h-[70dvh] object-contain group-hover:scale-[1.03] transition-transform duration-500"
                   loading="lazy"
                 />
                 <span

@@ -193,7 +193,7 @@ export function CiviaAssistant() {
           role="dialog"
           aria-label="Civia Assistant"
           aria-modal="false"
-          className="fixed bottom-6 right-6 z-40 w-[calc(100vw-3rem)] sm:w-[400px] max-w-[400px] h-[calc(100vh-6rem)] sm:h-[600px] max-h-[600px] flex flex-col lc-glass-3 rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] animate-modal-pop"
+          className="fixed bottom-6 right-6 z-40 w-[calc(100vw-3rem)] sm:w-[400px] max-w-[400px] h-[calc(100dvh-6rem)] sm:h-[600px] max-h-[600px] flex flex-col lc-glass-3 rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] animate-modal-pop"
         >
           {/* Header */}
           <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[var(--color-border)]">
@@ -214,7 +214,7 @@ export function CiviaAssistant() {
               <button
                 type="button"
                 onClick={handleReset}
-                aria-label="Reseteaza conversatia"
+                aria-label="Resetează conversația"
                 title="Reset"
                 className="w-8 h-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
@@ -223,7 +223,7 @@ export function CiviaAssistant() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Inchide"
+                aria-label="Închide"
                 className="w-8 h-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
                 <X size={16} aria-hidden="true" />

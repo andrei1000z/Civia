@@ -156,20 +156,20 @@ export function Lightbox({ open, onClose, url, kind = "auto", caption, title }: 
             <iframe
               src={url}
               title={title ?? "PDF"}
-              className="w-full h-full min-h-[60vh]"
+              className="w-full h-full min-h-[60dvh]"
               // Browsers refuse PDFs in iframes if the host serves
               // X-Frame-Options: DENY. Supabase storage serves them
               // permissively; if that ever changes, the "Tab nou"
               // button is a perfect fallback.
             />
           ) : (
-            <div className="relative w-full h-full max-h-[80vh] flex items-center justify-center p-2">
+            <div className="relative w-full h-full max-h-[80dvh] flex items-center justify-center p-2">
               <Image
                 src={url}
                 alt={title ?? "Imagine"}
                 width={1600}
                 height={1200}
-                className="max-w-full max-h-[80vh] w-auto h-auto object-contain"
+                className="max-w-full max-h-[80dvh] w-auto h-auto object-contain"
                 unoptimized
                 priority
               />

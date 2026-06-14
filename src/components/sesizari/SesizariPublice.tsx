@@ -303,13 +303,13 @@ export function SesizariPublice() {
                 // 3 cols when route-scoped county hides the dropdown.
                 county ? "sm:grid-cols-2 md:grid-cols-3" : "sm:grid-cols-2 md:grid-cols-4",
               )}>
-                <select value={filterTip} onChange={(e) => setFilterTip(e.target.value)} className={selectClass}>
+                <select aria-label="Filtrează după tip" value={filterTip} onChange={(e) => setFilterTip(e.target.value)} className={selectClass}>
                   <option value="toate">Toate tipurile</option>
                   {SESIZARE_TIPURI.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
-                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
+                <select aria-label="Filtrează după status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
                   <option value="toate">Orice status</option>
                   {/* Keep the order in sync with the workflow in
                       src/lib/sesizari/status.ts so the dropdown reads
@@ -325,7 +325,7 @@ export function SesizariPublice() {
                   <option value="respins">Respins</option>
                 </select>
                 {!county && (
-                  <select value={filterCounty} onChange={(e) => setFilterCounty(e.target.value)} className={selectClass}>
+                  <select aria-label="Filtrează după județ" value={filterCounty} onChange={(e) => setFilterCounty(e.target.value)} className={selectClass}>
                     <option value="toate">Toate județele</option>
                     {ALL_COUNTIES.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>

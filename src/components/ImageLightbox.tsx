@@ -97,7 +97,7 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
       <img
         src={urls[index]}
         alt={`Imagine ${index + 1} din ${urls.length}`}
-        className="max-w-full max-h-[90vh] object-contain rounded-[var(--radius-xs)]"
+        className="max-w-full max-h-[90dvh] object-contain rounded-[var(--radius-xs)]"
         onClick={(e) => e.stopPropagation()}
       />
       {urls.length > 1 && (

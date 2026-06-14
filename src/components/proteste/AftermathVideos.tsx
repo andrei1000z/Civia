@@ -224,7 +224,7 @@ function VideoPlayer({ video }: { video: AftermathVideo }) {
 
   if (embed.kind === "video") {
     return (
-      <div className="w-full aspect-video max-h-[85vh] bg-black rounded-[var(--radius-sm)] overflow-hidden">
+      <div className="w-full aspect-video max-h-[85dvh] bg-black rounded-[var(--radius-sm)] overflow-hidden">
         <video
           key={embed.src}
           src={embed.src}
@@ -239,7 +239,7 @@ function VideoPlayer({ video }: { video: AftermathVideo }) {
     );
   }
   return (
-    <div className="w-full aspect-video max-h-[85vh]">
+    <div className="w-full aspect-video max-h-[85dvh]">
       <iframe
         src={embed.src}
         title={video.title ?? "Video aftermath"}

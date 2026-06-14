@@ -360,7 +360,7 @@ export default function AdminSesizariPage() {
                 <CloseX size={16} aria-hidden="true" />
               </button>
             </div>
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 space-y-4 max-h-[70dvh] overflow-y-auto">
               <div>
                 <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
                   Sesizare

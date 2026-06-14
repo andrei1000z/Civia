@@ -101,7 +101,7 @@ export function PropuneFormClient() {
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[var(--radius-lg)] bg-[var(--color-surface)] shadow-[var(--shadow-xl)] border border-[var(--color-border)]">
+      <div className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-[var(--radius-lg)] bg-[var(--color-surface)] shadow-[var(--shadow-xl)] border border-[var(--color-border)]">
 
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[var(--color-border)]">

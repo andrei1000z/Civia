@@ -230,7 +230,7 @@ export function ApproveTicketDialog({ open, ticket, submitting, onClose, onSubmi
           </div>
         </div>
 
-        <div className="p-5 max-h-[75vh] overflow-y-auto space-y-5">
+        <div className="p-5 max-h-[75dvh] overflow-y-auto space-y-5">
           {/* Sesizare summary */}
           {ticket.sesizare && (
             <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-3">

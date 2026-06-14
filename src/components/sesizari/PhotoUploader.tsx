@@ -423,7 +423,7 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
           <img
             src={urls[lightbox]}
             alt={`Foto ${lightbox + 1} din ${urls.length}`}
-            className="max-w-[90vw] max-h-[85vh] object-contain rounded-[var(--radius-xs)]"
+            className="max-w-[90vw] max-h-[85dvh] object-contain rounded-[var(--radius-xs)]"
             onClick={(e) => e.stopPropagation()}
           />
 

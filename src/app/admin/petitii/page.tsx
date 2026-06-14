@@ -1026,7 +1026,7 @@ function PetitieForm({
 
         {/* Live preview */}
         {showPreview && (
-          <aside className="lg:sticky lg:top-24 self-start bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 max-h-[80vh] overflow-y-auto">
+          <aside className="lg:sticky lg:top-24 self-start bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 max-h-[80dvh] overflow-y-auto">
             <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-3 flex items-center gap-1">
               <Eye size={10} aria-hidden="true" /> Preview live
             </p>

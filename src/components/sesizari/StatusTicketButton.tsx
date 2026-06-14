@@ -180,7 +180,7 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
               </p>
             </div>
 
-            <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 space-y-5 max-h-[70dvh] overflow-y-auto">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
                   Status propus

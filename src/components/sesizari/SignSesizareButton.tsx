@@ -563,7 +563,7 @@ export function SignSesizareButton({
                   Mesaj
                 </p>
                 <div className="rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-inner">
-                  <div className="px-4 py-4 md:px-5 md:py-5 max-h-[40vh] md:max-h-[45vh] overflow-y-auto">
+                  <div className="px-4 py-4 md:px-5 md:py-5 max-h-[40dvh] md:max-h-[45dvh] overflow-y-auto">
                     <pre className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-sans text-[var(--color-text)]">
 {previewData.body}
                     </pre>
