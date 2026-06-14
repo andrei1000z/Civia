@@ -1627,10 +1627,11 @@ export function SesizareForm() {
 
         {draftRestoredAt && !draftDismissed && (
           <div className="px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center gap-2.5 text-xs">
-            <span aria-hidden>📝</span>
-            <p className="flex-1 min-w-0 flex items-baseline gap-1.5 text-[var(--color-text-muted)]">
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400 truncate">Ciornă restaurată</span>
-              <span className="shrink-0 whitespace-nowrap">· {draftRestoredAt}</span>
+            <span aria-hidden className="shrink-0">📝</span>
+            {/* Text SCURT — încape mereu pe un rând cu „Golește", nimic nu se
+                taie (nici label, nici data). */}
+            <p className="flex-1 min-w-0 text-[var(--color-text-muted)]">
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">Ciornă</span> din {draftRestoredAt}
             </p>
             <button
               type="button"
