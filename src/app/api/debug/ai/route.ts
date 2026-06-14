@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGeminiConfigured, GEMINI_MODEL, callGemini } from "@/lib/ai/gemini";
+import { verifyBearer } from "@/lib/auth/constant-time";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +9,19 @@ export const dynamic = "force-dynamic";
  * at runtime AND optionally pings Gemini live (?ping=1) to confirm
  * the key actually works.
  *
- * Returns booleans and provider names — never returns the raw keys.
- * Safe to leave in prod; no secrets are exposed.
+ * GATED: necesită `Authorization: Bearer ${CRON_SECRET}`. Înainte era
+ * public → leak de prefixe de chei (6 caractere) + `?ping=1` permitea
+ * oricui să ardă cota Gemini. Nu mai returnează niciun fragment de cheie.
  *
  * Usage:
- *   curl https://civia.ro/api/debug/ai
- *   curl https://civia.ro/api/debug/ai?ping=1
+ *   curl -H "Authorization: Bearer $CRON_SECRET" https://civia.ro/api/debug/ai
+ *   curl -H "Authorization: Bearer $CRON_SECRET" https://civia.ro/api/debug/ai?ping=1
  */
 export async function GET(req: Request) {
+  if (!verifyBearer(req.headers.get("authorization"), process.env.CRON_SECRET)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const shouldPing = url.searchParams.get("ping") === "1";
 
@@ -23,17 +29,11 @@ export async function GET(req: Request) {
     gemini: {
       configured: isGeminiConfigured(),
       model: GEMINI_MODEL,
-      keyPrefix: process.env.GEMINI_API_KEY
-        ? `${process.env.GEMINI_API_KEY.slice(0, 6)}…`
-        : null,
     },
     groq: {
       configured: !!process.env.GROQ_API_KEY,
       model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
       modelFast: process.env.GROQ_MODEL_FAST || "llama-3.1-8b-instant",
-      keyPrefix: process.env.GROQ_API_KEY
-        ? `${process.env.GROQ_API_KEY.slice(0, 6)}…`
-        : null,
     },
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV ?? null,

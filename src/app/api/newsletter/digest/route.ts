@@ -11,6 +11,7 @@ import {
 import { buildSalutation } from "@/lib/email/format";
 import { newsletterUnsubscribeUrl } from "@/lib/email/newsletter-unsubscribe";
 import { getUpcomingEvents } from "@/data/calendar-civic";
+import { verifyBearer } from "@/lib/auth/constant-time";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -27,10 +28,10 @@ export const maxDuration = 60;
  * Protected by CRON_SECRET header. Vercel Cron automatically sends this header.
  */
 export async function GET(req: Request) {
-  // Auth via Vercel Cron secret
-  const authHeader = req.headers.get("authorization");
-  const expected = process.env.CRON_SECRET;
-  if (expected && authHeader !== `Bearer ${expected}`) {
+  // Auth via Vercel Cron secret. verifyBearer e fail-CLOSED (respinge și
+  // când CRON_SECRET lipsește) + timing-safe — spre deosebire de check-ul
+  // vechi `if (expected && ...)` care SĂREA auth-ul când secretul lipsea.
+  if (!verifyBearer(req.headers.get("authorization"), process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
