@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "ro.civia.app",
+      "package_name": "ro.civia.twa",
       "sha256_cert_fingerprints": [
-        "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+        "50:B8:34:8C:BF:79:8E:01:07:52:D1:83:D0:F6:27:7D:83:65:55:BC:EB:6E:98:E7:55:9C:82:05:B6:02:76:B2"
       ]
     }
   }

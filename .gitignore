@@ -28,6 +28,13 @@
 Thumbs.db
 *.pem
 
+# Android signing keys + build artifacts (TWA / Google Play) — NEVER commit
+*.keystore
+*.jks
+signing-key-info.txt
+*.aab
+*.apk
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
