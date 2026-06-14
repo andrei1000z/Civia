@@ -2110,14 +2110,6 @@ export function SesizareForm() {
             <p className="text-xs text-[var(--color-text-muted)] mt-2">
               O poză apropiată + una de context.
             </p>
-            {imagini.length > 0 && (
-              <div className="mt-2 flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300">
-                <span className="shrink-0 mt-0.5">⚠️</span>
-                <p>
-                  <strong>Atașează pozele manual în email</strong> — apar pe Civia, dar e mai bine să le pui și ca atașamente.
-                </p>
-              </div>
-            )}
           </Field>
         )}
 
