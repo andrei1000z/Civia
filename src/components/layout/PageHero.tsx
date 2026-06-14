@@ -121,9 +121,10 @@ export function PageHero({
               </div>
             )}
             {tagline && (
-              <p className="inline-flex text-[11px] text-white/70 mt-3 flex-wrap items-start gap-1.5 break-words hero-enter-3">
-                <Sparkles size={11} aria-hidden="true" className="shrink-0 mt-0.5" />
-                <span>{tagline}</span>
+              <p className="text-[11px] text-white/70 mt-3 break-words hero-enter-3">
+                {/* iconul inline cu textul (nu mai stă singur pe primul rând) */}
+                <Sparkles size={11} aria-hidden="true" className="inline-block align-[-1.5px] mr-1" />
+                {tagline}
               </p>
             )}
             {children && <div className="hero-enter-3">{children}</div>}
