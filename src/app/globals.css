@@ -283,6 +283,13 @@
   border-color: var(--color-border);
 }
 
+/* Remove the grey/blue native tap-highlight on mobile — feedback comes
+   from the active:scale-* / press utilities instead (cleaner on the
+   rounded glass surfaces). 2026-06-15 audit. */
+a, button, [role="button"], summary, label, [tabindex] {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html, body {
   height: 100%;
   /* Global safety net: previne scroll orizontal pe TOATĂ aplicația.
