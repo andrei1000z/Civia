@@ -1424,10 +1424,15 @@ export function SesizareForm() {
       // Backend accept anonimi dacă sesizarea e < 24h vechime + rate
       // limit 5/h/IP. SuccessScreen are propriul auto-trigger care va
       // primi 409 already_sent + skip. Fire-and-forget.
+      // 2026-06-14 FIX (raport 00071/00074 rămase „nou", netrimise): `keepalive`
+      // — fără el, dacă userul închide pagina IMEDIAT după submit, browserul
+      // ANULEAZĂ requestul în zbor → emailul nu mai pleacă → sesizare publică
+      // blocată la „nou". keepalive face requestul să supraviețuiască unload-ului.
       void fetch(`/api/sesizari/${json.data.code}/send-via-civia`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
+        keepalive: true,
       }).catch(() => { /* SuccessScreen retry-uiește */ });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Trimiterea a eșuat";
