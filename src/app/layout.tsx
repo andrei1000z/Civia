@@ -14,6 +14,7 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { AlertBanner } from "@/components/AlertBanner";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { ReferralSelfBridge } from "@/components/referral/ReferralSelfBridge";
 import { NavProgress } from "@/components/NavProgress";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
@@ -245,6 +246,8 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         <ConsentedAnalytics />
+        {/* SW înregistrat devreme (nu deferred) — PWA detectabil de crawlere/Chrome */}
+        <ServiceWorkerRegister />
         <NavProgress />
         <ScrollRestoration />
         {/* 5/22/2026 v5 — AuroraBackground scoasă complet. Userul a raportat

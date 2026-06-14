@@ -40,40 +40,11 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
       { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-    // 5/22/2026 — Screenshots pentru Play Store + Chrome install dialog.
-    // Recomandat de Google: 3-5 screenshots mobile + 1-2 wide pentru tablet.
-    // Generate manual prin DevTools (deschide /sesizari pe Pixel 5 size,
-    // screenshot, salvează în /public/screenshots/). Pending captures.
-    screenshots: [
-      {
-        src: "/screenshots/mobile-home.png",
-        sizes: "1080x1920",
-        type: "image/png",
-        form_factor: "narrow",
-        label: "Pagina principală Civia",
-      },
-      {
-        src: "/screenshots/mobile-sesizari.png",
-        sizes: "1080x1920",
-        type: "image/png",
-        form_factor: "narrow",
-        label: "Formular sesizare cu camera",
-      },
-      {
-        src: "/screenshots/mobile-publice.png",
-        sizes: "1080x1920",
-        type: "image/png",
-        form_factor: "narrow",
-        label: "Sesizări publice de la cetățeni",
-      },
-      {
-        src: "/screenshots/desktop-judet.png",
-        sizes: "1920x1080",
-        type: "image/png",
-        form_factor: "wide",
-        label: "Dashboard județ — București",
-      },
-    ],
+    // 2026-06-14 — `screenshots` scos din manifest: pointau spre fișiere
+    // inexistente (/screenshots/*.png → 404, semnalat de PWABuilder). Pentru
+    // Play Store screenshot-urile se urcă SEPARAT în Play Console (store
+    // listing), nu din manifest. Le re-adăugăm aici doar dacă punem fișierele
+    // reale în /public/screenshots/ (îmbunătățește dialogul de install Chrome).
     shortcuts: [
       { name: "Trimite o sesizare", short_name: "Sesizare", url: "/sesizari", description: "Scrie o sesizare formală către primărie" },
       { name: "Urmărește sesizarea", short_name: "Urmărește", url: "/urmareste", description: "Verifică statusul cu codul primit" },
