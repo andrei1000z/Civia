@@ -429,6 +429,21 @@ export function SesizareForm() {
     setDetectedCounty(detected);
   }, [data.locatie, county?.id, data.lat, data.lng]);
 
+  // 2026-06-14 FIX (raport user „Șoseaua Viilor, Sector 5" detectat S4): sectorul
+  // scris EXPLICIT în textul locației e AUTORITAR — userul își știe sectorul, iar
+  // geocode-ul/AI-ul greșesc pe străzile de la limita dintre sectoare (Nominatim
+  // tag-uia Șoseaua Viilor ca S4). Re-asertăm la fiecare schimbare a LOCAȚIEI;
+  // NU depinde de data.sector, deci override-ul manual din dropdown (care schimbă
+  // doar sectorul, nu locația) rămâne neatins.
+  useEffect(() => {
+    const m = data.locatie?.match(/sector(?:ul)?\s*([1-6])\b/i);
+    if (!m) return;
+    const sn = `S${m[1]}`;
+    setData((d) => (d.sector === sn ? d : { ...d, sector: sn }));
+    setDetectedCounty("B"); // un sector explicit ⇒ București
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.locatie]);
+
   // 2026-05-26 — AI city detection FALLBACK via Groq pentru adrese pe care
   // regex-ul detectCountyFromLocatie nu le poate identifica (ex: „lângă
   // Universitate", „Drumul Taberei" fără București menționat, „Piața
