@@ -1,0 +1,23 @@
+name: ✨ Propune un feature
+description: O idee de îmbunătățire sau funcționalitate nouă pentru Civia
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Ce problemă rezolvă?
+      description: „Mă enervează că…" / „Ar fi util dacă…"
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Soluția pe care o propui
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative la care te-ai gândit
+  - type: textarea
+    id: extra
+    attributes:
+      label: Context suplimentar (mockup-uri, exemple, linkuri)

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Vulnerabilitate de securitate
+    url: https://github.com/andrei1000z/Civia/security/policy
+    about: Raportează PRIVAT problemele de securitate — NU deschide issue public. Vezi SECURITY.md.
+  - name: 💬 Întrebare generală sau feedback
+    url: https://civia.ro
+    about: Pentru întrebări generale despre platformă, folosește feedback-ul din footer-ul civia.ro.

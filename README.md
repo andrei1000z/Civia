@@ -193,3 +193,5 @@ Pentru raportare vulnerabilități de securitate: vezi [`SECURITY.md`](./SECURIT
 - Cod sursă: **MIT** — vezi [`LICENSE`](./LICENSE).
 - Date agregate publice: **CC BY 4.0** — reutilizează cu atribuire.
 - Branding-ul Civia (logo, identitate vizuală, nume „Civia") rămâne proprietatea operatorului. Dacă faci fork și deploy public, te rugăm să rebrand-uiești.
+
+Detaliile complete despre ce **nu** e acoperit de MIT (date, branding, surse terțe) sunt în [`NOTICE`](./NOTICE).

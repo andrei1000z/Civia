@@ -1,0 +1,47 @@
+name: 🐛 Raportează un bug
+description: Ceva nu funcționează cum trebuie pe Civia
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Mulțumim că ajuți! Completează cât poți — cu cât mai multe detalii, cu atât mai repede rezolvăm.
+        ⚠️ Pentru **vulnerabilități de securitate** NU deschide issue public — vezi [SECURITY.md](../../SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce s-a întâmplat?
+      description: Descrie problema clar și pe scurt.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pași de reproducere
+      placeholder: |
+        1. Mergi la „…"
+        2. Apasă pe „…"
+        3. Apare eroarea „…"
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ce te așteptai să se întâmple?
+  - type: input
+    id: where
+    attributes:
+      label: Unde? (pagină / URL)
+      placeholder: ex. /sesizari, civia.ro/cj/stiri
+  - type: dropdown
+    id: device
+    attributes:
+      label: Dispozitiv
+      options:
+        - Telefon (Android)
+        - Telefon (iPhone)
+        - Desktop
+        - Tabletă
+  - type: textarea
+    id: extra
+    attributes:
+      label: Capturi de ecran / context suplimentar
+      description: Trage și lasă imaginile aici, dacă ai.
