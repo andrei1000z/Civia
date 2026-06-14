@@ -206,3 +206,15 @@ describe("getAuthoritiesFor — afisaj/publicitate ilegală", () => {
     expect(emails.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ── Tip „animale" — protecția animalelor (activat 2026-06-14) ──
+describe("getAuthoritiesFor — protecția animalelor", () => {
+  it("routes 'animale' în București la ASPA + PMB + Poliția Locală sector", () => {
+    const r = getAuthoritiesFor("animale", "S3", "B", "Strada Rampei 37, Sector 3, București", undefined, "câine ținut în condiții improprii, fără apă");
+    const emails = r.primary.map((a) => a.email);
+    expect(emails).toContain("relatiicupublicul@aspa.ro"); // ASPA — adresa reală
+    expect(emails).toContain("relatiipublice@pmb.ro");      // PMB
+    expect(emails).toContain("secretariat.dgpl@primarie3.ro"); // PL S3 (sancțiune)
+    expect(emails).not.toContain("asau@pmb.ro");            // vechea adresă greșită, eliminată
+  });
+});

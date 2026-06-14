@@ -89,7 +89,7 @@ export const PETITIE_CATEGORIE_TO_SESIZARE: Record<
     pitch: "Vandalism, clădire istorică degradată sau afișaj ilegal pe patrimoniu în orașul tău?",
   },
   Animale: {
-    tip: "altele",
+    tip: "animale",
     pitch: "Vezi animale fără stăpân sau abuzate în zona ta? Semnalează autorităților locale.",
   },
   // Teme pur naționale — fără acțiune locală concretă → card ascuns.

@@ -217,6 +217,7 @@ LISTA DE TIPURI (alege DOAR UNUL):
 - "rampa_acces" — rampă pentru cărucioare/scaune cu rotile, accesibilitate persoane cu dizabilități, lipsă rampă la trotuar/instituție/bordură
 - "colectare_selectiva" — container reciclare lipsă, tomberoane separate (hârtie/plastic/sticlă) cerute, lipsă infrastructură reciclare
 - "fumat_interzis" — fumat in locuri publice interzise (Legea 15/2016): stații transport, scări de bloc, terase închise, locuri de joacă, școli, spitale, restaurante interior
+- "animale" — protecția animalelor: abuz / maltratare, animal ținut în condiții improprii (țarc mic, fără apă/hrană, lăsat în soare/caniculă, fără adăpost), animale fără stăpân / pe domeniul public, câine periculos care a mușcat. Cuvinte cheie: „câine", „pisică", „animal", „abuz", „maltratare", „condiții improprii", „fără apă", „înlănțuit", „fără stăpân", „maidanez", „mușcat", „neglijat". Rutează la ASPA + Poliția Locală (Legea 205/2004).
 - "altele" — orice nu se încadrează în lista de mai sus. AI-ul va auto-genera apoi o etichetă custom_category mai precisă.
 
 RĂSPUNDE DOAR CU JSON VALID în formatul EXACT:

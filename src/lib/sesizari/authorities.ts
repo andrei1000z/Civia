@@ -59,7 +59,11 @@ export const AUTH = {
   apanova: { id: "apanova", name: "ApaNova", email: "clientsc@apanovabucuresti.ro" },
   alpab: { id: "alpab", name: "ALPAB", email: "alpab@alpab.ro" },
   stb: { id: "stb", name: "STB S.A.", email: "relatii.publice@stbsa.ro" },
-  asau: { id: "asau", name: "ASAU (animale)", email: "asau@pmb.ro" },
+  // 2026-06-14 — ASPA (Autoritatea pentru Supravegherea și Protecția Animalelor,
+  // București) cu adresa REALĂ de relații cu publicul. Înlocuiește vechiul
+  // „asau@pmb.ro" (neconfirmat). Folosit de NGO-uri (ex. @gorider_ro) pt. abuz/
+  // condiții improprii/animale fără stăpân pe domeniul Capitalei.
+  aspa: { id: "aspa", name: "ASPA — Protecția Animalelor", email: "relatiicupublicul@aspa.ro" },
   prefectura: { id: "prefectura", name: "Prefectura București", email: "prefectura@prefecturabucu.ro" },
   isu: { id: "isu", name: "ISU București", email: "112@isubif.ro" },
 } as const;
@@ -353,9 +357,12 @@ export function getAuthoritiesFor(
       break;
 
     case "animale":
-      addTo(AUTH.asau);
+      // Protecția animalelor (abuz, condiții improprii, fără stăpân). ASPA =
+      // autoritatea pe animale în București; PMB coordonare pe domeniul public;
+      // Poliția Locală pe sector = competență sancțiune (Legea 205/2004).
+      addTo(AUTH.aspa);
       addTo(AUTH.pmb);
-      if (sectorPrimarie) addTo(sectorPrimarie);
+      if (sectorPolitie) addTo(sectorPolitie);
       break;
 
     case "transport":

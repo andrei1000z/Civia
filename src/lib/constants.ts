@@ -183,10 +183,12 @@ export const SESIZARE_TIPURI = [
   { value: "rampa_acces", label: "Rampă acces persoane cu dizabilități", short: "Rampă", icon: "♿", active: true },
   { value: "colectare_selectiva", label: "Colectare selectivă — container lipsă", short: "Reciclare", icon: "♻️", active: true },
   { value: "fumat_interzis", label: "Fumat în locuri interzise (Legea 15/2016)", short: "Fumat", icon: "🚭", active: true },
+  // 2026-06-14 — protecția animalelor (abuz, condiții improprii, fără stăpân).
+  // Rutează la ASPA + PMB + Poliția Locală (Legea 205/2004). Activat din inactiv.
+  { value: "animale", label: "Protecția animalelor (abuz / fără stăpân)", short: "Animale", icon: "🐾", active: true },
   // DEPRECATED — pastrat pentru compat. NU apar in form.
   { value: "pietonal", label: "Traversare pietoni periculoasă", short: "Pietonal", icon: "🚸", active: false },
   { value: "zgomot", label: "Zgomot excesiv/deranj", short: "Zgomot", icon: "🔊", active: false },
-  { value: "animale", label: "Câini periculoși/animale", short: "Animale", icon: "🐕", active: false },
   // FALLBACK — cand niciunul nu se potriveste. AI auto-genereaza
   // custom_category dinăuntru.
   // 2026-06-04 — label scurtat de la „Altele (categoria se creează automat din

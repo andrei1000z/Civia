@@ -70,8 +70,8 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     propunere: "intervenția Poliției Locale pentru verificarea respectării programului de liniște publică",
   },
   animale: {
-    problema_ghid: "câini comunitari agresivi/haite care pun în pericol trecătorii și copiii din zonă",
-    propunere: "intervenția ASAU pentru prinderea animalelor și evaluarea stării lor",
+    problema_ghid: "un animal ținut în condiții improprii / abuzat sau animale fără stăpân care necesită intervenție",
+    propunere: "intervenția ASPA pentru verificarea condițiilor de deținere și, dacă se confirmă, scoaterea animalului din condițiile improprii, conform Legii 205/2004 privind protecția animalelor",
     urgenta: "urgentă",
   },
   transport: {
