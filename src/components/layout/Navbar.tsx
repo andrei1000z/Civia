@@ -168,9 +168,9 @@ export function Navbar() {
                   href={link.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "px-3 py-2 rounded-[var(--radius-button)] text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
+                    "px-3.5 py-2 rounded-full text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
                     isActive
-                      ? "text-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      ? "text-[var(--color-primary)] bg-[var(--color-primary-soft)] ring-1 ring-[var(--color-primary)]/20"
                       : "text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
                   )}
                 >
@@ -207,7 +207,7 @@ export function Navbar() {
                   </button>
                   <div
                     className={cn(
-                      "absolute top-full right-0 w-72 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-[var(--shadow-lg)] overflow-hidden py-2 origin-top transition-all duration-150",
+                      "absolute top-full right-0 mt-1.5 w-72 lc-nav-glass rounded-2xl overflow-hidden py-2 origin-top-right transition-all duration-200 motion-reduce:transition-none",
                       moreDropdown
                         ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                         : "opacity-0 scale-95 -translate-y-1 pointer-events-none"

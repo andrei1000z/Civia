@@ -1377,6 +1377,46 @@ textarea:hover:not(:focus):not(:disabled) {
     0 24px 48px -12px rgba(0, 0, 0, 0.12);
 }
 
+/* 2026-06-14 — Liquid Glass dedicat NAVIGAȚIEI (bară mobil + sheet + navbar
+   desktop). Mai OPAC decât lc-glass-2 ca să fie lizibil peste fundal aglomerat
+   (problema raportată: sticla prea transparentă), cu specular highlight
+   direcțional (mai luminos sus-stânga) + rim subtil + umbră de plutire —
+   „sticlă lichidă" iOS 26, nu blur fad. Un singur strat per ecran. Light/dark +
+   reduced-transparency + fallback @supports. */
+.lc-nav-glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(185%);
+  -webkit-backdrop-filter: blur(20px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 10px 34px -8px rgba(0, 0, 0, 0.18),
+    0 2px 8px -2px rgba(0, 0, 0, 0.10);
+}
+.dark .lc-nav-glass {
+  background: rgba(24, 24, 28, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.05),
+    0 10px 34px -8px rgba(0, 0, 0, 0.5),
+    0 2px 8px -2px rgba(0, 0, 0, 0.3);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lc-nav-glass {
+    background: var(--color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lc-nav-glass {
+    background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  }
+}
+
 .lc-glass-3 {
   background: var(--glass-3-bg);
   backdrop-filter: blur(var(--glass-3-blur)) saturate(var(--glass-3-saturate)) brightness(105%);
