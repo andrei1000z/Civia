@@ -594,14 +594,17 @@ export function SesizariPublice() {
                     <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* 2026-06-14 — TOTAL trimiteri = co-semnatari + autorul
+                        original, ca să coincidă cu „Trimisă de N cetățeni" din
+                        pagina de detaliu (înainte arăta doar co-semnatarii → -1). */}
                     {(s.nr_cosigners ?? 0) > 0 && (
                       <span
                         className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
-                        aria-label={`${s.nr_cosigners} ${s.nr_cosigners === 1 ? "cetățean a trimis și el" : "cetățeni au trimis și ei"}`}
-                        title="Cetățeni care au trimis și ei această sesizare"
+                        aria-label={`Trimisă de ${(s.nr_cosigners ?? 0) + 1} cetățeni`}
+                        title="Câți cetățeni au trimis această sesizare"
                       >
                         <Users size={13} aria-hidden="true" />
-                        <span className="font-medium tabular-nums">{s.nr_cosigners}</span>
+                        <span className="font-medium tabular-nums">{(s.nr_cosigners ?? 0) + 1}</span>
                       </span>
                     )}
                     <span
