@@ -1,4 +1,5 @@
 import { useId, cloneElement, isValidElement } from "react";
+import { AlertCircle } from "lucide-react";
 
 /**
  * FormField — shared label+input wrapper pentru sesizari form (si alte
@@ -54,8 +55,9 @@ export function FormField({
         <p id={hintId} className="mt-1 text-xs text-[var(--color-text-muted)]">{hint}</p>
       )}
       {error && (
-        <p id={errId} className="mt-1 text-xs text-[var(--color-accent,#DC2626)]" role="alert">
-          {error}
+        <p id={errId} className="mt-1.5 text-[13px] font-medium text-red-600 dark:text-red-400 flex items-start gap-1.5" role="alert">
+          <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span>{error}</span>
         </p>
       )}
     </div>

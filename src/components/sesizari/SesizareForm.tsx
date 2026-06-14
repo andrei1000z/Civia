@@ -4,12 +4,11 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Locate,
-  Copy,
   Mail,
   Send,
   Sparkles,
   Loader2,
-  CheckCircle2,
+  Pencil,
   AlertCircle,
   Map as MapIcon,
 } from "lucide-react";
@@ -1581,6 +1580,14 @@ export function SesizareForm() {
               `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
             );
             setHotspotShown(false);
+            // 2026-06-14 (verify) — reset COMPLET al stării de editare text, altfel
+            // a doua sesizare moștenea textul EDITAT manual al celei anterioare
+            // (editedText + flag formal_text_edited → pleca textul greșit).
+            setEditedText(null);
+            setEditOpen(false);
+            formalEditedRef.current = false;
+            lastGenSigRef.current = "";
+            setFieldErrors({});
           }}
         />
         {showHotspot && data.lat != null && data.lng != null && (
@@ -1640,8 +1647,14 @@ export function SesizareForm() {
                 setParkingJurisdiction("");
                 setDraftDismissed(true);
                 setDraftRestoredAt(null);
+                // reset complet al editării textului (vezi onAnother).
+                setEditedText(null);
+                setEditOpen(false);
+                formalEditedRef.current = false;
+                lastGenSigRef.current = "";
+                setFieldErrors({});
               }}
-              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+              className="text-xs font-medium text-red-600 hover:text-red-700 shrink-0 h-8 px-2 inline-flex items-center underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg"
             >
               Golește
             </button>
@@ -1745,7 +1758,7 @@ export function SesizareForm() {
         </Field>
 
         {!recipients && data.tip && !hasLocationSignal && (
-          <div className="rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 text-xs">
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 text-xs">
             <p className="text-amber-900 dark:text-amber-300 flex items-center gap-1">
               <Mail size={12} aria-hidden="true" /> Destinatarii se determină după ce introduci locația — adresă, oraș sau coordonate GPS.
             </p>
@@ -1850,7 +1863,7 @@ export function SesizareForm() {
             adresă în București nu era promptat și pica abia la validare. Acum:
             quick-pick S1-S6 amber, vizibil cât timp sectorul lipsește. */}
         {sectorRequired && !sectorValid && (
-          <div className="rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3">
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3">
             <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
               <Locate size={13} aria-hidden="true" />
               Adresă în București — alege sectorul
@@ -1913,7 +1926,7 @@ export function SesizareForm() {
               {showSugg && addrSugg.length > 0 && (
                 <ul
                   role="listbox"
-                  className="absolute z-40 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
+                  className="absolute z-40 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
                 >
                   {addrSugg.map((sg, i) => (
                     <li key={`${sg.lat}-${sg.lng}-${i}`} role="option" aria-selected={false}>
@@ -1936,7 +1949,7 @@ export function SesizareForm() {
                 type="button"
                 onClick={getLocation}
                 disabled={geoLoading}
-                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 aria-label={geoLoading ? "Se detectează locația" : "Folosește GPS-ul pentru a prinde locația actuală"}
                 title="Folosește GPS-ul pentru a prinde locația actuală"
               >
@@ -1954,7 +1967,7 @@ export function SesizareForm() {
               <button
                 type="button"
                 onClick={() => setMapPickerOpen(true)}
-                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 aria-label="Alege locația pe hartă"
                 title="Alege locația apăsând pe hartă (fără permisiune GPS)"
               >
@@ -2076,7 +2089,7 @@ export function SesizareForm() {
               O poză apropiată + una de context.
             </p>
             {imagini.length > 0 && (
-              <div className="mt-2 flex items-start gap-2 p-3 rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300">
+              <div className="mt-2 flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300">
                 <span className="shrink-0 mt-0.5">⚠️</span>
                 <p>
                   <strong>Atașează pozele manual în email</strong> — apar pe Civia, dar e mai bine să le pui și ca atașamente.
@@ -2212,12 +2225,7 @@ export function SesizareForm() {
             oricum public (alții o pot vota / trimite). Notă scurtă de
             transparență (datele de identificare rămân private). */}
 
-        {error && (
-          <div ref={errorRef} role="alert" className="p-3 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
-            <span>{error}</span>
-          </div>
-        )}
+        {/* (blocul de eroare e randat o singură dată, lângă CTA mai jos.) */}
 
         {/* PREVIZUALIZARE + MODIFICĂ — exact ce se trimite, chiar înainte de
             „Trimite" (mutat aici din mijlocul formularului: review-before-send).
@@ -2240,17 +2248,17 @@ export function SesizareForm() {
                       type="button"
                       onClick={() => { setEditedText(null); formalEditedRef.current = false; lastGenSigRef.current = ""; void handleAIImprove({ withPhotos: imagini.length > 0 }); }}
                       disabled={aiLoading}
-                      className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors"
+                      className="inline-flex items-center gap-1 h-11 sm:h-9 px-3.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                       title="Aruncă modificările și regenerează cu AI"
                     >
-                      {aiLoading ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
+                      {aiLoading ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
                       Resetează
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => setEditOpen(false)}
-                    className="inline-flex items-center gap-1 h-8 px-4 rounded-full bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+                    className="inline-flex items-center gap-1 h-11 sm:h-9 px-5 rounded-full bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface-2)]"
                   >
                     Gata
                   </button>
@@ -2259,9 +2267,9 @@ export function SesizareForm() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  className="inline-flex items-center gap-1.5 h-11 sm:h-9 px-4 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 >
-                  ✏️ Modifică textul
+                  <Pencil size={13} aria-hidden="true" /> Modifică textul
                 </button>
               )}
             </div>
@@ -2302,19 +2310,20 @@ export function SesizareForm() {
           disabled={submitting}
           onClick={handleSubmit}
           aria-busy={submitting}
-          className="group relative w-full inline-flex items-center justify-center gap-2 h-[54px] rounded-full text-white font-semibold text-[15px] overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-cyan-500 transition-transform active:scale-[0.985] disabled:opacity-60 disabled:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+          className="group relative w-full inline-flex items-center justify-center gap-2 h-[54px] rounded-full text-white font-semibold text-[15px] overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-cyan-700 transition-transform active:scale-[0.985] disabled:opacity-60 disabled:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
           style={{
             boxShadow:
-              "0 12px 30px -10px color-mix(in srgb, var(--color-primary) 65%, transparent), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.12)",
+              "0 12px 30px -10px color-mix(in srgb, var(--color-primary) 65%, transparent), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.18)",
           }}
         >
-          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-white/15" />
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-white/10" />
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full motion-reduce:hidden transition-transform duration-700 ease-out"
             style={{ background: "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%)" }}
           />
-          <span className="relative inline-flex items-center gap-2">
+          {/* text-shadow garantează lizibilitatea albului pe toată lățimea gradientului (WCAG). */}
+          <span className="relative inline-flex items-center gap-2" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.35)" }}>
             {submitting ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <Send size={17} aria-hidden="true" />}
             {submitting ? "Se trimite…" : "Trimite sesizarea la autorități"}
           </span>
