@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, X, Share, Plus, Bell, Camera, WifiOff } from "lucide-react";
+import { Download, X, Share, Plus, Bell, Zap, WifiOff } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -58,6 +58,8 @@ export function InstallPrompt() {
   const [visible, setVisible] = useState(false);
   const [iosVisible, setIosVisible] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
+  // Tipul de dispozitiv — textul se adaptează (telefon vs calculator/laptop).
+  const [isMobile, setIsMobile] = useState(false);
 
   // Register the service worker once + listen for update events
   useEffect(() => {
@@ -131,6 +133,13 @@ export function InstallPrompt() {
     } catch {
       /* quota ignored */
     }
+  }, []);
+
+  // Detectează telefon vs desktop — promptul de install apare pe Chrome
+  // ȘI pe desktop ȘI pe Android, deci textul trebuie să se potrivească.
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    setIsMobile(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
   }, []);
 
   // Listen for Chrome's install prompt event
@@ -233,7 +242,7 @@ export function InstallPrompt() {
         className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-install-prompt)] animate-fade-in-up"
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
       >
-        <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4 flex items-start gap-3">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4 flex items-start gap-3">
           <div className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white">
             <Download size={18} aria-hidden="true" />
           </div>
@@ -281,7 +290,7 @@ export function InstallPrompt() {
         className="fixed left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-[var(--z-install-prompt)] animate-fade-in-up"
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
       >
-        <div className="glass-surface-strong rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-4)] p-4">
           <div className="flex items-start gap-3 mb-3">
             <div className="shrink-0 w-10 h-10 rounded-[var(--radius-xs)] bg-gradient-to-br from-[var(--color-primary)] to-indigo-900 grid place-items-center text-white">
               <Download size={18} aria-hidden="true" />
@@ -346,10 +355,12 @@ export function InstallPrompt() {
           </div>
           <div className="flex-1 min-w-0">
             <p id="install-prompt-title" className="font-semibold text-sm mb-0.5">
-              Civia ca aplicație pe telefon
+              Civia ca aplicație pe {isMobile ? "telefon" : "calculator"}
             </p>
             <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-              1 tap din home screen, fără bara de browser. Funcționează ca o app nativă.
+              {isMobile
+                ? "Un tap din ecranul principal, fără bara de browser. Funcționează ca o app nativă."
+                : "Un click și se deschide ca o aplicație separată, fără bara de browser."}
             </p>
           </div>
         </div>
@@ -360,8 +371,8 @@ export function InstallPrompt() {
             <span><strong>Notificări push</strong> când primăria răspunde la sesizarea ta</span>
           </li>
           <li className="flex items-start gap-2">
-            <Camera size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
-            <span><strong>Camera 1-tap</strong> pentru sesizare rapidă pe stradă</span>
+            <Zap size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+            <span><strong>Se deschide instant</strong> — fără să mai aștepți browserul</span>
           </li>
           <li className="flex items-start gap-2">
             <WifiOff size={14} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />

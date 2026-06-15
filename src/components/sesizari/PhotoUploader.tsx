@@ -99,22 +99,6 @@ export function PhotoUploader({ urls, onChange, max = 5 }: PhotoUploaderProps) {
   // nativ cu toate opțiunile.
   const cameraRef = useRef<HTMLInputElement>(null);
 
-  // 2026-05-24 Faza 4: Auto-trigger camera când URL conține ?camera=1.
-  // QuickCameraCTA de pe homepage trimite cu acest param → user ajunge direct
-  // în camera nativă fără tap extra. Mobile-only (camera permission prompt).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("camera") !== "1") return;
-    // Wait one tick pentru ca inputRef.current să fie atașat
-    const t = setTimeout(() => inputRef.current?.click(), 100);
-    // Curăță param după click ca să nu re-trigger la navigation back.
-    const url = new URL(window.location.href);
-    url.searchParams.delete("camera");
-    window.history.replaceState({}, "", url.toString());
-    return () => clearTimeout(t);
-  }, []);
-
   // Lightbox: Escape closes, ←/→ navigate, body scroll locked while open.
   useEffect(() => {
     if (lightbox === null) return;

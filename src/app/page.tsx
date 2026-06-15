@@ -4,7 +4,6 @@ import { ArrowRight, TrendingUp, Megaphone, Send } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { LiveStatsBar } from "@/components/home/LiveStatsBar";
 import { CountUp } from "@/components/ui/CountUp";
-import { QuickCameraCTA } from "@/components/sesizari/QuickCameraCTA";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
 import { StiriWidget } from "@/components/home/StiriWidget";
@@ -176,11 +175,6 @@ export default async function HomePage() {
 
       {/* LIVE STATS BAR */}
       <LiveStatsBar />
-
-      {/* F6 Mobile Camera Quick CTA — vizibil DOAR pe mobile, sub stats */}
-      <div className="container-narrow py-4 md:hidden">
-        <QuickCameraCTA />
-      </div>
 
       {/* TOP VOTED */}
       <section className="py-12 md:py-16">
