@@ -143,6 +143,20 @@ function durationLabel(startAt: string, endAt: string): string {
   return `${d} ${d === 1 ? "zi" : "zile"}`;
 }
 
+// 2026-06-15 (audit, fix #418) — separator de mii DETERMINIST.
+// `Number.prototype.toLocaleString("ro-RO")` / `Intl.NumberFormat("ro-RO")`
+// produc separatorul de grupare în funcție de versiunea ICU/CLDR a
+// runtime-ului: Node-ul de pe Vercel (SSR/ISR) randează „12.345" (punct),
+// dar browserul clientului (CLDR mai nou) poate randa „12 345" / „12 345"
+// (narrow no-break space). Pe pagina națională /intreruperi sunt zeci de
+// întreruperi cu affectedPopulation ≥ 1000 → text mismatch server↔client →
+// React #418 CONSTANT. Pe /intreruperi/[judet] setul filtrat aproape nu are
+// valori ≥ 1000, deci separatorul nici nu apare → pagina rămâne curată.
+// Fix: formatare manuală cu „." fix, identică pe server și client.
+function formatPopulation(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export function IntreruperiFilters({
   items,
   hideCountyFilter = false,
@@ -604,7 +618,7 @@ function InterruptionCard({
         {item.affectedPopulation != null && item.affectedPopulation > 0 && (
           <div className="flex items-center gap-1.5">
             <Users size={12} className="shrink-0" />
-            <span>~{item.affectedPopulation.toLocaleString("ro-RO")} persoane</span>
+            <span>~{formatPopulation(item.affectedPopulation)} persoane</span>
           </div>
         )}
       </div>
