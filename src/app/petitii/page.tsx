@@ -134,7 +134,7 @@ export default async function PetitiiPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/petitii/initiaza"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+            className="lc-liquid lc-liquid-violet lc-magnetic inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-gradient-to-br from-violet-500/85 to-purple-600/85 text-white text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
           >
             <Plus size={14} aria-hidden="true" />
             Inițiază o petiție
@@ -142,7 +142,7 @@ export default async function PetitiiPage() {
           <Link
             href="/petitii/propune"
             title="Ai văzut o petiție pe alt site (Declic, Avaaz, …) și vrei să fie listată și aici? Propune-o."
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-purple-500/40 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-500/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            className="lc-liquid lc-liquid-violet lc-magnetic inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-purple-500/40 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-500/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
           >
             <LinkIcon size={14} aria-hidden="true" />
             Propune o petiție existentă
