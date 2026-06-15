@@ -1,21 +1,28 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Guard against shipping localhost URLs to a real production deploy.
-// Skip the check for local prod builds (npm run build on dev machine).
-// The Vercel / CI env sets VERCEL=1 or CI=1; those are the ones that matter.
-if (
-  process.env.NODE_ENV === "production" &&
-  (process.env.VERCEL === "1" || process.env.CI === "true" || process.env.CI === "1")
-) {
+// Guard against shipping localhost URLs to a real production DEPLOY (Vercel).
+// CI test builds (e2e/bundle/lighthouse on GitHub Actions) legitimately use a
+// localhost SITE_URL — they boot a server on localhost and never deploy, and
+// e2e needs internal absolute links to stay on localhost — so there we only
+// warn. A localhost URL on an actual Vercel build IS a bug → fail hard.
+if (process.env.NODE_ENV === "production") {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  if (siteUrl.includes("localhost") || siteUrl.includes("127.0.0.1")) {
+  const hasLocalhost = siteUrl.includes("localhost") || siteUrl.includes("127.0.0.1");
+  const isVercelDeploy = process.env.VERCEL === "1";
+  const isCI = process.env.CI === "true" || process.env.CI === "1";
+  if (hasLocalhost && isVercelDeploy) {
     throw new Error(
-      `[next.config] NEXT_PUBLIC_SITE_URL is set to "${siteUrl}" in production build. ` +
-      `Set it to https://civia.ro (or your actual domain) in Vercel / hosting env vars.`
+      `[next.config] NEXT_PUBLIC_SITE_URL is set to "${siteUrl}" in a Vercel production build. ` +
+      `Set it to https://civia.ro (or your actual domain) in Vercel env vars.`
     );
   }
-  if (!siteUrl) {
+  if (hasLocalhost && isCI) {
+    console.warn(
+      `[next.config] NEXT_PUBLIC_SITE_URL="${siteUrl}" (localhost) — OK pentru un build de CI/test, dar ar pica pe un deploy real Vercel.`
+    );
+  }
+  if (!siteUrl && (isVercelDeploy || isCI)) {
     console.warn("[next.config] NEXT_PUBLIC_SITE_URL is not set — using fallback");
   }
 }

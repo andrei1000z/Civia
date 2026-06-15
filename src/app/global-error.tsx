@@ -86,6 +86,7 @@ export default function GlobalError({
             >
               Reîncarcă pagina
             </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global-error înlocuiește root layout-ul după un crash; <a> face hard-reload (resetează complet starea), iar router/Link context e indisponibil aici */}
             <a
               href="/"
               style={{
