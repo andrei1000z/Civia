@@ -36,6 +36,7 @@ export interface Candidate {
   sent_to_emails: string[] | null;
   sent_at: string | null;
   status: string;
+  created_at?: string | null;
 }
 
 // ─── Pure helpers (testabile) ──────────────────────────────────────
@@ -187,17 +188,22 @@ export async function matchReply(input: MatchInput): Promise<MatchResult> {
     if (byCode) return { sesizareId: byCode.id, code: byCode.code, method: "code", confidence: "high" };
   }
 
-  // N4 — FUZZY, DOAR pe candidați ELIGIBILI (trimiși via Civia înainte de reply).
+  // N4 — FUZZY, pe candidați ELIGIBILI = sesizări TRIMISE (status != "nou"),
+  // fie via Civia, fie MANUAL. 2026-06-15: înainte filtram doar pe
+  // sent_via_civia=true → răspunsurile la sesizările trimise manual (cele vechi,
+  // dinainte de send-via-civia) rămâneau ORFANE. Acum includem și manualele;
+  // time-gate-ul folosește sent_at, iar pentru manuale (sent_at null) cade pe
+  // created_at (răspunsul autorității vine oricum DUPĂ ce userul a depus).
   const graceMs = 3600_000;
   const replyAt = new Date(input.receivedAt).getTime();
   const { data: elig } = await admin
     .from("sesizari")
-    .select("id, code, locatie, titlu, sent_to_emails, sent_at, status")
-    .eq("sent_via_civia", true)
-    .not("sent_at", "is", null);
-  const eligible = ((elig as Candidate[]) || []).filter(
-    (s) => s.sent_at && new Date(s.sent_at).getTime() <= replyAt + graceMs,
-  );
+    .select("id, code, locatie, titlu, sent_to_emails, sent_at, status, created_at")
+    .neq("status", "nou");
+  const eligible = ((elig as Candidate[]) || []).filter((s) => {
+    const sentMs = new Date(s.sent_at ?? s.created_at ?? 0).getTime();
+    return sentMs > 0 && sentMs <= replyAt + graceMs;
+  });
   if (eligible.length === 0) return { sesizareId: null, code: null, method: null, confidence: null };
 
   const fromDomain = baseDom(dom(input.fromEmail));
