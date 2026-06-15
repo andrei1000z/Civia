@@ -20,7 +20,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/verificare-avere" },
 };
 
-export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 interface DemnitarRow {
