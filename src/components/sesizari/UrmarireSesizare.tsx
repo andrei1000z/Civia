@@ -261,7 +261,7 @@ export function UrmarireSesizare() {
                       )}
                       <span
                         className={cn(
-                          "absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm",
+                          "absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-[var(--shadow-1)]",
                           isCurrent && "animate-pulse",
                         )}
                         style={{

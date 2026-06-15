@@ -54,7 +54,7 @@ export function OfflineIndicator() {
       <div
         role="alert"
         aria-live="assertive"
-        className="fixed top-0 left-0 right-0 z-[200] bg-rose-600 text-white text-center text-sm py-2 px-4 shadow-lg flex items-center justify-center gap-2"
+        className="fixed top-0 left-0 right-0 z-[200] bg-rose-600 text-white text-center text-sm py-2 px-4 shadow-[var(--shadow-3)] flex items-center justify-center gap-2"
       >
         <WifiOff size={14} aria-hidden="true" />
         <span>
@@ -68,7 +68,7 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[200] bg-emerald-600 text-white text-center text-sm py-2 px-4 shadow-lg flex items-center justify-center gap-2 animate-fade-in"
+      className="fixed top-0 left-0 right-0 z-[200] bg-emerald-600 text-white text-center text-sm py-2 px-4 shadow-[var(--shadow-3)] flex items-center justify-center gap-2 animate-fade-in"
     >
       <Wifi size={14} aria-hidden="true" />
       <span>Conectat, sincronizez datele...</span>

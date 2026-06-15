@@ -504,10 +504,10 @@ export default function ContPage() {
                 <img
                   src={form.avatar_url}
                   alt=""
-                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover ring-2 sm:ring-4 ring-white/30 shadow-lg"
+                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover ring-2 sm:ring-4 ring-white/30 shadow-[var(--shadow-3)]"
                 />
               ) : (
-                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-lg">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-[var(--shadow-3)]">
                   {initial}
                 </div>
               )}
@@ -515,7 +515,7 @@ export default function ContPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-[var(--color-primary)] grid place-items-center shadow-md hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50"
+                className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-[var(--color-primary)] grid place-items-center shadow-[var(--shadow-2)] hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50"
                 aria-label="Schimbă poza de profil"
                 title="Schimbă poza de profil"
               >

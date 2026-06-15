@@ -46,7 +46,7 @@ export function LocaleSwitcher() {
       {open && (
         <ul
           role="menu"
-          className="absolute right-0 top-full mt-1 min-w-[160px] py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-lg z-50"
+          className="absolute right-0 top-full mt-1 min-w-[160px] py-1 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-3)] z-50"
         >
           {LOCALES.map((l) => (
             <li key={l}>

@@ -43,7 +43,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
           className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-400/20 blur-3xl pointer-events-none"
         />
         <div className="relative flex items-center gap-2 mb-4 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-full)] bg-emerald-500 text-white text-xs font-bold shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-full)] bg-emerald-500 text-white text-xs font-bold shadow-[var(--shadow-1)]">
             <CheckCircle2 size={13} strokeWidth={2.5} aria-hidden="true" />
             Rezolvat
           </span>
@@ -78,7 +78,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
                 loading="lazy"
               />
               <span
-                className="absolute top-2 left-2 bg-rose-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-full)] shadow-sm"
+                className="absolute top-2 left-2 bg-rose-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-full)] shadow-[var(--shadow-1)]"
                 aria-hidden="true"
               >
                 BEFORE
@@ -107,7 +107,7 @@ export function BeforeAfter({ beforeUrl, afterUrl, resolvedAt, isAuthor }: Props
                   loading="lazy"
                 />
                 <span
-                  className="absolute top-2 left-2 bg-emerald-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-full)] shadow-sm"
+                  className="absolute top-2 left-2 bg-emerald-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-full)] shadow-[var(--shadow-1)]"
                   aria-hidden="true"
                 >
                   AFTER

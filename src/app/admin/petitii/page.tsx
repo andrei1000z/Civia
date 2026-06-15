@@ -881,7 +881,7 @@ function PetitieForm({
                 type="button"
                 onClick={scrapeFromUrl}
                 disabled={scrapingUrl || !form.external_url.trim()}
-                className="h-11 inline-flex items-center gap-1.5 px-4 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 shadow-sm"
+                className="h-11 inline-flex items-center gap-1.5 px-4 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 shadow-[var(--shadow-1)]"
                 title="Extrage automat titlu, sumar, conținut, categorie, imagine din URL"
               >
                 {scrapingUrl ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Wand2 size={14} aria-hidden="true" />}

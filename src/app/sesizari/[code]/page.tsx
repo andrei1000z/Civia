@@ -581,7 +581,7 @@ export default async function SesizareDetailPage({
                       {/* Icon chip — filled pentru ultimul pas (live sau
                           terminal); soft pentru pașii intermediari. */}
                       <span
-                        className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-sm ${isCurrent ? "animate-pulse" : ""}`}
+                        className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-[var(--shadow-1)] ${isCurrent ? "animate-pulse" : ""}`}
                         style={{
                           backgroundColor: isLast ? meta.color : `${meta.color}1a`,
                           color: isLast ? "#fff" : meta.color,

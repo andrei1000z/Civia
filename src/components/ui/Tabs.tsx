@@ -48,13 +48,13 @@ export function Tabs({ items, defaultTab, variant = "underline", className }: Ta
                 variant === "pills" && [
                   "rounded-[var(--radius-pill)]",
                   isActive
-                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-[var(--shadow-1)]"
                     : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
                 ],
                 variant === "solid" && [
                   "rounded-[var(--radius-button)]",
                   isActive
-                    ? "bg-[var(--color-primary)] text-white shadow-md"
+                    ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-2)]"
                     : "bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-2)]",
                 ]
               )}

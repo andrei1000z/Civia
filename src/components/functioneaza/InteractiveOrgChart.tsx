@@ -13,7 +13,7 @@ export function InteractiveOrgChart() {
       <div className="relative">
         {/* Primar General */}
         <div className="flex justify-center mb-2">
-          <div className="bg-gradient-to-br from-[var(--color-primary)] to-indigo-800 text-white rounded-[var(--radius-md)] px-6 py-3 text-center shadow-lg">
+          <div className="bg-gradient-to-br from-[var(--color-primary)] to-indigo-800 text-white rounded-[var(--radius-md)] px-6 py-3 text-center shadow-[var(--shadow-3)]">
             <p className="text-xs opacity-80">Ales direct de cetățeni</p>
             <p className="font-bold">Primar General</p>
           </div>

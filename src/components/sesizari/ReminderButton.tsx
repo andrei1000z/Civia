@@ -60,7 +60,7 @@ export function ReminderButton({
       type="button"
       onClick={onClick}
       disabled={submitting}
-      className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
+      className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors shadow-[var(--shadow-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
       title="Trimite o reamintire formală conform art. 14 OG 27/2002"
     >
       {submitting ? (

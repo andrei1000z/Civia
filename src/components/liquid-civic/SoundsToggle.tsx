@@ -60,7 +60,7 @@ export function SoundsToggle() {
         aria-hidden="true"
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-[var(--shadow-1)] transition-transform ${
             enabled ? "translate-x-5" : "translate-x-0"
           }`}
         />

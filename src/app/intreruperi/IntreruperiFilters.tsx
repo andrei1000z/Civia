@@ -262,7 +262,7 @@ export function IntreruperiFilters({
                   aria-selected={type === t.value}
                   className={`shrink-0 px-3 h-8 rounded-[var(--radius-xs)] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
                     type === t.value
-                      ? "bg-[var(--color-primary)] text-white shadow-sm"
+                      ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-1)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]"
                   }`}
                 >

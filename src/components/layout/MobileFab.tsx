@@ -162,7 +162,7 @@ function SpeedDialLink({
     <Link
       href={href}
       role="menuitem"
-      className={`inline-flex items-center gap-2 h-11 pl-3 pr-4 rounded-full text-white font-medium text-sm shadow-lg whitespace-nowrap w-max max-w-[70vw] ${bg} hover:brightness-110 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40`}
+      className={`inline-flex items-center gap-2 h-11 pl-3 pr-4 rounded-full text-white font-medium text-sm shadow-[var(--shadow-3)] whitespace-nowrap w-max max-w-[70vw] ${bg} hover:brightness-110 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40`}
     >
       <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0" aria-hidden="true">
         {icon}
