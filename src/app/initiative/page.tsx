@@ -18,7 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/initiative" },
 };
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 interface InitiativeRow {

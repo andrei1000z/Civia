@@ -14,7 +14,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/propuneri-legislative" },
 };
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 interface PropunereRow {

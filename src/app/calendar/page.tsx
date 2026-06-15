@@ -18,7 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/calendar" },
 };
 
-export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 interface EvenimentRow {

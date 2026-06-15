@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/decizii-deschise" },
 };
 
-export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 interface PropunereRow {
