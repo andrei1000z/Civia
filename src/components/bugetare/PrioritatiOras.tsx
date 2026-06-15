@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ThumbsUp, Plus, Loader2, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 interface Propunere {
@@ -220,14 +221,15 @@ export function PrioritatiOras() {
       {/* Propune */}
       <div className="mt-4">
         {!showForm ? (
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={() => setShowForm(true)}
-            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
+            leftIcon={<Plus size={15} aria-hidden="true" />}
           >
-            <Plus size={15} aria-hidden="true" />
             Propune o prioritate
-          </button>
+          </Button>
         ) : (
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-1)] space-y-3">
             <div>
@@ -274,15 +276,16 @@ export function PrioritatiOras() {
               ))}
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={submit}
                 disabled={submitting || titlu.trim().length < 8 || descriere.trim().length < 20}
-                className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] transition disabled:cursor-not-allowed disabled:opacity-50"
+                loading={submitting}
               >
-                {submitting && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
                 Publică propunerea
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}

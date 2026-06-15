@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, Mail, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { buildCerereBP, SUBIECT_BP } from "@/lib/bugetare/template";
 
 const inputCls =
@@ -77,14 +78,15 @@ export function CerereBPGenerator() {
           </pre>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={copy}
-            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
+            leftIcon={copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
           >
-            {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
             {copied ? "Copiat în clipboard" : "Copiază cererea"}
-          </button>
+          </Button>
           <a
             href={emailValid ? mailtoHref : undefined}
             aria-disabled={!emailValid}
