@@ -138,7 +138,7 @@ export function GhidLayout({
                 <h3 className="font-semibold">Cuprins</h3>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="w-8 h-8 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center"
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center"
                 >
                   <X size={16} />
                 </button>

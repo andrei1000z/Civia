@@ -197,7 +197,7 @@ export function DocumentUploader({ url, onChange }: DocumentUploaderProps) {
         <button
           type="button"
           onClick={remove}
-          className="w-8 h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-rose-600 hover:border-rose-500/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-rose-600 hover:border-rose-500/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
           aria-label="Elimină documentul atașat"
         >
           <X size={14} aria-hidden="true" />

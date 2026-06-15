@@ -343,7 +343,7 @@ export function SearchModal({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal)] flex items-start justify-center px-3 pt-[8vh] pb-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-start justify-center px-3 pt-[8vh] pb-4 bg-black/60 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in"
       onClick={onClose}
       role="presentation"
     >

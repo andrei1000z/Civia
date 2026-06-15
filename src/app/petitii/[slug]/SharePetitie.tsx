@@ -208,7 +208,7 @@ export function SharePetitie({ url, title, summary }: Props) {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Închide"
-                className="w-8 h-8 rounded-full hover:bg-[var(--color-surface-2)] flex items-center justify-center transition-colors"
+                className="w-10 h-10 sm:w-8 sm:h-8 rounded-full hover:bg-[var(--color-surface-2)] flex items-center justify-center transition-colors"
               >
                 <X size={16} aria-hidden="true" />
               </button>

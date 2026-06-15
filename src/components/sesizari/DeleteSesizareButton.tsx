@@ -70,7 +70,7 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
 
       {confirm && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto overscroll-contain animate-fade-in"
           onClick={() => !deleting && setConfirm(false)}
           role="presentation"
         >

@@ -121,7 +121,7 @@ export function Modal({ open, onClose, title, children, size = "md", className }
     <div
       // 2026-05-19 Liquid Civic: backdrop blur-xl + emerald tint subtle.
       // Safe-area top/bottom pentru iPhone notch (landscape).
-      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center px-2 py-4 sm:p-4 backdrop-blur-xl overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-start md:items-center justify-center px-2 py-4 sm:p-4 backdrop-blur-xl overflow-y-auto overscroll-contain animate-fade-in"
       style={{
         paddingTop: "max(1rem, env(safe-area-inset-top))",
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
