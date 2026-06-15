@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Send, CheckCircle2, Loader2, X, LogIn } from "lucide-react";
+import { Send, CheckCircle2, X, LogIn } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/Button";
 import { playSound } from "@/lib/liquid-civic/sound";
 
 interface Props {
@@ -62,8 +63,11 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
     if (!showForAnonymous) return null;
     return (
       <div className={className}>
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="lg"
+          leftIcon={<LogIn size={18} aria-hidden="true" />}
           onClick={() => {
             // Salvăm intenția → după login redirecționăm direct înapoi
             // la pagina sesizării ca să apese din nou butonul.
@@ -73,11 +77,10 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
             // Trigger AuthModal via event (AuthProvider listening) sau redirect.
             window.dispatchEvent(new CustomEvent("civia:open-auth"));
           }}
-          className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 rounded-[var(--radius-md)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-base font-bold hover:brightness-110 active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          className="w-full"
         >
-          <LogIn size={18} aria-hidden="true" />
           Trimite oficial cu Civia (1-click)
-        </button>
+        </Button>
         <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
           Confirmă-ți emailul în 10 secunde și Civia trimite sesizarea direct
           la primărie. <strong>Răspunsul lor vine în inbox-ul tău.</strong>
@@ -173,24 +176,18 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
 
   return (
     <div className={className}>
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="lg"
+        loading={state === "sending"}
+        leftIcon={<Send size={20} aria-hidden="true" />}
         onClick={handleSend}
         disabled={state === "sending"}
-        className="inline-flex w-full items-center justify-center gap-2 h-14 px-6 rounded-[var(--radius-md)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-base font-bold hover:brightness-110 active:scale-[0.98] shadow-[var(--shadow-3)] hover:shadow-[var(--shadow-4)] disabled:opacity-60 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+        className="w-full"
       >
-        {state === "sending" ? (
-          <>
-            <Loader2 size={20} className="animate-spin" aria-hidden="true" />
-            Se trimite...
-          </>
-        ) : (
-          <>
-            <Send size={20} aria-hidden="true" />
-            Trimite acum cu Civia (1-click)
-          </>
-        )}
-      </button>
+        {state === "sending" ? "Se trimite..." : "Trimite acum cu Civia (1-click)"}
+      </Button>
       <p className="text-[11px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
         Civia trimite emailul direct la primarie din partea ta. Raspunsul vine
         in inbox-ul tău și pe pagina sesizării. <strong>Apasă o dată, trimite o dată.</strong>
@@ -278,20 +275,24 @@ export function SendViaCiviaButton({ code, className, showForAnonymous = true }:
               )}
 
               <div className="flex gap-2 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
                   onClick={() => setState("idle")}
-                  className="flex-1 h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors"
+                  className="flex-1"
                 >
                   Anulează
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-[var(--radius-xs)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold hover:brightness-110 transition-all"
+                  variant="primary"
+                  size="md"
+                  leftIcon={<Send size={14} aria-hidden="true" />}
+                  className="flex-1"
                 >
-                  <Send size={14} aria-hidden="true" />
                   Trimite
-                </button>
+                </Button>
               </div>
 
               <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed text-center">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Shield, X, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { buildBolarziRequest } from "@/lib/sesizari/parking";
 
 interface HotspotData {
@@ -173,13 +174,14 @@ export function ParkingHotspotModal({
               <Shield size={15} aria-hidden="true" />
               Da, trimite cererea către ASPMB
             </a>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="md"
               onClick={onClose}
-              className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               Nu, mulțumesc
-            </button>
+            </Button>
           </div>
         </div>
       </div>

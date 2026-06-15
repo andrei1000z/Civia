@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Loader2, X, AlertTriangle } from "lucide-react";
+import { Trash2, X, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   code: string;
@@ -58,15 +59,16 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="md"
         onClick={() => setConfirm(true)}
-        className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] border border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        leftIcon={<Trash2 size={16} aria-hidden="true" />}
         title="Șterge sesizarea"
       >
-        <Trash2 size={16} aria-hidden="true" />
         Șterge
-      </button>
+      </Button>
 
       {confirm && (
         <div
@@ -109,23 +111,28 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
                 Sesizarea, comentariile și toate datele asociate vor fi șterse definitiv.
               </p>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
                   onClick={() => setConfirm(false)}
                   disabled={deleting}
-                  className="flex-1 h-11 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-sm font-medium hover:bg-[var(--color-border)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  className="flex-1"
                 >
                   Anulează
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="danger"
+                  size="md"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-500"
+                  loading={deleting}
+                  leftIcon={<Trash2 size={14} aria-hidden="true" />}
+                  className="flex-1"
                 >
-                  {deleting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Trash2 size={14} aria-hidden="true" />}
                   Da, șterge
-                </button>
+                </Button>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Scale, Share2, Check, RotateCcw, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import {
   getCategoriiSimulator,
   compara,
@@ -108,22 +109,24 @@ export function BugetSimulator() {
         )}
 
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={share}
-            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
+            leftIcon={copied ? <Check size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
           >
-            {copied ? <Check size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
             {copied ? "Copiat — lipește-l oriunde" : "Distribuie rezultatul"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={reset}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)]"
+            leftIcon={<RotateCcw size={14} aria-hidden="true" />}
           >
-            <RotateCcw size={14} aria-hidden="true" />
             Încearcă din nou
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -172,15 +175,17 @@ export function BugetSimulator() {
             </button>
           )}
         </div>
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="md"
           onClick={() => setRevealed(true)}
           disabled={total !== 100}
-          className="btn-press inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-1)] transition disabled:cursor-not-allowed disabled:opacity-50"
+          leftIcon={<Scale size={15} aria-hidden="true" />}
+          className="w-full"
         >
-          <Scale size={15} aria-hidden="true" />
           Dezvăluie bugetul real
-        </button>
+        </Button>
       </div>
     </div>
   );

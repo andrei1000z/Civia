@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { Button } from "@/components/ui/Button";
 
 export default function SessionError({
   error,
@@ -20,9 +21,9 @@ export default function SessionError({
       <p className="text-sm text-[var(--color-text-muted)] mb-4">
         {error.digest ? `Cod: ${error.digest}` : ""}
       </p>
-      <button onClick={() => reset()} className="h-10 px-4 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold">
+      <Button variant="primary" size="sm" onClick={() => reset()}>
         Reîncarcă
-      </button>
+      </Button>
     </div>
   );
 }

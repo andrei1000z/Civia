@@ -22,6 +22,7 @@ import {
 import { createPetitie, type CreatePetitieState } from "@/actions/petitii-actions";
 import { PETITIE_CATEGORII } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   userEmail: string | null;
@@ -166,16 +167,17 @@ export function InitiatePetitieForm({ userEmail }: Props) {
           </span>
         </div>
         {hasContentInDraft(draft) && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               if (confirm("Șterge complet ce-ai scris și începe de la zero?")) clearDraft();
             }}
-            className="text-[var(--color-text-muted)] hover:text-rose-600 dark:hover:text-rose-400 inline-flex items-center gap-1 transition-colors"
+            leftIcon={<X size={11} />}
           >
-            <X size={11} />
             Șterge draft
-          </button>
+          </Button>
         )}
       </div>
 
@@ -521,25 +523,17 @@ Câteva propoziții despre impact + cifre dacă ai (cu sursă).`}
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
-      disabled={pending}
+      variant="petition"
+      size="md"
+      loading={pending}
       aria-busy={pending}
-      className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+      leftIcon={<Send size={14} aria-hidden="true" />}
+      rightIcon={<Sparkles size={12} className="opacity-70" aria-hidden="true" />}
     >
-      {pending ? (
-        <>
-          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" />
-          Se trimite spre verificare...
-        </>
-      ) : (
-        <>
-          <Send size={14} aria-hidden="true" />
-          Trimite spre verificare
-          <Sparkles size={12} className="opacity-70" aria-hidden="true" />
-        </>
-      )}
-    </button>
+      {pending ? "Se trimite spre verificare..." : "Trimite spre verificare"}
+    </Button>
   );
 }
 

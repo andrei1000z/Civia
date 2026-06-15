@@ -13,6 +13,7 @@ import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 import { withRef } from "@/lib/referral/client";
 import { RelatedPetitiiCard } from "@/components/sesizari/RelatedPetitiiCard";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Success screen post-submit — extras din SesizareForm in fisier separat
@@ -138,18 +139,22 @@ export function SuccessScreen({
       )}
 
       <div className="flex flex-col gap-3">
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={() => router.push(`/sesizari/${code}`)}
-          className="h-11 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          className="w-full"
         >
           Vezi sesizarea
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="md"
           onClick={onAnother}
-          className="h-11 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+          className="w-full"
         >
           Altă sesizare
-        </button>
+        </Button>
       </div>
 
       <SuccessShareSection code={code} title={emailInput.titlu} />

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, X, AlertCircle, Copy, Mail, Image as ImgIcon } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 
 interface Row {
   id: string;

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Share2, MessageCircle, Send, Link2, QrCode, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/Toast";
 import { QR_API_BASE_URL } from "@/lib/constants";
 import { withRef } from "@/lib/referral/client";
@@ -243,13 +244,15 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qrUrl} alt={`Cod QR pentru ${shareUrl}`} className="mx-auto" width={300} height={300} />
             <p className="text-xs text-center text-[var(--color-text-muted)] mt-3 truncate" title={shareUrl}>{shareUrl}</p>
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={() => setQrOpen(false)}
-              className="mt-4 w-full h-10 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+              className="mt-4 w-full"
             >
               Închide
-            </button>
+            </Button>
           </div>
         </div>
       )}

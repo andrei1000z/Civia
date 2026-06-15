@@ -759,6 +759,20 @@ h1, h2, h3, h4, [id] {
 .hero-enter-2 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
 .hero-enter-3 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both; }
 
+/* Page transition — rulează la fiecare navigare (template.tsx re-montează
+   conținutul paginii, NU chrome-ul navbar/footer din layout). OPACITY-ONLY
+   intenționat: un `transform` pe wrapper ar crea un containing-block care
+   sparge `position: fixed` pe TOȚI descendenții (modale, FAB-uri, toast-uri).
+   opacity:1 (end-state) nu creează nici stacking-context, nici containing-block
+   → fixed rămâne legat de viewport. Auto-neutralizat pe prefers-reduced-motion. */
+@keyframes pageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.page-transition {
+  animation: pageIn 0.28s ease-out both;
+}
+
 /* Scale-in — icon chips, badge-uri. */
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.85); }

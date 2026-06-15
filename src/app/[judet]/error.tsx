@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MapPinOff, RotateCcw, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function JudetError({ reset }: { error: Error; reset: () => void }) {
   const params = useParams<{ judet?: string }>();
@@ -21,14 +22,15 @@ export default function JudetError({ reset }: { error: Error; reset: () => void 
           : "Pagina e momentan indisponibilă. Încearcă din nou într-un minut."}
       </p>
       <div className="flex gap-3 justify-center flex-wrap">
-        <button
+        <Button
           type="button"
           onClick={reset}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          variant="primary"
+          size="md"
+          leftIcon={<RotateCcw size={16} aria-hidden="true" />}
         >
-          <RotateCcw size={16} aria-hidden="true" />
           Reîncearcă
-        </button>
+        </Button>
         <Link
           href="/"
           className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

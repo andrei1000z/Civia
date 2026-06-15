@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { withRef } from "@/lib/referral/client";
 
@@ -175,15 +176,18 @@ export function SharePetitie({ url, title, summary }: Props) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="md"
+        shape="pill"
         onClick={() => setOpen(true)}
-        className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-full)] bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+        leftIcon={<Share2 size={14} aria-hidden="true" />}
+        className="w-full"
         aria-label="Distribuie petiția"
       >
-        <Share2 size={14} aria-hidden="true" />
         Distribuie
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -217,14 +221,17 @@ export function SharePetitie({ url, title, summary }: Props) {
             <div className="p-5 space-y-4">
               {/* Native share (mobile primary) */}
               {hasNativeShare && (
-                <button
+                <Button
                   type="button"
+                  variant="petition"
+                  size="lg"
+                  shape="pill"
                   onClick={handleNative}
-                  className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                  leftIcon={<Share2 size={16} aria-hidden="true" />}
+                  className="w-full"
                 >
-                  <Share2 size={16} aria-hidden="true" />
                   Deschide opțiuni native (Instagram, TikTok, etc.)
-                </button>
+                </Button>
               )}
 
               {/* Platform grid */}
@@ -262,19 +269,16 @@ export function SharePetitie({ url, title, summary }: Props) {
                     aria-label="URL petiție"
                     className="flex-1 h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-mono text-[var(--color-text-muted)] truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={handleCopy}
-                    className={cn(
-                      "h-10 px-4 rounded-[var(--radius-xs)] text-sm font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
-                      copied
-                        ? "bg-emerald-500 text-white"
-                        : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white",
-                    )}
+                    leftIcon={copied ? <Check size={14} aria-hidden="true" /> : <Link2 size={14} aria-hidden="true" />}
+                    className={cn(copied && "from-emerald-500 to-emerald-500")}
                   >
-                    {copied ? <Check size={14} aria-hidden="true" /> : <Link2 size={14} aria-hidden="true" />}
                     {copied ? "Copiat" : "Copiază"}
-                  </button>
+                  </Button>
                 </div>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
                   💡 Pentru Instagram / TikTok: folosește butonul „Deschide opțiuni native" (mobile)

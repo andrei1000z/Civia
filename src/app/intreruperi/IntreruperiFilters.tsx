@@ -26,6 +26,7 @@ import {
   STATUS_COLORS,
 } from "@/data/intreruperi";
 import { ALL_COUNTIES } from "@/data/counties";
+import { Button } from "@/components/ui/Button";
 
 const IntreruperiMap = dynamic(() => import("./IntreruperiMap"), {
   ssr: false,
@@ -375,16 +376,17 @@ export function IntreruperiFilters({
           <p className="text-sm text-[var(--color-text-muted)] mb-4">
             Resetează filtrele să vezi tot ce e activ acum.
           </p>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={() => {
               setType("toate");
               setCounty("toate");
             }}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
           >
             Resetează filtrele <span aria-hidden="true">→</span>
-          </button>
+          </Button>
         </div>
       ) : view === "map" ? (
         <IntreruperiMap items={filtered} />

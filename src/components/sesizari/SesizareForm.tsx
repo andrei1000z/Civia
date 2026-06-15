@@ -80,6 +80,7 @@ import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { playSound } from "@/lib/liquid-civic/sound";
 import { DuplicateDetector } from "./DuplicateDetector";
 import { announce } from "@/components/ui/LiveAnnouncer";
+import { Button } from "@/components/ui/Button";
 import { useCountyOptional } from "@/lib/county-context";
 
 interface FormData {
@@ -1967,15 +1968,16 @@ export function SesizareForm() {
               )}
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={getLocation}
-                disabled={geoLoading}
-                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                loading={geoLoading}
+                leftIcon={<Locate size={16} aria-hidden="true" />}
                 aria-label={geoLoading ? "Se detectează locația" : "Folosește GPS-ul pentru a prinde locația actuală"}
                 title="Folosește GPS-ul pentru a prinde locația actuală"
+                className="flex-1 sm:flex-none shrink-0"
               >
-                {geoLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Locate size={16} aria-hidden="true" />}
                 <span className="tabular-nums">
                   {geoLoading
                     ? gpsAccuracy != null
@@ -1983,19 +1985,20 @@ export function SesizareForm() {
                       : "Detectez…"
                     : "GPS"}
                 </span>
-              </button>
+              </Button>
               {/* 2026-06-13 — Alternativă la GPS pentru cei care nu dau permisiune
                   browserului: alegi locația apăsând direct pe hartă. */}
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setMapPickerOpen(true)}
-                className="flex-1 sm:flex-none shrink-0 h-11 px-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                leftIcon={<MapIcon size={16} aria-hidden="true" />}
                 aria-label="Alege locația pe hartă"
                 title="Alege locația apăsând pe hartă (fără permisiune GPS)"
+                className="flex-1 sm:flex-none shrink-0"
               >
-                <MapIcon size={16} aria-hidden="true" />
                 <span>Pe hartă</span>
-              </button>
+              </Button>
             </div>
           </div>
           {/* 2026-06-14 — fără helper lung, fără lat/long, fără „detectat
@@ -2191,17 +2194,20 @@ export function SesizareForm() {
             {/* Batch 2 UX (5/22/2026) — 3 quick-actions in loc de un singur
                 buton „Regenerează". User poate refine fara sa goleasca tot. */}
             <div className="flex flex-wrap gap-1.5">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => handleAIImprove({ withPhotos: imagini.length > 0 })}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                leftIcon={<Sparkles size={10} aria-hidden="true" />}
                 title="Refac textul cu AI"
               >
-                <Sparkles size={10} aria-hidden="true" />
                 Refac
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   // Append hint to descriere ca AI sa scrie mai scurt
                   const shortHint = "\n\n[Cerere: scrie mai scurt, max 150 cuvinte]";
@@ -2211,13 +2217,14 @@ export function SesizareForm() {
                     void handleAIImprove({ withPhotos: imagini.length > 0 });
                   }, 50);
                 }}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 title="Genereaza varianta mai scurta"
               >
                 Mai scurt
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   const urgencyHint = "\n\n[Cerere: adauga sense de urgenta, evidentiaza riscul pentru cetateni]";
                   setData((d) => ({ ...d, descriere: d.descriere + urgencyHint }));
@@ -2226,11 +2233,10 @@ export function SesizareForm() {
                     void handleAIImprove({ withPhotos: imagini.length > 0 });
                   }, 50);
                 }}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 title="Adauga ton de urgenta"
               >
                 + Urgenta
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -2258,33 +2264,40 @@ export function SesizareForm() {
               {editOpen ? (
                 <div className="flex items-center gap-1.5">
                   {editedText != null && (
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
+                      shape="pill"
                       onClick={() => { setEditedText(null); formalEditedRef.current = false; lastGenSigRef.current = ""; void handleAIImprove({ withPhotos: imagini.length > 0 }); }}
-                      disabled={aiLoading}
-                      className="inline-flex items-center gap-1 h-11 sm:h-9 px-3.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                      loading={aiLoading}
+                      leftIcon={<Sparkles size={13} aria-hidden="true" />}
                       title="Aruncă modificările și regenerează cu AI"
                     >
-                      {aiLoading ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
                       Resetează
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
+                    shape="pill"
                     onClick={() => setEditOpen(false)}
-                    className="inline-flex items-center gap-1 h-11 sm:h-9 px-5 rounded-full bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface-2)]"
                   >
                     Gata
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  shape="pill"
                   onClick={() => setEditOpen(true)}
-                  className="inline-flex items-center gap-1.5 h-11 sm:h-9 px-4 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  leftIcon={<Pencil size={13} aria-hidden="true" />}
                 >
-                  <Pencil size={13} aria-hidden="true" /> Modifică textul
-                </button>
+                  Modifică textul
+                </Button>
               )}
             </div>
             {editOpen ? (

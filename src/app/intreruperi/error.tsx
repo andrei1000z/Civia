@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function Error({
   error,
@@ -27,13 +28,15 @@ export default function Error({
         greșeli se rezolvă la reîncărcare.
       </p>
       <div className="flex flex-wrap justify-center gap-3">
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="sm"
           onClick={reset}
-          className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          leftIcon={<RefreshCw size={14} aria-hidden="true" />}
         >
-          <RefreshCw size={14} aria-hidden="true" /> Încearcă din nou
-        </button>
+          Încearcă din nou
+        </Button>
         <Link
           href="/"
           className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

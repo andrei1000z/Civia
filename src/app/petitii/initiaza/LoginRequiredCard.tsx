@@ -2,6 +2,7 @@
 
 import { LogIn, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Apare în loc de form atunci când userul nu e autentificat. Loginul se
@@ -27,14 +28,15 @@ export function LoginRequiredCard() {
         avem întrebări la moderare. Login-ul e prin <strong>magic link pe email</strong> —
         fără parole de ținut minte.
       </p>
-      <button
+      <Button
         type="button"
+        variant="petition"
+        size="md"
         onClick={() => openAuthModal()}
-        className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-button)] bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+        leftIcon={<Mail size={16} aria-hidden="true" />}
       >
-        <Mail size={16} aria-hidden="true" />
         Conectează-te
-      </button>
+      </Button>
       <p className="text-[11px] text-[var(--color-text-muted)] mt-4">
         Datele tale rămân private. Doar prenumele tău (din profil) apare ca autor după aprobare.
       </p>

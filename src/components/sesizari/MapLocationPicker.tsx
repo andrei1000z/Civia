@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Marker, useMapEvents } from "react-leaflet";
 import { X, MapPin, Check, Loader2, Crosshair } from "lucide-react";
 import { BUCHAREST_CENTER } from "@/lib/constants";
+import { Button } from "@/components/ui/Button";
 
 const LeafletMap = dynamic(() => import("../maps/LeafletMap"), {
   ssr: false,
@@ -188,15 +189,18 @@ export default function MapLocationPicker({
             )}
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={onClose}
-              className="h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               Anulează
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               disabled={!result || resolving}
               onClick={() => {
                 if (result) {
@@ -204,11 +208,11 @@ export default function MapLocationPicker({
                   onClose();
                 }
               }}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+              leftIcon={<Check size={16} aria-hidden="true" />}
+              className="flex-1"
             >
-              <Check size={16} aria-hidden="true" />
               Folosește această locație
-            </button>
+            </Button>
           </div>
         </div>
       </div>

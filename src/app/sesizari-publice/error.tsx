@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Auto-retry cu exponential backoff. Raport analytics 5/8/2026 a arătat
@@ -83,13 +84,15 @@ export default function Error({
               : `Am încercat de ${AUTO_RETRY_DELAYS_MS.length} ori automat — pare o problemă persistentă a conexiunii. Reîncearcă manual mai târziu sau trimite o sesizare nouă.`}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
+              leftIcon={<RefreshCw size={14} aria-hidden="true" />}
               onClick={() => { setAutoRetryAttempt(0); reset(); }}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
             >
-              <RefreshCw size={14} aria-hidden="true" /> Reîncearcă
-            </button>
+              Reîncearcă
+            </Button>
             <Link
               href="/sesizari"
               className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

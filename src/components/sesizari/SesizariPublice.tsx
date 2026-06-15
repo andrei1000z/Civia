@@ -17,6 +17,7 @@ import { ALL_COUNTIES } from "@/data/counties";
 import { timeAgo, cn } from "@/lib/utils";
 import { stripForPreview } from "@/lib/privacy";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { SesizareFeedRow } from "@/lib/supabase/types";
 import { useCountyOptional } from "@/lib/county-context";
@@ -334,18 +335,20 @@ export function SesizariPublice() {
                 )}
               </div>
               {activeFilterCount > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<X size={12} aria-hidden="true" />}
                   onClick={() => {
                     setFilterTip("toate");
                     setFilterStatus("toate");
                     setFilterCounty("toate");
                   }}
-                  className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
+                  className="mt-3"
                 >
-                  <X size={12} aria-hidden="true" />
                   Resetează filtrele
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -362,14 +365,16 @@ export function SesizariPublice() {
                 )}
               </span>
               {pendingNew > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
+                  shape="pill"
                   onClick={refreshFeed}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--color-primary)] text-white font-medium text-[10px] hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   title="Actualizează lista cu noile sesizări"
                 >
                   ↻ {pendingNew} {pendingNew === 1 ? "nouă" : "noi"}
-                </button>
+                </Button>
               )}
             </span>
           </div>
@@ -407,13 +412,14 @@ export function SesizariPublice() {
           <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-md mx-auto">
             A apărut o problemă de conexiune. Verifică internetul și încearcă din nou.
           </p>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={refreshFeed}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
           >
             Reîncearcă
-          </button>
+          </Button>
         </div>
       ) : filtered.length === 0 ? (
         (() => {
@@ -434,17 +440,19 @@ export function SesizariPublice() {
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 {hasActiveFilter && (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<span aria-hidden="true">🔄</span>}
                     onClick={() => {
                       setFilterTip("toate");
                       setFilterStatus("toate");
                       setFilterCounty("toate");
                     }}
-                    className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   >
-                    <span aria-hidden="true">🔄</span> Resetează filtrele
-                  </button>
+                    Resetează filtrele
+                  </Button>
                 )}
                 <Link
                   href={county ? `/${county.slug}/sesizari` : "/sesizari"}
@@ -625,7 +633,10 @@ export function SesizariPublice() {
         {/* Load more */}
         {hasMore && filtered.length >= PAGE_SIZE && (
           <div className="flex justify-center mt-8">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
+              loading={loadingMore}
               onClick={async () => {
                 setLoadingMore(true);
                 const params = new URLSearchParams();
@@ -647,15 +658,9 @@ export function SesizariPublice() {
                   setLoadingMore(false);
                 }
               }}
-              disabled={loadingMore}
-              className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
-              {loadingMore ? (
-                <><Loader2 size={14} className="animate-spin" /> Se încarcă...</>
-              ) : (
-                <>Încarcă mai multe sesizări</>
-              )}
-            </button>
+              {loadingMore ? "Se încarcă..." : "Încarcă mai multe sesizări"}
+            </Button>
           </div>
         )}
         </>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Search,
-  Loader2,
   ArrowRight,
   AlertTriangle,
   MapPin,
@@ -16,6 +15,7 @@ import { formatDateTime } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { getSesizareEventMeta, isRedundantEventDescription, isTerminalEvent, dedupeConsecutiveEvents } from "@/lib/sesizari/events";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
+import { Button } from "@/components/ui/Button";
 import type { SesizareFeedRow, SesizareTimelineRow } from "@/lib/supabase/types";
 
 interface Result {
@@ -104,19 +104,17 @@ export function UrmarireSesizare() {
               className="w-full h-12 pl-10 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-base font-mono tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             />
           </div>
-          <button
+          <Button
             type="submit"
-            disabled={loading || cod.trim().length < 3}
+            variant="primary"
+            size="lg"
+            disabled={cod.trim().length < 3}
+            loading={loading}
             aria-busy={loading}
-            className="h-12 px-5 sm:px-6 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+            leftIcon={<Search size={16} aria-hidden="true" />}
           >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Search size={16} aria-hidden="true" />
-            )}
             <span className="hidden sm:inline">Caută</span>
-          </button>
+          </Button>
         </div>
         <p id="urm-hint" className="text-[11px] text-[var(--color-text-muted)] mt-2">
           Codul e cifric (ex: <span className="font-mono">00007</span>).

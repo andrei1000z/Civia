@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 
 interface RefreshResult {
   scrapedCount: number;
@@ -70,24 +71,16 @@ export function RefreshScrapeButton() {
             o întrerupere mare.
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={trigger}
           disabled={running}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+          loading={running}
+          leftIcon={<RefreshCw size={14} />}
         >
-          {running ? (
-            <>
-              <Loader2 size={14} className="motion-safe:animate-spin" />
-              Scraping...
-            </>
-          ) : (
-            <>
-              <RefreshCw size={14} />
-              Refresh scrape
-            </>
-          )}
-        </button>
+          {running ? "Scraping..." : "Refresh scrape"}
+        </Button>
       </div>
 
       {result && (

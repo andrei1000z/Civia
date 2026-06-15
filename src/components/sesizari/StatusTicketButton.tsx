@@ -6,13 +6,13 @@ import {
   CheckCircle2,
   Clock,
   Flag,
-  Loader2,
   ShieldAlert,
   X as CloseX,
   XCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 import {
   SESIZARE_STATUS_META,
   SESIZARE_TICKET_PROPOSABLE,
@@ -135,15 +135,16 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="md"
         onClick={handleClick}
-        className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-sm font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 hover:border-amber-400 dark:hover:border-amber-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+        leftIcon={<Flag size={16} aria-hidden="true" />}
         title="Ai vazut progres in teren sau ai primit raspuns? Raporteaza si admin-ul verifica."
       >
-        <Flag size={16} aria-hidden="true" />
         Ai văzut progres? Raportează
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -326,31 +327,25 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
             </div>
 
             <div className="px-5 py-4 border-t border-[var(--color-border)] flex items-center justify-end gap-2 bg-[var(--color-bg)]">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => !submitting && setOpen(false)}
-                className="h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
                 Anulează
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={submit}
                 disabled={submitting || !noteValid || proposable.length === 0}
-                className="inline-flex items-center gap-2 h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                loading={submitting}
+                leftIcon={<Flag size={12} aria-hidden="true" />}
               >
-                {submitting ? (
-                  <>
-                    <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-                    Trimit...
-                  </>
-                ) : (
-                  <>
-                    <Flag size={12} aria-hidden="true" />
-                    Trimite propunere
-                  </>
-                )}
-              </button>
+                {submitting ? "Trimit..." : "Trimite propunere"}
+              </Button>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   children: ReactNode;
@@ -72,14 +73,16 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-sm text-[var(--color-text-muted)] mb-3 leading-relaxed">
                 Restul paginii funcționează normal. Reîncearcă sau refresh pagina.
               </p>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={this.reset}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                leftIcon={<RefreshCw size={12} aria-hidden="true" />}
+                className="text-xs"
               >
-                <RefreshCw size={12} aria-hidden="true" />
                 Încearcă din nou
-              </button>
+              </Button>
             </div>
           </div>
         </div>

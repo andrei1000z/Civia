@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { trackCustomEvent, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
+import { Button } from "@/components/ui/Button";
 import { PhotoUploader } from "./PhotoUploader";
 
 interface Props {
@@ -87,14 +88,15 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={handleClick}
-        className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-sm font-medium hover:brightness-110 transition-all shadow-[var(--shadow-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+        variant="primary"
+        size="md"
+        leftIcon={<CheckCircle2 size={16} aria-hidden="true" />}
       >
-        <CheckCircle2 size={16} aria-hidden="true" />
         S-a rezolvat — marchează ca rezolvată
-      </button>
+      </Button>
       {error && !open && (
         <p role="alert" className="text-xs text-red-600 mt-1">{error}</p>
       )}
@@ -141,22 +143,27 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
               )}
 
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 h-11 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-sm font-medium hover:bg-[var(--color-border)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
                 >
                   Anulează
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-500"
+                  loading={submitting}
+                  variant="primary"
+                  size="md"
+                  leftIcon={<CheckCircle2 size={14} aria-hidden="true" />}
+                  className="flex-1"
                 >
-                  {submitting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />}
                   Da, a fost rezolvată
-                </button>
+                </Button>
               </div>
             </div>
           </div>

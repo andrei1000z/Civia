@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { Button } from "@/components/ui/Button";
 
 export default function SesizareDetailError({
   error,
@@ -29,13 +30,9 @@ export default function SesizareDetailError({
           Ceva n-a mers cum trebuie. Sentry e notificat.
           {error.digest ? ` (cod: ${error.digest})` : ""}
         </p>
-        <button
-          type="button"
-          onClick={() => reset()}
-          className="inline-flex items-center justify-center h-11 px-6 rounded-[var(--radius-md)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
-        >
+        <Button type="button" variant="primary" size="md" onClick={() => reset()}>
           Reîncarcă
-        </button>
+        </Button>
       </div>
     </div>
   );
