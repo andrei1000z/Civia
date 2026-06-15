@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Coins, ExternalLink, Vote, Users, ShieldQuestion } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { PROGRAME_BP } from "@/data/bugetare-programe";
@@ -133,12 +134,12 @@ export default function BugetareParticipativaPage() {
             Joc de 90 de secunde: împarte bugetul orașului pe categorii, apoi compară cu alocarea
             reală a primăriei. Spoiler: diferența ta cea mai mare e exact locul unde merită să acționezi.
           </p>
-          <a
+          <Link
             href="/bugetare-participativa/simulator"
             className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
           >
             Joacă simulatorul →
-          </a>
+          </Link>
         </section>
 
         <p className="text-xs text-[var(--color-text-muted)]">

@@ -186,7 +186,7 @@ export default async function SesizariPage() {
       </div>
 
       {/* Cross-link: propuneri legislative — compact (o singură linie pe desktop). */}
-      <a
+      <Link
         href="/propuneri-legislative"
         className="group mt-6 px-4 py-2.5 rounded-xl bg-surface-2 border border-border flex items-center justify-between gap-3 hover:bg-surface hover:border-primary/30 transition-colors"
       >
@@ -195,7 +195,7 @@ export default async function SesizariPage() {
           <span className="text-text-muted">Propune o modificare legislativă.</span>
         </p>
         <span className="shrink-0 text-sm font-semibold text-primary group-hover:translate-x-0.5 transition-transform" aria-hidden="true">→</span>
-      </a>
+      </Link>
 
       {/* FAQ section removed (5/8/2026 user request — minimalist).
           Răspunsurile la cele mai comune întrebări sunt deja în
