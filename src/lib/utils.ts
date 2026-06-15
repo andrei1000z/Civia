@@ -69,7 +69,17 @@ export function formatCurrency(amount: number, currency = "RON"): string {
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat("ro-RO").format(num);
+  // DETERMINIST (fix #418 latent): `Intl.NumberFormat("ro-RO")` alege separatorul
+  // de mii în funcție de ICU/CLDR-ul runtime-ului — Node pe Vercel randează
+  // „12.345" (punct), browserul cu CLDR nou randează „12 345" (narrow no-break
+  // space) → text mismatch server↔client = React #418 în orice client component.
+  // Formatăm manual: „." la mii + „," la zecimale (ro), identic peste tot.
+  const neg = num < 0;
+  const rounded = Math.round(Math.abs(num) * 1000) / 1000; // ≤3 zecimale, ca ICU
+  const [intPart, decPart] = String(rounded).split(".");
+  const grouped = (intPart ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const out = decPart ? `${grouped},${decPart}` : grouped;
+  return neg ? `-${out}` : out;
 }
 
 /** Format un număr cu 1-2 zecimale (ex: 596.5 → "596,5", 4.27 → "4,27").
