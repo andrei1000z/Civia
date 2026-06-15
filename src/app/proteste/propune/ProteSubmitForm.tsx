@@ -20,6 +20,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 import { ALL_COUNTIES } from "@/data/counties";
 
 // Draft persistence key (localStorage). Salvăm formularul de propunere
@@ -314,16 +315,17 @@ export function ProteSubmitForm() {
           >
             ← Toate protestele
           </Link>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => {
               setF(EMPTY);
               setDone(false);
             }}
-            className="inline-flex items-center h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-bg)] transition-colors"
           >
             Trimite altul
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -345,20 +347,23 @@ export function ProteSubmitForm() {
               O ciornă cu titlul și detaliile pe care le-ai introdus ultima dată e disponibilă.
             </p>
             <div className="flex gap-2 mt-2">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
+                leftIcon={<RotateCcw size={12} aria-hidden />}
                 onClick={restoreDraft}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
               >
-                <RotateCcw size={12} aria-hidden /> Continuă ciorna
-              </button>
-              <button
+                Continuă ciorna
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={discardDraft}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-xs font-semibold hover:bg-[var(--color-border)] transition-colors"
               >
                 Începe nou
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -712,13 +717,14 @@ export function ProteSubmitForm() {
                     maxLength={500}
                     className={`${inputCls} flex-1`}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={addDemand}
-                    className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
                   >
                     Adaugă
-                  </button>
+                  </Button>
                 </div>
                 {f.demands.length > 0 && (
                   <ol className="mt-2 space-y-1">
@@ -782,14 +788,15 @@ export function ProteSubmitForm() {
         >
           Anulează
         </Link>
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
+          loading={submitting}
           disabled={submitting}
-          className="inline-flex items-center gap-1.5 h-11 px-6 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
         >
-          {submitting && <Loader2 size={14} className="motion-safe:animate-spin" />}
           {submitting ? "Se trimite..." : "Trimite spre verificare"}
-        </button>
+        </Button>
       </div>
     </form>
   );

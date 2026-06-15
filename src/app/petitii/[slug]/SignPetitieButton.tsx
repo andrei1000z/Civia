@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Megaphone, LogIn } from "lucide-react";
+import { Check, Megaphone, LogIn } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/Button";
 import {
   trackPetitieSign,
   trackAuthModalOpen,
@@ -63,13 +64,16 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
 
   if (!isActive) {
     return (
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="lg"
+        shape="pill"
         disabled
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)] text-sm font-medium cursor-not-allowed"
+        className="w-full"
       >
         Petiție încheiată
-      </button>
+      </Button>
     );
   }
 
@@ -85,8 +89,12 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
   if (!isLoggedIn) {
     return (
       <div ref={buttonRef}>
-        <button
+        <Button
           type="button"
+          variant="petition"
+          size="lg"
+          shape="pill"
+          leftIcon={<LogIn size={16} aria-hidden="true" />}
           onClick={() => {
             // 2026-05-25 #8 — auth-required step DISTINCT, killer #1
             // în funnel (research: drop-off după AI draft).
@@ -94,11 +102,10 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
             trackAuthModalOpen("petitie-sign");
             openAuthModal();
           }}
-          className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+          className="w-full"
         >
-          <LogIn size={16} aria-hidden="true" />
           Conectează-te ca să semnezi
-        </button>
+        </Button>
       </div>
     );
   }
@@ -147,16 +154,19 @@ export function SignPetitieButton({ petitieId, petitieSlug, isActive, isLoggedIn
           className="w-full p-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
         />
       )}
-      <button
+      <Button
         type="button"
+        variant="petition"
+        size="lg"
+        shape="pill"
+        loading={signing}
+        leftIcon={<Megaphone size={16} aria-hidden="true" />}
         onClick={sign}
-        disabled={signing}
         aria-busy={signing}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-full)] bg-purple-600 hover:bg-purple-700 active:scale-[0.97] text-white text-sm font-semibold transition-all shadow-[var(--shadow-2)] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+        className="w-full"
       >
-        {signing ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Megaphone size={16} aria-hidden="true" />}
         Semnează acum
-      </button>
+      </Button>
       {!showComment && (
         <button
           type="button"

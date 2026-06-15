@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, ChevronLeft, ChevronRight, Check, Sparkles } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Check, Sparkles } from "lucide-react";
 import { AUTHORITIES, CATEGORII_PROPUNERI, VOTE_THRESHOLD_SEND } from "@/lib/propuneri-legislative/authorities";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 
 type Step = 1 | 2 | 3;
 
@@ -89,13 +90,14 @@ export function PropuneFormClient() {
 
   if (!open) {
     return (
-      <button
+      <Button
+        variant="primary"
+        size="sm"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+        leftIcon={<Plus size={14} />}
       >
-        <Plus size={14} />
         Propune o schimbare
-      </button>
+      </Button>
     );
   }
 
@@ -174,14 +176,15 @@ export function PropuneFormClient() {
               </div>
 
               <div className="flex justify-end">
-                <button
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={() => setStep(2)}
                   disabled={!canGoStep2}
-                  className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--color-primary-hover)] transition-colors"
+                  rightIcon={<ChevronRight size={14} />}
                 >
                   Continuă
-                  <ChevronRight size={14} />
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -263,21 +266,23 @@ export function PropuneFormClient() {
               )}
 
               <div className="flex items-center justify-between">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                  leftIcon={<ChevronLeft size={14} />}
                 >
-                  <ChevronLeft size={14} />
                   Înapoi
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={handleSubmitStep2}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 h-10 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold disabled:opacity-60 hover:bg-[var(--color-primary-hover)] transition-colors"
+                  loading={loading}
+                  leftIcon={<Sparkles size={14} />}
                 >
-                  {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                   {loading ? "AI formalizează..." : "Publică propunerea"}
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -314,12 +319,13 @@ export function PropuneFormClient() {
                 >
                   Vezi propunerea
                 </a>
-                <button
+                <Button
+                  variant="secondary"
+                  size="md"
                   onClick={close}
-                  className="inline-flex items-center justify-center h-10 px-5 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm"
                 >
                   Închide
-                </button>
+                </Button>
               </div>
             </div>
           )}

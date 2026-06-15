@@ -7,7 +7,6 @@ import {
   Sparkles,
   Plus,
   X,
-  Loader2,
   Send,
   AlertCircle,
   CheckCircle2,
@@ -23,6 +22,7 @@ import type {
   AftermathSource,
 } from "@/lib/proteste/aftermath";
 import { EMPTY_AFTERMATH } from "@/lib/proteste/aftermath";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   slug: string;
@@ -448,24 +448,20 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
           </ul>
         )}
 
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="lg"
           onClick={handleScrape}
-          disabled={scraping || !urlsRaw.trim()}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold py-3 text-sm hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={!urlsRaw.trim()}
+          loading={scraping}
+          leftIcon={<Sparkles size={16} aria-hidden />}
+          className="w-full"
         >
-          {scraping ? (
-            <>
-              <Loader2 size={16} className="animate-spin" aria-hidden />
-              Citesc articolele și sintetizez (10-30 sec)...
-            </>
-          ) : (
-            <>
-              <Sparkles size={16} aria-hidden />
-              Completează cu AI
-            </>
-          )}
-        </button>
+          {scraping
+            ? "Citesc articolele și sintetizez (10-30 sec)..."
+            : "Completează cu AI"}
+        </Button>
       </section>
 
       {/* MAIN FORM FIELDS */}
@@ -620,30 +616,26 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
                   className="hidden"
                   onChange={(e) => handleImageUpload(e.target.files)}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => imageInputRef.current?.click()}
                   disabled={uploadingImages}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 py-2 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15 disabled:opacity-50 transition-colors"
+                  loading={uploadingImages}
+                  leftIcon={<Upload size={13} aria-hidden />}
                 >
-                  {uploadingImages ? (
-                    <>
-                      <Loader2 size={13} className="animate-spin" aria-hidden />
-                      Se încarcă...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={13} aria-hidden /> Încarcă poze
-                    </>
-                  )}
-                </button>
-                <button
+                  {uploadingImages ? "Se încarcă..." : "Încarcă poze"}
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={addImage}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                  leftIcon={<LinkIcon size={13} aria-hidden />}
                 >
-                  <LinkIcon size={13} aria-hidden /> Lipește URL
-                </button>
+                  Lipește URL
+                </Button>
               </div>
             )}
           </div>
@@ -696,30 +688,26 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
                   className="hidden"
                   onChange={(e) => handleVideoUpload(e.target.files)}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={uploadingVideo}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 py-2 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15 disabled:opacity-50 transition-colors"
+                  loading={uploadingVideo}
+                  leftIcon={<Upload size={13} aria-hidden />}
                 >
-                  {uploadingVideo ? (
-                    <>
-                      <Loader2 size={13} className="animate-spin" aria-hidden />
-                      Se încarcă...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={13} aria-hidden /> Încarcă video
-                    </>
-                  )}
-                </button>
-                <button
+                  {uploadingVideo ? "Se încarcă..." : "Încarcă video"}
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={addVideo}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                  leftIcon={<LinkIcon size={13} aria-hidden />}
                 >
-                  <LinkIcon size={13} aria-hidden /> Lipește URL
-                </button>
+                  Lipește URL
+                </Button>
               </div>
             )}
             {uploadError && (
@@ -777,13 +765,16 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
               </div>
             ))}
             {data.sources.length < 15 && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={addSource}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                leftIcon={<Plus size={13} aria-hidden />}
+                className="w-full"
               >
-                <Plus size={13} aria-hidden /> Adaugă sursă
-              </button>
+                Adaugă sursă
+              </Button>
             )}
           </div>
         </Field>
@@ -797,23 +788,16 @@ Observații proprii: am fost azi la protest, atmosfera a fost pașnică, au scan
             <span>{submitError}</span>
           </div>
         )}
-        <button
+        <Button
           type="submit"
-          disabled={submitting}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold py-3.5 text-sm hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          variant="primary"
+          size="lg"
+          loading={submitting}
+          leftIcon={<Send size={15} aria-hidden />}
+          className="w-full"
         >
-          {submitting ? (
-            <>
-              <Loader2 size={16} className="animate-spin" aria-hidden />
-              Se publică...
-            </>
-          ) : (
-            <>
-              <Send size={15} aria-hidden />
-              Publică direct (admin)
-            </>
-          )}
-        </button>
+          {submitting ? "Se publică..." : "Publică direct (admin)"}
+        </Button>
       </div>
     </form>
   );
@@ -912,13 +896,16 @@ function ListEditor({
         </div>
       ))}
       {items.length < maxItems && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onAdd}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border)] py-2 text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+          leftIcon={<Plus size={13} aria-hidden />}
+          className="w-full"
         >
-          <Plus size={13} aria-hidden /> {addLabel}
-        </button>
+          {addLabel}
+        </Button>
       )}
     </div>
   );

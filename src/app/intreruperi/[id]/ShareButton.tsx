@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Check } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export function ShareButton({
   id,
@@ -34,12 +35,13 @@ export function ShareButton({
   };
 
   return (
-    <button
+    <Button
+      variant="secondary"
+      size="sm"
       onClick={handle}
-      className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors"
+      leftIcon={copied ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
     >
-      {copied ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
       {copied ? "Link copiat" : "Distribuie"}
-    </button>
+    </Button>
   );
 }

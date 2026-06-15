@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect } from "react";
 
+import { Button } from "@/components/ui/Button";
+
 /**
  * 2026-05-26 — fix scroll-la-anchor pe /intreruperi.
  *
@@ -43,26 +45,32 @@ export function IntreruperiQuickJump() {
 
   return (
     <div className="flex flex-wrap gap-2 justify-center -mt-2 mb-6">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
+        shape="pill"
+        leftIcon={<span aria-hidden="true">📣</span>}
         onClick={(e) => {
           e.preventDefault();
           scrollTo("submit-form");
         }}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
       >
-        <span aria-hidden="true">📣</span> Raportează o întrerupere
-      </button>
-      <button
+        Raportează o întrerupere
+      </Button>
+      <Button
         type="button"
+        variant="primary"
+        size="sm"
+        shape="pill"
+        leftIcon={<span aria-hidden="true">🔔</span>}
         onClick={(e) => {
           e.preventDefault();
           scrollTo("alerts-form");
         }}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-pill)] bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-sm font-medium hover:shadow-[0_6px_20px_-4px_rgba(5,150,105,0.5)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
       >
-        <span aria-hidden="true">🔔</span> Anunță-mă pe adresa mea
-      </button>
+        Anunță-mă pe adresa mea
+      </Button>
     </div>
   );
 }

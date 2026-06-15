@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   code: string;
@@ -98,24 +99,16 @@ export function ResendButton({ code, deliveryStatus, isGhostSend }: Props) {
               Retrimis cu succes — verifică pagina în 30 secunde
             </div>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={resend}
-              disabled={state === "sending"}
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-[var(--radius-button)] bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+              loading={state === "sending"}
+              leftIcon={<RefreshCw size={14} aria-hidden="true" />}
             >
-              {state === "sending" ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  Retrimit...
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={14} aria-hidden="true" />
-                  Retrimite la primării
-                </>
-              )}
-            </button>
+              {state === "sending" ? "Retrimit..." : "Retrimite la primării"}
+            </Button>
           )}
           {state === "error" && errorMsg && (
             <p className="text-xs text-red-400 mt-2">{errorMsg}</p>

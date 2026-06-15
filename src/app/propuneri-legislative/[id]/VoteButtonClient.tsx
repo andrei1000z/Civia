@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ThumbsUp, Loader2, Check, Share2 } from "lucide-react";
+import { ThumbsUp, Check, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { SITE_URL } from "@/lib/constants";
 
 interface Props {
@@ -65,31 +66,29 @@ export function VoteButtonClient({ propunereId, currentCount, threshold }: Props
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row gap-2">
-        <button
+        <Button
+          variant="primary"
+          size="lg"
           onClick={handleVote}
-          disabled={voted || loading}
-          className={`flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-[var(--radius-button)] font-semibold text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
+          disabled={voted}
+          loading={loading}
+          leftIcon={voted ? <Check size={16} /> : <ThumbsUp size={16} />}
+          className={`flex-1${
             voted
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 cursor-default"
-              : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] active:scale-[0.98]"
-          } disabled:cursor-not-allowed`}
+              ? " bg-emerald-100 bg-none text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+              : ""
+          }`}
         >
-          {loading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : voted ? (
-            <Check size={16} />
-          ) : (
-            <ThumbsUp size={16} />
-          )}
           {voted ? `Ai susținut! (${count} total)` : `Susțin această propunere`}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
           onClick={handleShare}
-          className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          leftIcon={copied ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
         >
-          {copied ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
           {copied ? "Copiat!" : "Distribuie"}
-        </button>
+        </Button>
       </div>
 
       {voted && count < threshold && (

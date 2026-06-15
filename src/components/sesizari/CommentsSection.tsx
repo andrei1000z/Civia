@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Send, Loader2, ThumbsUp, ThumbsDown, CornerDownRight } from "lucide-react";
+import { MessageSquare, Send, ThumbsUp, ThumbsDown, CornerDownRight } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { TimeAgo } from "@/components/ui/TimeAgo";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { trackCommentPost, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
 import type { SesizareCommentRow } from "@/lib/supabase/types";
@@ -261,29 +262,28 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
                 {replyBody.length}/2000
               </span>
               <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setReplyTo(null);
                   setReplyBody("");
                 }}
-                className="h-8 px-3 rounded-[var(--radius-sm)] text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] transition-colors"
               >
                 Anulează
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="primary"
+                size="sm"
+                loading={replyPosting}
                 disabled={!replyBody.trim() || replyPosting}
                 aria-busy={replyPosting}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-sm)] bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                leftIcon={<Send size={12} aria-hidden="true" />}
               >
-                {replyPosting ? (
-                  <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Send size={12} aria-hidden="true" />
-                )}
                 Trimite
-              </button>
+              </Button>
               </div>
             </div>
           </form>
@@ -323,26 +323,30 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
               <span id="comment-count" className="text-xs text-[var(--color-text-muted)] tabular-nums">
                 {body.length}/2000
               </span>
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="sm"
+                loading={posting}
                 disabled={!body.trim() || posting}
-                className="inline-flex items-center gap-2 h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
                 aria-busy={posting}
+                leftIcon={<Send size={14} aria-hidden="true" />}
               >
-                {posting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
                 {posting ? "Se trimite..." : "Trimite"}
-              </button>
+              </Button>
             </div>
             {error && <p role="alert" className="text-xs text-red-500 mt-2">{error}</p>}
           </>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="md"
             onClick={openAuthModal}
-            className="w-full py-3 text-sm text-center text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-xs)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            className="w-full"
           >
             Autentifică-te ca să comentezi <span aria-hidden="true">→</span>
-          </button>
+          </Button>
         )}
       </form>
 

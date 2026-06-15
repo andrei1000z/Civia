@@ -5,7 +5,6 @@ import {
   UserPlus,
   X,
   CheckCircle2,
-  Loader2,
   ArrowRight,
   Eye,
   Mail,
@@ -16,7 +15,7 @@ import {
 } from "lucide-react";
 import { getRecipientsLabel } from "@/lib/sesizari/mailto";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import { trackSesizareCosign } from "@/components/analytics/CiviaTracker";
 
 interface Props {
@@ -235,20 +234,16 @@ export function SignSesizareButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-[var(--radius-xs)] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
-          variant === "primary"
-            ? "h-11 px-4 text-sm bg-[var(--color-secondary)] text-white hover:brightness-110 shadow-[var(--shadow-2)]"
-            : "h-9 px-3 text-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface)]",
-        )}
+        variant={variant === "primary" ? "primary" : "outline"}
+        size={variant === "primary" ? "md" : "sm"}
+        leftIcon={<UserPlus size={variant === "primary" ? 16 : 13} aria-hidden="true" />}
         title="Trimite același email la autorități cu identitatea ta — direct prin Civia."
       >
-        <UserPlus size={variant === "primary" ? 16 : 13} aria-hidden="true" />
         Trimite și tu
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -295,13 +290,9 @@ export function SignSesizareButton({
                   Cu cât suntem mai mulți, cu atât autoritățile răspund mai repede.
                   Mulțumim pentru implicare! 🙌
                 </p>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="inline-flex items-center justify-center h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-                >
+                <Button type="button" onClick={handleClose} variant="primary" size="md">
                   Închide
-                </button>
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-5 space-y-4" autoComplete="on">
@@ -411,37 +402,32 @@ export function SignSesizareButton({
                 </label>
 
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={handlePreview}
-                    disabled={!canPreview || previewLoading || state === "sending"}
-                    className="shrink-0 inline-flex items-center justify-center gap-1.5 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:bg-[var(--color-border)]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    disabled={!canPreview || state === "sending"}
+                    loading={previewLoading}
+                    variant="outline"
+                    size="lg"
+                    leftIcon={<Eye size={16} aria-hidden="true" />}
                     title="Vezi exact ce email pleacă"
+                    className="shrink-0"
                   >
-                    {previewLoading ? (
-                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Eye size={16} aria-hidden="true" />
-                    )}
                     <span className="hidden sm:inline">Previzualizare</span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    disabled={!canSubmit || state === "sending"}
-                    className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                    disabled={!canSubmit}
+                    loading={state === "sending"}
+                    variant="primary"
+                    size="lg"
+                    rightIcon={<ArrowRight size={16} aria-hidden="true" />}
+                    className="flex-1"
                   >
-                    {state === "sending" ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                        Trimit emailul către autorități...
-                      </>
-                    ) : (
-                      <>
-                        Trimite acum
-                        <ArrowRight size={16} aria-hidden="true" />
-                      </>
-                    )}
-                  </button>
+                    {state === "sending"
+                      ? "Trimit emailul către autorități..."
+                      : "Trimite acum"}
+                  </Button>
                 </div>
 
                 {state === "error" && errorMsg && (
@@ -587,26 +573,28 @@ export function SignSesizareButton({
                 🇪🇺 Date stocate în UE · Conform OG 27/2002
               </p>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowPreview(false)}
-                  className="inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  variant="outline"
+                  size="md"
+                  leftIcon={<Pencil size={14} aria-hidden="true" />}
                 >
-                  <Pencil size={14} aria-hidden="true" />
                   Editez datele
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => {
                     setShowPreview(false);
                     handleSubmit(new Event("submit") as unknown as React.FormEvent);
                   }}
                   disabled={state === "sending"}
-                  className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                  variant="primary"
+                  size="md"
+                  rightIcon={<ArrowRight size={14} aria-hidden="true" />}
                 >
                   Trimite acum
-                  <ArrowRight size={14} aria-hidden="true" />
-                </button>
+                </Button>
               </div>
             </footer>
           </div>

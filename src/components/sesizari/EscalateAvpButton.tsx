@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Scale, Loader2, Check, X } from "lucide-react";
+import { Scale, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { AvpReason } from "@/lib/sesizari/escalation";
 
 /**
@@ -85,16 +86,17 @@ export function EscalateAvpButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="sm"
         onClick={() => eligible && setOpen(true)}
         disabled={!eligible}
         title={!eligible ? hint : undefined}
-        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed bg-amber-600 text-white hover:bg-amber-700 focus-visible:ring-amber-600 disabled:bg-[var(--color-surface-2)] disabled:text-[var(--color-text-muted)]"
+        leftIcon={<Scale size={14} aria-hidden="true" />}
       >
-        <Scale size={14} aria-hidden="true" />
         Escaladează la Avocatul Poporului
-      </button>
+      </Button>
       {!eligible && (
         <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">{hint}</p>
       )}
@@ -144,27 +146,26 @@ export function EscalateAvpButton({
                 </p>
               )}
               <div className="flex items-center gap-2 justify-end">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setOpen(false)}
                   disabled={busy}
-                  className="h-10 px-4 rounded-[var(--radius-button)] text-sm font-medium bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                 >
                   Anulează
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={submit}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] text-sm font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+                  loading={busy}
+                  leftIcon={<Scale size={14} aria-hidden="true" />}
                 >
-                  {busy ? (
-                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Scale size={14} aria-hidden="true" />
-                  )}
                   Trimite plângerea
-                </button>
+                </Button>
               </div>
             </div>
           </div>

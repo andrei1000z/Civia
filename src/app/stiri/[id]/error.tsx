@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Newspaper, RotateCcw, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function StireError({ reset }: { error: Error; reset: () => void }) {
   return (
@@ -16,14 +17,15 @@ export default function StireError({ reset }: { error: Error; reset: () => void 
         Sursa poate fi temporar indisponibilă. Încearcă mai târziu sau vezi alte știri.
       </p>
       <div className="flex gap-3 justify-center">
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="md"
           onClick={reset}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          leftIcon={<RotateCcw size={16} aria-hidden="true" />}
         >
-          <RotateCcw size={16} aria-hidden="true" />
           Reîncearcă
-        </button>
+        </Button>
         <Link
           href="/stiri"
           className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

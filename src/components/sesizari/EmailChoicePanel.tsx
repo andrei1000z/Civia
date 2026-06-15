@@ -10,6 +10,7 @@ import {
   buildEmailPayload,
   type MailtoInput,
 } from "@/lib/sesizari/mailto";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   input: MailtoInput;
@@ -155,14 +156,21 @@ export function EmailChoicePanel({ input, compact }: Props) {
             Mail nativ
           </a>
         )}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={copyAll}
-          className="inline-flex items-center justify-center gap-1.5 h-9 px-2 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          leftIcon={
+            copied === "all" ? (
+              <Check size={12} className="text-emerald-600" aria-hidden="true" />
+            ) : (
+              <Copy size={12} aria-hidden="true" />
+            )
+          }
         >
-          {copied === "all" ? <Check size={12} className="text-emerald-600" aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
           {copied === "all" ? "Copiat în clipboard" : "Copiază emailul"}
-        </button>
+        </Button>
       </div>
 
       {isMobile && (
@@ -191,13 +199,14 @@ export function EmailChoicePanel({ input, compact }: Props) {
                   {payload.to.join(", ")}
                   {payload.cc.length > 0 && `, ${payload.cc.join(", ")}`}
                 </code>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={copyTo}
-                  className="h-8 px-2 rounded bg-[var(--color-surface)] text-[10px] font-medium hover:bg-[var(--color-border)]"
                 >
                   {copied === "to" ? "✓ Copiat" : "Copiază"}
-                </button>
+                </Button>
               </div>
             </div>
             <div>
@@ -213,13 +222,14 @@ export function EmailChoicePanel({ input, compact }: Props) {
                 <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
                   Corpul emailului
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={copyBody}
-                  className="h-7 px-2 rounded bg-[var(--color-surface)] text-[10px] font-medium hover:bg-[var(--color-border)]"
                 >
                   {copied === "body" ? "✓ Copiat" : "Copiază textul"}
-                </button>
+                </Button>
               </div>
               <pre className="p-2 rounded bg-[var(--color-surface)] text-[10px] whitespace-pre-wrap font-mono max-h-60 overflow-y-auto">
                 {payload.body}

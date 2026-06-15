@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function GlobalError({
   error,
@@ -36,14 +37,15 @@ export default function GlobalError({
         </p>
       )}
       <div className="flex gap-3 justify-center mt-6">
-        <button
+        <Button
           type="button"
           onClick={reset}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          variant="primary"
+          size="md"
+          leftIcon={<RotateCcw size={16} aria-hidden="true" />}
         >
-          <RotateCcw size={16} aria-hidden="true" />
           Reîncarcă pagina
-        </button>
+        </Button>
         <Link
           href="/"
           className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"

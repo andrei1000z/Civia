@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, Check, ArrowLeft, ExternalLink } from "lucide-react";
+import { Check, ArrowLeft, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Formular minimal: link obligatoriu + un rând de context. Mesajul ajunge
@@ -71,13 +72,14 @@ export function ProposePetitieForm() {
             <ArrowLeft size={14} aria-hidden="true" />
             Înapoi la petiții
           </Link>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setDone(false)}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors"
           >
             Mai propun una
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -140,15 +142,16 @@ export function ProposePetitieForm() {
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="flex flex-wrap gap-3 pt-2">
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
+          loading={sending}
           disabled={sending || !url.trim()}
           aria-busy={sending}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
         >
-          {sending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : null}
           {sending ? "Se trimite..." : "Trimite propunerea"}
-        </button>
+        </Button>
         <Link
           href="/petitii"
           className="inline-flex items-center gap-1.5 h-11 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors"

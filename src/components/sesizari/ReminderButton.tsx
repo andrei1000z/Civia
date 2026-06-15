@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ExternalLink, Loader2 } from "lucide-react";
+import { Bell, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { buildReminderText, buildEmailPayload, type MailtoInput } from "@/lib/sesizari/mailto";
 import { evaluateOverdue } from "@/lib/sesizari/overdue";
 
@@ -56,20 +57,17 @@ export function ReminderButton({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="danger"
+      size="md"
       onClick={onClick}
-      disabled={submitting}
-      className="inline-flex items-center gap-2 h-11 px-4 rounded-[var(--radius-xs)] bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors shadow-[var(--shadow-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
+      loading={submitting}
+      leftIcon={<Bell size={16} aria-hidden="true" />}
+      rightIcon={<ExternalLink size={12} aria-hidden="true" />}
       title="Trimite o reamintire formală conform art. 14 OG 27/2002"
     >
-      {submitting ? (
-        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-      ) : (
-        <Bell size={16} aria-hidden="true" />
-      )}
       Reamintire către autoritate
-      <ExternalLink size={12} aria-hidden="true" />
-    </button>
+    </Button>
   );
 }

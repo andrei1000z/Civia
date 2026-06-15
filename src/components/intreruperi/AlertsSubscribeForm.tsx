@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export function AlertsSubscribeForm() {
   const [email, setEmail] = useState("");
@@ -123,14 +124,17 @@ export function AlertsSubscribeForm() {
             Cât mai specific (stradă + număr + cartier/oraș). Matchul se face pe strada + zonă.
           </span>
         </label>
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="lg"
+          loading={sending}
           disabled={sending || !email.trim() || !address.trim()}
-          className="w-full h-12 px-5 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+          leftIcon={<span aria-hidden="true">🔔</span>}
+          className="w-full"
         >
-          {sending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : "🔔"}
           {sending ? "Se trimite..." : "Anunță-mă"}
-        </button>
+        </Button>
         {error && (
           <p role="alert" className="text-xs text-red-500 mt-2 text-center">
             {error}

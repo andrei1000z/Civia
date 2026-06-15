@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 
 const SPLASH_KEY = "civia:splash-shown-v1";
-const DURATION_MS = 800;
+const ENTER_MS = 440; // logo reveal
+const HOLD_MS = 380; // hold
+const EXIT_MS = 420; // fade out
 
 /**
- * First-load splash — Civia logo cu emerald→aqua liquid morph.
+ * First-load splash — Civia logo cu glass-card + emerald→aqua liquid morph,
+ * glow și pulse-ring (look iOS 26 / One UI launch screen).
  *
- * Shown ONCE per browser (localStorage flag). After first visit, never
- * shown again. Total duration 800ms. Skippable via tap/click.
- *
- * Respects prefers-reduced-motion (instant fade-out).
+ * - PWA STANDALONE → animație de „app launch" la fiecare cold-launch (sesiune).
+ * - Web → o singură dată per browser (nederanjant pt. vizitatori recurenți).
+ * - Skippable la tap/click. Respectă prefers-reduced-motion (guard global CSS).
  */
 export function FirstLoadSplash() {
   const [show, setShow] = useState(false);
@@ -19,20 +21,24 @@ export function FirstLoadSplash() {
 
   useEffect(() => {
     try {
-      const seen = localStorage.getItem(SPLASH_KEY);
-      if (seen) return;
-      localStorage.setItem(SPLASH_KEY, "1");
+      const standalone =
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        (navigator as unknown as { standalone?: boolean }).standalone === true;
+      // standalone → sessionStorage (revine la fiecare lansare a aplicației);
+      // web → localStorage (o singură dată ever).
+      const store = standalone ? window.sessionStorage : window.localStorage;
+      const key = standalone ? "civia:splash-session" : SPLASH_KEY;
+      if (store.getItem(key)) return;
+      store.setItem(key, "1");
       setShow(true);
-      // Auto-dismiss after DURATION_MS
-      const timer = setTimeout(() => setExiting(true), DURATION_MS);
-      // Remove from DOM after exit anim
-      const removeTimer = setTimeout(() => setShow(false), DURATION_MS + 400);
+      const toExit = setTimeout(() => setExiting(true), ENTER_MS + HOLD_MS);
+      const toRemove = setTimeout(() => setShow(false), ENTER_MS + HOLD_MS + EXIT_MS);
       return () => {
-        clearTimeout(timer);
-        clearTimeout(removeTimer);
+        clearTimeout(toExit);
+        clearTimeout(toRemove);
       };
     } catch {
-      // localStorage blocked — never show, prevent infinite loops
+      // storage blocat (Safari private) — nu arăta, evită bucle.
     }
   }, []);
 
@@ -43,51 +49,137 @@ export function FirstLoadSplash() {
       aria-hidden="true"
       role="presentation"
       onClick={() => setExiting(true)}
-      className="fixed inset-0 z-[400] flex items-center justify-center cursor-pointer"
-      style={{
-        background: "radial-gradient(circle at center, rgba(16, 185, 129, 0.12), rgba(0, 0, 0, 0.95))",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        opacity: exiting ? 0 : 1,
-        transition: "opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)",
-        pointerEvents: exiting ? "none" : "auto",
-      }}
+      className="civia-splash"
+      data-exiting={exiting}
     >
-      <div
-        className="relative flex flex-col items-center gap-4"
-        style={{
-          transform: exiting ? "scale(1.1)" : "scale(1)",
-          transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}
-      >
-        {/* Logo morph — gradient emerald→aqua animated */}
-        <div
-          className="w-24 h-24 rounded-3xl flex items-center justify-center text-white font-extrabold text-5xl"
-          style={{
-            background: "linear-gradient(135deg, #10B981 0%, #22D3EE 100%)",
-            backgroundSize: "200% 200%",
-            animation: "lc-splash-gradient 1200ms ease-in-out infinite alternate",
-            boxShadow: "0 16px 48px -8px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.10)",
-            fontFamily: "var(--font-sora)",
-          }}
-        >
-          C
+      <div className="civia-splash-inner" data-exiting={exiting}>
+        <div className="civia-splash-logoWrap">
+          <span className="civia-splash-ring" aria-hidden="true" />
+          <span className="civia-splash-ring civia-splash-ring2" aria-hidden="true" />
+          <div className="civia-splash-logo">C</div>
         </div>
-        <div
-          className="text-white/80 text-sm font-medium tracking-wide"
-          style={{ fontFamily: "var(--font-sora)" }}
-        >
-          Civia
-        </div>
+        <div className="civia-splash-word">Civia</div>
       </div>
 
       <style jsx>{`
-        @keyframes lc-splash-gradient {
+        .civia-splash {
+          position: fixed;
+          inset: 0;
+          z-index: 400;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          background: radial-gradient(
+            120% 120% at 50% 38%,
+            rgba(16, 185, 129, 0.18),
+            rgba(8, 10, 12, 0.97) 70%
+          );
+          backdrop-filter: blur(12px) saturate(160%);
+          -webkit-backdrop-filter: blur(12px) saturate(160%);
+          opacity: 1;
+          transition: opacity ${EXIT_MS}ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .civia-splash[data-exiting="true"] {
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .civia-splash-inner {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          animation: splash-rise ${ENTER_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          transition: transform ${EXIT_MS}ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .civia-splash-inner[data-exiting="true"] {
+          transform: scale(1.08);
+        }
+        @keyframes splash-rise {
+          from {
+            opacity: 0;
+            transform: scale(0.86);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .civia-splash-logoWrap {
+          position: relative;
+          width: 96px;
+          height: 96px;
+        }
+        .civia-splash-logo {
+          position: relative;
+          z-index: 1;
+          width: 96px;
+          height: 96px;
+          border-radius: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 3rem;
+          font-weight: 800;
+          font-family: var(--font-sora);
+          background: linear-gradient(135deg, #10b981 0%, #22d3ee 100%);
+          background-size: 200% 200%;
+          animation: splash-grad 1600ms ease-in-out infinite alternate;
+          box-shadow:
+            0 24px 60px -10px rgba(16, 185, 129, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        @keyframes splash-grad {
           0% {
             background-position: 0% 50%;
           }
           100% {
             background-position: 100% 50%;
+          }
+        }
+
+        .civia-splash-ring {
+          position: absolute;
+          inset: 0;
+          border-radius: 28px;
+          border: 1px solid rgba(16, 185, 129, 0.5);
+          animation: splash-ring 1500ms cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        }
+        .civia-splash-ring2 {
+          animation-delay: 600ms;
+        }
+        @keyframes splash-ring {
+          0% {
+            transform: scale(1);
+            opacity: 0.55;
+          }
+          100% {
+            transform: scale(1.85);
+            opacity: 0;
+          }
+        }
+
+        .civia-splash-word {
+          color: rgba(255, 255, 255, 0.82);
+          font-size: 0.95rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          font-family: var(--font-sora);
+          animation: splash-word 520ms ease-out 170ms both;
+        }
+        @keyframes splash-word {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>

@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "petition";
 export type ButtonSize = "sm" | "md" | "lg";
 export type ButtonShape = "default" | "pill";
 
@@ -33,6 +33,11 @@ const variantStyles: Record<ButtonVariant, string> = {
     "lc-liquid lc-liquid-slate bg-white/5 text-[var(--color-text)]",
   danger:
     "lc-liquid lc-liquid-rose lc-magnetic bg-gradient-to-br from-rose-500/90 to-red-600/90 text-white font-semibold",
+  // Petiții = brand violet. Gradient pe shade-uri -500/-600 (rămâne suficient
+  // de închis pt. text alb în AMBELE moduri — spre deosebire de --color-petition
+  // care se inversează la violet deschis în dark și ar sparge contrastul).
+  petition:
+    "lc-liquid lc-liquid-violet lc-magnetic bg-gradient-to-br from-violet-500/85 to-purple-600/85 text-white font-semibold",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -75,7 +80,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         // 2026-05-19: focus ring per variant — primary/danger pe gradient
         // bg au nevoie de outline alb cu offset pe primary background;
         // celelalte (outline/ghost/secondary) pastreaza emerald.
-        variant === "primary" || variant === "danger"
+        variant === "primary" || variant === "danger" || variant === "petition"
           ? "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           : "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]",
         variantStyles[variant],
