@@ -216,6 +216,16 @@ export async function POST(req: Request) {
   const inReplyTo = normalizeMessageId(parsed.data.in_reply_to || headers["in-reply-to"]);
   const referencesChain = (parsed.data.references || headers["references"] || "").toLowerCase().trim() || null;
 
+  // 2026-06-15 — Data REALĂ a emailului (RFC 5322 §3.6.1 din header-ul Date),
+  // folosită pentru received_at + time-gate-ul de matching + timestamp-ul
+  // eventului de status în timeline. Astfel „când s-a pus statusul" = „când a
+  // venit emailul", nu ora procesării (relevant la backfill/retry/întârzieri).
+  // Fallback la now() dacă header-ul Date lipsește sau e invalid.
+  const emailDateRaw = headers["date"] ? new Date(headers["date"]) : null;
+  const receivedAtIso = emailDateRaw && !Number.isNaN(emailDateRaw.getTime())
+    ? emailDateRaw.toISOString()
+    : new Date().toISOString();
+
   // ─── 2.5 PRE-INGEST GUARDS (v3 hardening) ──────────────────────
   // Worker-ul deja filtrează, dar avem aici defense-in-depth în caz că
   // worker-ul nu se updateaza (backward compat) sau cineva apelează direct.
@@ -400,7 +410,7 @@ export async function POST(req: Request) {
       referencesChain,
       fromEmail: senderEmail,
       replyText: `${subject || ""} ${aiInputText} ${filenames}`,
-      receivedAt: new Date().toISOString(),
+      receivedAt: receivedAtIso,
       admin,
     });
     sesizareId = m.sesizareId;
@@ -431,7 +441,7 @@ export async function POST(req: Request) {
       subject: subject || "",
       body_text: cleanBody, // authenticity rămâne pe body original (semnale tehnice)
       headers,
-      received_at: new Date().toISOString(),
+      received_at: receivedAtIso,
     }),
   ]);
 
@@ -562,6 +572,8 @@ export async function POST(req: Request) {
               sesizareId,
               eventType: tlEvent,
               description: classification.summary?.slice(0, 200) ?? null,
+              // timestamp-ul eventului = ora emailului autorității, nu ora procesării.
+              createdAt: receivedAtIso,
               sentryTags: { source: "inbox_reply_status" },
             });
           }

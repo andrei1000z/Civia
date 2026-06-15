@@ -74,12 +74,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const admin = createSupabaseAdmin();
   const { data: reply } = await admin
     .from("sesizare_replies")
-    .select("id, sesizare_id, ai_status, ai_nr_inregistrare, ai_summary")
+    .select("id, sesizare_id, ai_status, ai_nr_inregistrare, ai_summary, received_at")
     .eq("id", id)
     .maybeSingle();
   if (!reply) return NextResponse.json({ error: "Reply not found" }, { status: 404 });
 
   const prevStatus = (reply as { ai_status: string | null }).ai_status;
+  // 2026-06-15 — timestamp-ul de status = ora REALĂ a emailului autorității
+  // (received_at, setat din header-ul Date), nu ora la care adminul confirmă.
+  const replyReceivedAt = (reply as { received_at?: string | null }).received_at ?? new Date().toISOString();
 
   // 0. Legare manuală orfan: dacă reply-ul n-are sesizare_id ȘI s-a dat link_code,
   //    rezolvăm codul → id. Devine sesizareId-ul folosit mai jos.
@@ -137,7 +140,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         const substantive = ["in-lucru", "rezolvat", "redirectionata"].includes(reply_status);
         if (substantive && summary && summary.trim().length > 20) {
           upd.official_response = summary.trim();
-          upd.official_response_at = new Date().toISOString();
+          upd.official_response_at = replyReceivedAt;
         }
         await admin.from("sesizari").update(upd).eq("id", (ses as { id: string }).id);
         // Review #2: writer canonic (dedup) în loc de insert raw.
@@ -146,6 +149,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
           sesizareId: (ses as { id: string }).id,
           eventType: reply_status,
           description: "Status actualizat de admin după revizuirea manuală a unui răspuns oficial.",
+          createdAt: replyReceivedAt,
           sentryTags: { source: "admin_inbox_reply_review" },
         });
       }
