@@ -286,7 +286,7 @@ export function InitiatePetitieForm({ userEmail }: Props) {
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-[var(--shadow-2)]">
                 <CheckCircle2 size={11} aria-hidden="true" />
                 Imagine atașată
               </span>
@@ -456,7 +456,7 @@ Câteva propoziții despre impact + cifre dacă ai (cu sursă).`}
                     bg-purple-500 text-white
                     text-[10px] font-bold
                     grid place-items-center
-                    shadow-md
+                    shadow-[var(--shadow-2)]
                     opacity-0 scale-50
                     peer-checked:opacity-100 peer-checked:scale-100
                     transition-all duration-200

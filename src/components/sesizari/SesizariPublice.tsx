@@ -232,7 +232,7 @@ export function SesizariPublice() {
             aria-pressed={view === "list"}
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
-              view === "list" ? "bg-[var(--color-surface)] shadow-sm" : "text-[var(--color-text-muted)]"
+              view === "list" ? "bg-[var(--color-surface)] shadow-[var(--shadow-1)]" : "text-[var(--color-text-muted)]"
             )}
           >
             <List size={14} /> Listă
@@ -242,7 +242,7 @@ export function SesizariPublice() {
             aria-pressed={view === "map"}
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
-              view === "map" ? "bg-[var(--color-surface)] shadow-sm" : "text-[var(--color-text-muted)]"
+              view === "map" ? "bg-[var(--color-surface)] shadow-[var(--shadow-1)]" : "text-[var(--color-text-muted)]"
             )}
           >
             <MapIconLucide size={14} /> Hartă

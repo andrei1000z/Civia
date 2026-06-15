@@ -36,7 +36,7 @@ export function CalendarMenu({ item }: { item: Interruption }) {
       {open && (
         <div
           role="menu"
-          className="absolute z-20 top-full mt-2 right-0 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-lg overflow-hidden"
+          className="absolute z-20 top-full mt-2 right-0 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-[var(--shadow-3)] overflow-hidden"
         >
           <a
             href={toGoogleCalendarUrl(item)}

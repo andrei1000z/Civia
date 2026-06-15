@@ -139,7 +139,7 @@ export default async function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 hero-enter-3">
               <Link
                 href="/sesizari"
-                className="lc-liquid lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-500 to-cyan-600 dark:from-emerald-400/95 dark:to-cyan-500/95 text-white font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                className="lc-liquid lc-magnetic w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[var(--radius-full)] bg-gradient-to-br from-emerald-500 to-cyan-600 dark:from-emerald-400/95 dark:to-cyan-500/95 text-white font-semibold shadow-[var(--shadow-3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
               >
                 <Send size={16} aria-hidden="true" />
                 Fă o sesizare acum

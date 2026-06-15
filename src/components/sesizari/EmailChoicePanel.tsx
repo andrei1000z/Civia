@@ -89,7 +89,7 @@ export function EmailChoicePanel({ input, compact }: Props) {
         {isMobile ? (
           <a
             href={buildMailtoLink(input)}
-            className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+            className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
             title="Se deschide în aplicația ta de email (Gmail / iOS Mail / Outlook — orice ai setat ca implicit)"
           >
             <Smartphone size={18} aria-hidden="true" />
@@ -101,7 +101,7 @@ export function EmailChoicePanel({ input, compact }: Props) {
               href={buildGmailLink(input)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
             >
               <Mail size={18} aria-hidden="true" />
               Deschide în Gmail
@@ -111,7 +111,7 @@ export function EmailChoicePanel({ input, compact }: Props) {
               href={buildOutlookLink(input)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[#0078d4] text-white font-semibold hover:brightness-110 shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0078d4]"
+              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[#0078d4] text-white font-semibold hover:brightness-110 shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0078d4]"
             >
               <Mail size={18} aria-hidden="true" />
               Deschide în Outlook

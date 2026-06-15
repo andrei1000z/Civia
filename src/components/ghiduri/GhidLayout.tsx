@@ -118,7 +118,7 @@ export function GhidLayout({
         {/* Mobile TOC button */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[var(--color-primary)] text-white shadow-lg flex items-center justify-center"
+          className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[var(--color-primary)] text-white shadow-[var(--shadow-3)] flex items-center justify-center"
           aria-label="Cuprins"
         >
           <List size={22} />

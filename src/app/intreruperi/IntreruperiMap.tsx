@@ -458,7 +458,7 @@ export default function IntreruperiMap({ items }: { items: Interruption[] }) {
           disabled={locating}
           aria-label="Localizează-mă pe hartă"
           title="Localizează-mă pe hartă"
-          className="w-10 h-10 rounded-full bg-white text-slate-900 shadow-md border border-slate-300 flex items-center justify-center hover:bg-slate-50 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="w-10 h-10 rounded-full bg-white text-slate-900 shadow-[var(--shadow-2)] border border-slate-300 flex items-center justify-center hover:bg-slate-50 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           {locating ? (
             <Loader2 size={18} className="animate-spin" aria-hidden="true" />
@@ -467,7 +467,7 @@ export default function IntreruperiMap({ items }: { items: Interruption[] }) {
           )}
         </button>
         {me && meAccuracy != null && (
-          <span className="text-[10px] bg-white/95 backdrop-blur-sm border border-slate-300 rounded px-1.5 py-0.5 text-slate-600 tabular-nums shadow-sm">
+          <span className="text-[10px] bg-white/95 backdrop-blur-sm border border-slate-300 rounded px-1.5 py-0.5 text-slate-600 tabular-nums shadow-[var(--shadow-1)]">
             ±{Math.round(meAccuracy)}m
           </span>
         )}
@@ -478,7 +478,7 @@ export default function IntreruperiMap({ items }: { items: Interruption[] }) {
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-sm border border-slate-300 rounded-[var(--radius-xs)] px-3 py-2 shadow-md">
+      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-sm border border-slate-300 rounded-[var(--radius-xs)] px-3 py-2 shadow-[var(--shadow-2)]">
         <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1.5">
           Legendă
         </p>

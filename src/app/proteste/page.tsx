@@ -338,7 +338,7 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
               className={`object-cover transition-transform group-hover:scale-105 ${muted ? "opacity-70 saturate-50" : ""}`}
             />
             {p.featured && (
-              <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+              <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-[10px] font-bold uppercase tracking-wider shadow-[var(--shadow-2)]">
                 Featured
               </span>
             )}
