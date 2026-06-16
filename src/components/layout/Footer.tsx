@@ -29,7 +29,6 @@ export function Footer() {
               <li><Link href="/legal/cookie-policy" className={linkCls}>Politica de cookies</Link></li>
               <li><Link href="/legal/analiza-trafic" className={linkCls}>Cum măsurăm trafic</Link></li>
               <li><CookiePreferencesButton /></li>
-              <li><Link href="/setari" className={linkCls}>Setări &amp; accesibilitate</Link></li>
             </ul>
           </div>
 
