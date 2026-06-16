@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 interface Notification {
   id: string;
   type: "status";
+  /** status key (rezolvat/in-lucru/respins/...) → icon + culoare type-aware. */
+  status?: string;
   sesizareCode: string;
   sesizareTitle: string;
   message: string;
@@ -37,6 +39,22 @@ const STATUS_NOTIFICATION: Record<string, { emoji: string; label: string }> = {
   amanata: { emoji: "⏸️", label: "Amânată" },
   respins: { emoji: "⚠️", label: "Respinsă de autoritate" },
 };
+
+// Culoare type-aware per status (soft bg + on-soft text, tokeni dark-safe) —
+// notificările devin scanabile dintr-o privire: verde=rezolvat, ambră=în lucru,
+// roșu=respins, albastru=înregistrată/trimisă.
+const STATUS_TONE: Record<string, { bg: string; text: string }> = {
+  rezolvat: { bg: "bg-[var(--color-success-soft)]", text: "text-[var(--color-success-on-soft)]" },
+  "in-lucru": { bg: "bg-[var(--color-warning-soft)]", text: "text-[var(--color-warning-on-soft)]" },
+  "actiune-autoritate": { bg: "bg-[var(--color-warning-soft)]", text: "text-[var(--color-warning-on-soft)]" },
+  interventie: { bg: "bg-[var(--color-warning-soft)]", text: "text-[var(--color-warning-on-soft)]" },
+  respins: { bg: "bg-[var(--color-error-soft)]", text: "text-[var(--color-error-on-soft)]" },
+  inregistrata: { bg: "bg-[var(--color-news-soft)]", text: "text-[var(--color-news-on-soft)]" },
+  trimis: { bg: "bg-[var(--color-secondary-soft)]", text: "text-[var(--color-secondary-on-soft)]" },
+  redirectionata: { bg: "bg-[var(--color-secondary-soft)]", text: "text-[var(--color-secondary-on-soft)]" },
+  amanata: { bg: "bg-[var(--color-surface-2)]", text: "text-[var(--color-text-muted)]" },
+};
+const DEFAULT_TONE = { bg: "bg-[var(--color-primary-soft)]", text: "text-[var(--color-primary-on-soft)]" };
 
 /**
  * Extrage status-ul dintr-o descriere timeline. Formatul standard generat de
@@ -192,6 +210,7 @@ export function NotificationBell() {
             addNotification({
               id: `s-${Date.now()}-${Math.random()}`,
               type: "status",
+              status: statusKey,
               sesizareCode: sez.code,
               sesizareTitle: sez.titlu,
               message: `${tone.emoji} ${tone.label} · ${titleHint(sez.titlu)}`,
@@ -265,7 +284,7 @@ export function NotificationBell() {
         <Bell size={18} aria-hidden="true" />
         {unread > 0 && (
           <span
-            className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+            className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--color-error)] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[var(--color-surface)] animate-scale-in"
             aria-hidden="true"
           >
             {unread > 9 ? "9+" : unread}
@@ -278,7 +297,7 @@ export function NotificationBell() {
           // max-w-[calc(100vw-1rem)] previne clip-ul pe viewport mic
           // (~640-768px) cand bell-ul e langa edge-ul drept. ShareMenu
           // are deja fix-ul echivalent prin direction smart.
-          className="fixed sm:absolute top-16 sm:top-auto left-2 right-2 sm:left-auto sm:right-0 sm:mt-2 sm:w-80 sm:max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[480px] overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-4)] z-50 flex flex-col"
+          className="fixed sm:absolute top-16 sm:top-auto left-2 right-2 sm:left-auto sm:right-0 sm:mt-2 sm:w-80 sm:max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[480px] overflow-hidden lc-glass-2 rounded-[var(--radius-lg)] z-50 flex flex-col animate-fade-in"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <div className="text-sm font-semibold">Ce s-a mișcat</div>
@@ -303,7 +322,10 @@ export function NotificationBell() {
             </div>
           ) : (
             <div className="overflow-y-auto">
-              {notifs.map((n) => (
+              {notifs.map((n) => {
+                const tone = (n.status && STATUS_TONE[n.status]) || DEFAULT_TONE;
+                const emoji = n.status ? STATUS_NOTIFICATION[n.status]?.emoji : null;
+                return (
                 <Link
                   key={n.id}
                   href={`/sesizari/${n.sesizareCode}`}
@@ -313,8 +335,8 @@ export function NotificationBell() {
                     !n.read && "bg-[var(--color-primary-soft)]/30"
                   )}
                 >
-                  <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                    <CheckCircle2 size={16} />
+                  <div className={cn("w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-base", tone.bg, tone.text)}>
+                    {emoji ?? <CheckCircle2 size={16} aria-hidden="true" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold line-clamp-1">{n.sesizareTitle}</div>
@@ -326,7 +348,8 @@ export function NotificationBell() {
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
