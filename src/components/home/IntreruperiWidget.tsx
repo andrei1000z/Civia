@@ -63,9 +63,12 @@ export async function IntreruperiWidget() {
                   style={{
                     background:
                       i.status === "in-desfasurare"
-                        ? "#F59E0B20"
-                        : "#3B82F620",
-                    color: i.status === "in-desfasurare" ? "#F59E0B" : "#3B82F6",
+                        ? "color-mix(in srgb, var(--color-warning) 13%, transparent)"
+                        : "color-mix(in srgb, var(--color-news) 13%, transparent)",
+                    color:
+                      i.status === "in-desfasurare"
+                        ? "var(--color-warning)"
+                        : "var(--color-news)",
                   }}
                 >
                   <Clock size={9} aria-hidden="true" />

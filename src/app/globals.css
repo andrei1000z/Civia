@@ -1272,19 +1272,29 @@ textarea:hover:not(:focus):not(:disabled) {
      glass-1: chrome subtle (navbar, sticky bars)
      glass-2: floating cards (modal content, lifted surfaces)
      glass-3: hero/premium (CTA mega, splash overlays) */
-  --glass-1-bg: rgba(255, 255, 255, 0.55);
+  /* ── Liquid Glass intensity (Best-of-Both) — un singur knob (0→1) conduce
+     opacitatea ȘI blur-ul TUTUROR straturilor glass. Readability-first:
+     intensitate MICĂ = mai OPAC (AA-safe); frost = opt-in. Default 0.45
+     CALIBRAT ca să arate IDENTIC cu valorile fixe de dinainte
+     (alfa 0.55/0.65/0.72 + blur 24/32/40px) → zero schimbare la default. */
+  --glass-intensity: 0.45;
+  --glass-1-a: calc(0.73 - 0.40 * var(--glass-intensity));
+  --glass-2-a: calc(0.81 - 0.36 * var(--glass-intensity));
+  --glass-3-a: calc(0.855 - 0.30 * var(--glass-intensity));
+
+  --glass-1-bg: rgb(255 255 255 / var(--glass-1-a));
   --glass-1-border: rgba(255, 255, 255, 0.18);
-  --glass-1-blur: 24px;
+  --glass-1-blur: calc(13px + 24px * var(--glass-intensity));
   --glass-1-saturate: 180%;
 
-  --glass-2-bg: rgba(255, 255, 255, 0.65);
+  --glass-2-bg: rgb(255 255 255 / var(--glass-2-a));
   --glass-2-border: rgba(255, 255, 255, 0.25);
-  --glass-2-blur: 32px;
+  --glass-2-blur: calc(18px + 31px * var(--glass-intensity));
   --glass-2-saturate: 200%;
 
-  --glass-3-bg: rgba(255, 255, 255, 0.72);
+  --glass-3-bg: rgb(255 255 255 / var(--glass-3-a));
   --glass-3-border: rgba(255, 255, 255, 0.35);
-  --glass-3-blur: 40px;
+  --glass-3-blur: calc(22px + 40px * var(--glass-intensity));
   --glass-3-saturate: 220%;
 
   /* Refractive border gradient — verde→albastru→alb pentru edge light */
@@ -1321,13 +1331,14 @@ textarea:hover:not(:focus):not(:disabled) {
 
 .dark {
   /* Glass layers dark — tinted emerald wash + brighter borders pentru OLED */
-  --glass-1-bg: rgba(15, 15, 15, 0.55);
+  /* Dark: păstrăm tinta navy/neagră, alfa condusă de --glass-N-a (intensity). */
+  --glass-1-bg: rgb(15 15 15 / var(--glass-1-a));
   --glass-1-border: rgba(255, 255, 255, 0.10);
 
-  --glass-2-bg: rgba(20, 20, 20, 0.65);
+  --glass-2-bg: rgb(20 20 20 / var(--glass-2-a));
   --glass-2-border: rgba(255, 255, 255, 0.14);
 
-  --glass-3-bg: rgba(25, 25, 25, 0.72);
+  --glass-3-bg: rgb(25 25 25 / var(--glass-3-a));
   --glass-3-border: rgba(255, 255, 255, 0.22);
 
   /* Refractive border dark — mai luminos pe negru */
@@ -1428,6 +1439,8 @@ textarea:hover:not(:focus):not(:disabled) {
     0 2px 8px -2px rgba(0, 0, 0, 0.3);
 }
 @media (prefers-reduced-transparency: reduce) {
+  /* OS-level: toată sticla devine opacă (alfa 1), nu doar navbarul. */
+  :root, .dark { --glass-1-a: 1; --glass-2-a: 1; --glass-3-a: 1; }
   .lc-nav-glass {
     background: var(--color-surface);
     backdrop-filter: none;
@@ -1437,6 +1450,44 @@ textarea:hover:not(:focus):not(:disabled) {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .lc-nav-glass {
     background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  }
+}
+
+/* ─── A11y toggles (manuale, din panoul de preferințe) ────────────────
+   Citite de boot-script înainte de paint → clase pe <html>. Completează
+   media-query-urile cu opțiuni controlate de utilizator. */
+html.a11y-reduce-transparency {
+  --glass-1-a: 1;
+  --glass-2-a: 1;
+  --glass-3-a: 1;
+}
+/* „Culoarea nu e niciodată singurul semnal" — semnele +/−/▲▼ sunt ascunse
+   default (culoarea + glyph-ul ajung pt. majoritate), dar pot fi forțate
+   mereu-vizibile pentru daltonism. */
+.a11y-sign { display: none; }
+html.a11y-signs .a11y-sign { display: inline; }
+/* Text mai mare — bump pe rădăcină; restul scalează în rem/em. */
+html.a11y-larger-text { font-size: 112.5%; }
+/* Reduce motion (toggle manual, peste media query). */
+html.a11y-reduce-motion *,
+html.a11y-reduce-motion *::before,
+html.a11y-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Contrast ridicat → sticla opacă. Forced-colors → fără blur, bordură reală. */
+@media (prefers-contrast: more) {
+  :root, .dark { --glass-1-a: 1; --glass-2-a: 1; --glass-3-a: 1; }
+}
+@media (forced-colors: active) {
+  .lc-glass-1, .lc-glass-2, .lc-glass-3, .lc-nav-glass {
+    background: Canvas;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid CanvasText;
   }
 }
 

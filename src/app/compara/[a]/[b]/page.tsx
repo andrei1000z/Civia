@@ -51,15 +51,23 @@ function CompareRow({ label, a, b, icon, higherIsBetter }: CompareRowProps) {
 
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] gap-2 sm:gap-4 py-3 border-b border-[var(--color-border)] last:border-b-0">
-      <div className={`text-right ${aWins ? "font-bold text-emerald-600" : "text-[var(--color-text)]"}`}>
-        <div className="text-base sm:text-lg tabular-nums">{format(a)}</div>
+      <div className={`text-right ${aWins ? "font-bold text-[var(--color-success)]" : "text-[var(--color-text)]"}`}>
+        <div className="text-base sm:text-lg tabular-nums">
+          {aWins && <span aria-hidden="true" className="mr-1">✓</span>}
+          {format(a)}
+          {aWins && <span className="sr-only"> (mai bine)</span>}
+        </div>
       </div>
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--color-text-muted)] px-2 shrink-0">
         {icon}
         <span className="hidden sm:inline">{label}</span>
       </div>
-      <div className={`text-left ${bWins ? "font-bold text-emerald-600" : "text-[var(--color-text)]"}`}>
-        <div className="text-base sm:text-lg tabular-nums">{format(b)}</div>
+      <div className={`text-left ${bWins ? "font-bold text-[var(--color-success)]" : "text-[var(--color-text)]"}`}>
+        <div className="text-base sm:text-lg tabular-nums">
+          {bWins && <span aria-hidden="true" className="mr-1">✓</span>}
+          {format(b)}
+          {bWins && <span className="sr-only"> (mai bine)</span>}
+        </div>
       </div>
       <div className="col-span-3 text-center text-[10px] text-[var(--color-text-muted)] sm:hidden">
         {label}

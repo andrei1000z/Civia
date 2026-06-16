@@ -59,19 +59,19 @@ export function LiveStatsBar() {
         {
           icon: Activity,
           text: `${data.totalSesizari.toLocaleString("ro-RO")} sesizări totale`,
-          color: "text-emerald-500",
+          color: "text-[var(--color-primary)]",
         },
         {
           icon: Clock,
           text: `${data.inLucru.toLocaleString("ro-RO")} sesizări în lucru`,
-          color: "text-amber-500",
+          color: "text-[var(--color-warning)]",
         },
         ...(data.rezolvate >= 3
           ? [
               {
                 icon: CheckCircle2,
                 text: `${data.rezolvate.toLocaleString("ro-RO")} sesizări rezolvate`,
-                color: "text-green-600",
+                color: "text-[var(--color-success)]",
               },
             ]
           : []),
@@ -80,7 +80,7 @@ export function LiveStatsBar() {
               {
                 icon: Megaphone,
                 text: `${data.petitiiActive.toLocaleString("ro-RO")} petiții active`,
-                color: "text-purple-500",
+                color: "text-[var(--color-petition)]",
               },
             ]
           : []),

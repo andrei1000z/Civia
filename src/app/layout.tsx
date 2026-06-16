@@ -161,7 +161,7 @@ export const viewport = {
  * TTFB. Try/catch întreg corpul în caz că localStorage e blocat
  * (Safari Private, embedded webview cu policy strict).
  */
-const themeBootScript = `(function(){try{var s=localStorage.getItem('civia-theme');var d=s==='dark'||((s==='system'||!s)&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';}catch(e){document.documentElement.classList.add('dark');}})();`;
+const themeBootScript = `(function(){try{var ls=localStorage,r=document.documentElement;var s=ls.getItem('civia-theme');var d=s==='dark'||((s==='system'||!s)&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light';var g=ls.getItem('civia-glass-intensity');if(g!==null)r.style.setProperty('--glass-intensity',g);['reduce-transparency','larger-text','reduce-motion','signs'].forEach(function(k){if(ls.getItem('civia-a11y-'+k)==='1')r.classList.add('a11y-'+k);});}catch(e){document.documentElement.classList.add('dark');}})();`;
 
 export default function RootLayout({
   children,
