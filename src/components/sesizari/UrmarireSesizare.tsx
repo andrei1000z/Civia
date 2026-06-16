@@ -174,7 +174,10 @@ export function UrmarireSesizare() {
                   {cosignCount > 0 && (
                     <span
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-                      style={{ backgroundColor: "#0891B21a", color: "#0891B2" }}
+                      style={{
+                        backgroundColor: "color-mix(in srgb, var(--color-secondary) 10%, transparent)",
+                        color: "var(--color-secondary)",
+                      }}
                       title="Și alți cetățeni au depus aceeași sesizare"
                     >
                       <Users size={10} aria-hidden="true" />
