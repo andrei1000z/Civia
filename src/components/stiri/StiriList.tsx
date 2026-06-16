@@ -320,7 +320,11 @@ export function StiriList() {
                     // dar fortam min-height egal cu text col via h-full +
                     // self-stretch. Combo asta elimina banda pink/violet care
                     // aparea cand text col era mai inalt decat min-h-[360px].
-                    "relative aspect-video md:aspect-auto md:h-full md:self-stretch bg-gradient-to-br overflow-hidden",
+                    // md:min-h-[420px] = plasă de siguranță: când stretch-ul pe
+                    // text (md:h-full) nu se rezolvă, containerul rămânea scurt
+                    // și apărea banda de gradient sub imagine. Acum imaginea
+                    // (object-cover, absolut) umple mereu tot cadranul.
+                    "relative aspect-video md:aspect-auto md:h-full md:min-h-[420px] md:self-stretch bg-gradient-to-br overflow-hidden",
                     sourceGradients[featured.source] ?? "from-slate-600 to-slate-800"
                   )}
                 >

@@ -29,6 +29,7 @@ import { formatDate } from "@/lib/utils";
 // 2026-05-26 — ThemeToggle revine: light + dark + system.
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
+import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
@@ -673,6 +674,11 @@ export default function ContPage() {
               </div>
               <div className="pt-3 border-t border-[var(--color-border)]/60">
                 <SoundsToggle />
+              </div>
+              {/* Slider intensitate sticlă + toggles a11y — aici e locul unde
+                  userii caută setările de aspect (înainte erau doar la /setari). */}
+              <div className="pt-3 border-t border-[var(--color-border)]/60">
+                <AppearanceSettings />
               </div>
             </section>
 

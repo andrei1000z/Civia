@@ -11,10 +11,14 @@ import { withRef } from "@/lib/referral/client";
 interface Props {
   url: string;
   title: string;
+  /** Mesaj bogat de „acțiune" pentru body-ul share-ului (WhatsApp/Telegram/…).
+   *  Ex: „Am trimis o sesizare pentru montare stâlpișori pe Str. X. Trimite și
+   *  tu:". Dacă lipsește, cade pe „{title} - Civia". */
+  message?: string;
   size?: "sm" | "md" | "lg";
 }
 
-export function ShareMenu({ url, title, size = "sm" }: Props) {
+export function ShareMenu({ url, title, message, size = "sm" }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -51,7 +55,9 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
     };
   }, [open, qrOpen]);
 
-  const fullText = `${title} - Civia`;
+  // Text de share — caller-ul poate trimite un mesaj „acțiune" (ex: „Am trimis
+  // o sesizare pentru X la Y. Trimite și tu:"); altfel titlu + Civia.
+  const fullText = message ?? `${title} - Civia`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${fullText}\n${shareUrl}`)}`;
   const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(fullText)}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(shareUrl)}`;
@@ -60,6 +66,10 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
   // URL. Civia are deja cont @civiaro pe Bluesky, deci shares ajung in
   // ecosistemul european open-source preferat.
   const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${fullText}\n${shareUrl}`)}`;
+  // Reddit — submit cu titlu separat (excelent pt. cauze civice: r/Romania,
+  // r/Bucuresti, r/{oras}). Title = headline-ul, url = link-ul Civia.
+  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`;
+  const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
 
   // Helper — fire a "share" custom analytics event with the channel
   // so /admin/analytics can show which sharing surfaces are hot.
@@ -172,6 +182,17 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
               <span>Telegram</span>
             </a>
             <a
+              href={redditUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              onClick={() => { setOpen(false); trackShare("reddit"); }}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)]"
+            >
+              <span className="w-4 h-4 flex items-center justify-center rounded-full bg-[#FF4500] text-white text-[10px] font-bold" aria-hidden="true">r</span>
+              <span>Reddit</span>
+            </a>
+            <a
               href={twitterUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -203,6 +224,17 @@ export function ShareMenu({ url, title, size = "sm" }: Props) {
             >
               <span className="w-4 h-4 flex items-center justify-center text-sm font-bold text-[#1877F2]" aria-hidden="true">f</span>
               <span>Facebook</span>
+            </a>
+            <a
+              href={linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              onClick={() => { setOpen(false); trackShare("linkedin"); }}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)]"
+            >
+              <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-[#0A66C2]" aria-hidden="true">in</span>
+              <span>LinkedIn</span>
             </a>
             <div className="border-t border-[var(--color-border)]" />
             <button
