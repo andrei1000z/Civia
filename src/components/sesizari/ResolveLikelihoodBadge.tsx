@@ -15,10 +15,12 @@ export async function ResolveLikelihoodBadge({ county, tip }: Props) {
   const { likelihood, label, sample } = await predictResolveLikelihood(county, tip);
   if (sample < 5) return null;
 
-  const color =
-    label === "high" ? "#059669"
-    : label === "medium" ? "#f59e0b"
-    : "#dc2626";
+  // Tokeni semantici (nu hex fix) → text mai luminos + lizibil în dark mode;
+  // color-mix pentru fundalul/bordura soft.
+  const colorVar =
+    label === "high" ? "var(--color-success)"
+    : label === "medium" ? "var(--color-warning)"
+    : "var(--color-error)";
 
   const text =
     label === "high"
@@ -30,7 +32,11 @@ export async function ResolveLikelihoodBadge({ county, tip }: Props) {
   return (
     <div
       className="inline-flex items-start gap-2 px-3 py-2 rounded-[var(--radius-xs)] text-xs"
-      style={{ background: color + "15", border: `1px solid ${color}40`, color }}
+      style={{
+        background: `color-mix(in srgb, ${colorVar} 12%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${colorVar} 30%, transparent)`,
+        color: colorVar,
+      }}
     >
       <Sparkles size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
       <span>{text}</span>
