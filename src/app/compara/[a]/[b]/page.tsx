@@ -95,7 +95,7 @@ export default async function ComparePage({
   const resolvedPctB = sb.sesizariTotal > 0 ? Math.round((sb.sesizariRezolvate / sb.sesizariTotal) * 100) : 0;
 
   return (
-    <div className="container-narrow py-12 md:py-16">
+    <div className="container-narrow py-8 md:py-12">
       <Link
         href="/compara"
         className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-6 transition-colors"

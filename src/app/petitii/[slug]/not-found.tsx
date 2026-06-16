@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PetitieNotFound() {
   return (
-    <div className="container-narrow py-12 md:py-16 max-w-2xl">
+    <div className="container-narrow py-8 md:py-12 max-w-2xl">
       <div className="text-center">
         <div
           className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--color-surface-2)] grid place-items-center"
