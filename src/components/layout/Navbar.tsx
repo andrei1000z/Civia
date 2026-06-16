@@ -7,10 +7,17 @@ import { Menu, X, ChevronDown, Search as SearchIcon } from "lucide-react";
 import { NAV_LINKS, NAV_MORE, SITE_NAME } from "@/lib/constants";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
-import { SearchModal } from "@/components/ui/SearchModal";
+import dynamic from "next/dynamic";
 import { useCountyOptional } from "@/lib/county-context";
 import { cn } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
+
+// Code-split: SearchModal e gated de starea „open" → nu intră în bundle-ul
+// principal al fiecărei pagini. Se încarcă la primul Cmd+K / tap pe search.
+const SearchModal = dynamic(
+  () => import("@/components/ui/SearchModal").then((m) => m.SearchModal),
+  { ssr: false },
+);
 
 export function Navbar() {
   const pathname = usePathname();

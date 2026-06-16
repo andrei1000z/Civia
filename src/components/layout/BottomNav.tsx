@@ -24,8 +24,15 @@ import {
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
-import { SearchModal } from "@/components/ui/SearchModal";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+
+// Code-split: SearchModal e gated de starea „open" → nu intră în bundle-ul
+// principal. Se încarcă la primul tap pe search.
+const SearchModal = dynamic(
+  () => import("@/components/ui/SearchModal").then((m) => m.SearchModal),
+  { ssr: false },
+);
 
 /**
  * BottomNav — navigația principală pe MOBIL, stil iOS 26 „Liquid Glass".
