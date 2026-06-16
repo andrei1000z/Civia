@@ -136,8 +136,9 @@ export function AlertsSubscribeForm() {
           {sending ? "Se trimite..." : "Anunță-mă"}
         </Button>
         {error && (
-          <p role="alert" className="text-xs text-red-500 mt-2 text-center">
-            {error}
+          <p role="alert" className="text-xs text-[var(--color-error)] mt-2 inline-flex w-full items-center justify-center gap-1.5">
+            <AlertCircle size={14} className="shrink-0" aria-hidden="true" />
+            <span>{error}</span>
           </p>
         )}
       </form>

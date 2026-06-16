@@ -580,7 +580,7 @@ export default function ContPage() {
               router.push("/");
             }}
             aria-label="Deconectare"
-            className="shrink-0 inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-4 rounded-[var(--radius-full)] bg-white/15 backdrop-blur-sm border border-white/30 text-xs sm:text-sm font-medium hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="shrink-0 inline-flex items-center justify-center gap-1.5 h-11 sm:h-10 px-2.5 sm:px-4 rounded-[var(--radius-full)] bg-white/15 backdrop-blur-sm border border-white/30 text-xs sm:text-sm font-medium hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <LogOut size={14} aria-hidden="true" />
             <span className="hidden sm:inline">Deconectare</span>

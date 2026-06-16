@@ -143,7 +143,7 @@ export function CompareCountyPicker({ counties }: { counties: CountyOption[] }) 
               window.location.href = `/compara/${aSlug}/${bSlug}`;
             }
           }}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 min-h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
         >
           <Shuffle size={12} aria-hidden="true" />
           Surprinde-mă cu o pereche aleatorie
