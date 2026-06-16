@@ -182,7 +182,9 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
   useEffect(() => {
     setUrl(withRef(baseUrl));
   }, [baseUrl]);
-  const shareText = title;
+  // Mesaj „acțiune" — îndeamnă alți cetățeni să trimită și ei (viralitate),
+  // nu doar titlul sec. Reddit folosește titlul separat (vezi redditUrl).
+  const shareText = `Am trimis o sesizare pe Civia: „${title}". Trimite și tu — 90 de secunde și pui presiune pe primărie să rezolve 👇`;
 
   const trackShare = (channel: string) => {
     import("@/components/analytics/CiviaTracker")
@@ -204,6 +206,9 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
   const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${url}`)}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  // Reddit — excelent pentru cauze civice (r/Romania, r/Bucuresti, r/{oras}).
+  // Title = titlul sesizării (headline), url = link-ul Civia.
+  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
 
   return (
     <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
@@ -249,7 +254,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
           <span className="text-[10px] font-medium">Bluesky</span>
         </a>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <a
           href={facebookUrl}
           target="_blank"
@@ -271,6 +276,17 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
         >
           <span className="font-bold" aria-hidden="true">𝕏</span>
           <span className="text-[10px]">Twitter</span>
+        </a>
+        <a
+          href={redditUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackShare("reddit-success")}
+          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          aria-label="Distribuie pe Reddit"
+        >
+          <span className="text-[#FF4500] font-bold" aria-hidden="true">r/</span>
+          <span className="text-[10px]">Reddit</span>
         </a>
         <button
           type="button"

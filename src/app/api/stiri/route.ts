@@ -42,8 +42,16 @@ const FETCH_LOCK_TTL_S = 3 * 60;
  * redirect cross-host. Fără redirect pe apex, nu mai e nevoie de ea.
  */
 function internalBaseUrl(): string {
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
+  // 2026-06-16 — PREFERĂM domeniul public canonic (civia.ro), NU VERCEL_URL.
+  // VERCEL_URL = hostname-ul de deploy, care pe proiectele cu Deployment
+  // Protection activă e PROTEJAT → fetch-ul intern self-healing primea pagina
+  // de autentificare Vercel (nu ruta) → refresh-ul de știri eșua silent, iar
+  // știrile stăteau la mila cron-ului zilnic. Domeniul public (apex) servește
+  // direct 200 + NU e protejat → self-healing-ul pe trafic funcționează din nou.
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://civia.ro")
+  );
 }
 
 /**

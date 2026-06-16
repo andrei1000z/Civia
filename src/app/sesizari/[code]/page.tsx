@@ -337,6 +337,7 @@ export default async function SesizareDetailPage({
               <ShareMenu
                 url={`${SITE_URL}/sesizari/${sesizare.code}`}
                 title={sesizare.titlu}
+                message={`Am trimis o sesizare pe Civia: „${sesizare.titlu}". Trimite și tu — durează 90 de secunde și pune presiune pe autorități să rezolve 👇`}
                 size="lg"
               />
               {/* 2026-06-12 — utilitarele autorului (reamintire + șterge) stau
