@@ -435,8 +435,8 @@ export default function ContPage() {
   // 2026-05-24 — zero „Se încarcă..." UX. Cu cache localStorage hydrate,
   // 99% din vizite vor avea `profile` valid din prima render. Pentru primul
   // vizit fără cache, arătăm skeleton (page structure) — nu spinner text.
-  // Auth pending sau anonymous user → fallback minimal (același skeleton).
-  if (authLoading || !user) {
+  // Auth în curs → skeleton scurt.
+  if (authLoading) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
         <header className="mb-6 h-32 sm:h-40 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] skeleton-shimmer" />
@@ -444,9 +444,35 @@ export default function ContPage() {
           <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
           <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
         </div>
-        {!user && !authLoading && (
-          <p className="sr-only">Autentifică-te pentru a accesa contul.</p>
-        )}
+      </div>
+    );
+  }
+  // NELOGAT → pagina „Setări": aspect + accesibilitate (device-level, fără cont)
+  // + invitație la conectare. Înlocuiește /setari (consolidat aici).
+  if (!user) {
+    return (
+      <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6 space-y-6">
+        <header className="relative overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" aria-hidden="true" />
+          <h1 className="relative font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-extrabold">Setări</h1>
+          <p className="relative text-white/85 mt-1 text-sm max-w-md">
+            Aspect și accesibilitate — se salvează pe acest dispozitiv, fără cont. Conectează-te pentru sesizările tale, co-semnături și notificări.
+          </p>
+        </header>
+        <AppearanceSettings />
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <p className="font-semibold text-[var(--color-text)]">Ai un cont Civia?</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Conectează-te ca să-ți vezi sesizările, co-semnăturile și notificările.</p>
+          </div>
+          <button
+            type="button"
+            onClick={openAuthModal}
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 shrink-0"
+          >
+            Conectează-te
+          </button>
+        </div>
       </div>
     );
   }

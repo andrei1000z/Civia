@@ -231,7 +231,7 @@ export function Navbar() {
                         onClick={() => setMoreDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)]"
                       >
-                        <span className="text-lg" aria-hidden="true">{link.icon}</span>
+                        <link.icon size={18} className="text-[var(--color-text-muted)] shrink-0" aria-hidden="true" />
                         <span className="text-[var(--color-text)]">{link.label}</span>
                       </Link>
                     ))}
@@ -343,9 +343,10 @@ export function Navbar() {
                         : link.href
                     }
                     onClick={() => setMobileOpen(false)}
-                    className="block px-4 py-2 rounded-[var(--radius-button)] text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius-button)] text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   >
-                    <span aria-hidden="true">{link.icon}</span> {link.label}
+                    <link.icon size={16} className="shrink-0" aria-hidden="true" />
+                    {link.label}
                   </Link>
                 ))}
               </div>

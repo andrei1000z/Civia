@@ -1,5 +1,6 @@
 import { SESIZARE_STATUS_META, SESIZARE_STATUS_VALUES } from "./sesizari/status";
 import { restoreDiacritics } from "./sesizari/diacritice";
+import { Target, Mail, BarChart3, Euro, BookOpen, Scale, Trophy, type LucideIcon } from "lucide-react";
 
 export const SITE_NAME = "Civia";
 export const SITE_TAGLINE = "Sesizări civice gratuite, cu AI";
@@ -103,7 +104,7 @@ export const NAV_LINKS = [
 export const NAV_MORE: Array<{
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   nationalOnly?: boolean;
   countyOnly?: boolean;
   /**
@@ -115,18 +116,18 @@ export const NAV_MORE: Array<{
 }> = [
   // 2026-06-10 (Faza 2) — provocarea civică a lunii. national (nu primește
   // prefix /[judet]/ — e surfață națională ca /sesizari /petitii).
-  { href: "/provocari", label: "Provocarea lunii", icon: "🎯", nationalOnly: true },
+  { href: "/provocari", label: "Provocarea lunii", icon: Target, nationalOnly: true },
   // 2026-06-10 (Faza 3) — generator cereri Legea 544/2001 (informații publice).
-  { href: "/informatii-publice", label: "Cere informații (544)", icon: "📨", nationalOnly: true },
+  { href: "/informatii-publice", label: "Cere informații (544)", icon: Mail, nationalOnly: true },
   // 2026-06-11 (Faza 3) — Promisometru: promisiunile primarilor cu sursă + verdict factual.
-  { href: "/promisometru", label: "Promisometru", icon: "📊", nationalOnly: true },
+  { href: "/promisometru", label: "Promisometru", icon: BarChart3, nationalOnly: true },
   // 2026-06-11 (Faza 4) — bugetare participativă: programe oficiale + generator de cerere.
-  { href: "/bugetare-participativa", label: "Bugetare participativă", icon: "💶", nationalOnly: true },
-  { href: "/ghiduri", label: "Ghiduri civice", icon: "📚", nationalOnly: true },
-  { href: "/propuneri-legislative", label: "Propuneri legislative", icon: "⚖️", nationalOnly: true },
+  { href: "/bugetare-participativa", label: "Bugetare participativă", icon: Euro, nationalOnly: true },
+  { href: "/ghiduri", label: "Ghiduri civice", icon: BookOpen, nationalOnly: true },
+  { href: "/propuneri-legislative", label: "Propuneri legislative", icon: Scale, nationalOnly: true },
   // 2026-05-25: „Fix Score" → „Clasament" (cleanup naming) + /clasament-primarii
   // eliminat (duplicat al /clasament — single source of truth).
-  { href: "/clasament", label: "Clasament primării", icon: "🏆", nationalOnly: true },
+  { href: "/clasament", label: "Clasament primării", icon: Trophy, nationalOnly: true },
 ];
 export const NAV_DATE_PUBLICE: Array<{ href: string; label: string; icon: string }> = [];
 
