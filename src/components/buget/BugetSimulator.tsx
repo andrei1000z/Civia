@@ -169,7 +169,7 @@ export function BugetSimulator() {
             <button
               type="button"
               onClick={() => setAlloc((p) => echilibreazaLa100(p, categorii.map((c) => c.key)))}
-              className="rounded-[var(--radius-pill)] border border-[var(--color-border)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text)] hover:border-[var(--color-primary)] transition"
+              className="inline-flex items-center min-h-[2.25rem] rounded-[var(--radius-pill)] border border-[var(--color-border)] px-3 text-[11px] font-semibold text-[var(--color-text)] hover:border-[var(--color-primary)] transition"
             >
               ⚖️ Echilibrează la 100%
             </button>
