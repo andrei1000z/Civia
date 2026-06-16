@@ -452,9 +452,9 @@ export default function ContPage() {
   if (!user) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6 space-y-6">
-        <header className="relative overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
+        <header className="relative overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" aria-hidden="true" />
-          <h1 className="relative font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-extrabold">Setări</h1>
+          <h1 className="relative font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-3xl font-extrabold">Setări</h1>
           <p className="relative text-white/85 mt-1 text-sm max-w-md">
             Aspect și accesibilitate — se salvează pe acest dispozitiv, fără cont. Conectează-te pentru sesizările tale, co-semnături și notificări.
           </p>
