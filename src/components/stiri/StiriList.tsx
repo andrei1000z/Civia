@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search, ArrowRight, ExternalLink, Loader2 } from "lucide-react";
 import { SOURCE_COLORS, readableTextColor } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { cn } from "@/lib/utils";
 import { useCountyOptional } from "@/lib/county-context";
@@ -287,13 +288,9 @@ export function StiriList() {
               <p className="text-xs text-[var(--color-text-muted)] mb-4">
                 Eroare: {fetchError}. Verifică conexiunea și încearcă din nou.
               </p>
-              <button
-                type="button"
-                onClick={() => load()}
-                className="inline-flex items-center gap-2 h-9 px-4 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
-              >
+              <Button variant="primary" size="sm" shape="pill" onClick={() => load()}>
                 Reîncearcă
-              </button>
+              </Button>
             </>
           ) : (
             <>
@@ -461,14 +458,13 @@ export function StiriList() {
 
           {rows.length - 1 > visible && (
             <div className="flex justify-center mt-10">
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 onClick={() => setVisible((v) => v + 24)}
-                className="inline-flex items-center gap-2 h-11 px-6 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                rightIcon={<ArrowRight size={14} aria-hidden="true" />}
               >
                 Încarcă mai multe
-                <ArrowRight size={14} aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           )}
         </>

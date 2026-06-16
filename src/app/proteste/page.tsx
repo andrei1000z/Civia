@@ -209,7 +209,7 @@ export default async function ProtestePage() {
         </div>
         <Link
           href="/proteste/propune"
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+          className="lc-liquid lc-magnetic inline-flex items-center gap-1.5 h-10 px-4 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500/85 to-cyan-500/85 text-white text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
         >
           <Plus size={14} aria-hidden="true" />
           Propune protest
