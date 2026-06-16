@@ -131,7 +131,7 @@ export default async function PetitiePage({
   const shareUrl = `${SITE_URL}/petitii/${petitie.slug}`;
 
   return (
-    <article className="container-narrow py-6 md:py-12">
+    <article className="container-narrow py-8 md:py-12">
       <BreadcrumbJsonLd
         items={[
           { name: "Acasă", url: SITE_URL },
