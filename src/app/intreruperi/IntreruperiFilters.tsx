@@ -261,7 +261,7 @@ export function IntreruperiFilters({
                   onClick={() => setType(t.value)}
                   role="tab"
                   aria-selected={type === t.value}
-                  className={`shrink-0 px-3 h-8 rounded-[var(--radius-xs)] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
+                  className={`shrink-0 px-3 h-9 rounded-[var(--radius-xs)] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
                     type === t.value
                       ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-1)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]"
@@ -635,7 +635,7 @@ function InterruptionCard({
             type="button"
             onClick={handleShare}
             aria-label="Distribuie"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            className="inline-flex items-center justify-center min-h-9 min-w-9 gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
             <Share2 size={11} aria-hidden="true" />
           </button>
@@ -643,7 +643,7 @@ function InterruptionCard({
             href={`/api/intreruperi/${item.id}/ics`}
             onClick={(e) => e.stopPropagation()}
             aria-label="Adaugă în calendar"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            className="inline-flex items-center justify-center min-h-9 min-w-9 gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             title="Descarcă în calendar (ICS)"
           >
             <Calendar size={11} aria-hidden="true" />
@@ -654,7 +654,7 @@ function InterruptionCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-primary)] hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="inline-flex items-center min-h-9 gap-1 text-[11px] font-medium text-[var(--color-primary)] hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               title={
                 item.sourceEntryUrl
                   ? "Anunțul oficial exact (PDF/pagină)"

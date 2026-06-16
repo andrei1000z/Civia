@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Check, Image as ImgIcon, X } from "lucide-react";
+import { Send, Loader2, Check, Image as ImgIcon, X, AlertCircle } from "lucide-react";
 import { trackFunnelStep } from "@/components/analytics/CiviaTracker";
 import { Button } from "@/components/ui/Button";
 
@@ -238,8 +238,9 @@ export function SubmitForm() {
       {error && (
         <p
           role="alert"
-          className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-[var(--radius-xs)] px-3 py-2"
+          className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-[var(--radius-xs)] px-3 py-2"
         >
+          <AlertCircle size={16} aria-hidden="true" className="shrink-0 mt-0.5" />
           {error}
         </p>
       )}
