@@ -34,9 +34,6 @@ const CursorGlow = dynamic(
 const KonamiEasterEgg = dynamic(
   () => import("@/components/liquid-civic/KonamiEasterEgg").then((m) => m.KonamiEasterEgg),
 );
-const FirstLoadSplash = dynamic(
-  () => import("@/components/liquid-civic/FirstLoadSplash").then((m) => m.FirstLoadSplash),
-);
 import { GlobalLiveAnnouncer } from "@/components/ui/LiveAnnouncer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
@@ -254,7 +251,6 @@ export default function RootLayout({
             persistent „cacat negru" peste bg din cauza spatiilor dintre blob-uri
             unde se vedea bg-ul solid. Acum: flat var(--color-bg) uniform. */}
         <CursorGlow />
-        <FirstLoadSplash />
         <KonamiEasterEgg />
         {/* A11y: global screen reader announcer (always mounted, sr-only) */}
         <GlobalLiveAnnouncer />
