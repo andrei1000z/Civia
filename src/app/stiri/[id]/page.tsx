@@ -404,7 +404,7 @@ export default async function StireDetailPage({
               href={stire.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 w-full justify-center h-11 rounded-[var(--radius-full)] text-white text-sm font-semibold hover:brightness-110 active:scale-[0.97] transition-all shadow-[var(--shadow-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 w-full justify-center h-11 rounded-[var(--radius-full)] text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-[var(--shadow-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
               style={{ backgroundColor: sourceColor }}
               aria-label={`Citește articolul complet pe ${stire.source} (deschide în tab nou)`}
             >

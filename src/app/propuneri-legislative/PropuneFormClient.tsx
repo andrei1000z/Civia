@@ -115,7 +115,13 @@ export function PropuneFormClient() {
               {step === 3 && "Pasul 3/3 — Publicat! Distribuie pentru susțineri"}
             </p>
           </div>
-          <button onClick={close} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-2xl leading-none">×</button>
+          <button
+            onClick={close}
+            aria-label="Închide"
+            className="grid place-items-center w-9 h-9 -mr-1.5 shrink-0 rounded-[var(--radius-full)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] text-2xl leading-none transition-colors"
+          >
+            ×
+          </button>
         </div>
 
         {/* Step indicator */}
