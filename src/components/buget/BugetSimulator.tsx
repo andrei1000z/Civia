@@ -166,13 +166,14 @@ export function BugetSimulator() {
             <span className="text-xs text-[var(--color-text-muted)]">(trebuie exact 100%)</span>
           </p>
           {total !== 100 && total > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
+              shape="pill"
               onClick={() => setAlloc((p) => echilibreazaLa100(p, categorii.map((c) => c.key)))}
-              className="inline-flex items-center min-h-[2.25rem] rounded-[var(--radius-pill)] border border-[var(--color-border)] px-3 text-[11px] font-semibold text-[var(--color-text)] hover:border-[var(--color-primary)] transition"
             >
               ⚖️ Echilibrează la 100%
-            </button>
+            </Button>
           )}
         </div>
         <Button

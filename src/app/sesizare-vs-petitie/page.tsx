@@ -270,14 +270,14 @@ export default function SesizareVsPetitiePage() {
         <div className="flex flex-wrap gap-3 justify-center">
           <Link
             href="/sesizari"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors"
+            className="lc-liquid lc-magnetic inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-gradient-to-br from-emerald-500/85 to-cyan-500/85 text-white font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <FileText size={16} aria-hidden="true" />
             Fă o sesizare
           </Link>
           <Link
             href="/petitii"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors"
+            className="lc-liquid lc-liquid-violet lc-magnetic inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-gradient-to-br from-violet-500/85 to-purple-600/85 text-white font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             <Users size={16} aria-hidden="true" />
             Semnează o petiție

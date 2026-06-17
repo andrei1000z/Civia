@@ -125,7 +125,7 @@ export default async function DeciziiDeschisePage() {
                     href={p.source_url}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex items-center gap-1 text-[var(--color-text-muted)]"
+                    className="inline-flex items-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:underline transition-colors"
                   >
                     Sursa oficială
                     <ExternalLink size={10} aria-hidden="true" />
