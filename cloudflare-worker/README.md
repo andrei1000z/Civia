@@ -10,7 +10,7 @@ sesizarea corectă + push notification pentru cetățean.
 2. Copy-paste `email-handler.js` integral
 3. **Save and Deploy**
 4. Verifică deploy: `https://civia-inbox-handler.musateduardandrei10.workers.dev/`
-   → trebuie să răspundă `Civia Inbox Email Worker v3.1.0 — OK`
+   → trebuie să răspundă `Civia Inbox Email Worker v4.1.0 — OK`
 
 ## Bindings (Settings → Bindings)
 
@@ -25,8 +25,8 @@ sesizarea corectă + push notification pentru cetățean.
 | Type | Name | Value | Note |
 |------|------|-------|------|
 | Secret | `INBOX_WEBHOOK_SECRET` | (random 32-char) | Bearer auth pentru `/api/inbox/reply` |
-| Plain text | `WEBHOOK_URL` | `https://www.civia.ro/api/inbox/reply` | **TREBUIE www** (civia.ro 307→www drops auth) |
-| Plain text | `HEARTBEAT_URL` | `https://www.civia.ro/api/inbox/heartbeat` | Audit logging |
+| Plain text | `WEBHOOK_URL` | `https://civia.ro/api/inbox/reply` | **TREBUIE APEX** (`www` 307→apex pierde header-ul Authorization → 401). De la flip-ul apex-primary (Play Store), apex e canonical. Vezi v4.1.0. |
+| Plain text | `HEARTBEAT_URL` | `https://civia.ro/api/inbox/heartbeat` | Audit logging (tot apex) |
 
 ### Optional (păstrate doar pentru debug)
 | Type | Name | Value | Note |
@@ -94,6 +94,7 @@ Worker dropulește înainte de webhook (NU mai ajung la /api/inbox/reply):
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.1.0 | 2026-06-17 | **Fix webhook 401**: normalizează `www.`→apex înainte de fetch (apex e canonical de la flip-ul Play Store; `www` 307→apex pierdea header-ul Authorization → inbox mort tăcut din 06-12). `redirect: error` (redirect viitor pică zgomotos). `message.setReject` pe eșec retriabil (0/401/403/408/429/5xx) → autoritatea reîncearcă în loc să pierdem tăcut răspunsul. |
 | v4.0.0 | 2026-05-27 | R2 attachment upload (PDF/DOCX/imagini → CIVIA_INBOX_R2 bucket) cu key `attachments/{date}/{uuid}-{filename}`. Payload include `r2_key` per attachment. Backend AI extraction (unpdf, Gemini Vision, mammoth) îmbogățește body înainte de classifyReply. |
 | v3.1.0 | 2026-05-27 | `ctx.waitUntil()` fire-and-forget (fix P99 wall time 10s → <500ms); plus-addressing Reply-To în send-via-civia |
 | v3.0.0 | 2026-05-26 | Pre-ingest filters (RFC 3834 + self-forward); forward la Gmail dezactivat default |
