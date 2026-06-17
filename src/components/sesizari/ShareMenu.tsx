@@ -155,8 +155,10 @@ export function ShareMenu({ url, title, message, size = "sm" }: Props) {
         {open && (
           <div
             role="menu"
+            // lc-nav-glass: același limbaj „liquid glass" ca meniurile din navbar
+            // (Explorează / notificări) — un singur stil de meniu plutitor în app.
             className={cn(
-              "absolute right-0 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden z-50",
+              "absolute right-0 w-56 lc-nav-glass rounded-2xl overflow-hidden z-50",
               direction === "up" ? "bottom-full mb-2" : "top-full mt-2",
             )}>
             <a

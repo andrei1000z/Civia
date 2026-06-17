@@ -338,7 +338,10 @@ export function NotificationBell() {
           // max-w-[calc(100vw-1rem)] previne clip-ul pe viewport mic
           // (~640-768px) cand bell-ul e langa edge-ul drept. ShareMenu
           // are deja fix-ul echivalent prin direction smart.
-          className="fixed sm:absolute top-16 sm:top-auto left-2 right-2 sm:left-auto sm:right-0 sm:mt-2 sm:w-80 sm:max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[480px] overflow-hidden lc-glass-2 rounded-[var(--radius-lg)] z-50 flex flex-col animate-fade-in"
+          // lc-nav-glass (nu lc-glass-2): ACELAȘI strat de sticlă ca dropdown-ul
+          // „Explorează" ancorat de aceeași bară → cele două meniuri din navbar
+          // arată identic (mai opac = lizibil), nu unul mai transparent ca altul.
+          className="fixed sm:absolute top-16 sm:top-auto left-2 right-2 sm:left-auto sm:right-0 sm:mt-1.5 sm:w-80 sm:max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[480px] overflow-hidden lc-nav-glass rounded-2xl z-50 flex flex-col animate-fade-in"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <div className="text-sm font-semibold">Ce s-a mișcat</div>
@@ -371,16 +374,16 @@ export function NotificationBell() {
                   key={n.id}
                   href={`/sesizari/${n.sesizareCode}`}
                   onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex gap-3 px-4 py-3 hover:bg-[var(--color-surface-2)] border-b border-[var(--color-border)] last:border-b-0 transition-colors",
-                    !n.read && "bg-[var(--color-primary-soft)]/30"
-                  )}
+                  // Glass-consistent: rândul rămâne sticla panoului, fără tentă
+                  // colorată peste (ăla arăta ca alt material). Necititul e marcat
+                  // doar de punctul-accent din dreapta + titlu mai apăsat — iOS/Linear.
+                  className="flex gap-3 px-4 py-3 hover:bg-[var(--color-surface-2)] border-b border-[var(--color-border)] last:border-b-0 transition-colors"
                 >
                   <div className={cn("w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-base", tone.bg, tone.text)}>
                     {emoji ?? <CheckCircle2 size={16} aria-hidden="true" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold line-clamp-1">{n.sesizareTitle}</div>
+                    <div className={cn("text-xs line-clamp-1", n.read ? "font-medium" : "font-semibold")}>{n.sesizareTitle}</div>
                     <div className="text-xs text-[var(--color-text-muted)] line-clamp-2 mt-0.5">
                       {n.message}
                     </div>
@@ -388,6 +391,12 @@ export function NotificationBell() {
                       {relativeTime(n.createdAt)}
                     </div>
                   </div>
+                  {!n.read && (
+                    <span
+                      aria-hidden="true"
+                      className="self-center shrink-0 w-2 h-2 rounded-full bg-[var(--color-primary)]"
+                    />
+                  )}
                 </Link>
                 );
               })}
