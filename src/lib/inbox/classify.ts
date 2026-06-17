@@ -19,6 +19,9 @@ import { groqText, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 export type ReplyStatus =
   | "inregistrata"
   | "in-lucru"
+  | "actiune-autoritate"
+  | "interventie"
+  | "amanata"
   | "rezolvat"
   | "redirectionata"
   | "respins"
@@ -196,7 +199,12 @@ function deterministicPreClassify(args: {
   if (
     /^fw[:.\- ]/i.test(subjectTrim) ||
     /^fwd[:.\- ]/i.test(subjectTrim) ||
-    /\btransmis[ăa]?\s+(la|c[ăa]tre|spre)\s+(autoritatea|institutia|institutia|departamentul|primaria)/i.test(b) ||
+    // 6/17 — ținte extinse + diacritice: „transmisă la PRIMĂRIA/ADMINISTRAȚIA/
+    // DIRECȚIA/Sectorul X" + „spre competentă soluționare" + „are competența
+    // legală de soluționare" (clasic redirect — altă instituție e competentă).
+    /\btransmis[ăa]?\s+(?:al[ăa]turat\s+)?(?:la|c[ăa]tre|spre)\s+(?:autoritatea|institu[tț]ia|departamentul|prim[ăa]ria|administra[tț]ia|direc[tț]ia|compania|sectorul|competen)/i.test(b) ||
+    /\bspre\s+competent[ăa]?\s+solu[tț]ionare/i.test(b) ||
+    /\bare\s+competen[tț]a\s+(?:legal[ăa]\s+)?(?:de\s+)?solu[tț]ionare/i.test(b) ||
     /\bnu\s+(este|intr[ăa])\s+(?:în|in)\s+competen[tț]a\s+(noastr[ăa]|institutiei)/i.test(b) ||
     /\bv[ăa]\s+(rug[ăa]m\s+)?(s[ăa]\s+v[ăa]\s+)?adresa[tț]i\s+(c[ăa]tre|la)/i.test(b) ||
     /\bredirec[tț]ion[ăa]m?\s+sesizarea/i.test(b)
@@ -238,19 +246,74 @@ function deterministicPreClassify(args: {
     };
   }
 
-  // ─── IN-LUCRU (acțiune autoritate — măsuri luate dar PROBLEMA NU e încă reparată) ──
-  // CRITIC: „Note de Constatare", „se vor demara/efectua lucrări", „am dispus
-  // măsuri", „aplicat sancțiuni/amenzi" = AUTORITATEA A ACȚIONAT, dar lucrările
-  // NU sunt finalizate → in-lucru, NU rezolvat. (Bug real 00007: AI a zis rezolvat
-  // la „a aplicat Note de Constatare. Se vor demara lucrări".)
+  // ─── INTERVENȚIE — lucrare fizică EFECTUATĂ (stâlpișori montați, asfaltat) ──
+  // Distinct de rezolvat: lucrarea concretă e gata, dar e o intervenție punctuală.
+  if (
+    /\bst[âa]lpi[șs]or\w*\s+(?:de\s+protec[tț]ie\s+|antiparcare\s+)?(?:au\s+fost\s+|s-?au\s+)?monta[tț]i?/i.test(b) ||
+    /\b(?:au\s+fost\s+|s-?au\s+)(?:montat|instalat|asfaltat|amplasat|reparat)(?:e|i)?\s+(?:st[âa]lpi|marcaj|carosabil|trotuar)/i.test(b) ||
+    /\blucrar(?:ea|e)\s+fizic[ăa]\s+(?:a\s+fost\s+)?efectuat[ăa]/i.test(b)
+  ) {
+    return {
+      status: "interventie",
+      confidence: 90,
+      suggested_action: "confirm_resolution",
+      source: "deterministic",
+    };
+  }
+
+  // ─── ACȚIUNE AUTORITATE — control / amenzi / verificare în teren (poliție) ──
+  // Poliția Locală a ACȚIONAT: Note de Constatare, procese-verbale, înștiințări,
+  // sancțiuni contravenționale APLICATE vehiculelor. Mai precis decât in-lucru.
+  // (Verbe la TRECUT — „au aplicat" — nu cereri viitoare „solicităm aplicarea".)
+  if (
+    /\bnot[ăae]\s+de\s+constatare/i.test(b) ||
+    /\bprocese?[-\s]?verbale?\s+(?:de\s+)?(?:sanc[tț]ionare|sanc[tț]ion|contraven)/i.test(b) ||
+    /\b(?:s-?au\s+|au\s+fost\s+|am\s+)?aplicat\s+(?:[îi]n[șs]tiin[tț][ăa]ri|sanc[tț]iuni|amenzi|amend[ăa]|avertismente?)/i.test(b) ||
+    /[îi]n[șs]tiin[tț][ăa]ri\s+(?:vehiculelor|conduc[ăa]torilor)/i.test(b) ||
+    /\bsanc[tț]iuni\s+contraven[tț]ionale\s+conduc[ăa]torilor/i.test(b) ||
+    /\bau\s+(?:efectuat|[îi]ntreprins)\s+verific[ăa]ri\s+(?:[îi]n\s+(?:teren|zon)|pe\s+(?:artera|str|calea|[șs]os))/i.test(b)
+  ) {
+    return {
+      status: "actiune-autoritate",
+      confidence: 90,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  // ─── AMÂNATĂ — planificat în alt proiect / depinde de buget / fără termen ───
+  // Tipic Administrația Străzilor: „urmează să demareze lucrări în funcție de
+  // buget", „în cadrul contractului de reparații", „după finalizarea modernizării",
+  // „nu vă putem oferi un termen estimativ", „în funcție de gradul de risc".
+  // = recunoscut + planificat, dar amânat într-un proiect mai amplu.
+  if (
+    // NB: fără \b înainte de „î" — în JS regex \b nu se declanșează lângă diacritice
+    // (î nu e \w ASCII), deci „\b[îi]n" rata „în funcție/în cadrul".
+    /[îi]n\s+func[tț]ie\s+de\s+(?:buget|bugetul|gradul\s+de\s+risc|fonduri|efectivele)/i.test(b) ||
+    /\bnu\s+(?:v[ăa]\s+)?put[ee]m\s+oferi\s+un\s+termen/i.test(b) ||
+    /[îi]n\s+cadrul\s+(?:unui\s+)?(?:proiect|contract|program|proces)\b/i.test(b) ||
+    /\bdup[ăa]\s+(?:finalizarea|materializarea|recep[tț]ia|predarea|reabilitarea)\b/i.test(b) ||
+    /\bproces\s+de\s+(?:reconfigurare|modernizare|reabilitare)/i.test(b) ||
+    /\bva\s+intra\s+[îi]n\s+reabilitare/i.test(b) ||
+    /\bvor\s+fi\s+(?:analizate|materializate)\s+(?:[șs]i\s+)?(?:implementate\s+)?ulterior/i.test(b)
+  ) {
+    return {
+      status: "amanata",
+      confidence: 88,
+      suggested_action: "monitor_progress",
+      source: "deterministic",
+    };
+  }
+
+  // ─── IN-LUCRU — măsuri/procesare în curs, generic (problema NU e încă reparată) ──
+  // „echipa va interveni", „se vor demara lucrări", „am dispus măsuri". Acțiunea
+  // poliției + amânarea pe buget au fost prinse mai sus în statusuri mai precise.
   if (
     /\b(?:echipa|echipele|departamentul)\s+(?:noastr[ăa]|de\s+specialitate)\s+(?:va|vor)\s+(?:interveni|interven[tț]ia|verifica)/i.test(b) ||
     /\bl[ăa]\s+urm[ăa]toarea\s+(?:saptam[âa]n[ăa]|edi[tț]ie|lun[ăa])/i.test(b) ||
     /\b(?:am\s+alocat|am\s+programat|am\s+repartizat)\s+(?:resurse|lucrare|interven[tț]ia)/i.test(b) ||
-    /\bnot[ăae]\s+de\s+constatare/i.test(b) ||
     /\bse\s+vor\s+(?:demara|efectua|executa|realiza|întreprinde)\s+(?:lucrar|m[ăa]sur|repara|ac[tț]iun)/i.test(b) ||
     /\b(?:am|au\s+fost)\s+dispus[e]?\s+(?:m[ăa]suri|verific[ăa]ri|repara[tț]ii)/i.test(b) ||
-    /\b(?:s-?au\s+)?aplicat\s+(?:sanc[tț]iuni|amenzi|amend[ăa]|sanc[tț]iune|avertismente?)/i.test(b) ||
     /\bm[ăa]suri\s+de\s+remediere/i.test(b) ||
     /\burmeaz[ăa]\s+(?:s[ăa]\s+fie|a\s+fi)\s+(?:efectuate|executate|demarate|realizate)/i.test(b)
   ) {
@@ -347,7 +410,7 @@ const SYSTEM_PROMPT = `Esti un classifier specializat in raspunsuri oficiale de 
 Userul a depus o sesizare. Acum autoritatea (primarie, prefectura, Brigada Rutiera, CNAIR, etc.) raspunde. Citesti textul raspunsului si returnezi UN SINGUR JSON cu schema:
 
 {
-  "status": "inregistrata|in-lucru|rezolvat|redirectionata|respins|cerere_informatii|necunoscut",
+  "status": "inregistrata|in-lucru|actiune-autoritate|interventie|amanata|rezolvat|redirectionata|respins|cerere_informatii|necunoscut",
   "confidence": <0-100>,
   "nr_inregistrare": "<numarul de inregistrare daca apare, altfel null>",
   "summary": "<o fraza scurta in romana, neutra, max 150 caractere>",
@@ -362,7 +425,13 @@ CRITERII STATUS:
 
 - "in-lucru": Autoritatea a LUAT MASURI / a actionat, DAR problema NU e inca reparata. Include: „Echipa noastra va interveni saptamana viitoare", „Lucrarea este in executie", „Am alocat resurse pentru remediere", „Am programat interventia", „Am aplicat Note de Constatare", „S-au aplicat sanctiuni/amenzi", „Am dispus masuri de remediere", „Se vor demara lucrarile". REGULA: daca autoritatea CONSTATA + ANUNTA masuri viitoare („se vor demara", „urmeaza sa", „am dispus") → ASTA E IN-LUCRU, NU rezolvat.
 
-- "rezolvat": DOAR cand problema e EFECTIV reparata, la TRECUT, finalizat. „Lucrarea a fost finalizata", „Problema semnalata a fost remediata", „Stalpisorii au fost montati", „Va comunicam rezolvarea". NU folosi rezolvat daca apare „se vor demara", „urmeaza", „Note de Constatare", „am dispus masuri", „sanctiuni aplicate" — alea sunt IN-LUCRU (actiune luata, dar lucrarea nu e gata).
+- "actiune-autoritate": Poliția Locală / Brigada Rutiera A ACTIONAT in teren: „au aplicat Note de Constatare", „procese-verbale de sanctionare", „au aplicat instiintari vehiculelor", „sanctiuni contraventionale conducatorilor auto", „au efectuat verificari pe artera/in zona". DOAR la TRECUT (au aplicat / au efectuat) — NU cereri viitoare („solicitam sprijinul Politiei pentru aplicarea sanctiunilor" = NU asta, ala e amanata/in-lucru). Mai PRECIS decat in-lucru pentru raspunsuri de la politie.
+
+- "interventie": Lucrarea fizica e EFECTUATA, punctual. „Stalpisorii au fost montati", „s-a asfaltat", „marcajul a fost refacut", „lucrarea fizica a fost efectuata". (Daca problema e complet rezolvata, foloseste rezolvat.)
+
+- "amanata": Autoritatea RECUNOASTE problema dar AMANA interventia intr-un proiect mai amplu / depinde de buget. „urmeaza sa demareze lucrari in functie de bugetul alocat", „in cadrul contractului de reparatii", „dupa finalizarea/materializarea/receptia lucrarilor", „dupa modernizarea infrastructurii", „nu va putem oferi un termen estimativ", „in functie de gradul de risc", „va intra in reabilitare in cadrul acestui proiect". Tipic Administratia Strazilor.
+
+- "rezolvat": DOAR cand problema e EFECTIV reparata, la TRECUT, finalizat. „Lucrarea a fost finalizata", „Problema semnalata a fost remediata", „Va comunicam rezolvarea". NU folosi rezolvat daca apare „se vor demara", „urmeaza", „in functie de buget" (= amanata), „Note de Constatare/sanctiuni aplicate" (= actiune-autoritate).
 
 - "redirectionata": Autoritatea spune ca nu e competenta ei. „Nu intra in competenta noastra, va rugam adresati X", „Am transmis sesizarea catre X", subject FW: / FWD: cu trimitere catre alta institutie.
 
@@ -463,8 +532,8 @@ export async function classifyReply(args: {
     const parsed = JSON.parse(raw) as Partial<ClassifyResult>;
 
     const validStatuses: ReplyStatus[] = [
-      "inregistrata", "in-lucru", "rezolvat", "redirectionata",
-      "respins", "cerere_informatii", "necunoscut",
+      "inregistrata", "in-lucru", "actiune-autoritate", "interventie", "amanata",
+      "rezolvat", "redirectionata", "respins", "cerere_informatii", "necunoscut",
     ];
     const status = validStatuses.includes(parsed.status as ReplyStatus)
       ? (parsed.status as ReplyStatus)
@@ -544,6 +613,12 @@ function buildDeterministicSummary(status: ReplyStatus, subject: string): string
       return `Autoritatea confirmă înregistrarea sesizării. Subject: „${subject.slice(0, 80)}"`;
     case "in-lucru":
       return "Autoritatea confirmă că lucrează / a programat intervenția.";
+    case "actiune-autoritate":
+      return "Autoritatea a acționat în teren (verificări, înștiințări, sancțiuni / procese-verbale).";
+    case "interventie":
+      return "Autoritatea a efectuat lucrarea fizică (montare stâlpișori / reparație).";
+    case "amanata":
+      return "Autoritatea recunoaște problema, dar amână intervenția (buget / proiect amplu / fără termen).";
     case "rezolvat":
       return "Autoritatea declară problema rezolvată — verifică în teren.";
     case "redirectionata":

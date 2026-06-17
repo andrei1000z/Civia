@@ -38,6 +38,9 @@ export function computeStatusUpdate(args: {
   const candidate =
     args.aiStatus === "inregistrata" ? "inregistrata"
     : args.aiStatus === "in-lucru" ? "in-lucru"
+    : args.aiStatus === "actiune-autoritate" ? "actiune-autoritate"
+    : args.aiStatus === "interventie" ? "interventie"
+    : args.aiStatus === "amanata" ? "amanata"
     : args.aiStatus === "rezolvat" ? "rezolvat"
     : args.aiStatus === "redirectionata" ? "redirectionata"
     : null;
@@ -51,7 +54,9 @@ export function computeStatusUpdate(args: {
   if (args.nrInregistrare && args.nrInregistrare.trim()) {
     updates.nr_inregistrare = args.nrInregistrare.trim();
   }
-  const substantive = ["in-lucru", "rezolvat", "redirectionata"].includes(candidate);
+  const substantive = [
+    "in-lucru", "actiune-autoritate", "interventie", "amanata", "rezolvat", "redirectionata",
+  ].includes(candidate);
   if (substantive && args.summary && args.summary.trim().length > 20) {
     updates.official_response = args.summary.trim();
     updates.official_response_at = args.at;
