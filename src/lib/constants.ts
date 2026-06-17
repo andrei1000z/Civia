@@ -350,6 +350,32 @@ export function readableTextColor(bgHex: string): string {
   return lum > 0.6 ? "#0A0A0A" : "white";
 }
 
+/**
+ * WCAG-correct pick of black or white text for a SOLID color background.
+ * Unlike readableTextColor (which uses a single lenient luminance threshold
+ * and keeps white on mid-tone colors like sky/amber where it actually fails),
+ * this computes the real sRGB relative luminance and compares the contrast
+ * ratio against both #0A0A0A and #ffffff, returning whichever is higher.
+ * Use anywhere a hex is painted as a solid `backgroundColor` with text/icons
+ * on top: `style={{ backgroundColor: hex, color: bestTextColor(hex) }}`.
+ */
+export function bestTextColor(bgHex: string): "#0A0A0A" | "#ffffff" {
+  const hex = bgHex.replace("#", "");
+  if (hex.length !== 6) return "#ffffff";
+  const toLinear = (channel: number) => {
+    const s = channel / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  const r = toLinear(parseInt(hex.slice(0, 2), 16));
+  const g = toLinear(parseInt(hex.slice(2, 4), 16));
+  const b = toLinear(parseInt(hex.slice(4, 6), 16));
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Contrast ratio formula (lighter+0.05)/(darker+0.05). White lum = 1, black ~0.
+  const contrastWhite = 1.05 / (L + 0.05);
+  const contrastBlack = (L + 0.05) / 0.05;
+  return contrastBlack >= contrastWhite ? "#0A0A0A" : "#ffffff";
+}
+
 // Mid-tone substitutes for sources whose brand color in SOURCE_COLORS
 // has poor contrast when used as plain text on a neutral surface in
 // at least one theme. Hotnews yellow-400 disappears on light surface;

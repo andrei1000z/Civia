@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
-import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, bestTextColor } from "@/lib/constants";
 import { getSesizareEventMeta, isRedundantEventDescription, isTerminalEvent, dedupeConsecutiveEvents } from "@/lib/sesizari/events";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
 import { Button } from "@/components/ui/Button";
@@ -268,7 +268,7 @@ export function UrmarireSesizare() {
                         )}
                         style={{
                           backgroundColor: isLast ? meta.color : `${meta.color}1a`,
-                          color: isLast ? "#fff" : meta.color,
+                          color: isLast ? bestTextColor(meta.color) : meta.color,
                         }}
                         aria-hidden="true"
                       >
