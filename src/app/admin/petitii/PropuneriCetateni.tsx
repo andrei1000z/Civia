@@ -169,7 +169,7 @@ export function PropuneriCetateni({ onImportUrl }: Props) {
                       type="button"
                       onClick={() => handleCopy(url)}
                       aria-label="Copiază URL"
-                      className="inline-flex items-center gap-1 h-7 px-2 rounded-[var(--radius-full)] border border-[var(--color-border)] hover:bg-[var(--color-border)]/30 text-[10px]"
+                      className="inline-flex items-center gap-1 h-7 px-2 rounded-[var(--radius-full)] border border-[var(--color-border)] hover:bg-[var(--color-border)]/30 text-[10px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                     >
                       {copied === url ? <Check size={11} /> : <Copy size={11} />}
                     </button>

@@ -127,7 +127,7 @@ export default async function PrimariePage() {
           <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Total</div>
         </Card>
         <Card className="text-center col-span-2 md:col-span-1">
-          <div className="text-3xl font-extrabold tabular-nums" style={{ color: resolveRate >= 60 ? "#059669" : resolveRate >= 30 ? "#f59e0b" : "#dc2626" }}>
+          <div className="text-3xl font-extrabold tabular-nums" style={{ color: resolveRate >= 60 ? "var(--color-success)" : resolveRate >= 30 ? "var(--color-warning)" : "var(--color-error)" }}>
             {resolveRate}%
           </div>
           <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Fix Score</div>
@@ -178,7 +178,7 @@ export default async function PrimariePage() {
                   </div>
                   <span
                     className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shrink-0"
-                    style={{ background: tipMeta?.icon ? "rgba(0,0,0,0.05)" : undefined }}
+                    style={{ background: tipMeta?.icon ? "var(--color-surface-2)" : undefined }}
                   >
                     {STATUS_LABELS[s.status] ?? s.status}
                   </span>

@@ -1416,6 +1416,7 @@ function ListGroup({
                     target="_blank"
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)]/40 transition-colors"
                     title="Vezi public"
+                    aria-label="Vezi public"
                   >
                     <ExternalLink size={13} />
                   </Link>
@@ -1441,6 +1442,7 @@ function ListGroup({
                     disabled={deleting === r.id || saving || moderating === r.id}
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)]/40 transition-colors disabled:opacity-50"
                     title="Editează"
+                    aria-label="Editează"
                   >
                     <Edit3 size={13} />
                   </button>
@@ -1450,6 +1452,7 @@ function ListGroup({
                     disabled={deleting === r.id || saving || moderating === r.id}
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:bg-rose-500/20 hover:border-rose-500/50 disabled:opacity-50 transition-colors"
                     title="Șterge"
+                    aria-label="Șterge protestul"
                   >
                     {deleting === r.id ? (
                       <Loader2 size={13} className="motion-safe:animate-spin" />
