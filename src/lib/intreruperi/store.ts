@@ -75,25 +75,31 @@ function rowToInterruption(r: ScrapedRow): Interruption {
  * `end_at` is more than 7 days in the past — keeps the read query small
  * and the page free of long-finished outages.
  */
-export async function loadInterruptions(): Promise<{
+export async function loadInterruptions(countyCode?: string): Promise<{
   items: Interruption[];
   scrapedCount: number;
   lastSeenAt: string | null;
   source: "supabase+seed" | "seed-only";
 }> {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const cc = countyCode?.toUpperCase();
   let scraped: Interruption[] = [];
   let lastSeenAt: string | null = null;
   let source: "supabase+seed" | "seed-only" = "seed-only";
 
   try {
     const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
+    let query = supabase
       .from("intreruperi_scraped")
       .select(
         "id,external_id,type,status,provider,source_url,source_entry_url,source_entry_title,reason,addresses,lat,lng,county,locality,sector,start_at,end_at,affected_population,excerpt,updated_at,last_seen_at",
       )
-      .gte("end_at", cutoff)
+      .gte("end_at", cutoff);
+    // Optimizare: filtrăm county-ul în SQL pe paginile de județ — înainte fiecare
+    // din 42 de pagini trăgea până la 500 rânduri NAȚIONALE + filtra în JS. ilike =
+    // case-insensitive exact, păstrează semantica filtrului JS de mai jos.
+    if (cc) query = query.ilike("county", cc);
+    const { data, error } = await query
       .order("start_at", { ascending: true })
       .limit(500);
     if (error) throw error;
@@ -115,7 +121,11 @@ export async function loadInterruptions(): Promise<{
   const externalIds = new Set(
     scraped.map((s) => s.externalId).filter((x): x is string => Boolean(x)),
   );
-  const seedKept = INTRERUPERI.filter(
+  // Seed scoped pe county când e cazul (consistent cu filtrul SQL de mai sus).
+  const seedScoped = cc
+    ? INTRERUPERI.filter((s) => s.county.toUpperCase() === cc)
+    : INTRERUPERI;
+  const seedKept = seedScoped.filter(
     (s) => !s.externalId || !externalIds.has(s.externalId),
   );
 
@@ -137,7 +147,9 @@ export async function getAllInterruptions(): Promise<Interruption[]> {
 export async function getInterruptionsForCounty(
   countyCode: string,
 ): Promise<Interruption[]> {
-  const { items } = await loadInterruptions();
+  // Trecem countyCode → filtru SQL (nu mai tragem toate rândurile naționale).
+  const { items } = await loadInterruptions(countyCode);
+  // Plasă de siguranță pe reprezentare/case — items sunt deja scoped pe county.
   return items.filter(
     (i) => i.county.toUpperCase() === countyCode.toUpperCase(),
   );
