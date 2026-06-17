@@ -1949,7 +1949,7 @@ export function SesizareForm() {
               {showSugg && addrSugg.length > 0 && (
                 <ul
                   role="listbox"
-                  className="absolute z-40 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-3)] py-1"
+                  className="absolute z-40 left-0 right-0 top-[calc(100%+4px)] max-h-64 overflow-y-auto rounded-2xl lc-nav-glass py-1"
                 >
                   {addrSugg.map((sg, i) => (
                     <li key={`${sg.lat}-${sg.lng}-${i}`} role="option" aria-selected={false}>

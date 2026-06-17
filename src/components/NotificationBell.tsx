@@ -379,6 +379,7 @@ export function NotificationBell() {
                   // doar de punctul-accent din dreapta + titlu mai apăsat — iOS/Linear.
                   className="flex gap-3 px-4 py-3 hover:bg-[var(--color-surface-2)] border-b border-[var(--color-border)] last:border-b-0 transition-colors"
                 >
+                  {!n.read && <span className="sr-only">Necitit. </span>}
                   <div className={cn("w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-base", tone.bg, tone.text)}>
                     {emoji ?? <CheckCircle2 size={16} aria-hidden="true" />}
                   </div>
