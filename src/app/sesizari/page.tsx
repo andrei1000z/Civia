@@ -5,6 +5,7 @@ import { SesizareForm } from "@/components/sesizari/SesizareForm";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/constants";
 
 const FAQ_SESIZARI = [
@@ -107,6 +108,11 @@ export default async function SesizariPage() {
     : STATIC_QUICK_LINKS;
   return (
     <div className="container-narrow py-8 md:py-12">
+      <CollectionPageJsonLd
+        name="Sesizări civice — Civia"
+        description="Trimite sesizări formale la autorități cu temei legal OG 27/2002 — gropi, trotuare distruse, iluminat defect, parcări ilegale."
+        url={`${SITE_URL}/sesizari`}
+      />
       <FaqJsonLd items={FAQ_SESIZARI} />
       <BreadcrumbJsonLd
         items={[
