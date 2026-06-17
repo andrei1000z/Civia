@@ -41,47 +41,7 @@ export async function GET(req: Request) {
   }
 
   const admin = createSupabaseAdmin();
-  const nowMs = Date.now();
 
-  // ─── 1) trimis → inregistrata (înregistrare prezumată, OG 27/2002) ─────────
-  // Bug 6/17/2026: #00071+ stăteau blocate pe „trimis". Cauza: Civia marca
-  // „inregistrata" DOAR pe un reply de confirmare matchuit pe sesizari@civia.ro —
-  // dar confirmările de înregistrare ajung des pe emailul PERSONAL al petentului
-  // (adresa lui e în petiție), nu la Civia → niciun reply de matchuit → blocaj.
-  // Fix robust, independent de email: o petiție primită de autoritate E, prin
-  // lege (OG 27/2002), înregistrată la primire. După GRACE zile de la trimiterea
-  // via Civia, fără o confirmare explicită, o considerăm înregistrată. NU setăm
-  // official_response_at (nu e răspuns de fond) → rămâne eligibilă pt. escaladarea
-  // la 60 de zile dacă autoritatea tace. Forward-only: doar status='trimis'.
-  const REGISTER_GRACE_DAYS = 2;
-  const regCutoff = new Date(nowMs - REGISTER_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  let registered = 0;
-  const regErrors: string[] = [];
-  const { data: toRegister } = await admin
-    .from("sesizari")
-    .select("id, code")
-    .eq("status", "trimis")
-    .eq("sent_via_civia", true)
-    .not("sent_at", "is", null)
-    .lte("sent_at", regCutoff);
-  for (const s of (toRegister ?? []) as { id: string; code: string }[]) {
-    // .eq('status','trimis') la UPDATE = gardă optimistă: dacă între timp a venit
-    // un reply real care a avansat statusul, nu-l regresăm/atingem.
-    const { error: updErr } = await admin
-      .from("sesizari")
-      .update({ status: "inregistrata" })
-      .eq("id", s.id)
-      .eq("status", "trimis");
-    if (updErr) { regErrors.push(`${s.code}: ${updErr.message}`); continue; }
-    await admin.from("sesizare_timeline").insert({
-      sesizare_id: s.id,
-      event_type: "inregistrata",
-      description: "Înregistrare prezumată conform OG 27/2002 — autoritatea are obligația legală de a înregistra petiția la primire. Au trecut 2+ zile de la trimiterea prin Civia fără o confirmare explicită.",
-    });
-    registered += 1;
-  }
-
-  // ─── 2) {nou,trimis,inregistrata} fără răspuns de fond → ignorat la 60 zile ──
   // Cut-off: 60 zile fără RĂSPUNS SUBSTANȚIAL. 2026-06-10 (audit statusuri) —
   // semnalul „autoritatea a răspuns" e official_response_at (setat DOAR pe răspuns
   // real: in-lucru/rezolvat/redirectionata), NU simpla prezență a unui reply.
@@ -103,7 +63,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (!candidates || candidates.length === 0) {
-    return NextResponse.json({ ok: true, registered, scanned: 0, marked: 0, regErrors: regErrors.length ? regErrors : undefined });
+    return NextResponse.json({ ok: true, scanned: 0, marked: 0 });
   }
 
   // Gating-ul „fără răspuns substanțial" e deja în query (official_response_at
@@ -133,10 +93,8 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     ok: true,
-    registered,
     scanned: candidates.length,
     marked,
     errors: errors.length > 0 ? errors : undefined,
-    regErrors: regErrors.length > 0 ? regErrors : undefined,
   });
 }
