@@ -169,11 +169,13 @@ export async function broadcastToAllSubscribers(
     return { sent: 0, failed: 0 };
   }
 
-  // Filter out users who explicitly opted out via dismissed_prompts.no_broadcast
+  // Filter out users who explicitly opted out via dismissed_prompts.no_broadcast.
+  // Valoarea e un timestamp (dismissPrompt scrie ISO string), NU boolean — deci
+  // verificăm truthy, nu `=== true` (care nu se potrivea niciodată → opt-out mort).
   const active = subs.filter((s) => {
     const dp = (s as { profiles?: { dismissed_prompts?: Record<string, unknown> } }).profiles
       ?.dismissed_prompts;
-    return !dp || dp.no_broadcast !== true;
+    return !dp || !dp.no_broadcast;
   });
 
   const body = JSON.stringify(payload);

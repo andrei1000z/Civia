@@ -187,3 +187,17 @@ export function isPromptDismissed(promptId: string): boolean {
   const local = readLocalPreferences();
   return Boolean(local.dismissed_prompts?.[promptId]);
 }
+
+/**
+ * Inversul lui dismissPrompt — scoate un flag din dismissed_prompts (re-opt-in)
+ * + sync cross-device. Păstrează celelalte chei. Folosit pentru toggle-uri de
+ * opt-out/opt-in (ex. notificări de implicare → cheia `no_broadcast`).
+ */
+export function undismissPrompt(promptId: string): void {
+  const local = readLocalPreferences();
+  const dismissed = { ...(local.dismissed_prompts ?? {}) };
+  delete dismissed[promptId];
+  const next = Object.keys(dismissed).length > 0 ? dismissed : null;
+  writeLocalPreferences({ dismissed_prompts: next });
+  writeRemotePreferences({ dismissed_prompts: next });
+}
