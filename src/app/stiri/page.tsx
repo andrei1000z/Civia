@@ -12,7 +12,7 @@ import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 export const metadata: Metadata = {
   title: "Știri civice România",
   description:
-    "Articole agregate din 15 surse naționale verificate (Digi24, Hotnews, G4Media, PressOne, Spotmedia, Europa Liberă, Recorder, ZF, …) — transport, urbanism, mediu, administrație din toată România.",
+    "Articole civice din 15 surse verificate (Digi24, Hotnews, G4Media, PressOne, Spotmedia, Europa Liberă, Recorder, ZF) — transport, urbanism, mediu, administrație.",
   alternates: { canonical: "/stiri" },
 };
 

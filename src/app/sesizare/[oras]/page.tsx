@@ -24,7 +24,7 @@ export async function generateMetadata({
   const o = ORASE_MARI.find((x) => x.slug === oras);
   if (!o) return { title: "Pagină negăsită" };
   return {
-    title: `Sesizare ${o.nume} — cum reclami la primăria din ${o.nume} | Civia`,
+    title: `Sesizare ${o.nume} — cum reclami la primărie | Civia`,
     description: `Trimite sesizare oficială la Primăria ${o.nume}: groapă, parcare, gunoi, iluminat, alte probleme. AI Civia formalizează emailul și îl trimite gratuit. Răspuns 30 zile (OG 27/2002).`,
     alternates: { canonical: `/sesizare/${o.slug}` },
     keywords: [
