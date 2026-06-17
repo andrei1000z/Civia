@@ -26,7 +26,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { buildFromHeader } from "@/lib/email/format";
-import { replyToAddress, authorityOutboundMessageId } from "@/lib/inbox/reply-token";
+import { replyToAddress, authorityOutboundMessageId, makeReplyToken } from "@/lib/inbox/reply-token";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { buildFormalText } from "@/lib/sesizari/mailto";
@@ -278,6 +278,12 @@ export async function POST(
           resend_message_id: result.id,
           sent_to_emails: [...primaryEmails, ...ccEmails],
           delivery_status: "sent",
+          // 6/17 FIX: emailul a plecat cu Reply-To token + Message-ID (liniile de
+          // mai sus), dar NU le persistam → matching-ul N1/N2 (token/threading) nu
+          // putea lega răspunsul autorității de sesizare (reply_token NULL în DB).
+          // Acum le salvăm, identic cu send-via-civia.
+          reply_token: makeReplyToken(sesizare.code),
+          outbound_message_id: outboundMessageId,
           ...(sesizare.status === "nou" ? { status: "trimis" } : {}),
         })
         .eq("id", sesizare.id);
