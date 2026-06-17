@@ -32,13 +32,11 @@
  *   Secret:     INBOX_WEBHOOK_SECRET = <same as Vercel>
  *   Plain text: WEBHOOK_URL          = https://civia.ro/api/inbox/reply
  *   Plain text: HEARTBEAT_URL        = https://civia.ro/api/inbox/heartbeat
- *   ⚠️ FOLOSEȘTE APEX (civia.ro), NU www. — www face 307→apex și redirectul
- *      PIERDE header-ul Authorization → /api/inbox/reply 401. Worker-ul
- *      normalizează oricum www.→apex defensiv, dar setează direct apex în env.
- *
- * ⚠️ IMPORTANT: WEBHOOK_URL and HEARTBEAT_URL MUST use `www.civia.ro`
- * (NOT `civia.ro` without www). civia.ro redirects to www.civia.ro with
- * 307 and the redirect drops the Authorization header.
+ *   ⚠️ FOLOSEȘTE APEX (civia.ro), NU www. — de la flip-ul apex-primary (Play
+ *      Store), www.civia.ro face 307→apex, iar redirectul PIERDE header-ul
+ *      Authorization → /api/inbox/reply răspunde 401 și răspunsurile autorităților
+ *      NU mai sunt procesate (cauza outage-ului tăcut 06-12→06-17). Worker-ul
+ *      normalizează oricum www.→apex defensiv, dar setează DIRECT apex în env.
  */
 
 const WORKER_VERSION = "4.1.0";
