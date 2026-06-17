@@ -740,10 +740,10 @@ export function ProteSubmitForm() {
                         <button
                           type="button"
                           onClick={() => removeDemand(i)}
-                          className="shrink-0 text-rose-500 hover:text-rose-700"
+                          className="shrink-0 inline-flex items-center justify-center w-9 h-9 -my-1 -mr-1 rounded text-rose-500 hover:text-rose-700 hover:bg-rose-500/10 transition-colors"
                           aria-label="Șterge"
                         >
-                          <X size={11} />
+                          <X size={14} />
                         </button>
                       </li>
                     ))}

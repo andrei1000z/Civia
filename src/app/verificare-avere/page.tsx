@@ -128,6 +128,7 @@ export default async function VerificareAverePage() {
                   href={`https://integritate.eu/cauta-declaratie?nume=${encodeURIComponent(d.full_name)}`}
                   target="_blank"
                   rel="noopener"
+                  aria-label={`Caută declarația lui ${d.full_name} pe integritate.eu`}
                   className="text-xs text-[var(--color-text-muted)] shrink-0"
                 >
                   <ExternalLink size={12} aria-hidden="true" />

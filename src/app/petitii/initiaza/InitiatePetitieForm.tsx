@@ -295,7 +295,7 @@ export function InitiatePetitieForm({ userEmail }: Props) {
               <button
                 type="button"
                 onClick={removeImage}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[var(--radius-xs)] bg-black/60 text-white text-[10px] font-medium hover:bg-rose-600 backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                className="inline-flex items-center gap-1 px-3 py-1.5 min-h-9 rounded-[var(--radius-xs)] bg-black/60 text-white text-[10px] font-medium hover:bg-rose-600 backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white"
               >
                 <X size={11} />
                 Elimină
