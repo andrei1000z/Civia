@@ -205,14 +205,20 @@ function deterministicPreClassify(args: {
     /\btransmis[ăa]?\s+(?:al[ăa]turat\s+)?(?:la|c[ăa]tre|spre)\s+(?:autoritatea|institu[tț]ia|departamentul|prim[ăa]ria|administra[tț]ia|direc[tț]ia|compania|sectorul|competen)/i.test(b) ||
     /\bspre\s+competent[ăa]?\s+solu[tț]ionare/i.test(b) ||
     /\bare\s+competen[tț]a\s+(?:legal[ăa]\s+)?(?:de\s+)?solu[tț]ionare/i.test(b) ||
+    // 6/17 (audit OG 27/2002) — declinare/înaintare/transmitere spre soluționare
+    // către altă autoritate competentă (caz real #58356: „vă transmitem spre
+    // soluționare petițiile ... competența revine Primăriei Sectorului 1").
+    /declin[ăa]m\s+competen[tț]a/i.test(b) ||
+    /(?:v[ăa]\s+)?transmit[ee]m\s+spre\s+solu[tțţ]ionare/i.test(b) ||
+    /fost\s+[îi]naintat[ăa]\s+(?:prim[ăa]riei|administra[tț]iei|poli[tț]iei|prefecturii|comisariatului|companiei)/i.test(b) ||
     // 6/17 (caz real #00050): PLMB forwardează SESIZAREA către poliția de sector
     // „vă transmitem alăturat sesizarea ... pentru luarea măsurilor ce se impun".
     // Cheia e „transmitem (alăturat) SESIZAREA/petiția" (nu „răspunsul" — ăla e
     // doar cover-ul), urmat de „pentru luarea măsurilor / competență / soluționare".
     /\bv[ăa]\s+transmit[ee]m\s+(?:al[ăa]turat\s+)?(?:sesizarea|peti[tț]ia|adresa|solicitarea|memoriul)\b[\s\S]{0,200}?\bpentru\s+(?:luarea\s+m[ăa]surilor|competent|solu[tț]ion|analiz|verific)/i.test(b) ||
     /\bnu\s+(este|intr[ăa])\s+(?:în|in)\s+competen[tț]a\s+(noastr[ăa]|institutiei)/i.test(b) ||
-    /\bv[ăa]\s+(rug[ăa]m\s+)?(s[ăa]\s+v[ăa]\s+)?adresa[tț]i\s+(c[ăa]tre|la)/i.test(b) ||
-    /\bredirec[tț]ion[ăa]m?\s+sesizarea/i.test(b)
+    /v[ăa]\s+(?:rug[ăa]m\s+|invit[ăa]m\s+)?(?:s[ăa]\s+v[ăa]\s+)?adresa[tțţ]i\s+(?:c[ăa]tre|la|acestei|acestor|autorit[ăa][tț]ii|institu[tț]iei|companiei|prim[ăa]riei|administra[tț]iei|direc[tț]iei|comisariatului|sectorului|poli[tț]iei)/i.test(b) ||
+    /redirec[tț]ion[ăa]m\s+(?:prezenta|sesizarea|peti[tț]ia)/i.test(b)
   ) {
     return {
       status: "redirectionata",
@@ -227,7 +233,9 @@ function deterministicPreClassify(args: {
     /\b(precizat?i|completat?i|transmit?eti)\s+(?:exact\s+)?(?:locatia|adresa|locația|imaginile|mai\s+multe\s+detalii)/i.test(b) ||
     /\bv[ăa]\s+rug[ăa]m\s+s[ăa]\s+(?:ne\s+)?(?:transmit?eti|comunicat?i|preciza|complet)/i.test(b) ||
     /\b(avem|este)\s+nevoie\s+de\s+(?:mai\s+)?(?:multe\s+)?(?:detalii|informa[tț]ii|preciz[ăa]ri|clarific[ăa]ri)/i.test(b) ||
-    /\bpentru\s+(?:a\s+)?(?:putea|sa\s+putem)\s+(?:solu[tț]iona|trata|analiza)/i.test(b)
+    /\bpentru\s+(?:a\s+)?(?:putea|sa\s+putem)\s+(?:solu[tț]iona|trata|analiza)/i.test(b) ||
+    // 6/17 (audit) — cere data/perioada aproximativă a constatării pt. verificare.
+    /(?:preciza|comunica)[tțţ]i(?:[-\s][\s\S]{0,30}?)?\s*(?:data|dat[aă]|perioada|perioad[aă]|momentul)\s+(?:aproximativ|constat)/i.test(b)
   ) {
     return {
       status: "cerere_informatii",
@@ -241,7 +249,10 @@ function deterministicPreClassify(args: {
   if (
     /\b(?:lucrar(?:ea|ile))\s+(?:a|au)\s+fost\s+finalizat[ăa]?/i.test(b) ||
     /\bproblema\s+(?:semnalat[ăa]|sesizat[ăa]|raportat[ăa])\s+(?:a\s+fost|este)\s+(?:remediat[ăa]|rezolvat[ăa]|solu[tț]ionat[ăa])/i.test(b) ||
-    /\bv[ăa]\s+comunic[ăa]m\s+(?:rezolvarea|solu[tț]ionarea|finalizarea)/i.test(b)
+    /\bv[ăa]\s+comunic[ăa]m\s+(?:rezolvarea|solu[tț]ionarea|finalizarea)/i.test(b) ||
+    // 6/17 (audit) — confirmări de rezolvare fără cuvintele „remediat/finalizat".
+    /problem[ăa]\s+(?:semnalat[ăa]|sesizat[ăa]|raportat[ăa]|reclamat[ăa])(?:\s+de\s+(?:c[ăa]tre\s+)?(?:dumneavoastr[ăa]|dvs\.?|noi))?\s+nu\s+mai\s+exist[ăa]/i.test(b) ||
+    /situa[tțţ]ia\s+(?:fiind\s+)?solu[tțţ]ionat[ăaâ]\s+[îi]n\s+fapt/i.test(b)
   ) {
     return {
       status: "rezolvat",
@@ -254,9 +265,13 @@ function deterministicPreClassify(args: {
   // ─── INTERVENȚIE — lucrare fizică EFECTUATĂ (stâlpișori montați, asfaltat) ──
   // Distinct de rezolvat: lucrarea concretă e gata, dar e o intervenție punctuală.
   if (
-    /\bst[âa]lpi[șs]or\w*\s+(?:de\s+protec[tț]ie\s+|antiparcare\s+)?(?:au\s+fost\s+|s-?au\s+)?monta[tț]i?/i.test(b) ||
+    // 6/17 (audit) — stâlpișori montați EFECTIV (0-3 cuvinte intercalate gen „de
+    // delimitare solicitați"), DAR cere marker de trecut „au fost/s-au montați" ca
+    // să NU prindă amânarea „stâlpișorii care vor fi montați".
+    /st[âa]lpi[șs]or\w*\s+(?:[a-zăâîșț]+\s+){0,3}?(?:au\s+fost|s-?au)\s+monta[tț]i/i.test(b) ||
     /\b(?:au\s+fost\s+|s-?au\s+)(?:montat|instalat|asfaltat|amplasat|reparat)(?:e|i)?\s+(?:st[âa]lpi|marcaj|carosabil|trotuar)/i.test(b) ||
-    /\blucrar(?:ea|e)\s+fizic[ăa]\s+(?:a\s+fost\s+)?efectuat[ăa]/i.test(b)
+    /\blucrar(?:ea|e)\s+fizic[ăa]\s+(?:a\s+fost\s+)?efectuat[ăa]/i.test(b) ||
+    /a\s+fost\s+[îi]nlocuit\s+cu\s+(?:unul\s+nou|altul)/i.test(b)
   ) {
     return {
       status: "interventie",
@@ -300,7 +315,8 @@ function deterministicPreClassify(args: {
     /\bdup[ăa]\s+(?:finalizarea|materializarea|recep[tț]ia|predarea|reabilitarea)\b/i.test(b) ||
     /\bproces\s+de\s+(?:reconfigurare|modernizare|reabilitare)/i.test(b) ||
     /\bva\s+intra\s+[îi]n\s+reabilitare/i.test(b) ||
-    /\bvor\s+fi\s+(?:analizate|materializate)\s+(?:[șs]i\s+)?(?:implementate\s+)?ulterior/i.test(b)
+    /\bvor\s+fi\s+(?:analizate|materializate)\s+(?:[șs]i\s+)?(?:implementate\s+)?ulterior/i.test(b) ||
+    /ulterior\s+(?:recep[tțţ]iei|finaliz[ăa]rii|pred[ăa]rii)\s+lucr[ăa]rilor/i.test(b)
   ) {
     return {
       status: "amanata",
@@ -320,7 +336,14 @@ function deterministicPreClassify(args: {
     /\bse\s+vor\s+(?:demara|efectua|executa|realiza|întreprinde)\s+(?:lucrar|m[ăa]sur|repara|ac[tț]iun)/i.test(b) ||
     /\b(?:am|au\s+fost)\s+dispus[e]?\s+(?:m[ăa]suri|verific[ăa]ri|repara[tț]ii)/i.test(b) ||
     /\bm[ăa]suri\s+de\s+remediere/i.test(b) ||
-    /\burmeaz[ăa]\s+(?:s[ăa]\s+fie|a\s+fi)\s+(?:efectuate|executate|demarate|realizate)/i.test(b)
+    /\burmeaz[ăa]\s+(?:s[ăa]\s+fie|a\s+fi)\s+(?:efectuate|executate|demarate|realizate)/i.test(b) ||
+    // 6/17 (audit) — forme viitoare/pasive de măsuri în curs (amânarea pe buget +
+    // acțiunea poliției la trecut sunt prinse MAI SUS, în statusuri mai precise).
+    /vor\s+fi\s+(?:executate|demarate|realizate|efectuate)\s+(?:lucr[ăa]r|m[ăa]sur|repara)/i.test(b) ||
+    /(?:echipa|echipele)\s+(?:noastr[ăa]|noastre)?\s*se\s+(?:va|vor)\s+deplasa/i.test(b) ||
+    // Capcană de ordine: „vom solicita aplicarea sancțiunilor" = demers VIITOR (in-lucru),
+    // NU actiune-autoritate (ale cărei verbe sunt la trecut, „au aplicat").
+    /vom\s+solicita\b[\s\S]{0,60}?aplicarea\s+sanc[tțţ]iunilor/i.test(b)
   ) {
     return {
       status: "in-lucru",
@@ -334,7 +357,9 @@ function deterministicPreClassify(args: {
   if (
     /\bsesizarea?\s+(?:dvs|dumneavoastr[ăa])?\s*nu\s+este\s+(?:întemeiat[ăa]|fondat[ăa]|justificat[ăa])/i.test(b) ||
     /\bnu\s+se\s+(?:justific[ăa]|impune)\s+interven[tț]ia/i.test(b) ||
-    /\bclasamen?t\s+f[ăa]r[ăa]\s+(?:obiect|m[ăa]suri)/i.test(b)
+    /\bclasamen?t\s+f[ăa]r[ăa]\s+(?:obiect|m[ăa]suri)/i.test(b) ||
+    // 6/17 (audit) — „soluționată prin clasare" = respingere (deși „soluționată" pare rezolvat).
+    /solu[tțţ]ion[aă]t[ăa]\s+prin\s+clasare/i.test(b)
   ) {
     return {
       status: "respins",
@@ -372,7 +397,17 @@ function deterministicPreClassify(args: {
     // PMB pattern „cu numărul PMB 89420 / DATA"
     /\bcu\s+num[ăa]rul\s+[A-Z]{2,5}\s+\d+/i.test(b) ||
     // „Confirm[ăa]m primirea" / „Confirm[ăa]m primirea e-mailului"
-    /\bconfirm[ăa]m\s+primirea/i.test(b);
+    /\bconfirm[ăa]m\s+primirea/i.test(b) ||
+    // 6/17 (audit) — forme de înregistrare neacoperite: recepționată+înregistrată,
+    // la registratură, cu succes, „vă transmitem numărul de înregistrare", luată în
+    // evidență sub nr, plural „au fost înregistrate sub nr", laconic „Înregistrat. Nr X".
+    /recep[tț]ionat[ăa]\s+[șs]i\s+[îi]nregistrat[ăa]/i.test(b) ||
+    /(?:^|[^a-zăâîșț0-9])[îi]nregistrat[ăa]?\s+la\s+registratur/i.test(b) ||
+    /[îi]nregistrat[ăa]?\s+cu\s+succes/i.test(b) ||
+    /v[ăa]\s+transmit[ee]m\s+(?:al[ăa]turat\s+)?num[ăa]rul\s+(?:de\s+)?[îi]nregistrare/i.test(b) ||
+    /(?:a\s+fost\s+)?luat[ăa]\s+[îi]n\s+eviden[tțţ][ăa]\s+(?:sub|cu)\s+(?:nr|num)/i.test(b) ||
+    /au\s+fost\s+[îi]nregistrat[e]?\s+sub\s+(?:nr|num)/i.test(b) ||
+    /(?<![a-zăâîșțA-ZĂÂÎȘȚ])[îi]nregistrat[.!]?\s+nr\.?\s*\d/i.test(b);
 
   if (subjectInreg || bodyInreg) {
     // Confidence boost dacă subject + body ambele match SAU sender e trusted
