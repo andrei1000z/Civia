@@ -492,15 +492,15 @@ body {
    The ThemeProvider adds this class after hydration. */
 html.theme-ready,
 html.theme-ready * {
-  /* Tranziție temă unificată + curbă iOS (ease-in-out smooth), durată egală pe
-     toate proprietățile → cross-fade clean, fără „valuri" de timing diferit.
-     Include fill/stroke ca iconițele SVG să tranziteze și ele. */
-  transition: background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    fill 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* Tranziție temă: doar proprietăți de CULOARE (ieftine de pictat), snappy.
+     box-shadow scos INTENȚIONAT — anima umbra pe FIECARE element (*) la schimbarea
+     temei = furtună de repaint/compositing 280ms pe tot arborele (principala sursă
+     de lag). 0.28s→0.18s = instant-dar-smooth. fill/stroke pentru iconițe SVG. */
+  transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
