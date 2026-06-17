@@ -114,7 +114,7 @@ async function fetchRecentSesizari(countyId: string): Promise<{
         .limit(4),
       admin
         .from("sesizari")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("county", countyId)
         .eq("moderation_status", "approved")
         .eq("publica", true),

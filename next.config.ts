@@ -54,6 +54,13 @@ const nextConfig: NextConfig = {
         ? { exclude: ["warn", "error"] }
         : false,
   },
+  // 2026-06-17 — optimizePackageImports: transformă barrel-imports (lucide-react
+  // e importat în 230+ fișiere, plus recharts) în importuri directe la build →
+  // graf de module mai mic, build mai rapid, mai puțin JS per rută. Config-only,
+  // recomandat oficial de Next, fără schimbare de comportament.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
   // 2026-05-25: React Compiler DISABLED — ESLint react-compiler plugin
   // flag-uia 2 errors în Server Components (Date.now()/IIFE callable)
   // care blocau CI lint. Compiler-ul e experimental și marginale beneficii

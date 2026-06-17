@@ -77,7 +77,7 @@ async function getTotalSesizariCount(): Promise<number | null> {
     // număra doar `approved` (incl. private) → diferea de feed.
     const { count } = await admin
       .from("sesizari")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("moderation_status", "approved")
       .eq("publica", true);
     return count;
