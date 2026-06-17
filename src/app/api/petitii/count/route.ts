@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     const admin = createSupabaseAdmin();
     const { count, error } = await admin
       .from("petitii")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("status", "active");
     if (error) {
       // Migration 020 not applied yet → table missing → soft fallback.

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getHiddenUserIds } from "@/lib/privacy/hidden-users";
@@ -19,11 +20,14 @@ const ANONYMOUS_LABEL = "[nume]";
 // author_email matches), and whether they have the admin role. Used by
 // both the name anonymizer and the formal_text scrubber so we fetch the
 // auth+profile row once per request.
-async function getViewerContext(): Promise<{
+// `cache()` dedup pe request: getViewerContext era apelat de 4-5× pe un render de
+// /sesizari/[code] (anonimizator nume + scrubber formal_text), fiecare făcând un
+// auth.getUser() (validare JWT remote) + un query `profiles`. Acum rulează O DATĂ.
+const getViewerContext = cache(async (): Promise<{
   viewerId: string | null;
   viewerEmail: string | null;
   isAdmin: boolean;
-}> {
+}> => {
   try {
     const supabase = await createSupabaseServer();
     const {
@@ -43,7 +47,7 @@ async function getViewerContext(): Promise<{
   } catch {
     return { viewerId: null, viewerEmail: null, isAdmin: false };
   }
-}
+});
 
 type Anonymizable = {
   user_id: string | null;

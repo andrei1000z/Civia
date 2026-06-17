@@ -43,12 +43,24 @@ export default async function PropunereLegislativaPage({ params }: Props) {
   const { id } = await params;
   const admin = createSupabaseAdmin();
 
-  const { data } = await admin
-    .from("propuneri_legislative")
-    .select("*")
-    .eq("id", id)
-    .in("status", ["active", "sent"])
-    .maybeSingle();
+  // Paralelizăm fetch-ul propunerii + comentariile (independente) → o singură
+  // rundă de latență în loc de două secvențiale pe o pagină force-dynamic.
+  const [propRes, comentariiRes] = await Promise.all([
+    admin
+      .from("propuneri_legislative")
+      .select("*")
+      .eq("id", id)
+      .in("status", ["active", "sent"])
+      .maybeSingle(),
+    admin
+      .from("propuneri_comentarii")
+      .select("id, content, display_name, created_at")
+      .eq("propunere_id", id)
+      .order("created_at", { ascending: true })
+      .limit(50),
+  ]);
+  const { data } = propRes;
+  const { data: comentarii } = comentariiRes;
 
   if (!data) notFound();
 
@@ -80,14 +92,6 @@ export default async function PropunereLegislativaPage({ params }: Props) {
   if (p.ai_formal_text) {
     try { formal = JSON.parse(p.ai_formal_text) as LegislativeFormalResult; } catch { /* ignore */ }
   }
-
-  // Comentarii
-  const { data: comentarii } = await admin
-    .from("propuneri_comentarii")
-    .select("id, content, display_name, created_at")
-    .eq("propunere_id", id)
-    .order("created_at", { ascending: true })
-    .limit(50);
 
   return (
     <div className="container-narrow py-8 md:py-12">
