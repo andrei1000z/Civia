@@ -690,8 +690,8 @@ export default function ContPage() {
             {/* Aspect — ThemeToggle reactivat 2026-05-26.
                 Segmented 3-way: light / system / dark, cu localStorage
                 persistat + sync cu OS la „system". SoundsToggle separat. */}
-            <section className="border-t border-[var(--color-border)] p-4 sm:p-5 space-y-4 min-w-0">
-              <SectionTitle icon={Sparkles}>Aspect</SectionTitle>
+            <section className="scroll-mt-20 border-t border-[var(--color-border)] p-4 sm:p-5 space-y-4 min-w-0" id="aspect">
+              <SectionTitle icon={Sparkles}>Aspect & accesibilitate</SectionTitle>
               <div>
                 <p className="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed">
                   Alege cum arată Civia pentru tine. „Sistem" urmărește setarea OS-ului tău.
