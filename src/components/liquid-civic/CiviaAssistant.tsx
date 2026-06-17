@@ -334,7 +334,7 @@ export function CiviaAssistant() {
               type="submit"
               disabled={!input.trim() || loading}
               aria-label="Trimite"
-              className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--civic-emerald-500)] to-[var(--civic-aqua-500)] text-white hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <Send size={16} aria-hidden="true" />
             </button>

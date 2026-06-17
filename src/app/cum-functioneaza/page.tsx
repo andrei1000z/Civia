@@ -297,7 +297,7 @@ export default function CumFunctioneazaPage() {
           </p>
           <Link
             href="/sesizari"
-            className="inline-flex items-center gap-2 h-14 px-8 rounded-[var(--radius-button)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-lg font-bold hover:brightness-110 shadow-[var(--shadow-3)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 h-14 px-8 rounded-[var(--radius-button)] bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-lg font-bold hover:opacity-90 shadow-[var(--shadow-3)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
           >
             <Send size={20} aria-hidden="true" />
             Fă o sesizare în 90 secunde

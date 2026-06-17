@@ -203,7 +203,7 @@ export default async function SesizareOrasPage({
         </p>
         <Link
           href="/sesizari"
-          className="inline-flex items-center gap-2 h-14 px-8 rounded-[var(--radius-button)] bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-lg font-bold hover:brightness-110 shadow-[var(--shadow-3)] transition-all"
+          className="inline-flex items-center gap-2 h-14 px-8 rounded-[var(--radius-button)] bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-lg font-bold hover:opacity-90 shadow-[var(--shadow-3)] transition-all"
         >
           <Send size={18} aria-hidden="true" />
           Fă o sesizare în {o.nume}

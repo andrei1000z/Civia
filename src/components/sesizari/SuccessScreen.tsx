@@ -225,7 +225,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackShare("whatsapp-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#25D366] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#25D366] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           aria-label="Distribuie pe WhatsApp"
         >
           <span className="text-xl" aria-hidden="true">💬</span>
@@ -236,7 +236,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackShare("telegram-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0088cc] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0088cc] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           aria-label="Distribuie pe Telegram"
         >
           <span className="text-xl" aria-hidden="true">✈️</span>
@@ -247,7 +247,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackShare("bluesky-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0085ff] text-white hover:brightness-110 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0085ff] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           aria-label="Distribuie pe Bluesky"
         >
           <span className="text-xl" aria-hidden="true">🦋</span>
