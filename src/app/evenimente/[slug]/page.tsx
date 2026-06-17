@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle } from "@/lib/seo/share-meta";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -69,16 +70,27 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params;
   const ev = evenimente.find((e) => e.slug === slug);
+  const ogTtl = ev ? ogTitle(ev.titlu) : undefined;
+  const ogDesc = ev?.descriere.slice(0, 160);
+  const evImages = ev?.image ? [`/images/evenimente/${ev.image}.webp`] : ["/opengraph-image"];
   return {
     title: ev?.titlu ?? "Eveniment negăsit",
-    description: ev?.descriere.slice(0, 160) ?? "",
+    description: ogDesc ?? "",
     alternates: { canonical: `/evenimente/${slug}` },
     openGraph: {
-      title: ev?.titlu,
-      description: ev?.descriere.slice(0, 160),
+      title: ogTtl,
+      description: ogDesc,
       type: "article",
       publishedTime: ev?.data,
-      images: ev?.image ? [`/images/evenimente/${ev.image}.webp`] : undefined,
+      siteName: "Civia",
+      locale: "ro_RO",
+      images: evImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTtl,
+      description: ogDesc,
+      images: evImages,
     },
   };
 }

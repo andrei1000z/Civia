@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle } from "@/lib/seo/share-meta";
 import { Badge } from "@/components/ui/Badge";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -28,13 +29,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const p = data as { titlu: string; destinatar_key: string; votes_count: number };
   const authority = AUTHORITIES[p.destinatar_key];
 
+  const ogTtl = ogTitle(p.titlu);
+  const ogDesc = `${p.votes_count} cetățeni susțin · Destinatar: ${authority?.name ?? p.destinatar_key}`;
   return {
     title: `${p.titlu} — Propunere legislativă Civia`,
     description: `${p.votes_count} cetățeni susțin această propunere adresată ${authority?.shortName ?? p.destinatar_key}. Susține și tu pe Civia.ro.`,
     openGraph: {
-      title: p.titlu,
-      description: `${p.votes_count} cetățeni susțin · Destinatar: ${authority?.name ?? p.destinatar_key}`,
+      title: ogTtl,
+      description: ogDesc,
       url: `${SITE_URL}/propuneri-legislative/${id}`,
+      siteName: "Civia",
+      locale: "ro_RO",
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTtl,
+      description: ogDesc,
+      images: ["/opengraph-image"],
     },
   };
 }

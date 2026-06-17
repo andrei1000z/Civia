@@ -48,6 +48,11 @@ export const metadata: Metadata = {
     title: "Ghid pentru parinti — Civia",
     description:
       "Cum aplici drepturile civice pentru siguranta copilului. Treceri de pietoni, scoala, parcuri, parcare.",
+    // Seta un openGraph parțial pierdea siteName + images moștenite din root →
+    // share-urile arătau card fără imagine. Le re-adăugăm explicit.
+    siteName: "Civia",
+    locale: "ro_RO",
+    images: ["/opengraph-image"],
   },
 };
 

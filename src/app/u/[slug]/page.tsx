@@ -50,8 +50,17 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     alternates: { canonical: `/u/${slug}` },
     openGraph: {
       title: `${name} — Profil civic`,
-      description: profile.public_bio ?? undefined,
+      description: profile.public_bio?.slice(0, 160) ?? undefined,
       url: `${SITE_URL}/u/${slug}`,
+      siteName: "Civia",
+      locale: "ro_RO",
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} — Profil civic`,
+      description: profile.public_bio?.slice(0, 160) ?? undefined,
+      images: ["/opengraph-image"],
     },
   };
 }
