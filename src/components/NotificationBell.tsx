@@ -19,11 +19,13 @@ interface Notification {
   read: boolean;
 }
 
-// 2026-05-25 — STORAGE_KEY bump la v2 ca să șteargă notificările vechi
-// (clean slate per cerere user — „ștergere tot legat de notificări"). Versiunea
-// nouă persistă DOAR status changes scurte cu emoji, nu mai are noise.
-const STORAGE_KEY = "civia:notifications:v2";
-const LAST_SEEN_KEY = "civia:notifications:v2:lastSeen";
+// 2026-06-17 — v3: bell server-backed. Sursa de adevăr e tabela durabilă
+// `sesizare_timeline` (citită pe mount → istoric cross-device, persistă chiar
+// dacă userul era offline când s-a schimbat statusul). localStorage devine DOAR
+// un cache pentru load instant. Bump v2→v3 ca să șteargă itemele vechi cu id
+// random (acum id-urile sunt stabile: `t-<timeline_id>` → dedup curat).
+const STORAGE_KEY = "civia:notifications:v3";
+const LAST_SEEN_KEY = "civia:notifications:v3:lastSeen";
 const MAX_STORED = 30;
 
 // Mapare status sesizare → emoji + mesaj scurt (max 35 chars).
@@ -97,6 +99,36 @@ function saveStored(notifs: Notification[]) {
   }
 }
 
+/**
+ * Mapează un rând din `sesizare_timeline` (durabil sau realtime) într-o
+ * Notification de status — sau null dacă nu e un status-change recognizable.
+ * id-ul e STABIL (`t-<timeline_id>`) → același event citit din durabil + venit
+ * prin realtime se dedup pe id, fără duplicate la remount.
+ */
+function buildStatusNotif(
+  row: { id: string; event_type: string; description: string; created_at: string },
+  meta: { code: string; titlu: string } | undefined,
+): Notification | null {
+  if (!meta) return null;
+  const statusKey =
+    row.event_type in STATUS_NOTIFICATION
+      ? row.event_type
+      : parseStatusFromDescription(row.description);
+  if (!statusKey) return null;
+  const tone = STATUS_NOTIFICATION[statusKey];
+  if (!tone) return null;
+  return {
+    id: `t-${row.id}`,
+    type: "status",
+    status: statusKey,
+    sesizareCode: meta.code,
+    sesizareTitle: meta.titlu,
+    message: `${tone.emoji} ${tone.label} · ${titleHint(meta.titlu)}`,
+    createdAt: row.created_at,
+    read: false,
+  };
+}
+
 export function NotificationBell() {
   const { user } = useAuth();
   const [notifs, setNotifs] = useState<Notification[]>([]);
@@ -105,7 +137,11 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const addNotification = useCallback((n: Notification) => {
+    let added = false;
     setNotifs((prev) => {
+      // Dedup stabil pe id (`t-<timeline_id>`) — același event venit prin realtime
+      // ȘI prezent deja din fetch-ul durabil nu se dublează.
+      if (prev.some((p) => p.id === n.id)) return prev;
       // Dedupe (5/21/2026): daca acelasi tip+code+message a venit in
       // ultimele 60s, NU mai adaugam. Cauzeaza spam la rollback-uri
       // de status sau retry-uri server-side (raportat user).
@@ -117,11 +153,12 @@ export function NotificationBell() {
         new Date(n.createdAt).getTime() - new Date(p.createdAt).getTime() < dedupeWindow,
       );
       if (isDuplicate) return prev;
+      added = true;
       const next = [n, ...prev].slice(0, MAX_STORED);
       saveStored(next);
       return next;
     });
-    setUnread((u) => u + 1);
+    if (added) setUnread((u) => u + 1);
   }, []);
 
   // Hydrate from localStorage on mount — setState aici e singura cale,
@@ -144,93 +181,96 @@ export function NotificationBell() {
   useEffect(() => {
     if (!user) return;
     const supabase = createSupabaseBrowser();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    async function init() {
-      // 2026-06-04 — „Urmărește" eliminat. Notificările de status change merg
-      // acum doar pe sesizările proprii (owner) + co-semnate (cosigner).
+    (async () => {
+      // 2026-06-04 — „Urmărește" eliminat. Status changes pe sesizările proprii
+      // (owner) + co-semnate (cosigner).
       const [ownedRes, cosignsRes] = await Promise.all([
         supabase.from("sesizari").select("id").eq("user_id", user!.id).limit(200),
         supabase.from("sesizare_cosigners").select("sesizare_id").eq("user_id", user!.id).limit(200),
       ]);
+      if (cancelled) return;
       const ownedIds = (ownedRes.data ?? []).map((s: { id: string }) => s.id);
       const cosignedIds = (cosignsRes.data ?? []).map((c: { sesizare_id: string }) => c.sesizare_id);
-
-      // Union: status updates pe owner + cosigner.
       const timelineIds = Array.from(new Set([...ownedIds, ...cosignedIds]));
-      if (timelineIds.length === 0) return () => {};
+      if (timelineIds.length === 0) return;
 
-      async function lookupSesizare(id: string) {
-        const { data } = await supabase
-          .from("sesizari")
-          .select("code, titlu")
-          .eq("id", id)
-          .maybeSingle();
-        return data as { code: string; titlu: string } | null;
+      // Metadata sesizări (id → code, titlu) o singură dată, reutilizat de durabil
+      // + realtime (evită un lookup per-event).
+      const metaById = new Map<string, { code: string; titlu: string }>();
+      const metaRes = await supabase.from("sesizari").select("id, code, titlu").in("id", timelineIds);
+      for (const r of (metaRes.data ?? []) as { id: string; code: string; titlu: string }[]) {
+        metaById.set(r.id, { code: r.code, titlu: r.titlu });
       }
 
-      // Channel name unique per mount — altfel Strict Mode + remount
-      // re-folosesc același channel name, second init găsește channel-ul
-      // deja subscribed și .on() aruncă „cannot add postgres_changes after
-      // subscribe()". Crypto.randomUUID() e safe pe browser modern.
+      // DURABIL — ultimele status-change events din `sesizare_timeline`. Cross-device,
+      // persistă chiar dacă userul era offline când s-a schimbat statusul. Sursa de
+      // adevăr; localStorage e doar cache pentru load instant.
+      const { data: tlRows } = await supabase
+        .from("sesizare_timeline")
+        .select("id, sesizare_id, event_type, description, created_at")
+        .in("sesizare_id", timelineIds)
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (cancelled) return;
+      const durable: Notification[] = [];
+      for (const row of (tlRows ?? []) as {
+        id: string; sesizare_id: string; event_type: string; description: string; created_at: string;
+      }[]) {
+        const n = buildStatusNotif(row, metaById.get(row.sesizare_id));
+        if (n) durable.push(n);
+      }
+      if (durable.length > 0) {
+        const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY) ?? "0");
+        const top = durable.slice(0, MAX_STORED);
+        setNotifs(top);
+        saveStored(top);
+        setUnread(top.filter((n) => new Date(n.createdAt).getTime() > lastSeen).length);
+      }
+
+      // LIVE — realtime pe timeline. Channel name unic per mount (StrictMode safe).
       const channelName = `notifications-${user!.id}-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-      const channel = supabase.channel(channelName);
-
-      // 2026-05-25 — RADICAL SIMPLIFICATION (user cerere):
-      //
-      // Notificările afișau prea multă noise (comments, votes, moderation,
-      // verifications) și mesaje greșite („aprobată și publică" la status
-      // change real). Scoase TOATE channels în afară de status change
-      // pe timeline, cu copy scurt + emoji per status real.
-      //
-      // Activează pe AMBELE seturi (followed + owned) — și autorul și
-      // cosignerii (care urmăresc) primesc notificarea.
-      if (timelineIds.length > 0) {
-        channel.on(
-          "postgres_changes" as never,
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "sesizare_timeline",
-            filter: `sesizare_id=in.(${timelineIds.join(",")})`,
-          },
-          async (payload: { new: { sesizare_id: string; event_type: string; description: string } }) => {
-            // Doar status change events (event_type matches keys din map sau
-            // descrierea conține „Status actualizat la"). Restul (depusa,
-            // cosemnat, delivery_problem, raspuns_oficial) SKIP.
-            const statusKey =
-              payload.new.event_type in STATUS_NOTIFICATION
-                ? payload.new.event_type
-                : parseStatusFromDescription(payload.new.description);
-            if (!statusKey) return;
-
-            const sez = await lookupSesizare(payload.new.sesizare_id);
-            if (!sez) return;
-            const tone = STATUS_NOTIFICATION[statusKey];
-            if (!tone) return;
-            addNotification({
-              id: `s-${Date.now()}-${Math.random()}`,
-              type: "status",
-              status: statusKey,
-              sesizareCode: sez.code,
-              sesizareTitle: sez.titlu,
-              message: `${tone.emoji} ${tone.label} · ${titleHint(sez.titlu)}`,
-              createdAt: new Date().toISOString(),
-              read: false,
-            });
+      channel = supabase.channel(channelName);
+      channel.on(
+        "postgres_changes" as never,
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "sesizare_timeline",
+          filter: `sesizare_id=in.(${timelineIds.join(",")})`,
+        },
+        async (payload: {
+          new: { id: string; sesizare_id: string; event_type: string; description: string; created_at?: string };
+        }) => {
+          let meta = metaById.get(payload.new.sesizare_id);
+          if (!meta) {
+            const { data } = await supabase
+              .from("sesizari")
+              .select("code, titlu")
+              .eq("id", payload.new.sesizare_id)
+              .maybeSingle();
+            if (data) meta = data as { code: string; titlu: string };
           }
-        );
-      }
-
+          const n = buildStatusNotif(
+            {
+              id: payload.new.id,
+              event_type: payload.new.event_type,
+              description: payload.new.description,
+              created_at: payload.new.created_at ?? new Date().toISOString(),
+            },
+            meta,
+          );
+          if (n) addNotification(n);
+        },
+      );
       channel.subscribe();
+    })();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-
-    const cleanup = init();
     return () => {
-      cleanup.then((fn) => fn?.());
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [user, addNotification]);
 
@@ -253,20 +293,21 @@ export function NotificationBell() {
     };
   }, [open]);
 
-  function handleOpen() {
-    setOpen((v) => !v);
-    if (!open) {
-      // Mark all as seen when opening
-      localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
-      setUnread(0);
-    }
+  function markSeen() {
+    localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
+    setUnread(0);
+    setNotifs((prev) => {
+      const next = prev.map((n) => (n.read ? n : { ...n, read: true }));
+      saveStored(next);
+      return next;
+    });
   }
 
-  function clearAll() {
-    setNotifs([]);
-    saveStored([]);
-    setUnread(0);
-    setOpen(false);
+  function handleOpen() {
+    setOpen((v) => !v);
+    // La deschidere → marcat ca văzut. Lista NU se mai șterge: e istoric durabil
+    // din `sesizare_timeline`, ar reapărea oricum la următorul load (cross-device).
+    if (!open) markSeen();
   }
 
   if (!user) return null;
@@ -304,7 +345,7 @@ export function NotificationBell() {
             {notifs.length > 0 && (
               <button
                 type="button"
-                onClick={clearAll}
+                onClick={markSeen}
                 className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded px-1"
               >
                 Marchează toate ca citite
@@ -317,7 +358,7 @@ export function NotificationBell() {
               <Bell size={28} className="mx-auto mb-2 opacity-40" />
               <p className="font-medium">Totul e liniștit aici</p>
               <div className="text-xs mt-2">
-                Urmărește sesizările care te interesează și îți dăm semn când primăria răspunde sau când ceva se mișcă.
+                Îți dăm semn aici când o sesizare de-a ta (sau co-semnată) își schimbă statusul ori primește răspuns de la autoritate.
               </div>
             </div>
           ) : (
