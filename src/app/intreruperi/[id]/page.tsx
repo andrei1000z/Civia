@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { safeJsonLd } from "@/components/JsonLd";
@@ -53,21 +54,25 @@ export async function generateMetadata({
 
   const item = await getInterruptionById(id);
   if (!item) return {};
-  const title = `${TYPE_ICONS[item.type]} ${TYPE_LABELS[item.type]} — ${item.addresses[0] ?? item.reason}`;
+  const title = ogTitle(
+    `${TYPE_ICONS[item.type]} ${TYPE_LABELS[item.type]} — ${item.addresses[0] ?? item.reason}`,
+  );
+  const desc = ogDescription(item.excerpt ?? `${item.reason}. Provider: ${item.provider}.`);
   return {
     title,
-    description: item.excerpt ?? `${item.reason}. Provider: ${item.provider}.`,
+    description: desc,
     alternates: { canonical: `/intreruperi/${item.id}` },
     openGraph: {
       title,
-      description: item.excerpt ?? item.reason,
+      description: desc,
       type: "article",
+      siteName: "Civia",
       locale: "ro_RO",
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description: item.excerpt ?? item.reason,
+      description: desc,
     },
     keywords: [
       TYPE_LABELS[item.type],

@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { PetitionJsonLd } from "@/components/JsonLd";
+import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import { SharePetitie } from "./SharePetitie";
 import { AiSummary } from "@/app/stiri/[id]/AiSummary";
 import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
@@ -59,9 +60,10 @@ export async function generateMetadata({
 
   const url = `${SITE_URL}/petitii/${p.slug}`;
   const title = `${p.title} — Petiție Civia`;
-  const description = p.summary.slice(0, 200);
+  const description = ogDescription(p.summary);
+  const ogTtl = ogTitle(p.title);
   const ogImages = p.image_url
-    ? [{ url: p.image_url, width: 1200, height: 630, alt: p.title }]
+    ? [{ url: p.image_url, alt: p.title }] // dims necunoscute → platforma detectează
     : [{ url: `${url}/opengraph-image`, width: 1200, height: 630, alt: p.title }];
 
   return {
@@ -69,7 +71,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/petitii/${p.slug}` },
     openGraph: {
-      title,
+      title: ogTtl,
       description,
       url,
       type: "article",
@@ -79,7 +81,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: p.title,
+      title: ogTtl,
       description,
       images: ogImages.map((i) => i.url),
     },

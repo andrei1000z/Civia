@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -181,10 +182,10 @@ export async function generateMetadata({
     year: "numeric",
     timeZone: "Europe/Bucharest",
   });
-  const desc =
-    p.subtitle ??
-    p.cause ??
-    `Protest la ${p.location_name} pe ${date}.`;
+  const desc = ogDescription(
+    p.subtitle ?? p.cause ?? `Protest la ${p.location_name} pe ${date}.`,
+  );
+  const ogTtl = ogTitle(p.title);
   const url = `${SITE_URL}/proteste/${p.slug}`;
   return {
     title: p.title,
@@ -192,8 +193,9 @@ export async function generateMetadata({
     alternates: { canonical: url },
     openGraph: {
       type: "article",
-      title: p.title,
+      title: ogTtl,
       description: desc,
+      siteName: "Civia",
       url,
       // 2026-06-07 (audit #38) — fallback la OG-ul PER-PROTEST (titlu + dată +
       // locație + status), nu la cel root generic. Activează opengraph-image.tsx.
@@ -202,7 +204,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: p.title,
+      title: ogTtl,
       description: desc,
       images: p.cover_image_url ? [p.cover_image_url] : [`${url}/opengraph-image`],
     },

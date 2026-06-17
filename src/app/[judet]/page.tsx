@@ -81,9 +81,19 @@ export async function generateMetadata({
     // OG image județean (opengraph-image.tsx exista dar nu era referențiat →
     // share-urile arătau logo-ul generic în loc de cardul județului).
     openGraph: {
+      title: `Sesizări civice — ${county.name}`,
+      description: `Sesizări, calitate aer, statistici și ghiduri civice pentru județul ${county.name}.`,
+      siteName: "Civia",
+      locale: "ro_RO",
       images: [
         { url: `${SITE_URL}/${county.slug}/opengraph-image`, width: 1200, height: 630, alt: county.name },
       ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Sesizări civice — ${county.name}`,
+      description: `Sesizări, calitate aer, statistici și ghiduri civice pentru județul ${county.name}.`,
+      images: [`${SITE_URL}/${county.slug}/opengraph-image`],
     },
   };
 }

@@ -12,6 +12,7 @@ import {
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel, bestTextColor } from "@/lib/constants";
+import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
@@ -50,7 +51,8 @@ export async function generateMetadata(
   // OG image: imaginea dinamică din opengraph-image.tsx (cardul sesizării). Era
   // NEreferențiată → share-urile (cea mai distribuită pagină!) arătau preview gol.
   const url = `${SITE_URL}/sesizari/${code}`;
-  const description = s?.descriere.slice(0, 160) ?? "";
+  const description = s ? ogDescription(s.descriere) : "";
+  const ogTtl = s ? ogTitle(s.titlu) : undefined;
   const ogImages = s
     ? [{ url: `${url}/opengraph-image`, width: 1200, height: 630, alt: s.titlu }]
     : undefined;
@@ -59,7 +61,7 @@ export async function generateMetadata(
     description,
     alternates: { canonical: `/sesizari/${code}` },
     openGraph: {
-      title: s?.titlu,
+      title: ogTtl,
       description,
       url,
       type: "article",
@@ -69,7 +71,7 @@ export async function generateMetadata(
     },
     twitter: {
       card: "summary_large_image",
-      title: s?.titlu,
+      title: ogTtl,
       description,
       images: s ? [`${url}/opengraph-image`] : undefined,
     },

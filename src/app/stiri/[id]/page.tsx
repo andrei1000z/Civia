@@ -7,6 +7,7 @@ import { ArticleReadingTracker } from "@/components/stiri/ArticleReadingTracker"
 import { createSupabaseAnon } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/Badge";
 import { SOURCE_COLORS, SITE_URL, readableTextColor, sourceTextColor } from "@/lib/constants";
+import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import { formatDateTime } from "@/lib/utils";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 import { AiSummary } from "./AiSummary";
@@ -122,7 +123,8 @@ export async function generateMetadata(
     return { title: "Știre inexistentă", robots: { index: false, follow: false } };
   }
   const title = stire.title;
-  const description = stire.excerpt?.slice(0, 160) ?? `Știre din ${stire.source}`;
+  const description = ogDescription(stire.excerpt ?? `Știre din ${stire.source}`);
+  const ogTtl = ogTitle(title);
   const sectionLabel = categoryLabels[stire.category] ?? stire.category;
   return {
     title,
@@ -130,7 +132,7 @@ export async function generateMetadata(
     alternates: { canonical: `${SITE_URL}/stiri/${id}` },
     authors: stire.author ? [{ name: stire.author }] : [{ name: "Civia" }],
     openGraph: {
-      title,
+      title: ogTtl,
       description,
       type: "article",
       publishedTime: stire.published_at,
@@ -144,11 +146,11 @@ export async function generateMetadata(
       locale: "ro_RO",
       images: stire.image_url
         ? [{ url: stire.image_url, alt: stire.title }]
-        : [{ url: `${SITE_URL}/stiri/${id}/opengraph-image`, alt: stire.title }],
+        : [{ url: `${SITE_URL}/stiri/${id}/opengraph-image`, width: 1200, height: 630, alt: stire.title }],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: ogTtl,
       description,
       // Fallback la OG image dinamic când articolul n-are imagine proprie →
       // niciodată un card Twitter/X gol.
