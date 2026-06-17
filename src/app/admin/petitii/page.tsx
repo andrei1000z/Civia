@@ -728,7 +728,7 @@ function PetitieForm({
             onClick={onClose}
             disabled={saving}
             aria-label="Închide formularul"
-            className="w-9 h-9 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            className="w-9 h-9 rounded-full bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -815,7 +815,7 @@ function PetitieForm({
                 type="button"
                 onClick={() => runAi("summary")}
                 disabled={aiBusy !== null || form.body.trim().length < 50}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-[10px] font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-xs)] bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-[10px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
                 title="Generează sumar cu AI din titlu + conținut"
               >
                 {aiBusy === "summary" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}

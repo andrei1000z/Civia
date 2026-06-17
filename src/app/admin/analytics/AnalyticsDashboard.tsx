@@ -1552,9 +1552,6 @@ function CivicNorthStarPanel() {
           <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
             sesizari cu AI draft
           </p>
-          <p className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-1 italic">
-            Median TTFA: TODO (necesită Redis funnel timing)
-          </p>
         </div>
       </div>
     </div>

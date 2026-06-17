@@ -573,6 +573,7 @@ export default function AdminSesizariPage() {
                     href={`/sesizari/${s.code}`}
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors"
                     title="Vezi"
+                    aria-label="Vezi sesizarea"
                   >
                     <Eye size={14} />
                   </Link>
@@ -582,6 +583,7 @@ export default function AdminSesizariPage() {
                     disabled={acting === `polish-${s.code}`}
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-all"
                     title="Rescrie cu AI + re-geocode"
+                    aria-label="Rescrie cu AI și re-geocode"
                   >
                     {acting === `polish-${s.code}` ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -609,6 +611,7 @@ export default function AdminSesizariPage() {
                     }
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)]/40 transition-colors"
                     title="Schimbă status + paste răspuns autoritate"
+                    aria-label="Schimbă status"
                   >
                     <Edit3 size={14} />
                   </button>
@@ -618,6 +621,7 @@ export default function AdminSesizariPage() {
                     disabled={acting === `del-${s.code}`}
                     className="w-9 h-9 rounded-[var(--radius-xs)] bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:bg-rose-500/20 hover:border-rose-500/50 disabled:opacity-50 transition-colors"
                     title="Șterge sesizarea (CASCADE pe voturi/comentarii/timeline)"
+                    aria-label="Șterge sesizarea"
                   >
                     {acting === `del-${s.code}` ? (
                       <Loader2 size={14} className="animate-spin" />

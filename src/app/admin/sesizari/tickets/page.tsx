@@ -357,6 +357,7 @@ export default function AdminTicketsPage() {
                     <>
                       <input
                         type="text"
+                        aria-label="Motiv respingere (opțional)"
                         value={decisionNote[t.id] ?? ""}
                         onChange={(e) =>
                           setDecisionNote((p) => ({ ...p, [t.id]: e.target.value }))
