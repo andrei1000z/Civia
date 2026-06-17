@@ -183,8 +183,11 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
     setUrl(withRef(baseUrl));
   }, [baseUrl]);
   // Mesaj „acțiune" — îndeamnă alți cetățeni să trimită și ei (viralitate),
-  // nu doar titlul sec. Reddit folosește titlul separat (vezi redditUrl).
-  const shareText = `Am trimis o sesizare pe Civia: „${title}". Trimite și tu — 90 de secunde și pui presiune pe primărie să rezolve 👇`;
+  // nu doar titlul sec. Reddit folosește un titlu separat, action-framed.
+  const shareText = `Am trimis o sesizare pe Civia: „${title}". Mai multe voci → primăria mișcă mai repede. Trimite și tu în 90 de secunde 👇`;
+  // Reddit: titlu de link-post action-framed (mai multe click-uri decât titlul
+  // sec) — îndeamnă direct cetățeanul care vede postarea în r/Romania, r/{oraș}.
+  const redditTitle = `Trimite și tu o sesizare oficială: ${title}`;
 
   const trackShare = (channel: string) => {
     import("@/components/analytics/CiviaTracker")
@@ -208,7 +211,7 @@ function SuccessShareSection({ code, title }: { code: string; title: string }) {
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
   // Reddit — excelent pentru cauze civice (r/Romania, r/Bucuresti, r/{oras}).
   // Title = titlul sesizării (headline), url = link-ul Civia.
-  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(redditTitle)}`;
 
   return (
     <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
