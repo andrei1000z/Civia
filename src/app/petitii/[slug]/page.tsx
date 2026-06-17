@@ -16,6 +16,7 @@ import { SITE_URL, PETITIE_CATEGORII } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { ALL_COUNTIES } from "@/data/counties";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { PetitionJsonLd } from "@/components/JsonLd";
 import { SharePetitie } from "./SharePetitie";
 import { AiSummary } from "@/app/stiri/[id]/AiSummary";
 import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
@@ -138,6 +139,16 @@ export default async function PetitiePage({
           { name: "Petiții", url: `${SITE_URL}/petitii` },
           { name: petitie.title, url: shareUrl },
         ]}
+      />
+      <PetitionJsonLd
+        title={petitie.title}
+        description={petitie.summary}
+        url={shareUrl}
+        signatureCount={petitie.external_signature_count ?? petitie.signature_count ?? undefined}
+        targetSignatures={petitie.target_signatures ?? undefined}
+        createdAt={petitie.created_at}
+        category={petitie.category ?? undefined}
+        externalUrl={petitie.external_url ?? undefined}
       />
 
       <Link

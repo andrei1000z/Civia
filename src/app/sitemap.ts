@@ -159,13 +159,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.65,
   }));
 
-  // Dynamic sesizari + stiri + proteste (all pulled in parallel)
+  // Dynamic sesizari + stiri + proteste + petitii (all pulled in parallel)
   let sesizariRoutes: MetadataRoute.Sitemap = [];
   let stiriRoutes: MetadataRoute.Sitemap = [];
   let protesteRoutes: MetadataRoute.Sitemap = [];
+  let petitiiRoutes: MetadataRoute.Sitemap = [];
   try {
     const admin = createSupabaseAdmin();
-    const [sesResp, stiriResp, protesteResp] = await Promise.all([
+    const [sesResp, stiriResp, protesteResp, petitiiResp] = await Promise.all([
       admin
         .from("sesizari")
         .select("code, updated_at")
@@ -183,6 +184,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .select("slug, updated_at, start_at")
         .eq("visibility", "publica")
         .order("start_at", { ascending: false })
+        .limit(200),
+      // petitii — lipseau din sitemap → Google nu descoperea conținut distribuibil.
+      admin
+        .from("petitii")
+        .select("slug, created_at")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
         .limit(200),
     ]);
     if (sesResp.data) {
@@ -217,6 +225,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.6,
         }));
     }
+    if (petitiiResp.data) {
+      petitiiRoutes = (petitiiResp.data as { slug: string; created_at: string }[])
+        .filter((p) => p.slug)
+        .map((p) => ({
+          url: `${base}/petitii/${p.slug}`,
+          lastModified: p.created_at ? new Date(p.created_at) : now,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        }));
+    }
   } catch {}
 
   return [
@@ -230,6 +248,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...sesizariRoutes,
     ...stiriRoutes,
     ...protesteRoutes,
+    ...petitiiRoutes,
     ...cumFacRoutes,
     ...oraseRoutes,
     ...strazi,

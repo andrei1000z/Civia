@@ -14,6 +14,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
 import { ALL_COUNTIES } from "@/data/counties";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
+import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/constants";
 
 const FAQ_PROTESTE = [
@@ -164,6 +165,11 @@ export default async function ProtestePage() {
 
   return (
     <div className="container-narrow py-8 md:py-12">
+      <CollectionPageJsonLd
+        name="Proteste programate — Civia"
+        description="Calendar de proteste, mitinguri și marșuri civice anunțate în România, cu loc, dată și context."
+        url={`${SITE_URL}/proteste`}
+      />
       <FaqJsonLd items={FAQ_PROTESTE} />
       <BreadcrumbJsonLd
         items={[
