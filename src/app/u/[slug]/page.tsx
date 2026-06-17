@@ -103,14 +103,14 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
 
   // Badge-uri civice computate
   const badges: Array<{ label: string; color: string }> = [];
-  if ((total ?? 0) >= 50) badges.push({ label: "Power Contributor 50+", color: "bg-violet-500" });
-  else if ((total ?? 0) >= 10) badges.push({ label: "Contributor activ", color: "bg-sky-500" });
-  if ((resolved ?? 0) >= 5) badges.push({ label: "5+ probleme rezolvate", color: "bg-emerald-500" });
+  if ((total ?? 0) >= 50) badges.push({ label: "Power Contributor 50+", color: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30" });
+  else if ((total ?? 0) >= 10) badges.push({ label: "Contributor activ", color: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30" });
+  if ((resolved ?? 0) >= 5) badges.push({ label: "5+ probleme rezolvate", color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" });
   // Faza 1 — ambasador (cetățeni aduși pe Civia).
   const refCount = referrals ?? 0;
-  if (refCount >= 20) badges.push({ label: "🌟 Ambasador civic", color: "bg-amber-500" });
-  else if (refCount >= 5) badges.push({ label: "📣 Ambasador de încredere", color: "bg-amber-500" });
-  else if (refCount >= 1) badges.push({ label: "🤝 Ambasador", color: "bg-amber-500" });
+  if (refCount >= 20) badges.push({ label: "🌟 Ambasador civic", color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" });
+  else if (refCount >= 5) badges.push({ label: "📣 Ambasador de încredere", color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" });
+  else if (refCount >= 1) badges.push({ label: "🤝 Ambasador", color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" });
 
   return (
     <div className="container-narrow py-8 md:py-12">
@@ -158,7 +158,7 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
               {badges.map((b) => (
                 <span
                   key={b.label}
-                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold text-white ${b.color}`}
+                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${b.color}`}
                 >
                   {b.label}
                 </span>

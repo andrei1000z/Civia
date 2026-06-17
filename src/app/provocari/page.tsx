@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Target, Send, Trophy, ArrowRight, Users } from "lucide-react";
+import { Target, Send, Trophy, Users } from "lucide-react";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import {
@@ -186,20 +186,18 @@ function Arhiva({ trecute }: { trecute: Provocare[] }) {
       </h2>
       <div className="grid gap-2">
         {trecute.map((p) => (
-          <Link
+          <div
             key={p.id}
-            href="/provocari"
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-3 hover:shadow-[var(--shadow-2)] transition-all group"
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-3"
           >
             <span className="text-xl" aria-hidden="true">{p.icon}</span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm group-hover:text-[var(--color-primary)] transition-colors truncate">
+              <p className="font-semibold text-sm truncate">
                 {p.titlu}
               </p>
               <p className="text-xs text-[var(--color-text-muted)]">{monthLabel(p.month)}</p>
             </div>
-            <ArrowRight size={15} className="text-[var(--color-text-muted)] shrink-0" aria-hidden="true" />
-          </Link>
+          </div>
         ))}
       </div>
     </section>
