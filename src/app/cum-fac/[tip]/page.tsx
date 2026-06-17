@@ -23,7 +23,7 @@ export async function generateMetadata({
   const t = CUM_FAC_TIPURI.find((x) => x.slug === tip);
   if (!t) return { title: "Pagină negăsită" };
   return {
-    title: `Cum fac sesizare pentru ${t.titlu.toLowerCase()} — ghid 2026 | Civia`,
+    title: `Cum fac sesizare pentru ${t.titlu.toLowerCase()} | Civia`,
     description: t.metaDescription,
     alternates: { canonical: `/cum-fac/${t.slug}` },
     keywords: t.keywords,
