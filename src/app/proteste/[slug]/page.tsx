@@ -572,7 +572,7 @@ export default async function ProtestDetailPage({
                 href={p.external_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[var(--radius-full)] bg-gradient-to-br from-amber-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 active:scale-[0.97] transition-all shadow-[0_8px_24px_-4px_rgba(245,158,11,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[var(--radius-full)] bg-gradient-to-br from-amber-500 to-orange-600 text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-[0_8px_24px_-4px_rgba(245,158,11,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
               >
                 <ExternalLink size={14} aria-hidden="true" />
                 <span>Eveniment oficial</span>

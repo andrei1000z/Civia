@@ -209,7 +209,7 @@ export function ApproveTicketDialog({ open, ticket, submitting, onClose, onSubmi
               type="button"
               onClick={runAiAssist}
               disabled={aiBusy || submitting}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-xs)] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white text-xs font-semibold hover:brightness-110 disabled:opacity-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-500"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-xs)] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-500"
               title="Cere AI să citească nota + dovada și să sugereze status / dată / text"
             >
               {aiBusy ? (

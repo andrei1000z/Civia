@@ -112,7 +112,7 @@ export function EmailChoicePanel({ input, compact }: Props) {
               href={buildOutlookLink(input)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[#0078d4] text-white font-semibold hover:brightness-110 shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0078d4]"
+              className="inline-flex items-center justify-center gap-2 h-12 px-4 rounded-[var(--radius-xs)] bg-[#0078d4] text-white font-semibold hover:opacity-90 shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0078d4]"
             >
               <Mail size={18} aria-hidden="true" />
               Deschide în Outlook

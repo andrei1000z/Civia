@@ -580,7 +580,7 @@ export default function AdminSesizariPage() {
                     type="button"
                     onClick={() => polish(s.code)}
                     disabled={acting === `polish-${s.code}`}
-                    className="w-9 h-9 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center hover:brightness-110 disabled:opacity-50 transition-all"
+                    className="w-9 h-9 rounded-[var(--radius-xs)] bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-all"
                     title="Rescrie cu AI + re-geocode"
                   >
                     {acting === `polish-${s.code}` ? (

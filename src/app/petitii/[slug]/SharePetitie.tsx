@@ -244,7 +244,7 @@ export function SharePetitie({ url, title, summary }: Props) {
                     rel="noopener noreferrer"
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 p-3 rounded-[var(--radius-xs)] text-white transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
+                      "flex flex-col items-center gap-1.5 p-3 rounded-[var(--radius-xs)] text-white transition-all hover:opacity-90 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
                       l.bg,
                     )}
                     title={l.label}
