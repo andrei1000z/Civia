@@ -33,6 +33,7 @@ import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
 import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
+import { EngagementPushToggle } from "@/components/notifications/EngagementPushToggle";
 import { MfaSetup } from "@/components/cont/MfaSetup";
 import { AreaSubscriptionsManager } from "@/components/area/AreaSubscriptionsManager";
 
@@ -750,6 +751,7 @@ export default function ContPage() {
                 când o autoritate răspunde. Funcționează și când Civia nu e deschis.
               </p>
               <PushPermissionButton />
+              <EngagementPushToggle />
             </div>
           )}
 

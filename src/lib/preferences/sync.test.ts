@@ -3,6 +3,9 @@ import {
   mergePreferences,
   readLocalPreferences,
   writeLocalPreferences,
+  dismissPrompt,
+  undismissPrompt,
+  isPromptDismissed,
   type UserPreferences,
 } from "./sync";
 
@@ -140,5 +143,26 @@ describe("preferences/sync — local storage", () => {
     expect(localStorage.getItem("civia_theme")).toBe("dark");
     writeLocalPreferences({ theme: null });
     expect(localStorage.getItem("civia_theme")).toBeNull();
+  });
+
+  it("dismissPrompt apoi undismissPrompt — round-trip opt-out/opt-in pe cheie", () => {
+    dismissPrompt("no_broadcast");
+    expect(isPromptDismissed("no_broadcast")).toBe(true);
+    undismissPrompt("no_broadcast");
+    expect(isPromptDismissed("no_broadcast")).toBe(false);
+  });
+
+  it("undismissPrompt pastreaza celelalte chei dismissed", () => {
+    dismissPrompt("a");
+    dismissPrompt("b");
+    undismissPrompt("a");
+    expect(isPromptDismissed("a")).toBe(false);
+    expect(isPromptDismissed("b")).toBe(true);
+  });
+
+  it("undismissPrompt pe ultima cheie sterge dismissed_prompts din storage", () => {
+    dismissPrompt("only");
+    undismissPrompt("only");
+    expect(localStorage.getItem("civia_dismissed_prompts")).toBeNull();
   });
 });

@@ -104,10 +104,11 @@ export async function GET(req: Request) {
     );
   const optedOut = new Set(
     (optRows ?? [])
-      .filter(
-        (p) =>
+      .filter((p) =>
+        Boolean(
           (p as { dismissed_prompts?: Record<string, unknown> }).dismissed_prompts
-            ?.no_broadcast === true,
+            ?.no_broadcast,
+        ),
       )
       .map((p) => (p as { id: string }).id),
   );
