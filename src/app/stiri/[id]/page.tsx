@@ -271,7 +271,7 @@ export default async function StireDetailPage({
             </div>
 
             {/* Desktop: full-bleed image with floating title overlay. */}
-            <div className="relative h-[420px] rounded-[var(--radius-md)] overflow-hidden mb-6 bg-[var(--color-surface-2)] hidden md:block">
+            <div className="relative aspect-[2/1] max-h-[460px] rounded-[var(--radius-md)] overflow-hidden mb-6 bg-[var(--color-surface-2)] hidden md:block">
               <Image
                 src={stire.image_url}
                 alt={stire.title}
