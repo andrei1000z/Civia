@@ -78,6 +78,13 @@ export async function generateMetadata({
   return {
     description: `Sesizări, calitate aer, statistici și ghiduri civice pentru județul ${county.name}.`,
     alternates: { canonical: `/${county.slug}` },
+    // OG image județean (opengraph-image.tsx exista dar nu era referențiat →
+    // share-urile arătau logo-ul generic în loc de cardul județului).
+    openGraph: {
+      images: [
+        { url: `${SITE_URL}/${county.slug}/opengraph-image`, width: 1200, height: 630, alt: county.name },
+      ],
+    },
   };
 }
 

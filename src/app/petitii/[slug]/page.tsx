@@ -68,7 +68,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/petitii/${p.slug}` },
     openGraph: {
-      title: p.title,
+      title,
       description,
       url,
       type: "article",

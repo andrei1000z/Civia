@@ -144,13 +144,15 @@ export async function generateMetadata(
       locale: "ro_RO",
       images: stire.image_url
         ? [{ url: stire.image_url, alt: stire.title }]
-        : undefined,
+        : [{ url: `${SITE_URL}/stiri/${id}/opengraph-image`, alt: stire.title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: stire.image_url ? [stire.image_url] : undefined,
+      // Fallback la OG image dinamic când articolul n-are imagine proprie →
+      // niciodată un card Twitter/X gol.
+      images: stire.image_url ? [stire.image_url] : [`${SITE_URL}/stiri/${id}/opengraph-image`],
     },
     // News-specific signals for Google + Bingbot. Robots default is
     // index/follow; max-image-preview=large unlocks the big-image
