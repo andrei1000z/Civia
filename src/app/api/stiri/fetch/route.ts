@@ -59,6 +59,14 @@ async function authorize(
   }
 }
 
+// Vercel Cron invokes scheduled endpoints with GET, dar handler-ul era POST-only
+// → cron-ul primea 405 și nu rula NICIODATĂ (știrile depindeau doar de self-heal
+// pe trafic). Delegăm GET→POST ca să avem un „podea" zilnică fiabilă. authorize()
+// acceptă deja `Authorization: Bearer ${CRON_SECRET}` pe care Vercel îl injectează.
+export async function GET(req: Request) {
+  return POST(req);
+}
+
 export async function POST(req: Request) {
   const authResult = await authorize(req);
   if (!authResult.ok) {
