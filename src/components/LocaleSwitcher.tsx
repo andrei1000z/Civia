@@ -55,7 +55,7 @@ export function LocaleSwitcher() {
                 onClick={() => switchTo(l)}
                 role="menuitem"
                 className={`w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--color-surface-2)] transition-colors flex items-center gap-2 ${
-                  l === current ? "font-semibold text-[var(--color-primary)]" : ""
+                  l === current ? "font-semibold text-[var(--color-primary-on-soft)]" : ""
                 }`}
               >
                 <span>{LOCALE_FLAGS[l]}</span>
