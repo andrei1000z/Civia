@@ -11,7 +11,7 @@ import {
   getCosignersCount,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel, bestTextColor } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { CommentsSection } from "@/components/sesizari/CommentsSection";
@@ -585,7 +585,7 @@ export default async function SesizareDetailPage({
                         className={`absolute left-0 top-0 w-[30px] h-[30px] rounded-full grid place-items-center ring-[3px] ring-[var(--color-surface)] shadow-[var(--shadow-1)] ${isCurrent ? "animate-pulse" : ""}`}
                         style={{
                           backgroundColor: isLast ? meta.color : `${meta.color}1a`,
-                          color: isLast ? "#fff" : meta.color,
+                          color: isLast ? bestTextColor(meta.color) : meta.color,
                         }}
                         aria-hidden="true"
                       >

@@ -18,6 +18,7 @@ import {
   SESIZARE_TICKET_PROPOSABLE,
   type SesizareStatus,
 } from "@/lib/sesizari/status";
+import { bestTextColor } from "@/lib/constants";
 import { DocumentUploader } from "./DocumentUploader";
 
 interface Props {
@@ -203,10 +204,10 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
                         onClick={() => setProposed(s)}
                         className={`text-left p-3 rounded-[var(--radius-xs)] border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
                           active
-                            ? "border-transparent text-white"
+                            ? "border-transparent"
                             : "bg-[var(--color-surface-2)] text-[var(--color-text)] border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
                         }`}
-                        style={active ? { backgroundColor: meta.color } : undefined}
+                        style={active ? { backgroundColor: meta.color, color: bestTextColor(meta.color) } : undefined}
                       >
                         <p className="text-sm font-semibold flex items-center gap-1.5">
                           <span aria-hidden="true">{meta.emoji}</span>
@@ -214,7 +215,7 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
                         </p>
                         <p
                           className={`text-[11px] mt-0.5 leading-relaxed ${
-                            active ? "text-white/85" : "text-[var(--color-text-muted)]"
+                            active ? "opacity-80" : "text-[var(--color-text-muted)]"
                           }`}
                         >
                           {meta.hint}
