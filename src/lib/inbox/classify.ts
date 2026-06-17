@@ -205,6 +205,11 @@ function deterministicPreClassify(args: {
     /\btransmis[ăa]?\s+(?:al[ăa]turat\s+)?(?:la|c[ăa]tre|spre)\s+(?:autoritatea|institu[tț]ia|departamentul|prim[ăa]ria|administra[tț]ia|direc[tț]ia|compania|sectorul|competen)/i.test(b) ||
     /\bspre\s+competent[ăa]?\s+solu[tț]ionare/i.test(b) ||
     /\bare\s+competen[tț]a\s+(?:legal[ăa]\s+)?(?:de\s+)?solu[tț]ionare/i.test(b) ||
+    // 6/17 (caz real #00050): PLMB forwardează SESIZAREA către poliția de sector
+    // „vă transmitem alăturat sesizarea ... pentru luarea măsurilor ce se impun".
+    // Cheia e „transmitem (alăturat) SESIZAREA/petiția" (nu „răspunsul" — ăla e
+    // doar cover-ul), urmat de „pentru luarea măsurilor / competență / soluționare".
+    /\bv[ăa]\s+transmit[ee]m\s+(?:al[ăa]turat\s+)?(?:sesizarea|peti[tț]ia|adresa|solicitarea|memoriul)\b[\s\S]{0,200}?\bpentru\s+(?:luarea\s+m[ăa]surilor|competent|solu[tț]ion|analiz|verific)/i.test(b) ||
     /\bnu\s+(este|intr[ăa])\s+(?:în|in)\s+competen[tț]a\s+(noastr[ăa]|institutiei)/i.test(b) ||
     /\bv[ăa]\s+(rug[ăa]m\s+)?(s[ăa]\s+v[ăa]\s+)?adresa[tț]i\s+(c[ăa]tre|la)/i.test(b) ||
     /\bredirec[tț]ion[ăa]m?\s+sesizarea/i.test(b)

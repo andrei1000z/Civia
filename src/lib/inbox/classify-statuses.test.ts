@@ -62,6 +62,27 @@ describe("classifyReply — statusuri precise din răspunsuri reale", () => {
     expect(r.status).toBe("redirectionata");
   });
 
+  it("PLMB forwardează sesizarea către poliția de sector → redirectionata (caz real #00050)", async () => {
+    const r = await classifyReply({
+      subject: "răspuns sesizare",
+      body: "Către, DIRECȚIA GENERALĂ DE POLIȚIE LOCALĂ SECTOR 6. În conformitate cu prevederile O.G. nr. 27/2002, vă transmitem alăturat sesizarea domnului Mușat Eduard Andrei, înregistrată cu nr. 51269/2026, pentru luarea măsurilor ce se impun.",
+      trusted_sender: true,
+    });
+    expect(r.status).toBe("redirectionata");
+    expect(r.source).toBe("deterministic");
+  });
+
+  it(`cover-ul „vă transmitem alăturat răspunsul" NU e redirect (regression)`, async () => {
+    // emailul-cover al PLMB care doar anunță un PDF atașat — fără text substanțial
+    // nu trebuie să devină redirectionata pe baza lui „vă transmitem".
+    const r = await classifyReply({
+      subject: "răspuns sesizare",
+      body: "Bună ziua, Vă transmitem alăturat răspunsul la sesizarea dumneavoastră. Cu stimă, Poliția Locală a Municipiului București.",
+      trusted_sender: true,
+    });
+    expect(r.status).not.toBe("redirectionata");
+  });
+
   it("stâlpișorii au fost montați → interventie", async () => {
     const r = await classifyReply({
       subject: "actualizare",
