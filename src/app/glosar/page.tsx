@@ -64,7 +64,7 @@ function TermCard({ term }: { term: GlosarTerm }) {
           {term.termen}
         </h3>
         <span
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full bg-[var(--color-surface-2)] text-[var(--color-text-muted)]"
+          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)]"
           aria-label={`Categorie: ${categorie.label}`}
         >
           <span aria-hidden="true">{categorie.emoji}</span>
