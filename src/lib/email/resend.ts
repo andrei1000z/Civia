@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import * as Sentry from "@sentry/nextjs";
 import { ENV, isProd } from "@/lib/env";
 import { sanitizeSubject } from "@/lib/sanitize";
+import { htmlToText } from "./html-to-text";
 
 let client: Resend | null = null;
 
@@ -81,7 +82,11 @@ export async function sendEmail(params: {
       ...(params.bcc ? { bcc: params.bcc } : {}),
       subject,
       html: params.html,
-      text: params.text ?? `${subject}\n\n—\nVezi conținutul complet pe civia.ro`,
+      // Parte text reală derivată din HTML (deliverability + a11y) — fallback la
+      // o linie generică doar dacă stripping-ul iese gol (HTML degenerat).
+      text:
+        params.text ??
+        (htmlToText(params.html) || `${subject}\n\n—\nVezi conținutul complet pe civia.ro`),
       ...(params.replyTo ? { replyTo: params.replyTo } : {}),
       ...(params.attachments ? { attachments: params.attachments } : {}),
       headers: {
