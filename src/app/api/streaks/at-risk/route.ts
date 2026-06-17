@@ -90,8 +90,31 @@ export async function GET(req: Request) {
   candidates.sort((a, b) => b.streak - a.streak);
   const toNotify = candidates.slice(0, 200);
 
+  // GDPR/ePrivacy: streak-at-risk e un nudge de ENGAGEMENT (push non-esențial),
+  // nu un mesaj tranzacțional legat de o sesizare proprie → respectă același
+  // opt-out ca broadcastToAllSubscribers (profiles.dismissed_prompts.no_broadcast).
+  // Înainte: blast la toți candidații, ignorând preferința — singura cale de push
+  // care nu respecta opt-out-ul.
+  const { data: optRows } = await admin
+    .from("profiles")
+    .select("id, dismissed_prompts")
+    .in(
+      "id",
+      toNotify.map((c) => c.userId),
+    );
+  const optedOut = new Set(
+    (optRows ?? [])
+      .filter(
+        (p) =>
+          (p as { dismissed_prompts?: Record<string, unknown> }).dismissed_prompts
+            ?.no_broadcast === true,
+      )
+      .map((p) => (p as { id: string }).id),
+  );
+
   let sent = 0;
   for (const { userId, streak } of toNotify) {
+    if (optedOut.has(userId)) continue;
     try {
       await sendPushToUsers([userId], {
         title: `🔥 Streak-ul tău de ${streak} zile e în pericol`,
