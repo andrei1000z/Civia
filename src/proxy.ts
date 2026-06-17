@@ -46,7 +46,8 @@ const COUNTY_SLUGS = new Set([
 // link-uri vechi / Google cache.
 const LEGACY_REDIRECTS: Record<string, string> = {
   // 2026-06-16 — /setari consolidat în /cont (nelogat = „Setări", logat = „Cont").
-  "/setari": "/cont",
+  // #aspect → aterizează direct pe secțiunea Aspect & accesibilitate (slider sticlă).
+  "/setari": "/cont#aspect",
   "/harti": "/",
   "/aer": "/",
   "/buget": "/",
@@ -154,7 +155,11 @@ export default async function proxy(request: NextRequest) {
   const legacyTarget = LEGACY_REDIRECTS[pathname];
   if (legacyTarget) {
     const url = request.nextUrl.clone();
-    url.pathname = legacyTarget;
+    // Suportă un fragment opțional în target (ex. „/cont#aspect") — pathname nu
+    // poate conține „#", deci îl setăm separat ca url.hash (browserul scrollează).
+    const hashIdx = legacyTarget.indexOf("#");
+    url.pathname = hashIdx === -1 ? legacyTarget : legacyTarget.slice(0, hashIdx);
+    url.hash = hashIdx === -1 ? "" : legacyTarget.slice(hashIdx + 1);
     return NextResponse.redirect(url, 308);
   }
 
