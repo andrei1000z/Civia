@@ -30,15 +30,18 @@
  *
  * Required env variables (Settings → Variables and Secrets):
  *   Secret:     INBOX_WEBHOOK_SECRET = <same as Vercel>
- *   Plain text: WEBHOOK_URL          = https://www.civia.ro/api/inbox/reply
- *   Plain text: HEARTBEAT_URL        = https://www.civia.ro/api/inbox/heartbeat
+ *   Plain text: WEBHOOK_URL          = https://civia.ro/api/inbox/reply
+ *   Plain text: HEARTBEAT_URL        = https://civia.ro/api/inbox/heartbeat
+ *   ⚠️ FOLOSEȘTE APEX (civia.ro), NU www. — www face 307→apex și redirectul
+ *      PIERDE header-ul Authorization → /api/inbox/reply 401. Worker-ul
+ *      normalizează oricum www.→apex defensiv, dar setează direct apex în env.
  *
  * ⚠️ IMPORTANT: WEBHOOK_URL and HEARTBEAT_URL MUST use `www.civia.ro`
  * (NOT `civia.ro` without www). civia.ro redirects to www.civia.ro with
  * 307 and the redirect drops the Authorization header.
  */
 
-const WORKER_VERSION = "4.0.0";
+const WORKER_VERSION = "4.1.0";
 
 // Limite atașamente — protejează R2 cost + Vercel function timeout.
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB per file
@@ -234,8 +237,21 @@ export default {
 
       let webhookStatus = 0;
       let webhookBody = "";
+      // 6/17 ROOT CAUSE (răspunsuri blocate din 06-12): dacă WEBHOOK_URL e pe
+      // www.civia.ro, apex-ul (devenit primary pt. packaging-ul Play Store)
+      // răspunde 307 → `redirect: follow` urmează redirectul DAR pierde header-ul
+      // Authorization (schimbare de host) → /api/inbox/reply întoarce 401
+      // „MISSING" și răspunsurile autorităților NU mai sunt procesate (status
+      // blocat pe „trimis"). Forțăm host-ul fără www. (apex), care răspunde direct,
+      // fără redirect → Authorization păstrat. `redirect: error` ca să prindem
+      // zgomotos orice redirect viitor în loc de un 401 tăcut.
+      let webhookUrl = env.WEBHOOK_URL;
       try {
-        const res = await fetch(env.WEBHOOK_URL, {
+        const u = new URL(env.WEBHOOK_URL);
+        if (u.hostname.startsWith("www.")) { u.hostname = u.hostname.slice(4); webhookUrl = u.toString(); }
+      } catch {}
+      try {
+        const res = await fetch(webhookUrl, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${env.INBOX_WEBHOOK_SECRET}`,
@@ -243,7 +259,7 @@ export default {
             "User-Agent": `civia-inbox-worker/${WORKER_VERSION}`,
           },
           body: JSON.stringify(payload),
-          redirect: "follow",
+          redirect: "error",
         });
         webhookStatus = res.status;
         try { webhookBody = (await res.text()).slice(0, 500); } catch {}
@@ -258,7 +274,7 @@ export default {
           body: JSON.stringify({
             phase: "post-webhook",
             worker_version: WORKER_VERSION,
-            webhook_url: env.WEBHOOK_URL,
+            webhook_url: webhookUrl,
             webhook_status: webhookStatus,
             webhook_response_preview: webhookBody.slice(0, 200),
             duration_ms: Date.now() - startMs,
@@ -269,6 +285,20 @@ export default {
             })),
           }),
         });
+      }
+
+      // 6/17 — NU mai pierde TĂCUT răspunsul pe eșec de webhook (cauza outage-ului
+      // 06-12→06-17: 401 din redirect → worker-ul accepta emailul + îl arunca, fără
+      // retry, fără bounce). Acum: pe status RETRIABIL (auth/server/rate-limit/fetch
+      // error) respingem → mailserverul autorității REÎNCEARCĂ (livrare eventuală) +
+      // observăm prin bounce. 2xx + 4xx-permanent (400/409 = payload/duplicat) =
+      // acceptăm, fără retry inutil.
+      const retriable =
+        webhookStatus === 0 || webhookStatus === 401 || webhookStatus === 403 ||
+        webhookStatus === 408 || webhookStatus === 429 || webhookStatus >= 500;
+      if (retriable) {
+        try { message.setReject(`Civia inbox webhook ${webhookStatus || "unreachable"} — retry later`); } catch {}
+        return;
       }
 
       // Forward la Gmail dezactivat default.
