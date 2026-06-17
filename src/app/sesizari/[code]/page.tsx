@@ -47,14 +47,31 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { code } = await params;
   const s = await getSesizareByCode(code);
+  // OG image: imaginea dinamică din opengraph-image.tsx (cardul sesizării). Era
+  // NEreferențiată → share-urile (cea mai distribuită pagină!) arătau preview gol.
+  const url = `${SITE_URL}/sesizari/${code}`;
+  const description = s?.descriere.slice(0, 160) ?? "";
+  const ogImages = s
+    ? [{ url: `${url}/opengraph-image`, width: 1200, height: 630, alt: s.titlu }]
+    : undefined;
   return {
     title: s ? s.titlu : "Sesizare negăsită",
-    description: s?.descriere.slice(0, 160) ?? "",
+    description,
     alternates: { canonical: `/sesizari/${code}` },
     openGraph: {
       title: s?.titlu,
-      description: s?.descriere.slice(0, 160),
+      description,
+      url,
       type: "article",
+      siteName: "Civia",
+      locale: "ro_RO",
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: s?.titlu,
+      description,
+      images: s ? [`${url}/opengraph-image`] : undefined,
     },
   };
 }
