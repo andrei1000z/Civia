@@ -136,7 +136,7 @@ export default function BugetareParticipativaPage() {
           </p>
           <Link
             href="/bugetare-participativa/simulator"
-            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
+            className="btn-press inline-flex items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:opacity-90 transition"
           >
             Joacă simulatorul →
           </Link>

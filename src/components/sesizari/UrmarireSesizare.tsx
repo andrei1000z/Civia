@@ -111,6 +111,7 @@ export function UrmarireSesizare() {
             disabled={cod.trim().length < 3}
             loading={loading}
             aria-busy={loading}
+            aria-label="Caută sesizarea"
             leftIcon={<Search size={16} aria-hidden="true" />}
           >
             <span className="hidden sm:inline">Caută</span>

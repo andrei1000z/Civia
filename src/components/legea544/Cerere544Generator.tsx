@@ -79,7 +79,7 @@ export function Cerere544Generator() {
                 key={c.label}
                 type="button"
                 onClick={() => setInformatie(c.exemplu)}
-                className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition"
+                className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-1.5 min-h-9 text-[11px] font-medium text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition"
               >
                 <span aria-hidden="true">{c.icon}</span> {c.label}
               </button>
@@ -116,7 +116,7 @@ export function Cerere544Generator() {
                   type="button"
                   onClick={() => setFormat(val)}
                   aria-pressed={format === val}
-                  className={`rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-semibold transition ${
+                  className={`inline-flex items-center justify-center min-h-9 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-semibold transition ${
                     format === val
                       ? "bg-[var(--color-primary)] text-white"
                       : "border border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text)]"

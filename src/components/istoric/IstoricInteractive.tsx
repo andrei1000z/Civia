@@ -212,6 +212,7 @@ export function IstoricInteractive({ primari }: Props) {
                   ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
                   : "border-[var(--color-border)] opacity-0 group-hover:opacity-100"
               )}
+              aria-label="Adaugă la comparare"
               title="Adaugă la comparare"
             >
               {compareIds.includes(primar.id) && (

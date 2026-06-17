@@ -118,7 +118,7 @@ export function CompareCountyPicker({ counties }: { counties: CountyOption[] }) 
               key={`${p.a}-${p.b}`}
               href={`/compara/${p.a}/${p.b}`}
               prefetch={false}
-              className="group flex items-center gap-2 px-3 py-2.5 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5 transition-colors text-xs"
+              className="group flex items-center gap-2 px-3 py-2.5 rounded-[var(--radius-xs)] bg-[var(--color-bg)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5 transition-colors text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <span aria-hidden="true">{p.emoji}</span>
               <span className="font-medium group-hover:text-[var(--color-primary)] transition-colors">
@@ -143,7 +143,7 @@ export function CompareCountyPicker({ counties }: { counties: CountyOption[] }) 
               window.location.href = `/compara/${aSlug}/${bSlug}`;
             }
           }}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 min-h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors"
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 min-h-11 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         >
           <Shuffle size={12} aria-hidden="true" />
           Surprinde-mă cu o pereche aleatorie

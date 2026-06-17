@@ -72,7 +72,7 @@ export default async function InitiazaPetitiePage() {
 
       {/* Reguli — sub form, ca să nu bloceze citirea câmpurilor */}
       <details className="mt-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
-        <summary className="cursor-pointer font-semibold text-sm select-none">
+        <summary className="cursor-pointer font-semibold text-sm select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]">
           Reguli de moderare — ce respingem
         </summary>
         <ul className="mt-3 space-y-2 text-xs text-[var(--color-text-muted)] list-disc pl-5 leading-relaxed">
