@@ -286,13 +286,13 @@ export function PrioritatiOras() {
               >
                 Publică propunerea
               </Button>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowForm(false)}
-                className="rounded-[var(--radius-button)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)]"
               >
                 Renunță
-              </button>
+              </Button>
             </div>
           </div>
         )}
