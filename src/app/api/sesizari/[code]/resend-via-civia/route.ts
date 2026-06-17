@@ -22,7 +22,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { buildFromHeader } from "@/lib/email/format";
-import { replyToAddress, authorityOutboundMessageId } from "@/lib/inbox/reply-token";
+import { replyToAddress, authorityOutboundMessageId, makeReplyToken } from "@/lib/inbox/reply-token";
 import { rateLimitAsync } from "@/lib/ratelimit";
 import { getAuthoritiesFor } from "@/lib/sesizari/authorities";
 import { detectCountyFromLocatie } from "@/lib/sesizari/county-from-locatie";
@@ -247,6 +247,10 @@ export async function POST(
       delivered_at: null,
       bounced_at: null,
       bounce_reason: null,
+      // 6/17 FIX: persistăm tokenul + Message-ID-ul cu care a plecat emailul, ca
+      // matching-ul N1/N2 să lege răspunsul (la fel ca send-via-civia/cosign-send).
+      reply_token: makeReplyToken(sesizare.code),
+      outbound_message_id: outboundMessageId,
     })
     .eq("id", sesizare.id);
 
