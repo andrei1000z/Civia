@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { CookiePreferencesButton } from "./FooterClientLinks";
 import { FooterFeedback } from "./FooterFeedback";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const linkCls =
   "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors";
@@ -98,9 +97,9 @@ export function Footer() {
             their next regeneration cycle.
             5/22/2026 — sters „Făcut cu ❤️ în România" badge la cererea
             user-ului: redundant pe un site dedicat exclusiv Romaniei.
-            2026-05-26 — adăugat ThemeToggle (compact pill) sub copyright. */}
-        <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex flex-col items-center gap-4">
-          <ThemeToggle variant="compact" />
+            2026-06-18 — ThemeToggle MUTAT în /cont → „Aspect & accesibilitate"
+            (la cererea user-ului). Footer-ul rămâne doar cu copyright. */}
+        <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex flex-col items-center">
           <p className="text-xs text-[var(--color-text-muted)] text-center" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Civia.ro · Toate drepturile rezervate
           </p>
