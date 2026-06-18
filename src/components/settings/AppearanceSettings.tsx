@@ -103,10 +103,10 @@ export function AppearanceSettings() {
   const transparencyOff = toggles["reduce-transparency"];
 
   return (
-    <section className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-1)] p-4 sm:p-5 space-y-5 min-w-0">
-      <div className="flex items-center gap-2">
-        <span className="flex size-8 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-primary)]/12 text-[var(--color-primary)]">
-          <Sparkles size={16} aria-hidden="true" />
+    <section className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-1)] p-4 sm:p-5 space-y-5 min-w-0">
+      <div className="flex items-center gap-3.5">
+        <span className="flex size-10 items-center justify-center rounded-full bg-pink-500 text-white">
+          <Sparkles size={20} aria-hidden="true" />
         </span>
         <h2 className="font-[family-name:var(--font-sora)] text-base font-bold text-[var(--color-text)] m-0">
           Aspect & accesibilitate

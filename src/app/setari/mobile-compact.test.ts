@@ -5,10 +5,10 @@ import { join } from "path";
 /**
  * Regression test pentru compactitatea /setari pe mobil (fost /cont).
  *
- * 2026-06-18 — pagina rescrisă în stil „Setări de telefon" (iOS Settings):
- * o singură coloană centrată (max-w-2xl), grupuri stivuite, profilul ca rând
- * compact (NU hero cu avatar 80px + h1 24px care părea „tăiat" pe ecran mic
- * cu text-zoom). Testul păzește invarianții care țin pagina ne-overflow.
+ * 2026-06-18 — pagina rescrisă în stil „Settings de telefon" (Samsung One UI):
+ * o singură coloană centrată (max-w-2xl), carduri grupate cu iconițe CIRCULARE
+ * colorate, card de profil sus (NU hero cu avatar 80px + „Salut"). Testul
+ * păzește invarianții care țin pagina ne-overflow pe ecran mic cu text-zoom.
  */
 describe("/setari mobile compact layout", () => {
   const source = readFileSync(
@@ -31,9 +31,7 @@ describe("/setari mobile compact layout", () => {
   });
 
   it("conținutul e o singură coloană centrată (max-w-2xl mx-auto)", () => {
-    // iOS Settings = single column, NU dashboard 2-col care se înghesuie pe mobil.
     expect(source).toMatch(/max-w-2xl mx-auto/);
-    // Grila 2-coloane veche a dispărut definitiv.
     expect(source).not.toMatch(/lg:grid-cols-\[400px/);
   });
 
@@ -43,15 +41,15 @@ describe("/setari mobile compact layout", () => {
     expect(h1Match?.[1] ?? "").toContain("font-[family-name:var(--font-sora)]");
   });
 
-  it("profilul e un rând iOS compact, nu hero cu avatar mare", () => {
-    // Vechiul hero „Salut, {nume}!" + avatarul de 80px au fost eliminate.
+  it("profilul e un card Samsung (nume + email), nu hero vechi cu Salut", () => {
     expect(source).not.toContain("Salut, ");
-    // Emailul apare ca sublabel pe rândul de profil (SettingsRow).
-    expect(source).toMatch(/sublabel=\{profile\?\.email\}/);
+    expect(source).toContain("SettingsProfileCard");
+    expect(source).toMatch(/sub=\{profile\?\.email\}/);
   });
 
-  it("folosește primitivele iOS (SettingsGroup + SettingsRow)", () => {
+  it("folosește primitivele + iconițe circulare colorate (fill solid)", () => {
     expect(source).toContain("SettingsGroup");
     expect(source).toContain("SettingsRow");
+    expect(source).toMatch(/iconClass="bg-\w+-500 text-white"/);
   });
 });
