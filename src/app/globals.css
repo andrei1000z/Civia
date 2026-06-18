@@ -1524,6 +1524,9 @@ html.a11y-reduce-motion *::after {
    staggered + micro-interacții. TOTUL respectă prefers-reduced-motion +
    html.a11y-reduce-motion (panoul de accesibilitate).
    ───────────────────────────────────────────────────────────────────── */
+/* Canvas „recessed" reutilizabil pe tot site-ul. .setari-canvas = alias istoric.
+   .lc-canvas--flat = fără aurora (pagini dense: admin, tabele). */
+.lc-canvas,
 .setari-canvas {
   position: relative;
   background: var(--color-surface-soft);
@@ -1531,6 +1534,7 @@ html.a11y-reduce-motion *::after {
 }
 /* Aurora subtilă, calmă — glow-uri brand low-opacity care plutesc lent.
    Înlocuiește blob-urile globale aglomerate cu un canvas viu, dar liniștit. */
+.lc-canvas::before,
 .setari-canvas::before {
   content: "";
   position: absolute;
@@ -1548,6 +1552,8 @@ html.a11y-reduce-motion *::after {
   from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.7; }
   to   { transform: translate3d(0, -1.5%, 0) scale(1.06); opacity: 1; }
 }
+/* Variantă plată — recessed fără aurora (pagini dense: admin/tabele). */
+.lc-canvas--flat::before { display: none; }
 
 /* Intrare staggered — cardurile „urcă" lin, în secvență, la mount. */
 .lc-stagger > * {
@@ -1568,9 +1574,11 @@ html.a11y-reduce-motion *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .lc-canvas::before,
   .setari-canvas::before { animation: none; }
   .lc-stagger > * { animation: none; }
 }
+html.a11y-reduce-motion .lc-canvas::before,
 html.a11y-reduce-motion .setari-canvas::before { animation: none; }
 html.a11y-reduce-motion .lc-stagger > * { animation: none; opacity: 1; transform: none; }
 

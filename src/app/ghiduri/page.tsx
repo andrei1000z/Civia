@@ -51,12 +51,12 @@ export default function GhiduriPage() {
       />
 
       <section aria-label="Listă ghiduri civice">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        <div className="lc-stagger grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             {ghiduri.map((ghid, idx) => (
               <Link
                 key={ghid.id}
                 href={`/ghiduri/${ghid.slug}`}
-                className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] overflow-hidden card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                className="group lc-glass-2 rounded-3xl overflow-hidden card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                 aria-label={`${ghid.titlu} — ${dificultateMap[ghid.dificultate].label}, ${ghid.timpCitire} minute citire, ${ghid.capitole} capitole`}
               >
                 <div className={`relative h-48 bg-gradient-to-br ${ghid.gradient} overflow-hidden`}>
