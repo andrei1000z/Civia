@@ -118,8 +118,7 @@ export function MfaSetup() {
     setStatus("disabled");
   }
 
-  const cardCls =
-    "rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5";
+  const cardCls = "rounded-3xl lc-glass-2 p-5";
 
   if (status === "loading") {
     return (

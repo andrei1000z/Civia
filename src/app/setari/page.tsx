@@ -390,7 +390,7 @@ export default function ContPage() {
   if (!user) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
-        <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4">
+        <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4 lc-stagger">
           <div className="space-y-1 px-1 mb-1">
             <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold">Setări</h1>
             <p className="text-sm text-[var(--color-text-muted)]">
@@ -451,7 +451,7 @@ export default function ContPage() {
   return (
     <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
       {/* ─── Titlu „Setări" + grup profil (stil iOS Settings) ───────── */}
-      <div className="max-w-2xl mx-auto mb-3 sm:mb-4 space-y-3 sm:space-y-4">
+      <div className="max-w-2xl mx-auto mb-3 sm:mb-4 space-y-3 sm:space-y-4 lc-stagger">
         <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold px-1">Setări</h1>
         {/* Card profil — nume + email + avatar (stil Samsung One UI) */}
         <SettingsProfileCard
@@ -464,7 +464,7 @@ export default function ContPage() {
       {/* Grupuri de setări — o singură coloană centrată (max-w-2xl),
           carduri care plutesc pe fundal cu gap-uri uniforme (stil Samsung). */}
       <div className="space-y-3 sm:space-y-4 max-w-2xl mx-auto">
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4 lc-stagger">
           {/* Date personale + abonări — un singur form cu buton Save.
               2026-06-18 — restructurat în grupuri stil „Setări de telefon". */}
           <form onSubmit={handleSave} className="space-y-3 sm:space-y-4">
@@ -729,7 +729,7 @@ export default function ContPage() {
       </div>
 
       {/* ─── Confidențialitate (GDPR) + Deconectare — grupuri stil Samsung ─── */}
-      <div className="max-w-2xl mx-auto mt-3 sm:mt-4 space-y-3 sm:space-y-4">
+      <div className="max-w-2xl mx-auto mt-3 sm:mt-4 space-y-3 sm:space-y-4 lc-stagger">
         <SettingsGroup>
           {/* Export = <a download> (NU Link — descarcă JSON), stilizat ca rând */}
           <a
@@ -739,7 +739,7 @@ export default function ContPage() {
               const today = new Date().toISOString().slice(0, 10);
               e.currentTarget.setAttribute("download", `civia-export-${today}.json`);
             }}
-            className="relative flex items-center gap-3.5 px-4 min-h-[60px] hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:bg-[var(--color-surface-2)] transition-colors after:content-[''] after:absolute after:left-[70px] after:right-0 after:bottom-0 after:h-px after:bg-[var(--color-border)]"
+            className="relative flex items-center gap-3.5 px-4 min-h-[60px] hover:bg-black/[0.035] dark:hover:bg-white/[0.05] focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)] focus-visible:bg-black/[0.035] dark:focus-visible:bg-white/[0.05] transition-[transform,background-color] duration-200 ease-out active:scale-[0.99] after:content-[''] after:absolute after:left-[70px] after:right-0 after:bottom-0 after:h-px after:bg-[var(--color-border)]"
           >
             <span className="shrink-0 w-10 h-10 rounded-full grid place-items-center bg-cyan-500 text-white [&>svg]:w-5 [&>svg]:h-5" aria-hidden="true">
               <Download />

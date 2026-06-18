@@ -59,7 +59,7 @@ export function AreaSubscriptionsManager() {
   if (!subs || subs.length === 0) return null;
 
   return (
-    <section className="min-w-0 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5">
+    <section className="min-w-0 rounded-3xl lc-glass-2 p-4 sm:p-5">
       <h2 className="text-sm font-bold mb-1 inline-flex items-center gap-1.5">
         <MapPin size={15} className="text-[var(--color-primary)]" aria-hidden="true" />
         Zone urmărite

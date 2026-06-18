@@ -1469,6 +1469,14 @@ html.a11y-reduce-transparency {
   --glass-2-a: 1;
   --glass-3-a: 1;
 }
+/* Mirror the OS-level path: opac NU înseamnă doar alfa 1, ci și fără blur
+   (altfel backdrop-filter rulează degeaba pe GPU sub un fundal deja opac). */
+html.a11y-reduce-transparency .lc-glass-1,
+html.a11y-reduce-transparency .lc-glass-2,
+html.a11y-reduce-transparency .lc-glass-3 {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 /* „Culoarea nu e niciodată singurul semnal" — semnele +/−/▲▼ sunt ascunse
    default (culoarea + glyph-ul ajung pt. majoritate), dar pot fi forțate
    mereu-vizibile pentru daltonism. */
@@ -1509,6 +1517,62 @@ html.a11y-reduce-motion *::after {
     inset 0 -1px 0 rgba(0, 0, 0, 0.04),
     0 16px 64px -16px rgba(34, 211, 238, 0.18);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   /setari — polish „liquid glass" fluid (2026-06-18)
+   Canvas recessed cu aurora calmă (sticla cardurilor o refractă) + intrare
+   staggered + micro-interacții. TOTUL respectă prefers-reduced-motion +
+   html.a11y-reduce-motion (panoul de accesibilitate).
+   ───────────────────────────────────────────────────────────────────── */
+.setari-canvas {
+  position: relative;
+  background: var(--color-surface-soft);
+  isolation: isolate;
+}
+/* Aurora subtilă, calmă — glow-uri brand low-opacity care plutesc lent.
+   Înlocuiește blob-urile globale aglomerate cu un canvas viu, dar liniștit. */
+.setari-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 42% at 12% -4%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 70%),
+    radial-gradient(48% 40% at 102% 18%, color-mix(in srgb, var(--color-news) 12%, transparent), transparent 72%),
+    radial-gradient(60% 50% at 50% 108%, color-mix(in srgb, var(--color-secondary) 9%, transparent), transparent 75%);
+  animation: setari-aurora 26s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+@keyframes setari-aurora {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.7; }
+  to   { transform: translate3d(0, -1.5%, 0) scale(1.06); opacity: 1; }
+}
+
+/* Intrare staggered — cardurile „urcă" lin, în secvență, la mount. */
+.lc-stagger > * {
+  animation: lc-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.lc-stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.lc-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.lc-stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.lc-stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.lc-stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.lc-stagger > *:nth-child(6) { animation-delay: 0.22s; }
+.lc-stagger > *:nth-child(7) { animation-delay: 0.26s; }
+.lc-stagger > *:nth-child(8) { animation-delay: 0.30s; }
+.lc-stagger > *:nth-child(n+9) { animation-delay: 0.34s; }
+@keyframes lc-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setari-canvas::before { animation: none; }
+  .lc-stagger > * { animation: none; }
+}
+html.a11y-reduce-motion .setari-canvas::before { animation: none; }
+html.a11y-reduce-motion .lc-stagger > * { animation: none; opacity: 1; transform: none; }
 
 /* Specular highlight — pseudo-element top reflection */
 .lc-specular {
