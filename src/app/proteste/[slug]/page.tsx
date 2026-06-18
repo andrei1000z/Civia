@@ -305,7 +305,7 @@ export default async function ProtestDetailPage({
   };
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
@@ -530,7 +530,7 @@ export default async function ProtestDetailPage({
               href={p.external_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full text-center bg-[var(--color-primary)] text-white font-semibold py-3 px-4 rounded-[var(--radius-button)] hover:bg-[var(--color-primary-hover)] transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+              className="lc-liquid lc-magnetic block w-full text-center bg-[var(--color-primary)] text-white font-semibold py-3 px-4 rounded-[var(--radius-full)] hover:bg-[var(--color-primary-hover)] transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
               Eveniment oficial →
             </a>

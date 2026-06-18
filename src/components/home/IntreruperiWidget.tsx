@@ -42,7 +42,7 @@ export async function IntreruperiWidget() {
               key={i.id}
               href={`/intreruperi/${i.id}`}
               prefetch
-              className="group lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)]/30 card-lift min-w-0"
+              className="group lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)]/30 card-lift min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
               style={{
                 borderLeftWidth: "4px",
                 borderLeftColor: TYPE_COLORS[i.type],

@@ -38,7 +38,7 @@ export default async function ProvocariPage() {
 
   if (!provocare) {
     return (
-      <div className="lc-canvas lc-canvas--flat">
+      <div className="lc-canvas lc-canvas--flat flex-1">
         <div className="container-narrow py-8 md:py-12">
           <PageHero
             title="Provocarea civică a lunii"
@@ -84,7 +84,7 @@ export default async function ProvocariPage() {
   const gradient = HERO_GRADIENT[provocare.gradient as keyof typeof HERO_GRADIENT] ?? HERO_GRADIENT.warning;
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
       <div className="container-narrow py-8 md:py-12">
         <BreadcrumbJsonLd
         items={[

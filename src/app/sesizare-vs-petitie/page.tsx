@@ -72,7 +72,7 @@ const ROWS: RowProps[] = [
 
 export default function SesizareVsPetitiePage() {
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={FAQ} />
       <BreadcrumbJsonLd
@@ -145,9 +145,9 @@ export default function SesizareVsPetitiePage() {
       <section aria-labelledby="comparatie" className="mb-12">
         <h2
           id="comparatie"
-          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4 flex items-center gap-2"
+          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4 flex items-center gap-2.5"
         >
-          <Scale size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
+          <SectionIcon icon={<Scale size={16} aria-hidden="true" />} className="bg-slate-500 text-white" />
           Comparație detaliată
         </h2>
         <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border)]">
@@ -240,7 +240,7 @@ export default function SesizareVsPetitiePage() {
       {/* FAQ */}
       <section aria-labelledby="faq-svp" className="mb-12">
         <h2 id="faq-svp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
-          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-sky-500 text-white" />
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
           Întrebări frecvente
         </h2>
         <div className="lc-stagger space-y-3">

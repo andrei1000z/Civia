@@ -107,7 +107,7 @@ export default async function SesizariPage() {
     ? [...STATIC_QUICK_LINKS, DOVEZI_LINK]
     : STATIC_QUICK_LINKS;
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
         name="Sesizări civice — Civia"

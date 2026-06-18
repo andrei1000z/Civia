@@ -73,7 +73,7 @@ export default async function SesizareOrasPage({
   ];
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <GovernmentServiceJsonLd
         code={`oras-${o.slug}`}

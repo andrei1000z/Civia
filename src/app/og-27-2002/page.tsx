@@ -68,7 +68,7 @@ const FAQ = [
 
 export default function OG272002Page() {
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={FAQ} />
       <BreadcrumbJsonLd
@@ -261,7 +261,7 @@ export default function OG272002Page() {
           </p>
           <Link
             href="/sesizari"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+            className="lc-liquid lc-magnetic inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
           >
             <Send size={16} aria-hidden="true" />
             Fă o sesizare
