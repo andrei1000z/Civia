@@ -20,14 +20,7 @@ export function SettingsGroup({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)]",
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <div className={cn("overflow-hidden rounded-3xl lc-glass-2", className)}>{children}</div>
   );
 }
 
@@ -61,6 +54,8 @@ function Glyph({
     <span
       className={cn(
         "shrink-0 w-10 h-10 rounded-full grid place-items-center [&>svg]:w-5 [&>svg]:h-5",
+        // gloss subtil: highlight intern sus + lift jos → pile lucioase pe sticlă
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_2px_6px_-1px_rgba(0,0,0,0.22)]",
         iconClass ?? "bg-[var(--color-primary)] text-white",
         className,
       )}
@@ -124,7 +119,10 @@ export function SettingsLinkRow({
 }: RowBase & { href?: string; onClick?: () => void }) {
   const cls = cn(
     ROW_BASE,
-    "items-center w-full text-left hover:bg-[var(--color-surface-2)] active:scale-[0.995] focus:outline-none focus-visible:bg-[var(--color-surface-2)] transition-[transform,background-color]",
+    // tentă translucidă subtilă (nu opacă) ca să nu „spargă" sticla pe hover/press
+    "items-center w-full text-left hover:bg-black/[0.035] dark:hover:bg-white/[0.05] active:scale-[0.99] active:bg-black/[0.05] dark:active:bg-white/[0.07] transition-[transform,background-color] duration-200 ease-out",
+    // focus vizibil REAL (WCAG 2.4.7) — outline inset (cardul e overflow-hidden)
+    "focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)] focus-visible:bg-black/[0.035] dark:focus-visible:bg-white/[0.05]",
   );
   const inner = (
     <>
@@ -158,7 +156,7 @@ export function SettingsProfileCard({
   initial: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)] p-4 sm:p-5">
+    <div className="flex items-center gap-4 rounded-3xl lc-glass-2 p-4 sm:p-5">
       <div className="flex-1 min-w-0">
         <div className="text-xl sm:text-2xl font-bold text-[var(--color-text)] truncate">{name}</div>
         {sub && <div className="text-sm text-[var(--color-text-muted)] truncate mt-0.5">{sub}</div>}

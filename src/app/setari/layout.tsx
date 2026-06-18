@@ -17,5 +17,9 @@ export const metadata: Metadata = {
  * rămâne neatins (Civia își păstrează fundalul navy + gradient).
  */
 export default function SetariLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-[var(--color-surface-soft)]">{children}</div>;
+  return (
+    <div className="setari-canvas flex-1">
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
 }

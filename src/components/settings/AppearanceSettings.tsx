@@ -103,7 +103,7 @@ export function AppearanceSettings() {
   const transparencyOff = toggles["reduce-transparency"];
 
   return (
-    <section className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-1)] p-4 sm:p-5 space-y-5 min-w-0">
+    <section className="rounded-3xl lc-glass-2 p-4 sm:p-5 space-y-5 min-w-0">
       <div className="flex items-center gap-3.5">
         <span className="flex size-10 items-center justify-center rounded-full bg-pink-500 text-white">
           <Sparkles size={20} aria-hidden="true" />
