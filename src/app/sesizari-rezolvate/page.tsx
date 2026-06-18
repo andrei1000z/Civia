@@ -123,14 +123,14 @@ export default async function SesizariResolvatePage() {
                 </span>
                 Înainte și după — galerie foto
               </h2>
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="grid md:grid-cols-2 gap-5 lc-stagger">
                 {withPhotos.map((s) => {
                   const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";
                   return (
                     <Link
                       key={s.id}
                       href={`/sesizari/${s.code}`}
-                      className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden card-lift hover:border-[var(--color-primary)]/30 transition-all"
+                      className="group lc-glass-2 rounded-3xl overflow-hidden card-lift hover:border-[var(--color-primary)]/30 transition-all focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                     >
                       <div className="grid grid-cols-2">
                         <div className="relative h-44 sm:h-48">
@@ -190,14 +190,14 @@ export default async function SesizariResolvatePage() {
               <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-bold mb-4 text-[var(--color-text-muted)]">
                 Alte rezolvări (fără poză „după")
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-2 lc-stagger">
                 {withoutPhotos.map((s) => {
                   const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";
                   return (
                     <Link
                       key={s.id}
                       href={`/sesizari/${s.code}`}
-                      className="flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] px-4 py-3 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-1)] transition-all"
+                      className="flex items-center gap-3 lc-glass-2 rounded-3xl px-4 py-3 hover:border-[var(--color-primary)]/30 hover:shadow-[var(--shadow-1)] transition-all focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                     >
                       <span
                         className="w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0"

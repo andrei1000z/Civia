@@ -45,7 +45,7 @@ export default async function ProvocariPage() {
           gradient={HERO_GRADIENT.primary}
           tagline="Revino curând — pregătim provocarea următoarei luni."
         />
-        <Card className="text-center py-10">
+        <Card variant="glass" className="text-center py-10">
           <div className="text-3xl mb-2" aria-hidden="true">🎯</div>
           <p className="text-sm text-[var(--color-text-muted)]">
             Nicio provocare activă luna aceasta. Între timp, poți depune oricând o
@@ -97,7 +97,7 @@ export default async function ProvocariPage() {
       />
 
       {/* Card progres colectiv — centerpiece */}
-      <Card className="mb-8 p-6 sm:p-8">
+      <Card variant="glass" className="mb-8 p-6 sm:p-8">
         <p className="text-sm text-[var(--color-text)] leading-relaxed mb-5">
           {provocare.descriere}
         </p>
@@ -184,11 +184,11 @@ function Arhiva({ trecute }: { trecute: Provocare[] }) {
         <Trophy size={18} aria-hidden="true" className="text-amber-500" />
         Provocări trecute
       </h2>
-      <div className="grid gap-2">
+      <div className="grid gap-2 lc-stagger">
         {trecute.map((p) => (
           <div
             key={p.id}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-4 py-3 flex items-center gap-3"
+            className="lc-glass-2 rounded-3xl px-4 py-3 flex items-center gap-3"
           >
             <span className="text-xl" aria-hidden="true">{p.icon}</span>
             <div className="flex-1 min-w-0">

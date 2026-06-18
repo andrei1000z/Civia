@@ -172,12 +172,12 @@ export default async function SesizareStradaPage({
           <h2 id="lista" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4">
             📍 Probleme raportate pe {strada.nume}
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-3 lc-stagger">
             {sesizari.slice(0, 20).map((s) => (
               <Link
                 key={s.id}
                 href={`/sesizari/${s.code}`}
-                className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-2)] transition-all"
+                className="block lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-2)] transition-all"
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
                   <h3 className="font-semibold text-base flex-1 min-w-0">{s.titlu}</h3>
@@ -219,13 +219,13 @@ export default async function SesizareStradaPage({
         <h2 id="faq" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Întrebări despre sesizările pe {strada.nume}
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-3 lc-stagger">
           {faq.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"

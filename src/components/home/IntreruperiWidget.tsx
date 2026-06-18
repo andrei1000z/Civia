@@ -36,13 +36,13 @@ export async function IntreruperiWidget() {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 stagger-children lc-stagger">
           {items.map((i) => (
             <Link
               key={i.id}
               href={`/intreruperi/${i.id}`}
               prefetch
-              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 shadow-[var(--shadow-1)] hover:border-[var(--color-primary)]/30 card-lift min-w-0"
+              className="group lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)]/30 card-lift min-w-0"
               style={{
                 borderLeftWidth: "4px",
                 borderLeftColor: TYPE_COLORS[i.type],

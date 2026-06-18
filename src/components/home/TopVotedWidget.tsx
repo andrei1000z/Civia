@@ -93,14 +93,14 @@ export function TopVotedWidget() {
   }
 
   return (
-    <div className="space-y-3 stagger-children">
+    <div className="space-y-3 stagger-children lc-stagger">
       {rows.map((s) => {
         const tipIcon = SESIZARE_TIPURI.find((t) => t.value === s.tip)?.icon ?? "📝";
         return (
           <Link
             key={s.id}
             href={`/sesizari/${s.code}`}
-            className="flex items-center gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] hover:border-[var(--color-primary)]/40 card-lift group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+            className="flex items-center gap-4 p-4 lc-glass-2 rounded-3xl shadow-[var(--shadow-1)] hover:border-[var(--color-primary)]/40 card-lift group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             aria-label={`${s.titlu} — ${STATUS_LABELS[s.status] ?? s.status}`}
           >
             <div
