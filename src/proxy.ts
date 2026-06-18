@@ -162,41 +162,31 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // Match /{county}/{harti|aer} → /{county} (paginile au fost sterse;
-  // județul are propria homepage care arata aceleaśi informații).
-  const legacyCountyMatch = pathname.match(/^\/([a-z]{1,3})\/(harti|aer)(\/.*)?$/);
-  if (legacyCountyMatch) {
-    const slug = legacyCountyMatch[1] ?? "";
-    if (COUNTY_SLUGS.has(slug)) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/${slug}`;
-      return NextResponse.redirect(url, 308);
+  // ─── County-prefixed paths → national-only ─────────────────────────
+  // 2026-06-18: TOATE paginile /[judet]/* au fost ELIMINATE — Civia e
+  // național-only. Redirectăm legacy URL-urile county (Google cache / share-uri
+  // vechi) ca să nu dea 404:
+  //  • /{slug}/intreruperi → /intreruperi/{slug} (versiunea county a
+  //    întreruperilor trăiește ca rută NAȚIONALĂ — pagina /[judet] care făcea
+  //    acest redirect a fost ștearsă, deci îl preluăm aici)
+  //  • /{slug}/{petitii|ghiduri|sesizari-publice} → /{segment} (oricum
+  //    național-only, doar prefixate greșit)
+  //  • /{slug} + orice altă pagină county (sesizari/autoritati/evenimente/
+  //    istoric/harti/aer) → / (home)
+  const countyMatch = pathname.match(/^\/([a-z]{1,3})(?:\/([^/]+)(\/.*)?)?$/);
+  if (countyMatch && COUNTY_SLUGS.has(countyMatch[1]!)) {
+    const slug = countyMatch[1]!;
+    const segment = countyMatch[2] ?? "";
+    const rest = countyMatch[3] ?? "";
+    const url = request.nextUrl.clone();
+    if (segment === "intreruperi") {
+      url.pathname = `/intreruperi/${slug}`;
+    } else if ((NATIONAL_ONLY_PATHS as readonly string[]).includes(segment)) {
+      url.pathname = `/${segment}${rest}`;
+    } else {
+      url.pathname = "/";
     }
-  }
-
-  // 2026-05-24: „come home to your county" REMOVED.
-  // Homepage e DOAR național. Userii ajung mereu la /, fără cookie redirect.
-  // Cookie-ul `county` rămâne pentru afișări UI contextuale (badge „Bucuresti")
-  // dar nu mai influențează routing-ul.
-
-  // ─── National-only paths accidentally county-prefixed ──────────────
-  // /b/petitii, /cj/ghiduri etc → 308 redirect la /petitii / /ghiduri.
-  // Match: /{2-letter-slug}/{petitii|ghiduri|sesizari-publice}[/...]
-  const m = pathname.match(/^\/([a-z]{1,3})\/([^/]+)(\/.*)?$/);
-  if (m) {
-    const slug = m[1] ?? "";
-    const segment = m[2] ?? "";
-    const rest = m[3];
-    if (
-      COUNTY_SLUGS.has(slug) &&
-      (NATIONAL_ONLY_PATHS as readonly string[]).includes(segment)
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/${segment}${rest ?? ""}`;
-      // 308 (permanent) — relația /b/petitii → /petitii e fixă, nu depinde
-      // de cookie sau user. Browserele și Google pot cache-ui agresiv.
-      return NextResponse.redirect(url, 308);
-    }
+    return NextResponse.redirect(url, 308);
   }
 
   // 2026-05-24: REDIRECT_EXACT (bilete/istoric) — eliminate, sunt

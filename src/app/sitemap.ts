@@ -18,22 +18,9 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 // decât 1h initial dar face sitemap-ul actualizat de 4× pe zi în loc de 2×.
 export const revalidate = 21600;
 
-// Toate sub-page-urile per județ. Trebuie să rămână sincronizat cu
-// `src/app/[judet]/<slug>/page.tsx`. La adăugarea unui nou sub-page,
-// adaugă slug-ul aici (altfel Google nu-l indexează automat).
-const COUNTY_PAGES = [
-  // 2026-06-06 (audit P1 #14) — scos „/ghiduri": e național-only (proxy.ts
-  // 308-redirectează /{judet}/ghiduri → /ghiduri), deci genera 42 URL-uri
-  // duplicate cu canonical conflictual → penalizare SEO. /ghiduri național rămâne mai jos.
-  "", "/sesizari",
-  "/autoritati", "/evenimente", "/istoric",
-  // 2026-05-19: /intreruperi mutat la /intreruperi/[county-slug]
-  // (vezi countyIntreruperiRoutes mai jos). Vechiul /{slug}/intreruperi
-  // 308-redirecteaza, deci scos din sitemap ca sa nu indexam redirect-uri.
-  // Sub-pages pentru date publice — au fost adăugate ca pagini per-județ
-  // în refactor-ul național dar lipseau din sitemap.
-  // 2026-05-19: scoase /educatie /sanatate /siguranta — pagini ghost, sterse.
-];
+// 2026-06-18: paginile per-județ /[judet]/* au fost ELIMINATE (Civia e
+// național-only). Doar /intreruperi/{slug} rămâne ca rută națională (vezi
+// countyIntreruperiRoutes mai jos).
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -65,16 +52,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // șterse. /dezvoltatori scoasă mai devreme. Doar /clasament rămâne.
     { url: `${base}/clasament`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
   ];
-
-  // Per-county pages: 42 counties × 8 pages = 336 URLs
-  const countyRoutes: MetadataRoute.Sitemap = ALL_COUNTIES.flatMap((c) =>
-    COUNTY_PAGES.map((page) => ({
-      url: `${base}/${c.slug}${page}`,
-      lastModified: now,
-      changeFrequency: (page === "" ? "daily" : "weekly") as "daily" | "weekly",
-      priority: page === "" ? 0.9 : 0.7,
-    }))
-  );
 
   // Legacy pages that still exist
   const legacyRoutes: MetadataRoute.Sitemap = [
@@ -219,7 +196,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...globalRoutes,
-    ...countyRoutes,
     ...legacyRoutes,
     ...ghiduriRoutes,
     ...evenimenteRoutes,

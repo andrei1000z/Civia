@@ -103,7 +103,7 @@ const FAQ = [
   {
     question: "Pot vedea date pe județul meu?",
     answer:
-      `Da, în secțiunea „Top județe” + pagini per județ: /[judet]/sesizari.`,
+      `Da, în secțiunea „Top județe” din statisticile naționale.`,
   },
 ];
 
