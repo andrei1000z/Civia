@@ -26,6 +26,7 @@ const dificultateMap = {
 
 export default function GhiduriPage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       <BreadcrumbJsonLd
         items={[
@@ -119,6 +120,7 @@ export default function GhiduriPage() {
             ))}
         </div>
       </section>
+    </div>
     </div>
   );
 }

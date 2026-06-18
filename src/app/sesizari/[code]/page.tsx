@@ -158,6 +158,7 @@ export default async function SesizareDetailPage({
   );
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       {/* Update LIVE al statusului când autoritatea răspunde (realtime). */}
       <LiveSesizareRefresh sesizareId={sesizare.id} />
@@ -676,6 +677,7 @@ export default async function SesizareDetailPage({
           <SimilarSesizari sesizari={similar} />
         </aside>
       </div>
+    </div>
     </div>
   );
 }

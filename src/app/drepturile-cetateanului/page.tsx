@@ -171,6 +171,7 @@ const FAQ = [
 
 export default function DrepturilePage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={FAQ} />
       <BreadcrumbJsonLd
@@ -324,6 +325,7 @@ export default function DrepturilePage() {
           Vezi glosarul civic complet
         </Link>
       </section>
+    </div>
     </div>
   );
 }

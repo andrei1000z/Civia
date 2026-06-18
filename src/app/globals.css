@@ -1555,6 +1555,19 @@ html.a11y-reduce-motion *::after {
 /* Variantă plată — recessed fără aurora (pagini dense: admin/tabele). */
 .lc-canvas--flat::before { display: none; }
 
+/* Mobile: cap blur-ul de sticlă. backdrop-filter blur e fill-rate-bound pe
+   GPU-uri de telefon; 32-40px × multe carduri = jank la scroll. ~13px arată
+   aproape identic, mult mai ieftin. Defense-in-depth peste lc-canvas (care
+   oricum face fundalul static pe paginile dense). */
+@media (max-width: 640px) {
+  :root,
+  .dark {
+    --glass-1-blur: 10px;
+    --glass-2-blur: 13px;
+    --glass-3-blur: 16px;
+  }
+}
+
 /* Intrare staggered — cardurile „urcă" lin, în secvență, la mount. */
 .lc-stagger > * {
   animation: lc-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;

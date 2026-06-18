@@ -87,6 +87,7 @@ const FAQ = [
 
 export default function AvocatulPoporuluiPage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <HowToJsonLd
         name="Cum depui plângere la Avocatul Poporului online"
@@ -320,6 +321,7 @@ Semnătura: [SEMNĂTURĂ]
           </a>
         </div>
       </section>
+    </div>
     </div>
   );
 }

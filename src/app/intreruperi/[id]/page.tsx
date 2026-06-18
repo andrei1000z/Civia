@@ -250,6 +250,7 @@ export default async function InterruptionDetail({
   };
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       <script
         type="application/ld+json"
@@ -525,6 +526,7 @@ export default async function InterruptionDetail({
           </div>
         </section>
       )}
+    </div>
     </div>
   );
 }

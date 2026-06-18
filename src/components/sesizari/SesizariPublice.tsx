@@ -483,7 +483,7 @@ export function SesizariPublice() {
             Bottom (cod + voturi + share): mt-auto pinned jos.
             Ordine top→bottom: status+tip+timp → titlu → adresă+sector
             → descriere → poze → bottom action row. */}
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0 auto-rows-fr stagger-children lc-stagger">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0 auto-rows-fr lc-stagger">
           {filtered.map((s) => {
             const { label: tipLabel, icon: tipIcon } = resolveTipLabel(s.tip, s.custom_category);
             const hasPhotos = s.imagini.length > 0 || !!s.resolved_photo_url;

@@ -102,6 +102,7 @@ export default async function SesizareStradaPage({
   ];
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-5xl">
       <ItemListJsonLd
         name={`Sesizări pe ${strada.nume}`}
@@ -259,6 +260,7 @@ export default async function SesizareStradaPage({
             ))}
         </div>
       </section>
+    </div>
     </div>
   );
 }

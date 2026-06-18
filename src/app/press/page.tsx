@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 
 export default function PressPage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <BreadcrumbJsonLd
         items={[
@@ -134,7 +135,7 @@ export default function PressPage() {
           <BarChart3 size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
           Fapte verificabile despre Civia
         </h2>
-        <div className="space-y-3">
+        <div className="lc-stagger space-y-3">
           {[
             { fapt: "Civia funcționează de la", val: "ianuarie 2026" },
             { fapt: "Acoperire județe", val: "42 + București (6 sectoare)" },
@@ -149,7 +150,7 @@ export default function PressPage() {
           ].map((f) => (
             <div
               key={f.fapt}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 flex items-start gap-3 flex-wrap"
+              className="lc-glass-2 rounded-3xl p-4 flex items-start gap-3 flex-wrap"
             >
               <p className="text-sm font-medium flex-1 min-w-0">{f.fapt}</p>
               <p className="text-sm font-bold text-[var(--color-primary)]">{f.val}</p>
@@ -218,6 +219,7 @@ export default function PressPage() {
         Civia este platformă independentă · Misiunea: democratizarea informației
         civice · Open-source pe GitHub · Conform OG 27/2002
       </p>
+    </div>
     </div>
   );
 }

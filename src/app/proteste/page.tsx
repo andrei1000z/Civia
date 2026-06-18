@@ -164,6 +164,7 @@ export default async function ProtestePage() {
   });
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
         name="Proteste programate — Civia"
@@ -272,6 +273,7 @@ export default async function ProtestePage() {
           pentru ce se întâmplă la ele.
         </p>
       </div>
+    </div>
     </div>
   );
 }
