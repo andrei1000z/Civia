@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles, Eye, Type, Activity, PlusSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * Aspect & accesibilitate — panou de preferințe device-level (NU cont).
@@ -110,6 +111,12 @@ export function AppearanceSettings() {
         <h2 className="font-[family-name:var(--font-sora)] text-base font-bold text-[var(--color-text)] m-0">
           Aspect & accesibilitate
         </h2>
+      </div>
+
+      {/* Temă — light / system / dark (mutat din footer 2026-06-18) */}
+      <div>
+        <label className="text-sm font-semibold text-[var(--color-text)]">Temă</label>
+        <ThemeToggle variant="segmented" className="mt-2" />
       </div>
 
       {/* Glass intensity slider */}
