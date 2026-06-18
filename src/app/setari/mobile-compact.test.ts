@@ -3,29 +3,23 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 /**
- * Regression test pentru compactitatea /cont pe mobile.
+ * Regression test pentru compactitatea /setari pe mobil (fost /cont).
  *
- * Bug raportat: pe Android cu accessibility text-zoom, hero-ul (avatar
- * 80px + h1 24px) si padding-urile generoase (py-10, p-6) faceau pagina
- * sa para „taiata" pe ecran mic. User-ul a trimis screenshot-uri cu
- * impresia de overflow.
- *
- * Fix: scalare progresiva — pe mobil totul mai mic (avatar 56px, h1 18px,
- * padding 12px); pe sm/md totul revine la dimensiunile originale.
+ * 2026-06-18 — pagina rescrisă în stil „Setări de telefon" (iOS Settings):
+ * o singură coloană centrată (max-w-2xl), grupuri stivuite, profilul ca rând
+ * compact (NU hero cu avatar 80px + h1 24px care părea „tăiat" pe ecran mic
+ * cu text-zoom). Testul păzește invarianții care țin pagina ne-overflow.
  */
-describe("/cont mobile compact layout", () => {
+describe("/setari mobile compact layout", () => {
   const source = readFileSync(
     join(process.cwd(), "src/app/setari/page.tsx"),
     "utf-8",
   );
 
   it("container exterior are padding redus pe mobil", () => {
-    // container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6 — al primului
-    // container din return statement, NU empty state divs din lista.
-    // Caut linia exacta cu „return (" + următoarea <div>.
     const returnIdx = source.indexOf("\n  return (");
     expect(returnIdx).toBeGreaterThan(0);
-    const afterReturn = source.slice(returnIdx, returnIdx + 500);
+    const afterReturn = source.slice(returnIdx, returnIdx + 600);
     const containerMatch = afterReturn.match(
       /<div className="container-narrow ([^"]+)">/,
     );
@@ -36,48 +30,28 @@ describe("/cont mobile compact layout", () => {
     expect(cls).toMatch(/\bsm:py-[6-9]/);
   });
 
-  it("hero header are padding redus pe mobil (p-4 mobile, p-6 sm+)", () => {
-    const headerMatch = source.match(
-      /<header className="([^"]*overflow-hidden[^"]+)"/,
-    );
-    expect(headerMatch).not.toBeNull();
-    const cls = headerMatch?.[1] ?? "";
-    expect(cls).toContain("p-4");
-    expect(cls).toMatch(/sm:p-[5-6]/);
+  it("conținutul e o singură coloană centrată (max-w-2xl mx-auto)", () => {
+    // iOS Settings = single column, NU dashboard 2-col care se înghesuie pe mobil.
+    expect(source).toMatch(/max-w-2xl mx-auto/);
+    // Grila 2-coloane veche a dispărut definitiv.
+    expect(source).not.toMatch(/lg:grid-cols-\[400px/);
   });
 
-  it("avatar are dimensiune redusa pe mobil (w-14 mobile, w-20 sm+)", () => {
-    // Verificam ca dim avatar pe mobil e <= w-16 (64px), nu w-20 (80px).
-    // Cautam pattern de avatar (fallback initial-box).
-    const avatarPattern = /w-1[2-6] h-1[2-6] sm:w-20 sm:h-20/;
-    expect(avatarPattern.test(source)).toBe(true);
-  });
-
-  it("h1 hero are text-lg pe mobil (NU text-2xl)", () => {
-    const h1Match = source.match(/<h1[^>]+className="([^"]+)">\s*Salut/);
+  it("titlul paginii folosește fontul Sora", () => {
+    const h1Match = source.match(/<h1 className="([^"]+)">Setări<\/h1>/);
     expect(h1Match).not.toBeNull();
-    const cls = h1Match?.[1] ?? "";
-    // Pe mobil: text-lg sau text-xl (NU text-2xl direct fara breakpoint)
-    expect(cls).toMatch(/\btext-(lg|xl|base)\b/);
-    expect(cls).toMatch(/\bsm:text-2xl\b/);
-    expect(cls).toContain("break-words");
+    expect(h1Match?.[1] ?? "").toContain("font-[family-name:var(--font-sora)]");
   });
 
-  it("email user-ului in hero are truncate", () => {
-    // Verifica ca elementul <p> ce afiseaza profile?.email in hero
-    // ARE truncate ca sa nu sparga layout-ul.
-    // Pattern: <p className="...truncate...">{profile?.email}</p>
-    const heroEmailPattern = /<p className="[^"]*truncate[^"]*">\s*\{profile\?\.email\}/;
-    expect(heroEmailPattern.test(source)).toBe(true);
+  it("profilul e un rând iOS compact, nu hero cu avatar mare", () => {
+    // Vechiul hero „Salut, {nume}!" + avatarul de 80px au fost eliminate.
+    expect(source).not.toContain("Salut, ");
+    // Emailul apare ca sublabel pe rândul de profil (SettingsRow).
+    expect(source).toMatch(/sublabel=\{profile\?\.email\}/);
   });
 
-  it("Deconectare button: doar icon pe mobil (text hidden sm:inline)", () => {
-    // Pe mobile, butonul nu trebuie sa contina textul „Deconectare" vizibil
-    // (lazy/icon-only ca sa nu impinga layout-ul lateral).
-    const decoIdx = source.indexOf("Deconectare");
-    // Cele 2 apariții: aria-label si toast — verificăm ca <span hidden> e prezent.
-    expect(source).toContain('hidden sm:inline">Deconectare');
+  it("folosește primitivele iOS (SettingsGroup + SettingsRow)", () => {
+    expect(source).toContain("SettingsGroup");
+    expect(source).toContain("SettingsRow");
   });
-
-  // 5/23/2026 — Profile completion box ștears la cererea user-ului.
 });

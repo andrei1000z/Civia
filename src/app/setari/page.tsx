@@ -18,15 +18,12 @@ import {
   Trash2,
   ShieldCheck,
   Download,
-  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
-// 2026-05-26 — ThemeToggle revine: light + dark + system.
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
@@ -34,6 +31,8 @@ import { PushPermissionButton } from "@/components/notifications/PushPermissionB
 import { EngagementPushToggle } from "@/components/notifications/EngagementPushToggle";
 import { MfaSetup } from "@/components/cont/MfaSetup";
 import { AreaSubscriptionsManager } from "@/components/area/AreaSubscriptionsManager";
+import { SettingsGroup, SettingsRow, SettingsLinkRow } from "@/components/settings/SettingsList";
+import { ChevronRight, LogIn } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -373,10 +372,10 @@ export default function ContPage() {
   if (authLoading) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
-        <header className="mb-6 h-32 sm:h-40 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-        <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6">
-          <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-          <div className="h-96 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+        <div className="max-w-2xl mx-auto space-y-5">
+          <div className="h-9 w-32 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-20 rounded-2xl bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-64 rounded-2xl bg-[var(--color-surface-2)] skeleton-shimmer" />
         </div>
       </div>
     );
@@ -385,27 +384,29 @@ export default function ContPage() {
   // + invitație la conectare. Înlocuiește /setari (consolidat aici).
   if (!user) {
     return (
-      <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6 space-y-6">
-        <header className="relative overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
-          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" aria-hidden="true" />
-          <h1 className="relative font-[family-name:var(--font-sora)] text-xl sm:text-2xl md:text-3xl font-extrabold">Setări</h1>
-          <p className="relative text-white/85 mt-1 text-sm max-w-md">
-            Aspect și accesibilitate — se salvează pe acest dispozitiv, fără cont. Conectează-te pentru sesizările tale, co-semnături și notificări.
-          </p>
-        </header>
-        <AppearanceSettings />
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="font-semibold text-[var(--color-text)]">Ai un cont Civia?</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Conectează-te ca să-ți vezi sesizările, co-semnăturile și notificările.</p>
+      <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
+        <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6">
+          <div className="space-y-1 px-1">
+            <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold">Setări</h1>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Aspectul și accesibilitatea se salvează pe acest dispozitiv, fără cont.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={openAuthModal}
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 shrink-0"
+          {/* Cont — invitație la conectare (rând stil iOS) */}
+          <SettingsGroup
+            title="Cont"
+            footer="Conectează-te ca să-ți vezi sesizările, co-semnăturile și notificările."
           >
-            Conectează-te
-          </button>
+            <SettingsLinkRow
+              icon={<LogIn size={15} aria-hidden="true" />}
+              iconClass="bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]"
+              label="Conectează-te"
+              sublabel="Magic link pe email — fără parolă"
+              onClick={openAuthModal}
+            />
+          </SettingsGroup>
+          {/* Aspect & accesibilitate — device-level (temă + sticlă + a11y) */}
+          <AppearanceSettings />
         </div>
       </div>
     );
@@ -414,17 +415,11 @@ export default function ContPage() {
   if (loading || !profile) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
-        <header className="mb-6 h-32 sm:h-40 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-        <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6">
-          <div className="space-y-4">
-            <div className="h-48 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-            <div className="h-32 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-          </div>
-          <div className="space-y-3">
-            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-            <div className="h-24 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
-          </div>
+        <div className="max-w-2xl mx-auto space-y-5">
+          <div className="h-9 w-32 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-20 rounded-2xl bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-56 rounded-2xl bg-[var(--color-surface-2)] skeleton-shimmer" />
+          <div className="h-40 rounded-2xl bg-[var(--color-surface-2)] skeleton-shimmer" />
         </div>
       </div>
     );
@@ -453,30 +448,22 @@ export default function ContPage() {
 
   return (
     <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
-      {/* ─── Header strip ─────────────────────────────────────────── */}
-      <header className="relative mb-4 sm:mb-6 md:mb-8 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] via-emerald-700 to-indigo-800 p-4 sm:p-6 md:p-8 text-white shadow-[var(--shadow-3)]">
-        <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" aria-hidden="true" />
-        <div className="absolute -bottom-16 -left-8 w-72 h-72 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" aria-hidden="true" />
-        <div className="relative flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            {/* 2026-06-18 — poza de profil ELIMINATĂ la cererea userului.
-                Avatar static cu inițiala numelui, fără upload/crop/ștergere. */}
-            <div className="relative">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-[var(--shadow-3)]">
-                {initial}
-              </div>
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="font-[family-name:var(--font-sora)] text-lg sm:text-2xl md:text-3xl font-extrabold leading-tight break-words">
-                Salut, {profile?.display_name?.split(" ")[0] ?? "Cetățean"}!
-              </h1>
-              <p className="text-xs sm:text-sm text-white/80 truncate">
-                {profile?.email}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
+      {/* ─── Titlu „Setări" + grup profil (stil iOS Settings) ───────── */}
+      <div className="max-w-2xl mx-auto mb-5 sm:mb-6 space-y-3">
+        <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold px-1">Setări</h1>
+        <SettingsGroup>
+          <SettingsRow
+            icon={<span className="text-sm font-bold">{initial}</span>}
+            iconClass="bg-[var(--color-primary)] text-white"
+            label={<span className="text-[15px] font-semibold">{profile?.display_name || "Cetățean"}</span>}
+            sublabel={profile?.email}
+          />
+          <SettingsLinkRow
+            icon={<LogOut size={15} aria-hidden="true" />}
+            iconClass="bg-[var(--color-error-soft)] text-[var(--color-error-on-soft)]"
+            label="Deconectare"
+            danger
+            showChevron={false}
             onClick={async () => {
               // Invalidăm cache-ul înainte de signOut ca să nu păstrăm datele
               // user-ului anterior dacă altcineva intră în cont pe același device.
@@ -485,14 +472,9 @@ export default function ContPage() {
               toast("Te-ai deconectat. La revedere!", "info");
               router.push("/");
             }}
-            aria-label="Deconectare"
-            className="shrink-0 inline-flex items-center justify-center gap-1.5 h-11 sm:h-10 px-2.5 sm:px-4 rounded-[var(--radius-full)] bg-white/15 backdrop-blur-sm border border-white/30 text-xs sm:text-sm font-medium hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            <LogOut size={14} aria-hidden="true" />
-            <span className="hidden sm:inline">Deconectare</span>
-          </button>
-        </div>
-      </header>
+          />
+        </SettingsGroup>
+      </div>
 
       {/* ─── Main grid: Profile (left) + Sesizari (right) ───────────
           IMPORTANT: minmax(0, 1fr) NU 1fr — by default „1fr" implicit
@@ -504,59 +486,71 @@ export default function ContPage() {
           centrată (max-w-2xl), grupuri stivuite. Înainte era dashboard 2-col. */}
       <div className="space-y-5 sm:space-y-6 max-w-2xl mx-auto">
         <div className="space-y-5">
-          <form
-            onSubmit={handleSave}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] min-w-0 overflow-hidden"
-          >
-            {/* Date personale */}
-            <section className="p-4 sm:p-5 space-y-4 min-w-0">
-              <SectionTitle icon={User}>Date personale</SectionTitle>
-              <Field label="Nume afișat">
-                <input
-                  type="text"
-                  autoComplete="nickname"
-                  value={form.display_name}
-                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                  placeholder="Maria P."
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Nume complet (pentru sesizări)">
-                <input
-                  type="text"
-                  autoComplete="name"
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  placeholder="Maria Popescu"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Adresă domiciliu (pentru sesizări)">
-                <input
-                  type="text"
-                  autoComplete="street-address"
-                  autoCapitalize="words"
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  placeholder="Str. Exemplu 12, Sector 3"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Telefon (opțional, pentru newsletter + notificări SMS la petiții/proteste)">
-                <input
-                  type="tel"
-                  autoComplete="tel"
-                  inputMode="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="07XX..."
-                  className={inputClass}
-                />
-              </Field>
+          {/* Date personale + abonări — un singur form cu buton Save.
+              2026-06-18 — restructurat în grupuri stil „Setări de telefon". */}
+          <form onSubmit={handleSave} className="space-y-5">
+            <SettingsGroup
+              title="Date pentru sesizări"
+              footer="Numele complet și adresa apar pe sesizarea trimisă autorității (OG 27/2002). Telefonul e opțional — doar pentru notificări SMS."
+            >
+              <div className="px-4 py-3">
+                <Field label="Nume afișat">
+                  <input
+                    type="text"
+                    autoComplete="nickname"
+                    value={form.display_name}
+                    onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                    placeholder="Maria P."
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <div className="px-4 py-3">
+                <Field label="Nume complet (pentru sesizări)">
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                    placeholder="Maria Popescu"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <div className="px-4 py-3">
+                <Field label="Adresă domiciliu (pentru sesizări)">
+                  <input
+                    type="text"
+                    autoComplete="street-address"
+                    autoCapitalize="words"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Str. Exemplu 12, Sector 3"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <div className="px-4 py-3">
+                <Field label="Telefon (opțional — newsletter + SMS petiții/proteste)">
+                  <input
+                    type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="07XX..."
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </SettingsGroup>
 
-              {/* 5/23/2026 — Abonări granular: 3 surse × 2 canale.
-                  GDPR explicit opt-in per fiecare. SMS gated pe phone non-empty
-                  (UI dezactivat dacă lipsește, cu hint). Auto-save pe toggle. */}
+            {/* 5/23/2026 — Abonări granular: 3 surse × 2 canale, opt-in GDPR
+                per fiecare. SMS gated pe phone. Auto-save pe toggle. */}
+            <div className="space-y-1.5">
+              <h2 className="px-1 sm:px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">
+                Notificări pe email & SMS
+              </h2>
               <SubscriptionsGrid
                 form={form}
                 onChange={(patch) => {
@@ -566,32 +560,10 @@ export default function ContPage() {
                 phoneAvailable={!!form.phone.trim()}
                 savedAt={newsletterSavedAt}
               />
-            </section>
-
-            {/* Aspect — ThemeToggle reactivat 2026-05-26.
-                Segmented 3-way: light / system / dark, cu localStorage
-                persistat + sync cu OS la „system". SoundsToggle separat. */}
-            <section className="scroll-mt-20 border-t border-[var(--color-border)] p-4 sm:p-5 space-y-4 min-w-0" id="aspect">
-              <SectionTitle icon={Sparkles}>Aspect & accesibilitate</SectionTitle>
-              <div>
-                <p className="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed">
-                  Alege cum arată Civia pentru tine. „Sistem" urmărește setarea OS-ului tău.
-                </p>
-                <ThemeToggle />
-              </div>
-              <div className="pt-3 border-t border-[var(--color-border)]/60">
-                <SoundsToggle />
-              </div>
-              {/* Slider intensitate sticlă + toggles a11y — aici e locul unde
-                  userii caută setările de aspect (înainte erau doar la /setari). */}
-              <div className="pt-3 border-t border-[var(--color-border)]/60">
-                <AppearanceSettings />
-              </div>
-            </section>
-
+            </div>
 
             {/* Save button */}
-            <div className="border-t border-[var(--color-border)] p-4 sm:p-5 min-w-0">
+            <div className="px-1">
               {saveError && (
                 <div role="alert" className="mb-3 p-2.5 rounded-[var(--radius-xs)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
                   {saveError}
@@ -601,7 +573,7 @@ export default function ContPage() {
                 type="submit"
                 disabled={saving}
                 aria-busy={saving}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-xs)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -614,6 +586,16 @@ export default function ContPage() {
               </button>
             </div>
           </form>
+
+          {/* Aspect & accesibilitate — device-level (temă + sticlă + a11y).
+              AppearanceSettings include deja toggle-ul de temă (un singur loc,
+              fără duplicat). SoundsToggle separat, în propriul grup. */}
+          <AppearanceSettings />
+          <SettingsGroup title="Sunete">
+            <div className="px-4 py-3">
+              <SoundsToggle />
+            </div>
+          </SettingsGroup>
 
           {/* 2026-05-24 — Streak + Badges scoase la cererea user-ului
               („sterge tototototot insignele tale + urmatoarele insigne").
@@ -739,11 +721,13 @@ export default function ContPage() {
         </div>
       </div>
 
-      {/* ─── GDPR actions ─────────────────────────────────────────
-          2026-05-24: titlu + descriere GDPR scoase la cererea user-ului.
-          Păstrăm doar cele 2 butoane utile (export + delete cont). */}
-      <div className="mt-14 pt-8 border-t border-[var(--color-border)]">
-        <div className="flex flex-wrap gap-2">
+      {/* ─── Confidențialitate (GDPR) — grup stil iOS ─────────────── */}
+      <div className="max-w-2xl mx-auto mt-6">
+        <SettingsGroup
+          title="Confidențialitate"
+          footer="Drepturile tale GDPR — export complet al datelor + ștergere definitivă, în 1 click."
+        >
+          {/* Export = <a download> (NU Link — descarcă JSON), stilizat ca rând iOS */}
           <a
             href="/api/profile/export"
             download="civia-export.json"
@@ -751,20 +735,29 @@ export default function ContPage() {
               const today = new Date().toISOString().slice(0, 10);
               e.currentTarget.setAttribute("download", `civia-export-${today}.json`);
             }}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            className="block w-full hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:bg-[var(--color-surface-2)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] transition-colors"
           >
-            <Download size={12} aria-hidden="true" />
-            Descarcă datele mele (JSON)
+            <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
+              <span className="shrink-0 w-7 h-7 rounded-[9px] grid place-items-center bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]" aria-hidden="true">
+                <Download size={15} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-[var(--color-text)]">Descarcă datele mele</div>
+                <div className="text-xs text-[var(--color-text-muted)] mt-0.5">Export GDPR complet (JSON)</div>
+              </div>
+              <ChevronRight size={16} className="text-[var(--color-text-muted)]/70 shrink-0" aria-hidden="true" />
+            </div>
           </a>
-          <button
-            type="button"
+          <SettingsLinkRow
+            icon={<Trash2 size={15} aria-hidden="true" />}
+            iconClass="bg-[var(--color-error-soft)] text-[var(--color-error-on-soft)]"
+            label="Șterge contul definitiv"
+            sublabel="Acțiune ireversibilă"
+            danger
+            showChevron={false}
             onClick={() => setDeleteModal(true)}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--radius-xs)] border border-red-300 dark:border-red-900 text-red-700 dark:text-red-400 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-950/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-          >
-            <Trash2 size={12} aria-hidden="true" />
-            Șterge contul definitiv
-          </button>
-        </div>
+          />
+        </SettingsGroup>
       </div>
 
       {/* Delete confirmation modal */}
@@ -894,21 +887,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </label>
       {child}
     </div>
-  );
-}
-
-function SectionTitle({
-  icon: Icon,
-  children,
-}: {
-  icon: typeof User;
-  children: React.ReactNode;
-}) {
-  return (
-    <h2 className="!text-[13px] sm:!text-sm !font-semibold text-[var(--color-text)] inline-flex items-center gap-1.5 break-words leading-tight m-0">
-      <Icon size={13} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
-      {children}
-    </h2>
   );
 }
 
