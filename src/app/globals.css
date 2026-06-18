@@ -1549,28 +1549,36 @@ html.a11y-reduce-motion *::after {
   background: var(--color-surface-soft);
   isolation: isolate;
 }
-/* Aurora subtilă, calmă — glow-uri brand low-opacity care plutesc lent.
-   Înlocuiește blob-urile globale aglomerate cu un canvas viu, dar liniștit. */
+/* Aurora ambient brand — 4 glow-uri în colțuri (emerald / albastru / violet /
+   aqua) peste fundalul recessed → adâncime „iOS 27 / One UI 9", calm. z-index:-1
+   + isolation pe părinte → stă SUB conținut fără wrapper z-10 per pagină. */
 .lc-canvas::before,
 .setari-canvas::before {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(55% 42% at 12% -4%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 70%),
-    radial-gradient(48% 40% at 102% 18%, color-mix(in srgb, var(--color-news) 12%, transparent), transparent 72%),
-    radial-gradient(60% 50% at 50% 108%, color-mix(in srgb, var(--color-secondary) 9%, transparent), transparent 75%);
+    radial-gradient(46% 40% at 6% -8%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 66%),
+    radial-gradient(44% 38% at 100% 4%, color-mix(in srgb, var(--color-news) 18%, transparent), transparent 68%),
+    radial-gradient(46% 40% at 96% 100%, color-mix(in srgb, var(--color-petition) 16%, transparent), transparent 70%),
+    radial-gradient(52% 44% at 12% 104%, color-mix(in srgb, var(--color-secondary) 15%, transparent), transparent 72%);
   animation: setari-aurora 26s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
 @keyframes setari-aurora {
-  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.7; }
-  to   { transform: translate3d(0, -1.5%, 0) scale(1.06); opacity: 1; }
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.78; }
+  to   { transform: translate3d(0, -1.5%, 0) scale(1.05); opacity: 1; }
 }
-/* Variantă plată — recessed fără aurora (pagini dense: admin/tabele). */
-.lc-canvas--flat::before { display: none; }
+/* Variantă „flată" — aceeași aurora ambient, dar STATICĂ (fără mișcare → fără
+   re-blur per frame sub multe carduri de sticlă). Pagini dense (conținut/admin).
+   Înainte era `display: none` (fundal negru plat) — de-aici inconsistența
+   „ambient pe unele pagini, negru pe altele". */
+.lc-canvas--flat::before {
+  animation: none;
+  will-change: auto;
+}
 
 /* Mobile: cap blur-ul de sticlă. backdrop-filter blur e fill-rate-bound pe
    GPU-uri de telefon; 32-40px × multe carduri = jank la scroll. ~13px arată
