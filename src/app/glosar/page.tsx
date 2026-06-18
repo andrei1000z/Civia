@@ -126,6 +126,7 @@ export default function GlosarPage() {
   );
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-5xl">
       <DefinedTermSetJsonLd
         name="Glosar civic românesc"
@@ -209,7 +210,7 @@ export default function GlosarPage() {
         <h2 id="faq-glosar" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Întrebări frecvente
         </h2>
-        <div className="space-y-3">
+        <div className="lc-stagger space-y-3">
           {FAQ_GLOSAR.map((q) => (
             <details
               key={q.question}
@@ -262,6 +263,7 @@ export default function GlosarPage() {
           </Link>
         </div>
       </section>
+    </div>
     </div>
   );
 }

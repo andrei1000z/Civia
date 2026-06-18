@@ -134,6 +134,7 @@ export default async function PetitiePage({
   const shareUrl = `${SITE_URL}/petitii/${petitie.slug}`;
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <article className="container-narrow py-8 md:py-12">
       <BreadcrumbJsonLd
         items={[
@@ -546,5 +547,6 @@ export default async function PetitiePage({
         </div>
       )}
     </article>
+    </div>
   );
 }

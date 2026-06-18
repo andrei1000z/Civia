@@ -67,6 +67,7 @@ const FAQ = [
 
 export default function OG272002Page() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={FAQ} />
       <BreadcrumbJsonLd
@@ -229,10 +230,10 @@ export default function OG272002Page() {
           <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6">
             🤔 Întrebări frecvente despre OG 27/2002
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-3 lc-stagger">
             {FAQ.map((q) => (
-              <details key={q.question} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group">
-                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <details key={q.question} className="lc-glass-2 rounded-3xl group">
+                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                   {q.question}
                   <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">▼</span>
                 </summary>
@@ -262,6 +263,7 @@ export default function OG272002Page() {
           </Link>
         </section>
       </article>
+    </div>
     </div>
   );
 }

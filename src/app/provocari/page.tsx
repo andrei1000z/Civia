@@ -38,27 +38,29 @@ export default async function ProvocariPage() {
 
   if (!provocare) {
     return (
-      <div className="container-narrow py-8 md:py-12">
-        <PageHero
-          title="Provocarea civică a lunii"
-          icon={Target}
-          gradient={HERO_GRADIENT.primary}
-          tagline="Revino curând — pregătim provocarea următoarei luni."
-        />
-        <Card variant="glass" className="text-center py-10">
-          <div className="text-3xl mb-2" aria-hidden="true">🎯</div>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Nicio provocare activă luna aceasta. Între timp, poți depune oricând o
-            sesizare.
-          </p>
-          <Link
-            href="/sesizari"
-            className="inline-flex items-center gap-1.5 h-10 px-4 mt-4 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
-          >
-            <Send size={14} aria-hidden="true" /> Fă o sesizare
-          </Link>
-        </Card>
-        {trecute.length > 0 && <Arhiva trecute={trecute} />}
+      <div className="lc-canvas lc-canvas--flat">
+        <div className="container-narrow py-8 md:py-12">
+          <PageHero
+            title="Provocarea civică a lunii"
+            icon={Target}
+            gradient={HERO_GRADIENT.primary}
+            tagline="Revino curând — pregătim provocarea următoarei luni."
+          />
+          <Card variant="glass" className="text-center py-10">
+            <div className="text-3xl mb-2" aria-hidden="true">🎯</div>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Nicio provocare activă luna aceasta. Între timp, poți depune oricând o
+              sesizare.
+            </p>
+            <Link
+              href="/sesizari"
+              className="inline-flex items-center gap-1.5 h-10 px-4 mt-4 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+            >
+              <Send size={14} aria-hidden="true" /> Fă o sesizare
+            </Link>
+          </Card>
+          {trecute.length > 0 && <Arhiva trecute={trecute} />}
+        </div>
       </div>
     );
   }
@@ -82,8 +84,9 @@ export default async function ProvocariPage() {
   const gradient = HERO_GRADIENT[provocare.gradient as keyof typeof HERO_GRADIENT] ?? HERO_GRADIENT.warning;
 
   return (
-    <div className="container-narrow py-8 md:py-12">
-      <BreadcrumbJsonLd
+    <div className="lc-canvas lc-canvas--flat">
+      <div className="container-narrow py-8 md:py-12">
+        <BreadcrumbJsonLd
         items={[
           { name: "Acasă", url: SITE_URL },
           { name: "Provocări", url: `${SITE_URL}/provocari` },
@@ -173,6 +176,7 @@ export default async function ProvocariPage() {
       </Card>
 
       {trecute.length > 0 && <Arhiva trecute={trecute} />}
+      </div>
     </div>
   );
 }

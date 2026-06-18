@@ -71,6 +71,7 @@ const ROWS: RowProps[] = [
 
 export default function SesizareVsPetitiePage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={FAQ} />
       <BreadcrumbJsonLd
@@ -284,6 +285,7 @@ export default function SesizareVsPetitiePage() {
           </Link>
         </div>
       </section>
+    </div>
     </div>
   );
 }

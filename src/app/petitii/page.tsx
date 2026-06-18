@@ -83,6 +83,7 @@ export default async function PetitiiPage() {
   after(maybeTriggerScrape);
 
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
         name="Petiții civice — Civia"
@@ -202,6 +203,7 @@ export default async function PetitiiPage() {
           )}
         </>
       )}
+    </div>
     </div>
   );
 }

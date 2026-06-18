@@ -97,6 +97,7 @@ const STEPS = [
 
 export default function CumFunctioneazaPage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <HowToJsonLd
         name="Cum trimiți o sesizare la primărie în România"
@@ -307,6 +308,7 @@ export default function CumFunctioneazaPage() {
           </p>
         </section>
       </article>
+    </div>
     </div>
   );
 }

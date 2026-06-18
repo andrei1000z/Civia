@@ -256,6 +256,7 @@ const ALL_FAQS = SECTIUNI.flatMap((s) => s.items).map((f) => ({ question: f.q, a
 
 export default function IntrebariFrecventePage() {
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <FaqJsonLd items={ALL_FAQS} />
       <BreadcrumbJsonLd
@@ -329,7 +330,7 @@ export default function IntrebariFrecventePage() {
                   key={q.q}
                   className="lc-glass-2 rounded-3xl group"
                 >
-                  <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+                  <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                     {q.q}
                     <span
                       className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"
@@ -378,6 +379,7 @@ export default function IntrebariFrecventePage() {
           Fă o sesizare acum
         </Link>
       </section>
+    </div>
     </div>
   );
 }

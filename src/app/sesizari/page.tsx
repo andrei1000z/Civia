@@ -107,6 +107,7 @@ export default async function SesizariPage() {
     ? [...STATIC_QUICK_LINKS, DOVEZI_LINK]
     : STATIC_QUICK_LINKS;
   return (
+    <div className="lc-canvas lc-canvas--flat">
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
         name="Sesizări civice — Civia"
@@ -206,6 +207,7 @@ export default async function SesizariPage() {
       {/* FAQ section removed (5/8/2026 user request — minimalist).
           Răspunsurile la cele mai comune întrebări sunt deja în
           /ghiduri/ghid-sesizari + în PageHero-ul de mai sus. */}
+    </div>
     </div>
   );
 }
