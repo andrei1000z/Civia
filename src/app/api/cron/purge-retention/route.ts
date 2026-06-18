@@ -83,10 +83,66 @@ export async function GET(req: Request) {
     .is("user_id", null)
     .not("author_email", "is", null);
 
+  // ─── (c) inbox_debug_log: purjă > 30 zile ────────────────────────────────
+  // 6/18 (audit consum): tabela creștea MONOTON (body până la 50KB/rând, zero
+  // cleanup). 30z păstrăm ca plasă de recuperare (vezi scripts/recover-lost-
+  // replies.ts) dar mărginim creșterea. Tolerăm eroarea dacă tabela lipsește.
+  const cutoff30 = new Date(now - 30 * DAY).toISOString();
+  let inboxLogsPurged = 0;
+  try {
+    const { count } = await admin
+      .from("inbox_debug_log")
+      .delete({ count: "exact" })
+      .lt("received_at", cutoff30);
+    inboxLogsPurged = count ?? 0;
+  } catch { /* best-effort */ }
+
+  // ─── (d) Poze ORFANE în Storage (bucket sesizari-photos) ─────────────────
+  // 6/18 (audit consum): pozele sesizărilor/conturilor ȘTERSE nu se curățau
+  // niciodată → singura limită Supabase cu orizont real de epuizare (1 GB).
+  // Ștergem DOAR obiectele nereferite de NICIO `sesizari.imagini` ȘI mai vechi
+  // de 7 zile (timestamp-ul e în numele fișierului: „<ms>-<uuid>.<ext>") — gardă
+  // contra cursei upload→creare-sesizare (poza e încărcată înainte ca imagini să
+  // fie populat). Numai obiectele clar abandonate dispar.
+  let orphanPhotosDeleted = 0;
+  try {
+    const { data: allImg } = await admin.from("sesizari").select("imagini");
+    const referenced = new Set<string>();
+    for (const r of (allImg ?? []) as { imagini: string[] | null }[]) {
+      for (const url of r.imagini ?? []) {
+        const m = String(url).match(/\/sesizari-photos\/(.+)$/);
+        const p = m?.[1]?.split("?")[0];
+        if (p) referenced.add(p); // ex: public/123-abc.jpg
+      }
+    }
+    const orphans: string[] = [];
+    let offset = 0;
+    for (;;) {
+      const { data: objs } = await admin.storage
+        .from("sesizari-photos")
+        .list("public", { limit: 1000, offset });
+      if (!objs || objs.length === 0) break;
+      for (const o of objs) {
+        const key = `public/${o.name}`;
+        const ts = o.name.match(/^(\d{10,13})-/);
+        const olderThan7d = ts ? Number(ts[1]) < now - 7 * DAY : true;
+        if (!referenced.has(key) && olderThan7d) orphans.push(key);
+      }
+      if (objs.length < 1000) break;
+      offset += 1000;
+    }
+    for (const batch of chunk(orphans, 100)) {
+      const { data } = await admin.storage.from("sesizari-photos").remove(batch);
+      orphanPhotosDeleted += data?.length ?? 0;
+    }
+  } catch { /* best-effort — storage list poate eșua dacă bucket-ul lipsește */ }
+
   return NextResponse.json({
     ok: true,
     cosignersPurged,
     sesizariAnonimizate: sesizariAnonimizate ?? 0,
     expiredSesizari: expiredIds.length,
+    inboxLogsPurged,
+    orphanPhotosDeleted,
   });
 }

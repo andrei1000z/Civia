@@ -24,7 +24,7 @@ Civia.ro is an independent civic platform for Romania. Citizens can:
 | Framework | **Next.js 16** App Router, Turbopack, React 19 |
 | Database | **Supabase** Postgres + Auth + Storage + Realtime |
 | AI | **Groq** — `llama-3.3-70b-versatile` (text), `llama-3.1-8b-instant` (classify), Llama 4 Scout 17B vision |
-| Cache + rate limit | **Upstash Redis** |
+| Cache + rate limit + analytics | **Cloudflare D1** (Upstash-compatible API via `d1-client`; in-memory fallback if `CLOUDFLARE_API_TOKEN` missing) |
 | Maps | **Leaflet** + react-leaflet, OSM tiles — sesizari visualization only (no `/harti` page) |
 | Styling | **Tailwind CSS v4** with CSS-variable design tokens (dark mode) |
 | Mail | **Resend** + magic-link auth (no passwords) |
@@ -79,14 +79,13 @@ scripts/               # one-shot maintenance scripts (migrate, backfill, verify
 
 ## Background work + cron
 
-Vercel Hobby plan caps cron jobs at 1×/day. Two strategies in use:
+Vercel Hobby caps cron at **1×/day**. Pattern: **one dispatcher** does the work.
 
-1. **Daily cron** for `/api/stiri/fetch` (RSS pull) and `/api/newsletter/digest` (Mondays).
-2. **Self-healing on traffic** for stiri: every visit to `/api/stiri` fires `/api/stiri/fetch` in `after()` (Next 16 background-after), throttled by a Redis NX lock with 5-min TTL. Lets articles surface within minutes of being posted on Digi24/HotNews/etc., without external cron infrastructure.
+**Canonical scheduler = `/api/cron/daily`** (the only cron in `vercel.json`, 09:00). It fans out via `fetch` to all sub-jobs (each fetch = a separate serverless invocation, so the daily-frequency cap is sidestepped without breaking it): reminders, auto-status, drafts/nudge, streaks, winback, **purge-retention**; newsletter on Mon/Tue/Fri.
 
-Auth on `/api/stiri/fetch` accepts either `Authorization: Bearer ${CRON_SECRET}` (cron path) or a logged-in admin session.
+`purge-retention` (`/api/cron/purge-retention`) enforces the GDPR retentions AND the storage hygiene: cosigner PII scrubbed at 90d/1y, anonymous sesizari at 3y, **`inbox_debug_log` rows >30d deleted**, and **orphan photos in the `sesizari-photos` Storage bucket** (unreferenced + >7d old, guarded by the `<ms>-<uuid>` filename timestamp against the upload→create race) removed.
 
-**Canonical scheduler = `/api/cron/daily`** (the dispatcher in `vercel.json`). It fans out to all sub-jobs (reminders, auto-status, drafts/nudge, streaks, winback, purge-retention; newsletter on Mon/Tue/Fri). The pg_cron migrations `078`/`078b` are **DEPRECATED** — do NOT enable `078b`'s HTTP jobs (reminders-6h, stiri-30min, etc.) alongside the daily dispatcher: they call the same endpoints → duplicate emails. Migration `101_deprecate_pgcron_http` defensively unschedules them. The pure-SQL jobs in `078` (cleanup/feed-refresh/mark-overdue) are DB-internal maintenance and don't conflict.
+The pg_cron migrations `078`/`078b` are **DEPRECATED** — do NOT enable `078b`'s HTTP jobs (reminders-6h, etc.) alongside the daily dispatcher: they call the same endpoints → duplicate emails. Migration `101_deprecate_pgcron_http` defensively unschedules them. The pure-SQL jobs in `078` (cleanup/mark-overdue) are DB-internal maintenance and don't conflict.
 
 ## AI guardrails
 
