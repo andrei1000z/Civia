@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Plus, X, FileText, AlertTriangle } from "lucide-react";
-import { useCountyOptional } from "@/lib/county-context";
-import { ALL_COUNTIES } from "@/data/counties";
 
 /**
  * Floating speed-dial — butonul primar „+" pe mobile. La apăsare se deschide
@@ -20,16 +18,13 @@ import { ALL_COUNTIES } from "@/data/counties";
  */
 export function MobileFab() {
   const pathname = usePathname();
-  const county = useCountyOptional();
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const pathSlug = pathname.match(/^\/([a-z]{1,2})(?:\/|$)/)?.[1] ?? null;
-  const validated = pathSlug && ALL_COUNTIES.some((c) => c.slug === pathSlug) ? pathSlug : null;
-  const countySlug = county?.slug ?? validated;
-  const sesizariTarget = countySlug ? `/${countySlug}/sesizari` : "/sesizari";
-  const intreruperiTarget = countySlug ? `/${countySlug}/intreruperi` : "/intreruperi";
+  // 2026-06-18: național-only (paginile /[judet]/* eliminate) — targets fixe.
+  const sesizariTarget = "/sesizari";
+  const intreruperiTarget = "/intreruperi";
 
   const hidden =
     /\/sesizari\/?$/.test(pathname) ||

@@ -12,12 +12,10 @@ Civia.ro is an independent civic platform for Romania. Citizens can:
 
 - File AI-formalized complaints (`/sesizari`) addressed to the right authority via OG 27/2002.
 - Sign curated civic petitions (`/petitii`) sourced from Declic, Avaaz, etc.
-- Read AI-summarized national news (`/stiri`) with a structured "TL;DR" panel per article.
-- See planned utility outages (`/intreruperi`).
-- Browse interactive maps (`/harti`) for cycling, pedestrian, road, transit and air-quality layers.
-- Compare counties (`/compara`), browse open budget data (`/buget`), and follow live impact metrics (`/impact`).
+- See planned utility outages (`/intreruperi`), nationally and per county (`/intreruperi/{slug}`).
+- Browse scheduled protests (`/proteste`) and compare counties (`/compara`).
 
-Every county (`/[judet]/...`) carries its own scoped versions of the maps + air + outages + stats + news. The action surfaces (sesizari, petitii, ghiduri) are deliberately **national-only** — they live at `/sesizari`, `/petitii`, `/ghiduri` and never get a `/[judet]/` prefix.
+**Civia is national-only.** The county-scoped subtree `/[judet]/...` (per-county landing, sesizari, autoritati, evenimente, istoric) was REMOVED 2026-06-18 — along with the `/stiri` news feature, the `/harti` mobility maps, and the `/aer` air-quality pages (all already gone). Everything lives at national routes (`/sesizari`, `/petitii`, `/ghiduri`, `/intreruperi`, `/proteste`, `/compara`, …). `proxy.ts` 308-redirects any legacy `/{county}/*` URL to the national equivalent (or home). The Leaflet map components survive only for sesizari visualization.
 
 ## Stack at a glance
 
@@ -27,7 +25,7 @@ Every county (`/[judet]/...`) carries its own scoped versions of the maps + air 
 | Database | **Supabase** Postgres + Auth + Storage + Realtime |
 | AI | **Groq** — `llama-3.3-70b-versatile` (text), `llama-3.1-8b-instant` (classify), Llama 4 Scout 17B vision |
 | Cache + rate limit | **Upstash Redis** |
-| Maps | **Leaflet** + react-leaflet, OSM tiles, custom Canvas IDW heatmap for AQI |
+| Maps | **Leaflet** + react-leaflet, OSM tiles — sesizari visualization only (no `/harti` page) |
 | Styling | **Tailwind CSS v4** with CSS-variable design tokens (dark mode) |
 | Mail | **Resend** + magic-link auth (no passwords) |
 | Errors | **Sentry** with PII redaction |
@@ -36,9 +34,9 @@ Every county (`/[judet]/...`) carries its own scoped versions of the maps + air 
 
 ## Routing rules (the one you'll trip on)
 
-`src/lib/constants.ts → NAV_LINKS` carries a `national: true` flag. Items with that flag are **never** prefixed with `/[judet]/` even when the user has selected a county. Today: `/sesizari`, `/petitii`, `/ghiduri` are national-only. `/harti` and `/stiri` are county-aware.
+`src/lib/constants.ts → NAV_LINKS`. **All nav links are national** — there is no county prefixing anymore (the `/[judet]/` subtree was removed 2026-06-18). Navbar/MobileFab no longer compute a county slug; clicking any nav item goes straight to the national route.
 
-The "come home to your county" redirect lives in `src/proxy.ts` (Next 16 renamed `middleware.ts` → `proxy.ts`). Visiting `/` with a `county` cookie 307-redirects to `/{slug}`. To opt out, the user picks "Național" in `/cont` — that clears the cookie via the `CountyPickerInline` component (which sets `max-age=0` AND `expires=epoch` defensively, because some browsers honor only one).
+`src/proxy.ts` (Next 16 renamed `middleware.ts` → `proxy.ts`) 308-redirects legacy county URLs so old Google-cache/share links don't 404: `/{slug}/intreruperi → /intreruperi/{slug}`; `/{slug}/{petitii|ghiduri|sesizari-publice} → /{segment}`; `/{slug}` and any other `/{slug}/*` (sesizari/autoritati/evenimente/istoric/harti/aer) → `/` (home). The `county` cookie is vestigial (UI context only, no routing effect).
 
 ## Where things live
 

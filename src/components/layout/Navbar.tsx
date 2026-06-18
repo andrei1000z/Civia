@@ -8,9 +8,7 @@ import { NAV_LINKS, NAV_MORE, SITE_NAME } from "@/lib/constants";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import dynamic from "next/dynamic";
-import { useCountyOptional } from "@/lib/county-context";
 import { cn } from "@/lib/utils";
-import { ALL_COUNTIES } from "@/data/counties";
 
 // Code-split: SearchModal e gated de starea „open" → nu intră în bundle-ul
 // principal al fiecărei pagini. Se încarcă la primul Cmd+K / tap pe search.
@@ -21,30 +19,11 @@ const SearchModal = dynamic(
 
 export function Navbar() {
   const pathname = usePathname();
-  const county = useCountyOptional();
   const [scrolled, setScrolled] = useState(false);
 
-  // Detect county slug from pathname if context not available.
-  // The regex matches both /ar/statistici AND /ar (county homepage, no trailing slash).
-  const pathSlug = pathname.match(/^\/([a-z]{1,2})(?:\/|$)/)?.[1] ?? null;
-  // Validate it's an actual county slug — not a random 2-letter path
-  const validatedSlug = pathSlug && ALL_COUNTIES.some((c) => c.slug === pathSlug) ? pathSlug : null;
-  const countySlug = county?.slug ?? validatedSlug;
-  const countyObj = county ?? (validatedSlug ? ALL_COUNTIES.find((c) => c.slug === validatedSlug) : null);
-  const countyName = countyObj?.name ?? null;
-
-  // Prefix links with county slug if we're inside a county route — but
-  // honor the `national: true` flag (e.g. /petitii, /sesizari, /ghiduri
-  // never get /[judet]/ prepended, even when the user is browsing a
-  // county). Clicking such a link from /cj/whatever takes the user
-  // back to the national view.
-  const prefixedLinks = NAV_LINKS.map((l) => {
-    const isNational = "national" in l && l.national;
-    return {
-      ...l,
-      href: countySlug && !isNational ? `/${countySlug}${l.href}` : l.href,
-    };
-  });
+  // 2026-06-18: Civia e național-only — paginile /[judet]/* au fost eliminate,
+  // deci nu mai prefixăm linkurile cu slug de județ.
+  const prefixedLinks = NAV_LINKS;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreDropdown, setMoreDropdown] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -140,7 +119,7 @@ export function Navbar() {
       >
         <div className="container-narrow flex items-center justify-between h-16">
           <div className="flex items-center gap-2 shrink-0">
-            <Link href={countySlug ? `/${countySlug}` : "/"} className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-[var(--radius-button)] bg-gradient-to-br from-[var(--color-primary)] to-emerald-900 flex items-center justify-center text-white font-[family-name:var(--font-sora)] font-semibold text-2xl leading-none" aria-hidden="true">
                 C
               </div>
@@ -148,14 +127,6 @@ export function Navbar() {
                 {SITE_NAME}
               </span>
             </Link>
-            {countyName && (
-              <span
-                className="text-xs text-[var(--color-text-muted)] font-medium"
-                aria-label={`Județ selectat: ${countyName}`}
-              >
-                · {countyName}
-              </span>
-            )}
           </div>
 
           {/* Desktop nav. Ghiduri used to expand into a hover-dropdown
@@ -186,7 +157,7 @@ export function Navbar() {
                 pe homepage național; nationalOnly păstrează URL absolut. */}
             {(() => {
               const visibleMoreItems = NAV_MORE.filter(
-                (l) => !("countyOnly" in l && l.countyOnly) || countySlug,
+                (l) => !("countyOnly" in l && l.countyOnly),
               );
               if (visibleMoreItems.length === 0) return null;
               return (
@@ -219,15 +190,7 @@ export function Navbar() {
                     {visibleMoreItems.map((link) => (
                       <Link
                         key={link.href}
-                        href={
-                          "nationalOnly" in link && link.nationalOnly
-                            ? link.href
-                            : countySlug
-                            ? "countySuffix" in link && link.countySuffix
-                              ? `${link.href}/${countySlug}`
-                              : `/${countySlug}${link.href}`
-                            : link.href
-                        }
+                        href={link.href}
                         onClick={() => setMoreDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:bg-[var(--color-surface-2)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)]"
                       >
@@ -322,7 +285,7 @@ export function Navbar() {
           {/* Mai mult — secondary links (hidden if no visible items) */}
           {(() => {
             const items = NAV_MORE.filter(
-              (l) => !("countyOnly" in l && l.countyOnly) || countySlug,
+              (l) => !("countyOnly" in l && l.countyOnly),
             );
             if (items.length === 0) return null;
             return (
@@ -333,15 +296,7 @@ export function Navbar() {
                 {items.map((link) => (
                   <Link
                     key={link.href}
-                    href={
-                      "nationalOnly" in link && link.nationalOnly
-                        ? link.href
-                        : countySlug
-                        ? "countySuffix" in link && link.countySuffix
-                          ? `${link.href}/${countySlug}`
-                          : `/${countySlug}${link.href}`
-                        : link.href
-                    }
+                    href={link.href}
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius-button)] text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                   >

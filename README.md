@@ -12,7 +12,7 @@
   <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square">
 </p>
 
-Platformă civică independentă, gratuită, pentru cetățenii din România. Sesizări AI-formalizate către primării, petiții civice, calitatea aerului live, hărți de mobilitate, ghiduri practice și date publice — pentru toate cele 42 de județe.
+Platformă civică independentă, gratuită, pentru cetățenii din România. Sesizări AI-formalizate către primării, petiții civice, proteste programate, întreruperi de utilități, ghiduri practice și date publice — național.
 
 **🌐 Live:** [civia.ro](https://civia.ro) · **📱 PWA** instalabilă (Android/iOS) · **🆓 100% gratuit, fără reclame, fără partid**
 
@@ -31,7 +31,7 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 | **Framework** | Next.js 16 (App Router, Turbopack, React 19) |
 | **Bază de date** | Supabase (PostgreSQL, Auth, Storage, Realtime) |
 | **AI** | Groq — `llama-3.3-70b-versatile` (text formal), `llama-3.1-8b-instant` (clasificare + extractor petiții), Llama 4 Scout 17B vision (analiză foto sesizări) |
-| **Hărți** | Leaflet + react-leaflet, OSM tiles, IDW heatmap pentru calitatea aerului |
+| **Hărți (sesizări)** | Leaflet + react-leaflet, OSM tiles — vizualizarea sesizărilor publice pe hartă |
 | **Styling** | Tailwind CSS v4 cu CSS variables, dark mode complet |
 | **Email** | Resend + magic-link (fără parole) |
 | **Rate limit + cache** | Upstash Redis |
@@ -53,7 +53,6 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 - **Sesizări publice** (`/sesizari-publice`) — feed live cu sesizările publice ale altor cetățeni, vot + co-semnături.
 - **Sesizări rezolvate** (`/sesizari-rezolvate`) — galerie înainte/după cu probleme rezolvate de primării.
 - **Embed widget** (`/embed/[judet]`) — iframe gratuit pentru jurnaliști și bloggeri; sesizările live din județ + counter total, util pentru investigații locale.
-- **42 județe** (`/{judet}`) — fiecare cu sesizări, întreruperi, ghiduri, autorități, evenimente.
 
 ### Cont + GDPR
 - **Magic-link auth** — fără parole, opțional Google + Apple OAuth.
@@ -156,8 +155,6 @@ Mai mult în [`AGENTS.md`](./AGENTS.md).
 ## Date și surse
 
 - **Populație** — INS Recensământ 2021
-- **Accidente rutiere** — DRPCIV 2023 (estimări proporționale per județ)
-- **Calitate aer** — Sensor.Community + OpenAQ + WAQI + ANPM
 - **Primari** — BEC, alegeri locale 2024
 - **Sesizări publice** — date generate de utilizatori, anonimizate conform GDPR
 - **Buget** — Ministerul Finanțelor, INS
