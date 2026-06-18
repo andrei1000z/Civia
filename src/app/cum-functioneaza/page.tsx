@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Sparkles, Send, Mail, Clock, Shield, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Sparkles, Send, Mail, Clock, Shield, ArrowRight, CheckCircle2, AlertTriangle, ListChecks, Scale, HelpCircle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { HowToJsonLd } from "@/components/JsonLd";
 import { FaqJsonLd, BreadcrumbJsonLd, GovernmentServiceJsonLd } from "@/components/FaqJsonLd";
@@ -138,8 +139,9 @@ export default function CumFunctioneazaPage() {
       <article className="space-y-12">
         {/* Step-by-step howto */}
         <section aria-labelledby="pasi-heading">
-          <h2 id="pasi-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2">
-            <span aria-hidden="true">📋</span> Cei 5 pași concreți
+          <h2 id="pasi-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<ListChecks size={16} aria-hidden="true" />} className="bg-blue-500 text-white" />
+            Cei 5 pași concreți
           </h2>
           <ol className="lc-stagger space-y-4">
             {STEPS.map((step, i) => (
@@ -227,8 +229,9 @@ export default function CumFunctioneazaPage() {
 
         {/* Ce zice legea */}
         <section aria-labelledby="lege-heading" className="lc-glass-2 rounded-3xl p-6">
-          <h2 id="lege-heading" className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4">
-            ⚖️ Ce zice OG 27/2002 (text literal)
+          <h2 id="lege-heading" className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4 flex items-center gap-2.5">
+            <SectionIcon icon={<Scale size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+            Ce zice OG 27/2002 (text literal)
           </h2>
           <blockquote className="border-l-4 border-[var(--color-primary)] pl-4 italic text-sm leading-relaxed text-[var(--color-text)] mb-3">
             „Termenul de soluționare al petițiilor este de <strong>30 de zile</strong> de la data înregistrării petiției. Pentru petițiile complexe se poate prelungi cu cel mult <strong>15 zile</strong>, cu notificare prealabilă a petentului."
@@ -270,8 +273,9 @@ export default function CumFunctioneazaPage() {
 
         {/* FAQ */}
         <section aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6">
-            🤔 Întrebări frecvente
+          <h2 id="faq-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-amber-500 text-white" />
+            Întrebări frecvente
           </h2>
           <div className="lc-stagger space-y-3">
             {FAQ.map((q) => (

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Shield, AlertTriangle, FileText, ExternalLink, Send, Clock, BookOpen } from "lucide-react";
+import { Shield, AlertTriangle, FileText, ExternalLink, Send, Clock, BookOpen, GitBranch, HelpCircle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd, GovernmentServiceJsonLd } from "@/components/FaqJsonLd";
 import { HowToJsonLd } from "@/components/JsonLd";
@@ -232,9 +233,10 @@ Semnătura: [SEMNĂTURĂ]
       <section aria-labelledby="alternative" className="mb-12">
         <h2
           id="alternative"
-          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6"
+          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5"
         >
-          📋 Și ce alte opțiuni mai am?
+          <SectionIcon icon={<GitBranch size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+          Și ce alte opțiuni mai am?
         </h2>
         <div className="grid md:grid-cols-3 gap-4 lc-stagger">
           <div className="lc-glass-2 rounded-3xl p-5">
@@ -267,8 +269,9 @@ Semnătura: [SEMNĂTURĂ]
 
       {/* FAQ */}
       <section aria-labelledby="faq-avp" className="mb-12">
-        <h2 id="faq-avp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
-          🤔 Întrebări frecvente
+        <h2 id="faq-avp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-sky-500 text-white" />
+          Întrebări frecvente
         </h2>
         <div className="space-y-3 lc-stagger">
           {FAQ.map((q) => (

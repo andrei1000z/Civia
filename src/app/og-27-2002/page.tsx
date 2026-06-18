@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Scale, ArrowRight, ExternalLink, Send } from "lucide-react";
+import { Scale, ArrowRight, ExternalLink, Send, Zap, ScrollText, Target, BookOpen, HelpCircle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
@@ -94,8 +95,9 @@ export default function OG272002Page() {
       <article className="space-y-10 mt-8">
         {/* TL;DR */}
         <section className="bg-gradient-to-br from-violet-500/10 via-[var(--color-surface)] to-[var(--color-surface)] border border-violet-500/30 rounded-[var(--radius-md)] p-6">
-          <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
-            <span aria-hidden="true">⚡</span> Pe scurt — 3 lucruri esențiale
+          <h2 className="font-bold text-lg mb-3 flex items-center gap-2.5">
+            <SectionIcon icon={<Zap size={16} aria-hidden="true" />} className="bg-blue-500 text-white" />
+            Pe scurt — 3 lucruri esențiale
           </h2>
           <ol className="space-y-2 text-sm">
             <li>
@@ -112,8 +114,9 @@ export default function OG272002Page() {
 
         {/* Articole cheie */}
         <section>
-          <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6">
-            📜 Articole cheie cu comentariu
+          <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<ScrollText size={16} aria-hidden="true" />} className="bg-indigo-500 text-white" />
+            Articole cheie cu comentariu
           </h2>
 
           <div className="space-y-5 lc-stagger">
@@ -171,8 +174,9 @@ export default function OG272002Page() {
 
         {/* Cum aplici concret */}
         <section className="bg-emerald-500/5 border border-emerald-500/30 rounded-[var(--radius-md)] p-6">
-          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4">
-            🎯 Cum aplici OG 27/2002 concret
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4 flex items-center gap-2.5">
+            <SectionIcon icon={<Target size={16} aria-hidden="true" />} className="bg-emerald-500 text-white" />
+            Cum aplici OG 27/2002 concret
           </h2>
           <ol className="space-y-3 text-sm">
             <li>
@@ -196,8 +200,9 @@ export default function OG272002Page() {
 
         {/* Linkuri externe */}
         <section>
-          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4">
-            📚 Surse oficiale
+          <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4 flex items-center gap-2.5">
+            <SectionIcon icon={<BookOpen size={16} aria-hidden="true" />} className="bg-amber-500 text-white" />
+            Surse oficiale
           </h2>
           <ul className="space-y-2 text-sm">
             <li>
@@ -227,8 +232,9 @@ export default function OG272002Page() {
 
         {/* FAQ */}
         <section>
-          <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6">
-            🤔 Întrebări frecvente despre OG 27/2002
+          <h2 className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+            Întrebări frecvente despre OG 27/2002
           </h2>
           <div className="space-y-3 lc-stagger">
             {FAQ.map((q) => (

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, ExternalLink } from "lucide-react";
+import { BookOpen, ExternalLink, HelpCircle, MessageSquarePlus } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { GLOSAR, GLOSAR_CATEGORII, type GlosarTerm } from "@/data/glosar";
 import {
@@ -207,8 +208,9 @@ export default function GlosarPage() {
 
       {/* FAQ secțiune */}
       <section aria-labelledby="faq-glosar" className="mt-12 pt-8 border-t border-[var(--color-border)]">
-        <h2 id="faq-glosar" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
-          🤔 Întrebări frecvente
+        <h2 id="faq-glosar" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+          Întrebări frecvente
         </h2>
         <div className="lc-stagger space-y-3">
           {FAQ_GLOSAR.map((q) => (
@@ -235,7 +237,8 @@ export default function GlosarPage() {
 
       {/* CTA */}
       <section className="mt-12 text-center bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-8">
-        <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-3">
+        <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-3 flex items-center justify-center gap-2.5">
+          <SectionIcon icon={<MessageSquarePlus size={16} aria-hidden="true" />} className="bg-emerald-500 text-white" />
           Lipsește un termen?
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mb-5 max-w-md mx-auto">

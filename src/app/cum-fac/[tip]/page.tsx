@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Send, BookOpen, AlertCircle, ArrowRight, Clock } from "lucide-react";
+import { Send, BookOpen, AlertCircle, ArrowRight, Clock, Lightbulb, ListChecks, HelpCircle, LayoutGrid } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { CUM_FAC_TIPURI } from "@/data/cum-fac-tipuri";
 import { HowToJsonLd } from "@/components/JsonLd";
@@ -124,9 +125,10 @@ export default async function CumFacTipPage({
         <section aria-labelledby="exemple" className="mb-12">
           <h2
             id="exemple"
-            className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4"
+            className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4 flex items-center gap-2.5"
           >
-            💡 Exemple concrete
+            <SectionIcon icon={<Lightbulb size={16} aria-hidden="true" />} className="bg-amber-500 text-white" />
+            Exemple concrete
           </h2>
           <ul className="lc-stagger space-y-2">
             {t.exemple.map((ex, i) => (
@@ -146,8 +148,9 @@ export default async function CumFacTipPage({
 
       {/* Pași */}
       <section aria-labelledby="pasi" className="mb-12">
-        <h2 id="pasi" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
-          📋 Pași concreți
+        <h2 id="pasi" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
+          <SectionIcon icon={<ListChecks size={16} aria-hidden="true" />} className="bg-blue-500 text-white" />
+          Pași concreți
         </h2>
         <ol className="lc-stagger space-y-4">
           {t.pasi.map((step, i) => (
@@ -185,8 +188,9 @@ export default async function CumFacTipPage({
       {/* FAQ specific tipului */}
       {t.faq.length > 0 && (
         <section aria-labelledby="faq" className="mb-12">
-          <h2 id="faq" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
-            🤔 Întrebări frecvente pentru {t.titlu.toLowerCase()}
+          <h2 id="faq" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+            Întrebări frecvente pentru {t.titlu.toLowerCase()}
           </h2>
           <div className="lc-stagger space-y-3">
             {t.faq.map((q) => (
@@ -229,9 +233,10 @@ export default async function CumFacTipPage({
       <section aria-labelledby="alte-tipuri" className="mb-12">
         <h2
           id="alte-tipuri"
-          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4"
+          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4 flex items-center gap-2.5"
         >
-          📚 Alte tipuri de sesizări
+          <SectionIcon icon={<LayoutGrid size={16} aria-hidden="true" />} className="bg-emerald-500 text-white" />
+          Alte tipuri de sesizări
         </h2>
         <div className="lc-stagger grid sm:grid-cols-2 md:grid-cols-3 gap-3">
           {CUM_FAC_TIPURI.filter((x) => x.slug !== t.slug)
