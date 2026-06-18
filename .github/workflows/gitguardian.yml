@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 5
     if: ${{ github.event.repository.full_name == 'andrei1000z/Civia' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
