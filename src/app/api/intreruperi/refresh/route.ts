@@ -19,11 +19,11 @@ export const maxDuration = 300;
  * POST /api/intreruperi/refresh
  *
  * Re-runs the utility-outage scrapers and upserts results into the
- * `intreruperi_scraped` Supabase table. Authentication mirrors
- * `/api/stiri/fetch`: either a `Bearer ${CRON_SECRET}` header (Vercel
- * cron path) or an admin user session. Hobby plan only allows one daily
- * cron, so the page itself also fires this in the background once every
- * 6 hours via a Redis NX lock.
+ * `intreruperi_scraped` Supabase table. Authentication: either a
+ * `Bearer ${CRON_SECRET}` header (Vercel cron path) or an admin user
+ * session. Hobby plan only allows one daily cron, so the page itself
+ * also fires this in the background once every 6 hours via a Redis NX
+ * lock.
  */
 async function authorize(
   req: Request,

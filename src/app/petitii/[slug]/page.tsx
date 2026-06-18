@@ -19,7 +19,7 @@ import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { PetitionJsonLd } from "@/components/JsonLd";
 import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import { SharePetitie } from "./SharePetitie";
-import { AiSummary } from "@/app/stiri/[id]/AiSummary";
+import { AiSummary } from "@/components/ai/AiSummary";
 import { getOrGeneratePetitieAiSummary } from "@/lib/petitii/ai-summary";
 import { petitieToSesizareTip } from "@/lib/petitii/chaining";
 
@@ -283,7 +283,7 @@ export default async function PetitiePage({
             {petitie.summary}
           </p>
 
-          {/* AI synthesis — same structured output as /stiri/[id]: bullets,
+          {/* AI synthesis — structured output: bullets,
               bold spans, inline number highlights, reading-time + copy +
               listen toolbar. Generated server-side on first visit, cached
               in petitii.ai_summary. */}

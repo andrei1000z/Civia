@@ -2,8 +2,8 @@
 // Sentry catches server errors via instrumentation.ts, and the browser
 // console in prod is mostly noise for end users.
 //
-// Usage: `import { log } from "@/lib/logger"; log.warn("[stiri] fetch failed", { err })`
-// The `tag` prefix convention ("[stiri]", "[email]") keeps greppable context.
+// Usage: `import { log } from "@/lib/logger"; log.warn("[email] send failed", { err })`
+// The `tag` prefix convention ("[email]", "[sesizari]") keeps greppable context.
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 

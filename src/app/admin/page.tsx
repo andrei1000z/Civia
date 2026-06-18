@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { FileText, Users, Newspaper, ArrowRight, Inbox } from "lucide-react";
+import { FileText, Users, ArrowRight, Inbox } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { RefreshStiriButton } from "./RefreshStiriButton";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +16,12 @@ export default async function AdminDashboard() {
 
   const [
     totalSesizari,
-    totalStiri,
     totalUsers,
     pendingTickets,
     todaySesizari,
-    todayStiri,
     todayUsers,
   ] = await Promise.all([
     admin.from("sesizari").select("*", { count: "exact", head: true }),
-    admin.from("stiri_cache").select("*", { count: "exact", head: true }),
     admin.from("profiles").select("*", { count: "exact", head: true }),
     admin
       .from("sesizare_status_tickets")
@@ -33,10 +29,6 @@ export default async function AdminDashboard() {
       .eq("decision", "pending"),
     admin
       .from("sesizari")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayStart),
-    admin
-      .from("stiri_cache")
       .select("*", { count: "exact", head: true })
       .gte("created_at", todayStart),
     admin
@@ -54,15 +46,6 @@ export default async function AdminDashboard() {
       href: "/admin/sesizari",
       color: "#2563EB",
       tint: "from-blue-500/10 to-transparent",
-    },
-    {
-      label: "Articole știri indexate",
-      value: totalStiri.count ?? 0,
-      delta: todayStiri.count ?? 0,
-      icon: Newspaper,
-      href: "/stiri",
-      color: "#059669",
-      tint: "from-emerald-500/10 to-transparent",
     },
     {
       label: "Conturi active",
@@ -154,7 +137,6 @@ export default async function AdminDashboard() {
 
       {/* Utility action — RSS feed refresh stays accessible since it's
           an *action*, not a duplicate of a nav tab. */}
-      <RefreshStiriButton />
 
       {/* Pending status tickets — propuneri de la cetățeni care așteaptă
           decizie. Renderizat doar când există efectiv treabă. */}

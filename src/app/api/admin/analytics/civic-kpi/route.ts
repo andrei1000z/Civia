@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Pe care le calculăm:
  *   - #37 county-coverage: % din 42 județe cu ≥1 sesizare în ultima lună
  *   - #36 multi-surface: % users registered activi pe ≥2 din
- *     {sesizari, petitii, stiri, harti} în ultimele 30 zile
+ *     {sesizari, petitii, harti} în ultimele 30 zile
  *   - #32 time-to-first-draft: median ms de la prima accesare formular
  *     până la primul AI improve success (calculat din funnel events
  *     în Redis, dar serv-ul nu îl agregă încă — placeholder pentru
@@ -49,8 +49,6 @@ export async function GET() {
   // din ultimele 30 zile. Surfaces tracked via:
   //   - sesizari.user_id (sesizari) → surface „sesizari"
   //   - petitie_signatures.user_id (petitii) → surface „petitii"
-  //   - stiri n-au user_id direct; folosim event analytics tracking
-  //     (article-read-start) pentru asta — momentan skip
   //   - harti n-are user_id → skip
   // Implementare conservatoare: counted DOAR sesizari + petitii pentru
   // moment. Multi-surface = users care au făcut AMBELE.

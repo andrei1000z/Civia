@@ -29,10 +29,6 @@ export const CTA = {
   PROTEST_VIEW: "Vezi protestul",
   PROTEST_PROPOSE: "Propune un protest",
 
-  // Stiri
-  STIRE_READ: "Citește articolul",
-  STIRE_VIEW: "Vezi știrea",
-
   // Share & social
   SHARE: "Distribuie",
   SHARE_WHATSAPP: "Trimite pe WhatsApp",
@@ -80,7 +76,6 @@ export const CTA = {
  */
 export const LOADING_MSG = {
   SESIZARI: "Caut sesizările tale...",
-  STIRI: "Adun știrile zilei...",
   PETITII: "Încarc petițiile civice...",
   PROTESTE: "Verific protestele programate...",
   INTRERUPERI: "Verific întreruperile active...",

@@ -1,11 +1,11 @@
 /**
- * GET /api/search/semantic?q=...&type=sesizari|petitii|stiri&limit=10
+ * GET /api/search/semantic?q=...&type=sesizari|petitii&limit=10
  *
  * 🎁 MEDIUM #1 — Search semantic AI cu pgvector.
  *
  * Pipeline:
  *  1. Embed query cu Groq embeddings (sau Cloudflare AI fallback)
- *  2. Cosine similarity search in tabel (sesizari/petitii/stiri)
+ *  2. Cosine similarity search in tabel (sesizari/petitii)
  *  3. Returneaza top N matches cu similarity score
  *
  * Cu fallback la ILIKE keyword search dacă pgvector nu disponibil (graceful).
@@ -27,7 +27,7 @@ interface SearchResult {
   titlu: string;
   excerpt?: string;
   similarity?: number;
-  type: "sesizare" | "petitie" | "stire";
+  type: "sesizare" | "petitie";
 }
 
 export async function GET(req: Request) {
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") ?? "").trim();
-  const type = (url.searchParams.get("type") ?? "sesizari") as "sesizari" | "petitii" | "stiri";
+  const type = (url.searchParams.get("type") ?? "sesizari") as "sesizari" | "petitii";
   const limit = Math.max(1, Math.min(20, parseInt(url.searchParams.get("limit") ?? "10", 10) || 10));
 
   if (q.length < 3) {
@@ -109,23 +109,6 @@ export async function GET(req: Request) {
         titlu: r.title,
         excerpt: r.summary,
         type: "petitie" as const,
-      })),
-    });
-  }
-
-  if (type === "stiri") {
-    const { data } = await admin
-      .from("stiri")
-      .select("id, title, ai_summary")
-      .or(`title.ilike.${sqlPattern},ai_summary.ilike.${sqlPattern}`)
-      .limit(limit);
-    return NextResponse.json({
-      mode: "keyword",
-      results: (data ?? []).map((r) => ({
-        id: r.id,
-        titlu: r.title,
-        excerpt: r.ai_summary,
-        type: "stire" as const,
       })),
     });
   }

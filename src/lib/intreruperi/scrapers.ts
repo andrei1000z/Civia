@@ -15,15 +15,9 @@
  *   - Apavital Iași (apavital.ro)                     — HTML, often open
  *   - DELGAZ Grid (delgaz.ro)                         — HTML
  *   - DEER (distributie.ro / e-distributie.com)       — HTML
- *   - News-derived (stiri_cache table in Supabase)    — surfaces outages
- *                                                       announced via local
- *                                                       press when the
- *                                                       direct site is dark
  *
  * For sources still blocked even with browser headers we'd need a
  * headless browser (Playwright via Browserless.io / Bright Data — paid).
- * The news-derived source partly compensates: if Apa Nova publishes an
- * outage and Digi24 / HotNews / B365 picks it up, we still catch it.
  */
 
 import type { Interruption } from "@/data/intreruperi";
@@ -1086,99 +1080,6 @@ export async function scrapeReteleElectrice(): Promise<Interruption[]> {
   return out;
 }
 
-// ─── News-derived outage source ─────────────────────────────────────
-//
-// When a utility's website is WAF-dark we can still surface outages
-// they announce by parsing our own `stiri_cache` table for outage
-// keywords. This catches, for instance, an Apa Nova outage covered by
-// Digi24 even when apanovabucuresti.ro returns a Cloudflare challenge
-// to our cron's IP. Coverage is not as exhaustive as a direct scrape,
-// but it's a strong fallback floor.
-
-import { createSupabaseAdmin } from "@/lib/supabase/admin";
-
-interface StiriRow {
-  url: string;
-  title: string;
-  excerpt: string | null;
-  published_at: string;
-  counties: string[] | null;
-}
-
-// Title-level filter: must announce an outage / interruption / planned
-// works. We avoid catching general utility news ("noi tarife apa nova")
-// by requiring an action verb + utility keyword.
-//
-// Updated mai 2026: catch mai larg — include „pana de curent",
-// „blackout", „evacuare", „pierdere", și mai multe forme verbale.
-const NEWS_OUTAGE_RE =
-  /\b(?:se opre[sș]te|întrerup|opri[rt]|opre[sș]te furnizarea|f[aă]r[aă] (?:ap[aă]|c[aă]ldur[aă]|gaz|curent|electric|gaze)|avarie|defec[țt]iune|pan[aă]\s+de\s+curent|blackout|sistat[aă]?|reziliat[aă]?|lucr[aă]ri (?:de )?(?:reabilitare|moderniza|înlocuir|repara|extindere|interven|revizie))[^.]{0,100}\b(?:ap[aă]|c[aă]ldur[aă]|gaz|gaze|curent|electric|termoficare|magistral|conduct|re[țt]ea|ho[țt][șs]ot|distribu[țt]ie)\b/i;
-
-function classifyNewsType(text: string): Interruption["type"] {
-  return classifyType(text);
-}
-
-export async function scrapeFromNews(): Promise<Interruption[]> {
-  const out: Interruption[] = [];
-  let rows: StiriRow[] = [];
-  try {
-    const supabase = createSupabaseAdmin();
-    // Last 5 days of articles — outages older than that are stale.
-    const cutoff = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase
-      .from("stiri_cache")
-      .select("url,title,excerpt,published_at,counties")
-      .gte("published_at", cutoff)
-      .limit(500);
-    if (error) return [];
-    rows = (data as StiriRow[]) ?? [];
-  } catch {
-    return [];
-  }
-
-  for (const r of rows) {
-    const haystack = `${r.title} ${r.excerpt ?? ""}`;
-    if (!NEWS_OUTAGE_RE.test(haystack)) continue;
-
-    const type = classifyNewsType(haystack);
-    const addresses = extractAddresses(haystack);
-    if (addresses.length === 0) {
-      // No street-level address → keep but flag as "zonă nespecificată"
-      // so users know to read the source. Skip if not even a city is
-      // implied (county tag absent).
-      const c = r.counties?.[0];
-      if (!c) continue;
-      addresses.push(`${c} (zonă nespecificată — vezi articolul)`);
-    }
-
-    const startAt = new Date(r.published_at);
-    if (Number.isNaN(startAt.getTime())) continue; // published_at malformat → sari (toISOString ar arunca)
-    const endAt = new Date(startAt);
-    endAt.setHours(endAt.getHours() + 24); // assume same-day; user reads source for exact
-
-    const county = r.counties?.[0]?.toUpperCase() ?? "B";
-    const id = `news-${slugify(r.url.slice(-80))}-${startAt.toISOString().slice(0, 10)}`;
-
-    out.push({
-      id,
-      externalId: id,
-      type,
-      status: endAt > new Date() ? "programat" : "finalizat",
-      provider: "Anunț din presă (Civia)",
-      sourceUrl: r.url,
-      sourceEntryUrl: r.url,
-      sourceEntryTitle: r.title.slice(0, 200),
-      reason: r.title.slice(0, 200),
-      addresses,
-      county,
-      startAt: startAt.toISOString(),
-      endAt: endAt.toISOString(),
-      excerpt: (r.excerpt ?? r.title).slice(0, 220),
-    });
-  }
-  return out;
-}
-
 // ─── Master orchestrator ────────────────────────────────────────────
 
 export interface ScrapeResult {
@@ -1188,7 +1089,7 @@ export interface ScrapeResult {
 }
 
 export async function scrapeAllSources(): Promise<ScrapeResult> {
-  // All 9 sources run in parallel — slowest (or longest-timeout)
+  // All sources run in parallel — slowest (or longest-timeout)
   // paces the whole refresh. Each scraper handles its own errors and
   // returns []; nothing should reach Promise.allSettled rejected, but
   // we still defensively handle that path.
@@ -1227,8 +1128,6 @@ export async function scrapeAllSources(): Promise<ScrapeResult> {
     { key: "engie-distrigaz-sud", fn: scrapeEngieGaz },
     // ── Lucrări stradă (Primării) ──
     { key: "pmb-bucuresti", fn: scrapePmb },
-    // ── Fallback floor — presa locală ──
-    { key: "news-derived", fn: scrapeFromNews },
   ];
 
   const settled = await Promise.allSettled(sources.map((s) => s.fn()));

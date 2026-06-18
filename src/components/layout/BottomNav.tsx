@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Send,
-  Newspaper,
   FileSignature,
   Menu as MenuIcon,
   Search as SearchIcon,
@@ -23,7 +22,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
-import { ALL_COUNTIES } from "@/data/counties";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +34,7 @@ const SearchModal = dynamic(
 
 /**
  * BottomNav — navigația principală pe MOBIL, stil iOS 26 „Liquid Glass".
- * Bară flotantă jos (4: Sesizări · Știri · Petiții · Meniu) + sheet deasupra cu
+ * Bară flotantă jos (3: Sesizări · Petiții · Meniu) + sheet deasupra cu
  * restul destinațiilor. Înlocuiește navbarul de sus pe mobil; ascunsă pe desktop.
  *
  * Material: `.lc-nav-glass` (opac cât trebuie pt. lizibilitate + specular + rim).
@@ -49,10 +47,9 @@ const SPRING = "cubic-bezier(0.33, 1.28, 0.5, 1)";
 
 type Item = { href: string; label: string; Icon: LucideIcon };
 
-// Cele 3 destinații principale (Meniu e al 4-lea, special).
+// Cele 2 destinații principale (Meniu e al 3-lea, special).
 const TABS: Item[] = [
   { href: "/sesizari", label: "Sesizări", Icon: Send },
-  { href: "/stiri", label: "Știri", Icon: Newspaper },
   { href: "/petitii", label: "Petiții", Icon: FileSignature },
 ];
 
@@ -71,8 +68,6 @@ const SHEET_LINKS: Item[] = [
   { href: "/clasament", label: "Clasament", Icon: Trophy },
 ];
 
-const COUNTY_SLUGS = new Set(ALL_COUNTIES.map((c) => c.slug));
-
 export function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -84,15 +79,10 @@ export function BottomNav() {
   const accum = useRef(0); // delta cumulat (histerezis anti-flicker)
 
   const isActive = (href: string) => {
-    if (pathname === href || pathname.startsWith(href + "/")) return true;
-    // variantă cu prefix de județ REAL (ex: /cj/stiri) pt. tab-uri county-aware.
-    const m = pathname.match(/^\/([a-z]{1,2})(?=\/)/);
-    if (!m || !COUNTY_SLUGS.has(m[1]!)) return false;
-    const noCounty = pathname.slice(m[0].length);
-    return noCounty === href || noCounty.startsWith(href + "/");
+    return pathname === href || pathname.startsWith(href + "/");
   };
   const routeIndex = TABS.findIndex((t) => isActive(t.href));
-  const pillIndex = open ? 3 : routeIndex;
+  const pillIndex = open ? TABS.length : routeIndex;
 
   // Închide sheet-ul la schimbarea rutei.
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -258,7 +248,7 @@ export function BottomNav() {
         {/* ===== BARĂ ===== */}
         <nav
           aria-label="Navigare"
-          className="pointer-events-auto relative w-full max-w-md lc-nav-glass rounded-full grid grid-cols-4 px-1.5"
+          className="pointer-events-auto relative w-full max-w-md lc-nav-glass rounded-full grid grid-cols-3 px-1.5"
         >
           {/* Pastila activă — o celulă lățime, alunecă springy între sloturi. */}
           <span

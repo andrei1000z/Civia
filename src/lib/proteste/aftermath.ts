@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { extractBodyFromHtml } from "@/lib/stiri/extract-body";
+import { extractBodyFromHtml } from "@/lib/text/extract-body";
 
 // ============================================================
 // Types

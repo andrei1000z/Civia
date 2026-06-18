@@ -20,7 +20,6 @@ export type SearchResultType =
   | "sesizare"
   | "ghid"
   | "eveniment"
-  | "stire"
   | "page"
   | "judet"
   | "petitie"
@@ -39,7 +38,7 @@ export interface SearchResult {
   /** Score 0-100 used to rank results across types. */
   score: number;
   /** UI hint: which group this result belongs to. */
-  group: "actiuni" | "navigatie" | "sesizari" | "petitii_proteste" | "stiri_evenimente" | "ghiduri" | "autoritati";
+  group: "actiuni" | "navigatie" | "sesizari" | "petitii_proteste" | "evenimente" | "ghiduri" | "autoritati";
 }
 
 const STATIC_PAGES: Omit<SearchResult, "score" | "group">[] = [
@@ -47,7 +46,6 @@ const STATIC_PAGES: Omit<SearchResult, "score" | "group">[] = [
   { type: "page", title: "Petiții", url: "/petitii", excerpt: "Petiții civice curate" },
   { type: "page", title: "Proteste", url: "/proteste", excerpt: "Proteste civice anunțate" },
   { type: "page", title: "Întreruperi planificate", url: "/intreruperi", excerpt: "Întreruperi apă, gaz, curent" },
-  { type: "page", title: "Știri civice", url: "/stiri", excerpt: "Știri agregate din surse verificate" },
   { type: "page", title: "Evenimente", url: "/evenimente", excerpt: "Evenimente majore din România" },
   { type: "page", title: "Ghiduri practice", url: "/ghiduri", excerpt: "Ghiduri pas-cu-pas pentru cetățeni" },
   { type: "page", title: "Sesizări publice", url: "/sesizari-publice", excerpt: "Ce semnalează alți cetățeni" },
@@ -150,8 +148,7 @@ const GROUP_FOR_TYPE: Record<SearchResultType, SearchResult["group"]> = {
   "ghid-sesizare": "sesizari",
   ghid: "ghiduri",
   glosar: "ghiduri",
-  eveniment: "stiri_evenimente",
-  stire: "stiri_evenimente",
+  eveniment: "evenimente",
   petitie: "petitii_proteste",
   protest: "petitii_proteste",
   page: "navigatie",
@@ -198,7 +195,7 @@ export async function GET(req: Request) {
         type: "judet",
         title: c.name,
         url: `/${c.slug}`,
-        excerpt: `Sesizări, întreruperi, știri pentru ${c.name}`,
+        excerpt: `Sesizări, întreruperi, evenimente pentru ${c.name}`,
         meta: c.id,
       }, s + 25));
     }
@@ -333,7 +330,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // ─── DB: Sesizari + Stiri + Petitii + Proteste (parallel) ──────────
+  // ─── DB: Sesizari + Petitii + Proteste (parallel) ──────────
   const supabase = await createSupabaseServer();
   const safeWords = words.map((w) => sanitizeForPostgrest(w)).filter(Boolean);
   const firstWord = safeWords[0];
@@ -348,19 +345,13 @@ export async function GET(req: Request) {
   const dre = diacriticRegex(filterWord);
 
   if (firstWord) {
-    const [sesRes, stiriRes, petitiiRes, protesteRes] = await Promise.all([
+    const [sesRes, petitiiRes, protesteRes] = await Promise.all([
       supabase
         .from("sesizari_feed")
         .select("code, titlu, locatie, sector, status, descriere")
         // `code` pe ilike (cifre, fără diacritice); textul pe imatch diacritic-tolerant.
         .or(`code.ilike.%${filterWord}%,titlu.imatch.${dre},locatie.imatch.${dre},descriere.imatch.${dre}`)
         .limit(20),
-      supabase
-        .from("stiri_cache")
-        .select("id, title, excerpt, source, published_at")
-        .or(`title.imatch.${dre},excerpt.imatch.${dre}`)
-        .order("published_at", { ascending: false })
-        .limit(15),
       supabase
         .from("petitii")
         .select("slug, title, summary, status")
@@ -391,22 +382,6 @@ export async function GET(req: Request) {
           excerpt: `#${r.code} · ${r.locatie}`,
           meta: r.status,
         }, codeHit ? 200 : s + 5));
-      }
-    }
-
-    // Stiri
-    for (const r of (stiriRes.data ?? []) as Array<{ id: string; title: string; excerpt: string; source: string }>) {
-      const titleN = normalizeForSearch(r.title);
-      const hayN = normalizeForSearch(`${r.title} ${r.excerpt ?? ""}`);
-      if (matchesAll(hayN, safeWords)) {
-        const s = scoreMatch(qRaw, safeWords, titleN, normalizeForSearch(r.excerpt ?? ""));
-        results.push(makeResult({
-          type: "stire",
-          title: r.title,
-          url: `/stiri/${r.id}`,
-          excerpt: (r.excerpt ?? "").slice(0, 120),
-          meta: r.source,
-        }, s));
       }
     }
 

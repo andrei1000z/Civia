@@ -125,7 +125,7 @@ export default async function IntreruperiPage() {
         description={
           <>
             Află din timp când ți se oprește apa, caldura, gazul sau curentul + lucrările
-            de stradă în curs. Agregat automat din <strong>30 de surse oficiale</strong>{" "}
+            de stradă în curs. Agregat automat din <strong>29 de surse oficiale</strong>{" "}
             naționale (Apa Nova, RAJA, Aquatim, DEER, REE, ENGIE, PMB ș.a.) la fiecare
             12 ore.
           </>
@@ -301,7 +301,7 @@ export default async function IntreruperiPage() {
 
       <section className="mt-6 bg-[var(--color-primary-soft)] rounded-[var(--radius-md)] p-6">
         <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-2 flex items-center gap-2">
-          <MapPin size={18} aria-hidden="true" /> 30 surse oficiale
+          <MapPin size={18} aria-hidden="true" /> 29 surse oficiale
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mb-5">
           Fiecare întrerupere provine dintr-un anunț public al unuia dintre operatorii
@@ -371,14 +371,6 @@ export default async function IntreruperiPage() {
             title="Lucrări strazi (1)"
             sources={[
               { name: "Primăria Municipiului București (PMB API)", url: "https://www.pmb.ro/anunturi-lucrari", county: "B" },
-            ]}
-          />
-
-          <SourceGroup
-            icon="📰"
-            title="Fallback floor (presa locală)"
-            sources={[
-              { name: "30+ surse de presă agregate de Civia", url: "/stiri", county: "național" },
             ]}
           />
         </div>

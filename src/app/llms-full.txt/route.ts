@@ -38,7 +38,7 @@ export async function GET() {
 
 ## Ce este Civia
 
-Civia.ro este o platformă civică independentă, gratuită, pentru cetățenii României. Permite trimiterea de sesizări formale către primării și autorități, semnarea petițiilor, urmărirea protestelor programate și citirea de știri civice agregate din 12 surse naționale.
+Civia.ro este o platformă civică independentă, gratuită, pentru cetățenii României. Permite trimiterea de sesizări formale către primării și autorități, semnarea petițiilor și urmărirea protestelor programate.
 
 Civia automatizează procesul de comunicare cu administrația publică:
 - AI-ul scrie sesizarea în limbaj formal (OG 27/2002 compliant)

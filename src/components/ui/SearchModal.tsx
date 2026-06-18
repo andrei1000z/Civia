@@ -8,7 +8,6 @@ import {
   FileText,
   BookOpen,
   Calendar,
-  Newspaper,
   MapPin,
   Sparkles,
   X,
@@ -29,7 +28,6 @@ interface SearchResult {
     | "sesizare"
     | "ghid"
     | "eveniment"
-    | "stire"
     | "page"
     | "judet"
     | "petitie"
@@ -59,7 +57,6 @@ const TYPE_META: Record<
   "ghid-sesizare": { label: "Tip sesizare", icon: FileText, color: "text-emerald-600 dark:text-emerald-400" },
   petitie: { label: "Petiție", icon: Megaphone, color: "text-purple-600 dark:text-purple-400" },
   protest: { label: "Protest", icon: Flag, color: "text-rose-600 dark:text-rose-400" },
-  stire: { label: "Știre", icon: Newspaper, color: "text-blue-600 dark:text-blue-400" },
   eveniment: { label: "Eveniment", icon: Calendar, color: "text-amber-600 dark:text-amber-400" },
   ghid: { label: "Ghid", icon: BookOpen, color: "text-violet-600 dark:text-violet-400" },
   glosar: { label: "Glosar", icon: BookOpen, color: "text-violet-600 dark:text-violet-400" },
@@ -74,7 +71,7 @@ const GROUP_LABELS: Record<string, string> = {
   navigatie: "Navigație rapidă",
   sesizari: "Sesizări",
   petitii_proteste: "Petiții & Proteste",
-  stiri_evenimente: "Știri & Evenimente",
+  evenimente: "Evenimente",
   ghiduri: "Ghiduri & Glosar",
   autoritati: "Autorități",
 };
@@ -84,7 +81,7 @@ const GROUP_ORDER = [
   "navigatie",
   "sesizari",
   "petitii_proteste",
-  "stiri_evenimente",
+  "evenimente",
   "ghiduri",
   "autoritati",
 ];
@@ -512,7 +509,7 @@ export function SearchModal({ open, onClose }: Props) {
                 </div>
                 <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
                   Search-ul se uită în <strong className="text-[var(--color-text)]">sesizări, petiții,
-                  proteste, știri, ghiduri, glosar și autorități</strong> — inclusiv după
+                  proteste, evenimente, ghiduri, glosar și autorități</strong> — inclusiv după
                   numărul sesizării (ex „00035").
                 </p>
               </div>

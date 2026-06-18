@@ -1188,7 +1188,7 @@ export function trackPetitieSign(slug: string): void {
 
 /** Share petitie/sesizare/protest pe o platforma. */
 export function trackShare(
-  kind: "sesizare" | "petitie" | "protest" | "stire",
+  kind: "sesizare" | "petitie" | "protest",
   channel: "copy" | "facebook" | "twitter" | "whatsapp" | "telegram" | "native",
 ): void {
   trackCustomEvent("share", { kind, channel });
@@ -1227,7 +1227,7 @@ export function trackMapInteraction(map: string, action: "zoom" | "drag" | "mark
   trackCustomEvent("map-interaction", { map: map.slice(0, 32), action });
 }
 
-/** Filter aplicat pe un feed (sesizari/petitii/stiri). */
+/** Filter aplicat pe un feed (sesizari/petitii). */
 export function trackFilterApplied(feed: string, filter: string, value: string): void {
   trackCustomEvent("filter-applied", {
     feed: feed.slice(0, 20),

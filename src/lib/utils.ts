@@ -30,7 +30,7 @@ export function formatDateTime(input: string | Date, locale = "ro-RO"): string {
   const date = typeof input === "string" ? new Date(input) : input;
   // Timezone EXPLICIT → altfel server-ul Vercel (UTC) și browser-ul
   // (Europe/Bucharest) emit texte diferite → React hydration error
-  // #418/#419. Logged 5 ori în analytics pe /stiri/[id] înainte de fix.
+  // #418/#419.
   return date.toLocaleString(locale, {
     day: "numeric",
     month: "short",

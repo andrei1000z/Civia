@@ -31,7 +31,6 @@ Platformă independentă, gratuită, fără cont obligatoriu. Date stocate în U
 - [Petiții civice](https://civia.ro/petitii): Catalog curat de petiții civice agregate de pe Declic, Avaaz, change.org + petițiile inițiate direct pe Civia.
 - [Proteste programate](https://civia.ro/proteste): Calendar civic cu mitingurile, marșurile și protestele anunțate în România.
 - [Întreruperi utilități](https://civia.ro/intreruperi): Întreruperi planificate (apă, gaz, curent, căldură) scrape-uite de la distribuitori — Apa Nova, Distrigaz, e-distribuție, etc.
-- [Știri civice](https://civia.ro/stiri): Articole agregate din 15 surse naționale verificate (Digi24, HotNews, G4Media, Recorder, PressOne, etc.) — cu sinteză AI structurată.
 - [Ghiduri practice](https://civia.ro/ghiduri): 11 ghiduri pas-cu-pas — Legea 544/2001 (acces la informații publice), contestarea unei amenzi, înființare ONG, dezbatere publică, ajutor social, ghid biciclist, ghid cetățean, ghid pregătire cutremur.
 
 ## Pentru cetățeni

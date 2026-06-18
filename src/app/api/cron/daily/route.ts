@@ -10,8 +10,8 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://civia.ro";
  * 2026-06-05 — MASTER DAILY CRON (dispecer).
  *
  * Vercel Hobby permite MAX 2 cron-uri (1×/zi). Înainte erau programate doar
- * /api/stiri/fetch + /api/sesizari/reminders → digestul de newsletter,
- * weekly-rezolvate, auto-status și drafts/nudge NU porneau automat niciodată.
+ * /api/sesizari/reminders → digestul de newsletter, weekly-rezolvate,
+ * auto-status și drafts/nudge NU porneau automat niciodată.
  *
  * Soluție: UN singur cron zilnic care declanșează sub-job-urile potrivite zilei.
  * Fiecare sub-endpoint e o invocare serverless SEPARATĂ (GET + Bearer

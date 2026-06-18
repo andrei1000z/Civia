@@ -3,10 +3,6 @@
   "regions": ["fra1"],
   "crons": [
     {
-      "path": "/api/stiri/fetch",
-      "schedule": "0 6 * * *"
-    },
-    {
       "path": "/api/cron/daily",
       "schedule": "0 9 * * *"
     }
@@ -20,9 +16,6 @@
     },
     "src/app/api/upload/route.ts": {
       "maxDuration": 30
-    },
-    "src/app/api/stiri/fetch/route.ts": {
-      "maxDuration": 60
     },
     "src/app/api/intreruperi/refresh/route.ts": {
       "maxDuration": 180

@@ -10,11 +10,11 @@ import { getAllInterruptions } from "@/data/intreruperi";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 // 2026-05-19: 1h → 12h. Sitemap-ul are MII de URL-uri (42 judete × ~10 rute
-// + 200+ sesizari + 50 outages + 100+ stiri). Regenerarea era cel mai mare
+// + 200+ sesizari + 50 outages). Regenerarea era cel mai mare
 // outage de bandwidth (sitemap.xml era >2MB). Google crawl-uieste o data/zi
 // oricum, 12h e mai mult decat suficient.
-// 2026-05-24 Faza 2: 12h → 6h. Stiri-cache se primenește rapid; vrem ca
-// Google să vadă URL-urile noi mai des. 6h e tot mult mai puțin overhead
+// 2026-05-24 Faza 2: 12h → 6h. Conținutul dinamic se primenește rapid; vrem
+// ca Google să vadă URL-urile noi mai des. 6h e tot mult mai puțin overhead
 // decât 1h initial dar face sitemap-ul actualizat de 4× pe zi în loc de 2×.
 export const revalidate = 21600;
 
@@ -25,7 +25,7 @@ const COUNTY_PAGES = [
   // 2026-06-06 (audit P1 #14) — scos „/ghiduri": e național-only (proxy.ts
   // 308-redirectează /{judet}/ghiduri → /ghiduri), deci genera 42 URL-uri
   // duplicate cu canonical conflictual → penalizare SEO. /ghiduri național rămâne mai jos.
-  "", "/sesizari", "/stiri",
+  "", "/sesizari",
   "/autoritati", "/evenimente", "/istoric",
   // 2026-05-19: /intreruperi mutat la /intreruperi/[county-slug]
   // (vezi countyIntreruperiRoutes mai jos). Vechiul /{slug}/intreruperi
@@ -79,7 +79,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Legacy pages that still exist
   const legacyRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/sesizari`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
-    { url: `${base}/stiri`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${base}/ghiduri`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     // 2026-06-06 (audit P1 #8) — /compara restaurat (comparație civică județe).
     { url: `${base}/compara`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
@@ -159,14 +158,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.65,
   }));
 
-  // Dynamic sesizari + stiri + proteste + petitii (all pulled in parallel)
+  // Dynamic sesizari + proteste + petitii (all pulled in parallel)
   let sesizariRoutes: MetadataRoute.Sitemap = [];
-  let stiriRoutes: MetadataRoute.Sitemap = [];
   let protesteRoutes: MetadataRoute.Sitemap = [];
   let petitiiRoutes: MetadataRoute.Sitemap = [];
   try {
     const admin = createSupabaseAdmin();
-    const [sesResp, stiriResp, protesteResp, petitiiResp] = await Promise.all([
+    const [sesResp, protesteResp, petitiiResp] = await Promise.all([
       admin
         .from("sesizari")
         .select("code, updated_at")
@@ -174,11 +172,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .eq("moderation_status", "approved")
         .order("created_at", { ascending: false })
         .limit(500),
-      admin
-        .from("stiri_cache")
-        .select("id, published_at, fetched_at")
-        .order("published_at", { ascending: false })
-        .limit(200),
       admin
         .from("proteste")
         .select("slug, updated_at, start_at")
@@ -202,19 +195,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: "weekly" as const,
           priority: 0.5,
         }));
-    }
-    if (stiriResp.data) {
-      stiriRoutes = (stiriResp.data as { id: string; published_at: string; fetched_at: string }[])
-        .map((s) => {
-          const dt = s.published_at ?? s.fetched_at;
-          const parsed = dt ? new Date(dt) : now;
-          return {
-            url: `${base}/stiri/${s.id}`,
-            lastModified: isNaN(parsed.getTime()) ? now : parsed,
-            changeFrequency: "monthly" as const,
-            priority: 0.4,
-          };
-        });
     }
     if (protesteResp.data) {
       protesteRoutes = (protesteResp.data as { slug: string; updated_at: string; start_at: string }[])
@@ -246,7 +226,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...intreruperiRoutes,
     ...countyIntreruperiRoutes,
     ...sesizariRoutes,
-    ...stiriRoutes,
     ...protesteRoutes,
     ...petitiiRoutes,
     ...cumFacRoutes,
