@@ -3,13 +3,13 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 /**
- * Regression test pentru /setari layout pe mobil (fost /cont).
+ * Regression test pentru /setari layout pe mobil (fost /cont), stil Samsung One UI.
  *
- * Bug original: label-urile Field cu `uppercase tracking-wider` depășeau
- * viewport-ul pe Android cu display-zoom (label lung „NUME COMPLET (PENTRU
- * SESIZARI)" → scroll orizontal blocat). Fix: fără uppercase, break-words +
- * min-w-0. 2026-06-18 — pagina e acum single-column iOS; păstrăm garda pe
- * Field (încă folosit) + adăugăm garda pe noua structură (max-w-2xl + grupuri).
+ * 2026-06-18 — câmpurile de profil sunt acum rânduri (SettingsRow) cu input +
+ * aria-label (componenta Field a fost eliminată). Garda: input-urile au
+ * aria-label (a11y), folosesc inputClass (h-11 WCAG + text-base anti-zoom iOS),
+ * pagina e încadrată în max-w-2xl, iar rândurile sunt grupate în carduri cu
+ * iconițe circulare colorate.
  */
 describe("/setari layout — mobile regression guards", () => {
   const source = readFileSync(
@@ -17,40 +17,32 @@ describe("/setari layout — mobile regression guards", () => {
     "utf-8",
   );
 
-  it("Field labels nu folosesc uppercase + tracking-wider (cauza bug-ului)", () => {
-    const fieldMatch = source.match(
-      /function Field\([^)]*\)\s*\{[\s\S]*?<label([^>]*)className=\{?"([^"]+)"/,
-    );
-    expect(fieldMatch).not.toBeNull();
-    const labelClasses = fieldMatch?.[2] ?? "";
-    expect(labelClasses).not.toMatch(/\buppercase\b/);
-    expect(labelClasses).not.toMatch(/\btracking-wider\b/);
-    expect(labelClasses).not.toMatch(/\bwhitespace-nowrap\b/);
+  it("inputurile au aria-label (a11y, fără componenta Field)", () => {
+    expect(source).toMatch(/aria-label="Nume afișat"/);
+    expect(source).toMatch(/aria-label="Telefon"/);
   });
 
-  it("Field labels au break-words si min-w-0 pe wrap-ul parintelui", () => {
-    const fieldMatch = source.match(
-      /function Field\([^)]*\)\s*\{[\s\S]*?<div\s+className="([^"]*)"/,
-    );
-    expect(fieldMatch).not.toBeNull();
-    expect(fieldMatch?.[1] ?? "").toContain("min-w-0");
-
-    const labelMatch = source.match(/<label[^>]*\sclassName="([^"]+)">\s*\{label\}/);
-    expect(labelMatch).not.toBeNull();
-    expect(labelMatch?.[1] ?? "").toContain("break-words");
+  it("inputurile folosesc inputClass (h-11 WCAG + text-base anti-zoom iOS)", () => {
+    expect(source).toMatch(/inputClass/);
+    const def = source.match(/const inputClass\s*=\s*"([^"]+)"/);
+    expect(def).not.toBeNull();
+    const cls = def?.[1] ?? "";
+    expect(cls).toContain("h-11");
+    expect(cls).toMatch(/\btext-base\b/);
   });
 
   it("conținutul e încadrat în max-w-2xl (nu iese din viewport pe mobil)", () => {
     expect(source).toMatch(/max-w-2xl mx-auto/);
   });
 
-  it("rândurile sunt grupate în carduri iOS (SettingsGroup, min. 3 grupuri)", () => {
+  it("rândurile sunt grupate în carduri (SettingsGroup, min. 4 grupuri)", () => {
     const groupCount = [...source.matchAll(/<SettingsGroup\b/g)].length;
-    expect(groupCount).toBeGreaterThanOrEqual(3);
+    expect(groupCount).toBeGreaterThanOrEqual(4);
   });
 
-  it("inputurile folosesc inputClass (h-11 WCAG + text-base anti-zoom iOS)", () => {
-    expect(source).toMatch(/className=\{inputClass\}/);
-    expect(source).toMatch(/const inputClass\s*=/);
+  it("iconițele sunt cercuri colorate cu glyph alb (stil Samsung)", () => {
+    expect(source).toMatch(
+      /iconClass="bg-(blue|indigo|emerald|teal|orange|amber|violet|cyan|red|sky|slate)-500 text-white"/,
+    );
   });
 });

@@ -1,46 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * 2026-06-18 — Primitive stil „Setări de telefon" (iOS Settings) pentru /setari.
- * SettingsGroup = card rotunjit cu titlu de secțiune deasupra + rânduri separate
- * de divider. SettingsRow = un rând: chip-icon stânga + label/sublabel + dreapta
- * (valoare / chevron / toggle / control). Liquid-glass clean, minimalist.
+ * 2026-06-18 — Primitive stil „Settings de telefon" (Samsung One UI / iOS).
+ *
+ * - Carduri rotunjite (rounded-3xl) care plutesc pe fundalul paginii, cu spațiu
+ *   între ele (grupul nu pune gap — îl pune containerul: space-y-3/4).
+ * - Fiecare rând are o iconiță CIRCULARĂ colorată (fill solid + glyph alb).
+ * - Divider INSET: începe după iconiță (left-[70px]), ascuns pe ultimul rând.
  */
 
 export function SettingsGroup({
-  title,
-  footer,
   children,
   className,
 }: {
-  title?: string;
-  footer?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <section className={cn("space-y-1.5", className)}>
-      {title && (
-        <h2 className="px-1 sm:px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">
-          {title}
-        </h2>
+    <div
+      className={cn(
+        "overflow-hidden rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)]",
+        className,
       )}
-      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-1)] divide-y divide-[var(--color-border)]/70">
-        {children}
-      </div>
-      {footer && (
-        <p className="px-1 sm:px-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">{footer}</p>
-      )}
-    </section>
+    >
+      {children}
+    </div>
   );
 }
 
 type RowBase = {
   icon?: React.ReactNode;
+  /** clasă pt. cercul iconiței: fill solid + glyph alb, ex. "bg-blue-500 text-white" */
   iconClass?: string;
   label: React.ReactNode;
   sublabel?: React.ReactNode;
@@ -50,51 +43,96 @@ type RowBase = {
   children?: React.ReactNode;
 };
 
-function RowInner({ icon, iconClass, label, sublabel, right, danger, children, interactive }: RowBase & { interactive?: boolean }) {
+// Divider inset (after icon ~70px) + ascuns pe ultimul rând al grupului.
+const ROW_BASE =
+  "relative flex gap-3.5 px-4 min-h-[60px] after:content-[''] after:absolute after:left-[70px] after:right-0 after:bottom-0 after:h-px after:bg-[var(--color-border)] last:after:hidden";
+
+function Glyph({
+  icon,
+  iconClass,
+  className,
+}: {
+  icon?: React.ReactNode;
+  iconClass?: string;
+  className?: string;
+}) {
+  if (!icon) return null;
   return (
-    <div className={cn("flex items-center gap-3 px-4 py-3 min-h-[52px]", interactive && "transition-colors")}>
-      {icon && (
-        <span
-          className={cn(
-            "shrink-0 w-7 h-7 rounded-[9px] grid place-items-center",
-            iconClass ?? "bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]",
-          )}
-          aria-hidden="true"
-        >
-          {icon}
-        </span>
+    <span
+      className={cn(
+        "shrink-0 w-10 h-10 rounded-full grid place-items-center [&>svg]:w-5 [&>svg]:h-5",
+        iconClass ?? "bg-[var(--color-primary)] text-white",
+        className,
       )}
-      <div className="flex-1 min-w-0">
-        <div className={cn("text-sm font-medium leading-snug", danger ? "text-[var(--color-error)]" : "text-[var(--color-text)]")}>
-          {label}
-        </div>
-        {sublabel && <div className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">{sublabel}</div>}
-        {children}
+      aria-hidden="true"
+    >
+      {icon}
+    </span>
+  );
+}
+
+function Body({
+  label,
+  sublabel,
+  danger,
+  children,
+}: Pick<RowBase, "label" | "sublabel" | "danger" | "children">) {
+  return (
+    <div className="flex-1 min-w-0 py-2.5">
+      <div
+        className={cn(
+          "text-[15px] font-medium leading-snug",
+          danger ? "text-[var(--color-error)]" : "text-[var(--color-text)]",
+        )}
+      >
+        {label}
       </div>
-      {right !== undefined && right !== null && (
-        <div className="shrink-0 text-sm text-[var(--color-text-muted)] flex items-center gap-1.5 max-w-[55%] truncate">{right}</div>
+      {sublabel && (
+        <div className="text-[13px] text-[var(--color-text-muted)] mt-0.5 leading-relaxed">{sublabel}</div>
       )}
+      {children}
     </div>
   );
 }
 
-/** Rând static / cu conținut (input, descriere). */
-export function SettingsRow(props: RowBase) {
-  return <RowInner {...props} />;
+/** Rând static / cu conținut sub label (input, descriere). align="start" =
+ *  iconița se aliniază cu label-ul (pentru rânduri înalte cu input dedesubt). */
+export function SettingsRow({
+  icon,
+  iconClass,
+  right,
+  align = "center",
+  ...body
+}: RowBase & { align?: "center" | "start" }) {
+  return (
+    <div className={cn(ROW_BASE, align === "start" ? "items-start" : "items-center")}>
+      <Glyph icon={icon} iconClass={iconClass} className={align === "start" ? "mt-2.5" : undefined} />
+      <Body {...body} />
+      {right != null && <div className="shrink-0 flex items-center self-center pl-1">{right}</div>}
+    </div>
+  );
 }
 
-/** Rând clicabil — link sau onClick — cu chevron iOS implicit. */
+/** Rând clicabil — link sau onClick (Samsung nu pune chevron pe rândurile principale). */
 export function SettingsLinkRow({
   href,
   onClick,
-  showChevron = true,
-  ...row
-}: RowBase & { href?: string; onClick?: () => void; showChevron?: boolean }) {
-  const right =
-    row.right ?? (showChevron ? <ChevronRight size={16} className="text-[var(--color-text-muted)]/70" aria-hidden="true" /> : null);
-  const cls =
-    "block w-full text-left hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:bg-[var(--color-surface-2)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] transition-colors";
-  const inner = <RowInner {...row} right={right} interactive />;
+  icon,
+  iconClass,
+  right,
+  ...body
+}: RowBase & { href?: string; onClick?: () => void }) {
+  const cls = cn(
+    ROW_BASE,
+    "items-center w-full text-left hover:bg-[var(--color-surface-2)] active:scale-[0.995] focus:outline-none focus-visible:bg-[var(--color-surface-2)] transition-[transform,background-color]",
+  );
+  const inner = (
+    <>
+      <Glyph icon={icon} iconClass={iconClass} />
+      <Body {...body} />
+      {right != null && <div className="shrink-0 flex items-center pl-1">{right}</div>}
+    </>
+  );
   if (href) {
     return (
       <Link href={href} className={cls} onClick={onClick}>
@@ -106,5 +144,38 @@ export function SettingsLinkRow({
     <button type="button" onClick={onClick} className={cls}>
       {inner}
     </button>
+  );
+}
+
+/** Card mare de profil (nume + sub-text la stânga, avatar la dreapta) — stil Samsung. */
+export function SettingsProfileCard({
+  name,
+  sub,
+  initial,
+}: {
+  name: string;
+  sub?: string;
+  initial: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-1)] p-4 sm:p-5">
+      <div className="flex-1 min-w-0">
+        <div className="text-xl sm:text-2xl font-bold text-[var(--color-text)] truncate">{name}</div>
+        {sub && <div className="text-sm text-[var(--color-text-muted)] truncate mt-0.5">{sub}</div>}
+      </div>
+      <div
+        className="shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-indigo-600 grid place-items-center text-2xl font-bold text-white shadow-[var(--shadow-2)]"
+        aria-hidden="true"
+      >
+        {initial}
+      </div>
+    </div>
+  );
+}
+
+/** Titlu mic de secțiune (opțional) — Samsung de obicei NU îl pune; folosește rar. */
+export function SettingsGroupTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="px-4 pt-1 text-[13px] font-semibold text-[var(--color-text-muted)]">{children}</h2>
   );
 }

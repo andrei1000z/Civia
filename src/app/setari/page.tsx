@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useId, cloneElement, isValidElement } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,8 +31,13 @@ import { PushPermissionButton } from "@/components/notifications/PushPermissionB
 import { EngagementPushToggle } from "@/components/notifications/EngagementPushToggle";
 import { MfaSetup } from "@/components/cont/MfaSetup";
 import { AreaSubscriptionsManager } from "@/components/area/AreaSubscriptionsManager";
-import { SettingsGroup, SettingsRow, SettingsLinkRow } from "@/components/settings/SettingsList";
-import { ChevronRight, LogIn } from "lucide-react";
+import {
+  SettingsGroup,
+  SettingsRow,
+  SettingsLinkRow,
+  SettingsProfileCard,
+} from "@/components/settings/SettingsList";
+import { Contact, MapPin, Phone, Bell, BellRing, Volume2, ListChecks, LogIn } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -385,23 +390,20 @@ export default function ContPage() {
   if (!user) {
     return (
       <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
-        <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6">
-          <div className="space-y-1 px-1">
+        <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4">
+          <div className="space-y-1 px-1 mb-1">
             <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold">Setări</h1>
             <p className="text-sm text-[var(--color-text-muted)]">
               Aspectul și accesibilitatea se salvează pe acest dispozitiv, fără cont.
             </p>
           </div>
-          {/* Cont — invitație la conectare (rând stil iOS) */}
-          <SettingsGroup
-            title="Cont"
-            footer="Conectează-te ca să-ți vezi sesizările, co-semnăturile și notificările."
-          >
+          {/* Cont — invitație la conectare (rând cu iconiță colorată, stil Samsung) */}
+          <SettingsGroup>
             <SettingsLinkRow
-              icon={<LogIn size={15} aria-hidden="true" />}
-              iconClass="bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]"
+              icon={<LogIn size={20} aria-hidden="true" />}
+              iconClass="bg-blue-500 text-white"
               label="Conectează-te"
-              sublabel="Magic link pe email — fără parolă"
+              sublabel="Magic link pe email, fără parolă — pentru sesizări, co-semnături și notificări"
               onClick={openAuthModal}
             />
           </SettingsGroup>
@@ -449,118 +451,117 @@ export default function ContPage() {
   return (
     <div className="container-narrow py-4 sm:py-8 md:py-14 px-3 sm:px-6">
       {/* ─── Titlu „Setări" + grup profil (stil iOS Settings) ───────── */}
-      <div className="max-w-2xl mx-auto mb-5 sm:mb-6 space-y-3">
+      <div className="max-w-2xl mx-auto mb-3 sm:mb-4 space-y-3 sm:space-y-4">
         <h1 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-extrabold px-1">Setări</h1>
-        <SettingsGroup>
-          <SettingsRow
-            icon={<span className="text-sm font-bold">{initial}</span>}
-            iconClass="bg-[var(--color-primary)] text-white"
-            label={<span className="text-[15px] font-semibold">{profile?.display_name || "Cetățean"}</span>}
-            sublabel={profile?.email}
-          />
-          <SettingsLinkRow
-            icon={<LogOut size={15} aria-hidden="true" />}
-            iconClass="bg-[var(--color-error-soft)] text-[var(--color-error-on-soft)]"
-            label="Deconectare"
-            danger
-            showChevron={false}
-            onClick={async () => {
-              // Invalidăm cache-ul înainte de signOut ca să nu păstrăm datele
-              // user-ului anterior dacă altcineva intră în cont pe același device.
-              if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
-              await signOut();
-              toast("Te-ai deconectat. La revedere!", "info");
-              router.push("/");
-            }}
-          />
-        </SettingsGroup>
+        {/* Card profil — nume + email + avatar (stil Samsung One UI) */}
+        <SettingsProfileCard
+          name={profile?.display_name || "Cetățean"}
+          sub={profile?.email}
+          initial={initial}
+        />
       </div>
 
-      {/* ─── Main grid: Profile (left) + Sesizari (right) ───────────
-          IMPORTANT: minmax(0, 1fr) NU 1fr — by default „1fr" implicit
-          „minmax(auto, 1fr)" si „auto" = min-content => coloana se
-          extinde la latimea continutului. Daca un card are text neromp-
-          ut (location lung, cod URL), coloana iese din viewport.
-          minmax(0, 1fr) forteaza shrink. */}
-      {/* 2026-06-18 — layout stil „Setări de telefon": o singură coloană
-          centrată (max-w-2xl), grupuri stivuite. Înainte era dashboard 2-col. */}
-      <div className="space-y-5 sm:space-y-6 max-w-2xl mx-auto">
-        <div className="space-y-5">
+      {/* Grupuri de setări — o singură coloană centrată (max-w-2xl),
+          carduri care plutesc pe fundal cu gap-uri uniforme (stil Samsung). */}
+      <div className="space-y-3 sm:space-y-4 max-w-2xl mx-auto">
+        <div className="space-y-3 sm:space-y-4">
           {/* Date personale + abonări — un singur form cu buton Save.
               2026-06-18 — restructurat în grupuri stil „Setări de telefon". */}
-          <form onSubmit={handleSave} className="space-y-5">
-            <SettingsGroup
-              title="Date pentru sesizări"
-              footer="Numele complet și adresa apar pe sesizarea trimisă autorității (OG 27/2002). Telefonul e opțional — doar pentru notificări SMS."
-            >
-              <div className="px-4 py-3">
-                <Field label="Nume afișat">
-                  <input
-                    type="text"
-                    autoComplete="nickname"
-                    value={form.display_name}
-                    onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                    placeholder="Maria P."
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
-              <div className="px-4 py-3">
-                <Field label="Nume complet (pentru sesizări)">
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    placeholder="Maria Popescu"
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
-              <div className="px-4 py-3">
-                <Field label="Adresă domiciliu (pentru sesizări)">
-                  <input
-                    type="text"
-                    autoComplete="street-address"
-                    autoCapitalize="words"
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    placeholder="Str. Exemplu 12, Sector 3"
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
-              <div className="px-4 py-3">
-                <Field label="Telefon (opțional — newsletter + SMS petiții/proteste)">
-                  <input
-                    type="tel"
-                    autoComplete="tel"
-                    inputMode="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="07XX..."
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
+          <form onSubmit={handleSave} className="space-y-3 sm:space-y-4">
+            {/* Date pentru sesizări — fiecare câmp = rând cu iconiță colorată */}
+            <SettingsGroup>
+              <SettingsRow
+                align="start"
+                icon={<User size={20} aria-hidden="true" />}
+                iconClass="bg-blue-500 text-white"
+                label="Nume afișat"
+              >
+                <input
+                  type="text"
+                  autoComplete="nickname"
+                  value={form.display_name}
+                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                  placeholder="Maria P."
+                  aria-label="Nume afișat"
+                  className={`${inputClass} mt-2`}
+                />
+              </SettingsRow>
+              <SettingsRow
+                align="start"
+                icon={<Contact size={20} aria-hidden="true" />}
+                iconClass="bg-indigo-500 text-white"
+                label="Nume complet"
+                sublabel="Apare pe sesizarea trimisă autorității (OG 27/2002)"
+              >
+                <input
+                  type="text"
+                  autoComplete="name"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  placeholder="Maria Popescu"
+                  aria-label="Nume complet"
+                  className={`${inputClass} mt-2`}
+                />
+              </SettingsRow>
+              <SettingsRow
+                align="start"
+                icon={<MapPin size={20} aria-hidden="true" />}
+                iconClass="bg-emerald-500 text-white"
+                label="Adresă domiciliu"
+                sublabel="Apare pe sesizarea trimisă autorității"
+              >
+                <input
+                  type="text"
+                  autoComplete="street-address"
+                  autoCapitalize="words"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Str. Exemplu 12, Sector 3"
+                  aria-label="Adresă domiciliu"
+                  className={`${inputClass} mt-2`}
+                />
+              </SettingsRow>
+              <SettingsRow
+                align="start"
+                icon={<Phone size={20} aria-hidden="true" />}
+                iconClass="bg-teal-500 text-white"
+                label="Telefon"
+                sublabel="Opțional — newsletter + SMS la petiții/proteste"
+              >
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="07XX..."
+                  aria-label="Telefon"
+                  className={`${inputClass} mt-2`}
+                />
+              </SettingsRow>
             </SettingsGroup>
 
-            {/* 5/23/2026 — Abonări granular: 3 surse × 2 canale, opt-in GDPR
-                per fiecare. SMS gated pe phone. Auto-save pe toggle. */}
-            <div className="space-y-1.5">
-              <h2 className="px-1 sm:px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">
-                Notificări pe email & SMS
-              </h2>
-              <SubscriptionsGrid
-                form={form}
-                onChange={(patch) => {
-                  setForm({ ...form, ...patch });
-                  autoSaveNewsletter(patch);
-                }}
-                phoneAvailable={!!form.phone.trim()}
-                savedAt={newsletterSavedAt}
+            {/* Notificări email/SMS — header colorat + grila de abonări (auto-save).
+                5/23/2026 — 3 surse × 2 canale, opt-in GDPR per fiecare, SMS gated pe phone. */}
+            <SettingsGroup>
+              <SettingsRow
+                icon={<Bell size={20} aria-hidden="true" />}
+                iconClass="bg-orange-500 text-white"
+                label="Notificări pe email & SMS"
+                sublabel="Newsletter, petiții și proteste — alege canalele"
               />
-            </div>
+              <div className="px-4 pb-4 pt-1">
+                <SubscriptionsGrid
+                  form={form}
+                  onChange={(patch) => {
+                    setForm({ ...form, ...patch });
+                    autoSaveNewsletter(patch);
+                  }}
+                  phoneAvailable={!!form.phone.trim()}
+                  savedAt={newsletterSavedAt}
+                />
+              </div>
+            </SettingsGroup>
 
             {/* Save button */}
             <div className="px-1">
@@ -588,33 +589,36 @@ export default function ContPage() {
           </form>
 
           {/* Aspect & accesibilitate — device-level (temă + sticlă + a11y).
-              AppearanceSettings include deja toggle-ul de temă (un singur loc,
-              fără duplicat). SoundsToggle separat, în propriul grup. */}
+              AppearanceSettings include deja toggle-ul de temă (fără duplicat). */}
           <AppearanceSettings />
-          <SettingsGroup title="Sunete">
-            <div className="px-4 py-3">
+
+          {/* Sunete UI — header colorat + toggle */}
+          <SettingsGroup>
+            <SettingsRow
+              icon={<Volume2 size={20} aria-hidden="true" />}
+              iconClass="bg-violet-500 text-white"
+              label="Sunete în interfață"
+              sublabel="Feedback sonor discret la acțiuni"
+            />
+            <div className="px-4 pb-4 pt-1">
               <SoundsToggle />
             </div>
           </SettingsGroup>
 
-          {/* 2026-05-24 — Streak + Badges scoase la cererea user-ului
-              („sterge tototototot insignele tale + urmatoarele insigne").
-              Components păstrate în repo (StreakWidget, BadgesSection) pentru
-              eventual re-enable; aici nu mai sunt montate. */}
-
-          {/* Notificări push pe device — vizibil doar daca browser-ul
-              suporta + user logat. Configurabil din PWA (Chrome/Firefox
-              full, iOS Safari 16.4+ INSTALAT). */}
+          {/* Notificări push pe device — doar logat + browser cu suport (PWA). */}
           {user && (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 shadow-[var(--shadow-1)]">
-              <h3 className="font-semibold text-sm mb-2">Notificări push pe acest device</h3>
-              <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
-                Primește notificare native când o sesizare urmărită își schimbă statusul sau
-                când o autoritate răspunde. Funcționează și când Civia nu e deschis.
-              </p>
-              <PushPermissionButton />
-              <EngagementPushToggle />
-            </div>
+            <SettingsGroup>
+              <SettingsRow
+                icon={<BellRing size={20} aria-hidden="true" />}
+                iconClass="bg-amber-500 text-white"
+                label="Notificări push pe acest device"
+                sublabel="Native, când o autoritate răspunde — chiar dacă Civia nu e deschis"
+              />
+              <div className="px-4 pb-4 pt-1 space-y-2">
+                <PushPermissionButton />
+                <EngagementPushToggle />
+              </div>
+            </SettingsGroup>
           )}
 
           {/* Zone urmărite (Faza 2) — abonările la digestul local. Ascuns dacă none. */}
@@ -633,23 +637,26 @@ export default function ContPage() {
             const procent = Math.round((rezolvate / sesizari.length) * 100);
             return (
               <div className="grid grid-cols-3 gap-3 mb-6">
-                <StatBox label="Totale" value={sesizari.length.toString()} color="#2563EB" />
-                <StatBox label="Rezolvate" value={rezolvate.toString()} delta={`${procent}%`} color="#059669" />
-                <StatBox label="În lucru" value={inLucru.toString()} color="#EAB308" />
+                <StatBox label="Totale" value={sesizari.length.toString()} color="var(--color-news)" />
+                <StatBox label="Rezolvate" value={rezolvate.toString()} delta={`${procent}%`} color="var(--color-primary)" />
+                <StatBox label="În lucru" value={inLucru.toString()} color="var(--color-warning)" />
               </div>
             );
           })()}
 
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold">
-              Sesizările tale ({sesizari.length})
+          <div className="flex items-center justify-between gap-3 mb-4 mt-2 px-1">
+            <h2 className="font-[family-name:var(--font-sora)] text-lg sm:text-xl font-bold inline-flex items-center gap-2.5 min-w-0">
+              <span className="shrink-0 w-9 h-9 rounded-full bg-sky-500 text-white grid place-items-center" aria-hidden="true">
+                <ListChecks size={18} />
+              </span>
+              <span className="truncate">Sesizările tale ({sesizari.length})</span>
             </h2>
             <Link
               href="/sesizari"
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)]"
+              className="shrink-0 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[var(--color-primary)] text-white text-xs font-medium hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
               <Plus size={14} aria-hidden="true" />
-              Sesizare nouă
+              Nouă
             </Link>
           </div>
 
@@ -688,7 +695,7 @@ export default function ContPage() {
                     className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
                   >
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <Badge bgColor={STATUS_COLORS[s.status] ?? "#64748b"} color="white">
+                      <Badge bgColor={STATUS_COLORS[s.status] ?? "var(--color-text-muted)"} color="white">
                         {STATUS_LABELS[s.status] ?? s.status}
                       </Badge>
                       <Badge variant="neutral">{tipLabel}</Badge>
@@ -721,13 +728,10 @@ export default function ContPage() {
         </div>
       </div>
 
-      {/* ─── Confidențialitate (GDPR) — grup stil iOS ─────────────── */}
-      <div className="max-w-2xl mx-auto mt-6">
-        <SettingsGroup
-          title="Confidențialitate"
-          footer="Drepturile tale GDPR — export complet al datelor + ștergere definitivă, în 1 click."
-        >
-          {/* Export = <a download> (NU Link — descarcă JSON), stilizat ca rând iOS */}
+      {/* ─── Confidențialitate (GDPR) + Deconectare — grupuri stil Samsung ─── */}
+      <div className="max-w-2xl mx-auto mt-3 sm:mt-4 space-y-3 sm:space-y-4">
+        <SettingsGroup>
+          {/* Export = <a download> (NU Link — descarcă JSON), stilizat ca rând */}
           <a
             href="/api/profile/export"
             download="civia-export.json"
@@ -735,27 +739,40 @@ export default function ContPage() {
               const today = new Date().toISOString().slice(0, 10);
               e.currentTarget.setAttribute("download", `civia-export-${today}.json`);
             }}
-            className="block w-full hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:bg-[var(--color-surface-2)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary)] transition-colors"
+            className="relative flex items-center gap-3.5 px-4 min-h-[60px] hover:bg-[var(--color-surface-2)] focus:outline-none focus-visible:bg-[var(--color-surface-2)] transition-colors after:content-[''] after:absolute after:left-[70px] after:right-0 after:bottom-0 after:h-px after:bg-[var(--color-border)]"
           >
-            <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
-              <span className="shrink-0 w-7 h-7 rounded-[9px] grid place-items-center bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)]" aria-hidden="true">
-                <Download size={15} />
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[var(--color-text)]">Descarcă datele mele</div>
-                <div className="text-xs text-[var(--color-text-muted)] mt-0.5">Export GDPR complet (JSON)</div>
-              </div>
-              <ChevronRight size={16} className="text-[var(--color-text-muted)]/70 shrink-0" aria-hidden="true" />
+            <span className="shrink-0 w-10 h-10 rounded-full grid place-items-center bg-cyan-500 text-white [&>svg]:w-5 [&>svg]:h-5" aria-hidden="true">
+              <Download />
+            </span>
+            <div className="flex-1 min-w-0 py-2.5">
+              <div className="text-[15px] font-medium text-[var(--color-text)]">Descarcă datele mele</div>
+              <div className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Export GDPR complet (JSON)</div>
             </div>
           </a>
           <SettingsLinkRow
-            icon={<Trash2 size={15} aria-hidden="true" />}
-            iconClass="bg-[var(--color-error-soft)] text-[var(--color-error-on-soft)]"
+            icon={<Trash2 size={20} aria-hidden="true" />}
+            iconClass="bg-red-500 text-white"
             label="Șterge contul definitiv"
             sublabel="Acțiune ireversibilă"
             danger
-            showChevron={false}
             onClick={() => setDeleteModal(true)}
+          />
+        </SettingsGroup>
+
+        {/* Deconectare */}
+        <SettingsGroup>
+          <SettingsLinkRow
+            icon={<LogOut size={20} aria-hidden="true" />}
+            iconClass="bg-slate-500 text-white"
+            label="Deconectare"
+            onClick={async () => {
+              // Invalidăm cache-ul înainte de signOut ca să nu păstrăm datele
+              // user-ului anterior dacă altcineva intră în cont pe același device.
+              if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+              await signOut();
+              toast("Te-ai deconectat. La revedere!", "info");
+              router.push("/");
+            }}
           />
         </SettingsGroup>
       </div>
@@ -870,72 +887,6 @@ export default function ContPage() {
 // h-11 (era h-10 sub WCAG 44px) + text-base sm:text-sm (era text-sm → iOS zoom).
 const inputClass =
   "w-full h-11 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  // audit fix (a11y): asociere programatică label↔input (useId + htmlFor + id
-  // injectat în child). Înainte label-ul nu era legat de input pe formularul cont.
-  const autoId = useId();
-  const childProps = (isValidElement(children) ? (children.props as Record<string, unknown>) : {}) || {};
-  const fieldId = (typeof childProps.id === "string" && childProps.id) || autoId;
-  const child = isValidElement(children)
-    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, { id: fieldId })
-    : children;
-  return (
-    <div className="min-w-0">
-      <label htmlFor={fieldId} className="block text-[11px] sm:text-xs font-semibold mb-1 text-[var(--color-text-muted)] break-words leading-tight">
-        {label}
-      </label>
-      {child}
-    </div>
-  );
-}
-
-function CheckboxRow({
-  icon: Icon,
-  checked,
-  onChange,
-  title,
-  description,
-  disabled = false,
-  disabledHint,
-}: {
-  icon: typeof User;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  title: string;
-  description: string;
-  disabled?: boolean;
-  disabledHint?: string;
-}) {
-  return (
-    <label
-      className={`flex items-start gap-3 p-3 rounded-[var(--radius-xs)] border transition-colors cursor-pointer ${
-        disabled
-          ? "border-[var(--color-border)] bg-[var(--color-surface-2)]/50 opacity-60 cursor-not-allowed"
-          : checked
-            ? "border-[var(--color-primary)]/40 bg-[var(--color-primary-soft)]"
-            : "border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={checked && !disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        disabled={disabled}
-        className="mt-0.5 w-4 h-4 accent-[var(--color-primary)] cursor-pointer disabled:cursor-not-allowed"
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium flex items-center gap-1.5">
-          <Icon size={12} className="text-[var(--color-primary)] shrink-0" aria-hidden="true" />
-          {title}
-        </p>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
-          {disabled && disabledHint ? disabledHint : description}
-        </p>
-      </div>
-    </label>
-  );
-}
 
 /**
  * 3 surse de abonare × 2 canale (email + SMS) — UI compact.
