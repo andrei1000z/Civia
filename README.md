@@ -34,7 +34,7 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 | **Hărți (sesizări)** | Leaflet + react-leaflet, OSM tiles — vizualizarea sesizărilor publice pe hartă |
 | **Styling** | Tailwind CSS v4 cu CSS variables, dark mode complet |
 | **Email** | Resend + magic-link (fără parole) |
-| **Rate limit + cache** | Upstash Redis |
+| **Rate limit + cache + analytics** | Cloudflare D1 (API compatibil Upstash via `d1-client`; fallback in-memory) |
 | **Erori** | Sentry cu PII redacted |
 | **Deploy** | Vercel |
 
@@ -165,7 +165,7 @@ Datele agregate publice sunt licențiate **CC BY 4.0** — reutilizează cu atri
 
 ## Privacy & analytics (transparență)
 
-Civia colectează **analytics anonime** prin Upstash Redis cu retenție de 30 de zile:
+Civia colectează **analytics anonime** prin Cloudflare D1 cu retenție de 30 de zile:
 - Hash de visitor ID, country/city derivat din IP, clasă de device, pageview-uri, click-uri, web vitals, AI usage counts.
 - **Nu** se colectează email, nume, sau adresă în analytics.
 - Per-visitor session timeline în `/admin/analytics/sessions` — last 200 events / visitor, TTL 30 zile, cap 1000 vizitatori. Folosit pentru debugging UX (rage-clicks, error spikes), niciodată pentru profilare individuală.
