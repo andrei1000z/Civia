@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Scale, FileText, Vote, BookOpen, Shield, Globe } from "lucide-react";
+import { Scale, FileText, Vote, BookOpen, Shield, Globe, HelpCircle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
@@ -276,9 +277,10 @@ export default function DrepturilePage() {
       <section aria-labelledby="faq-drepturi" className="mb-12">
         <h2
           id="faq-drepturi"
-          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6"
+          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5"
         >
-          🤔 Întrebări frecvente
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
+          Întrebări frecvente
         </h2>
         <div className="space-y-3 lc-stagger">
           {FAQ.map((q) => (

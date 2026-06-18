@@ -9,9 +9,12 @@ import {
   ExternalLink,
   Pin,
   Plus,
+  CalendarClock,
+  Archive,
 } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { ALL_COUNTIES } from "@/data/counties";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
@@ -229,11 +232,8 @@ export default async function ProtestePage() {
         <>
           {upcoming.length > 0 && (
             <section className="mb-10">
-              <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-extrabold mb-4 inline-flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full bg-rose-500 motion-safe:animate-pulse"
-                  aria-hidden="true"
-                />
+              <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-extrabold mb-4 flex items-center gap-2.5">
+                <SectionIcon icon={<CalendarClock size={16} aria-hidden="true" />} className="bg-rose-500 text-white" />
                 Active și viitoare
               </h2>
               <ul className="lc-stagger grid gap-4 md:grid-cols-2">
@@ -246,7 +246,8 @@ export default async function ProtestePage() {
 
           {past.length > 0 && (
             <section className="mb-10">
-              <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-extrabold mb-4 text-[var(--color-text-muted)]">
+              <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-extrabold mb-4 text-[var(--color-text-muted)] flex items-center gap-2.5">
+                <SectionIcon icon={<Archive size={16} aria-hidden="true" />} className="bg-slate-500 text-white" />
                 Arhivă
               </h2>
               <ul className="lc-stagger grid gap-4 md:grid-cols-2 opacity-90">

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GitCompare, FileText, Users, Scale, Send } from "lucide-react";
+import { GitCompare, FileText, Users, Scale, Send, Lightbulb, HelpCircle } from "lucide-react";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { SectionIcon } from "@/components/ui/SectionIcon";
 import { SITE_URL } from "@/lib/constants";
 import { FaqJsonLd, BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 
@@ -175,9 +176,10 @@ export default function SesizareVsPetitiePage() {
       <section aria-labelledby="exemple" className="mb-12">
         <h2
           id="exemple"
-          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4"
+          className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4 flex items-center gap-2.5"
         >
-          💡 Exemple concrete
+          <SectionIcon icon={<Lightbulb size={16} aria-hidden="true" />} className="bg-amber-500 text-white" />
+          Exemple concrete
         </h2>
         <div className="lc-stagger space-y-3">
           {[
@@ -237,8 +239,9 @@ export default function SesizareVsPetitiePage() {
 
       {/* FAQ */}
       <section aria-labelledby="faq-svp" className="mb-12">
-        <h2 id="faq-svp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
-          🤔 Întrebări frecvente
+        <h2 id="faq-svp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-sky-500 text-white" />
+          Întrebări frecvente
         </h2>
         <div className="lc-stagger space-y-3">
           {FAQ.map((q) => (
