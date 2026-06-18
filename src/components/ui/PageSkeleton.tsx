@@ -117,7 +117,7 @@ export function CardGridSkeleton({ cards = 9 }: { cards?: number }) {
   );
 }
 
-/** List of items (sesizari, stiri, events) */
+/** List of items (sesizari, events) */
 export function ListSkeleton({ rows = 8 }: { rows?: number }) {
   return (
     <SkeletonWrapper label="Se încarcă lista">

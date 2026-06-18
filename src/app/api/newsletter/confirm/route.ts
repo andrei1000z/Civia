@@ -141,11 +141,6 @@ export async function GET(req: Request) {
               meta: "Cauze civice reale, atent selectate, cu impact.",
               url: `${SITE_URL}/petitii`,
             },
-            {
-              title: "Vezi știrile",
-              meta: "Rezumate AI clare, fără zgomot și fără clickbait.",
-              url: `${SITE_URL}/stiri`,
-            },
           ])}
           <p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:#86868b">Fără spam. Te poți dezabona oricând, dintr-un click.</p>
         `,

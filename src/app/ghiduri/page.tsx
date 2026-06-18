@@ -33,7 +33,7 @@ export default function GhiduriPage() {
           { name: "Ghiduri", url: `${SITE_URL}/ghiduri` },
         ]}
       />
-      {/* PageHero card pattern — aliniat cu /stiri, /petitii, /proteste,
+      {/* PageHero card pattern — aliniat cu /petitii, /proteste,
           /intreruperi (user request 5/12/2026, „standarde Civia UI"). */}
       <PageHero
         title="Ce să faci când te lovești de stat"

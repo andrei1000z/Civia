@@ -39,7 +39,6 @@ export async function GET() {
   const tables = [
     "sesizare_verifications",
     "newsletter_subscribers",
-    "stiri_cache",
   ];
   for (const t of tables) {
     try {

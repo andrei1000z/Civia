@@ -3,7 +3,7 @@ import { getGroqClient, GROQ_MODEL, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { callGemini, isGeminiConfigured, GEMINI_MODEL, GEMINI_MODEL_FAST, GEMINI_MODEL_BACKUPS } from "@/lib/ai/gemini";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { polishSynthesis } from "@/lib/ai/polish-synthesis";
-import { stripInventedCifre } from "@/lib/stiri/validate-cifre";
+import { stripInventedCifre } from "@/lib/ai/validate-cifre";
 import { AI_SUMMARY_VERSION } from "@/lib/ai/synthesis-version";
 
 export interface SummarizablePetitie {
@@ -90,8 +90,7 @@ export async function getOrGeneratePetitieAiSummary(
   }
 }
 
-/** True for Groq 429 (rate limit / token budget exhausted). Mirrors
- *  the same helper in lib/stiri/ai-summary.ts. */
+/** True for Groq 429 (rate limit / token budget exhausted). */
 function isRateLimited(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as { status?: number; message?: string };
@@ -100,7 +99,7 @@ function isRateLimited(err: unknown): boolean {
 }
 
 /**
- * Multi-provider AI fallback chain. Mirrors the stiri synthesis chain:
+ * Multi-provider AI fallback chain:
  *   1. Gemini 2.5 Flash       (separate quota from Groq)
  *   2. Gemini 2.5 Flash Lite  (separate per-model Gemini counter)
  *   3. Groq Llama 3.3 70B
@@ -165,7 +164,7 @@ async function callAiWithFallback(
     { provider: "groq" as const, model: GROQ_MODEL_FAST, run: groqCall(GROQ_MODEL_FAST, 1200) },
   ];
 
-  // Same MIN_LEN guard as stiri — empty/short responses cascade to
+  // MIN_LEN guard — empty/short responses cascade to
   // the next provider instead of being accepted as success.
   const MIN_LEN = 80;
 
@@ -261,7 +260,7 @@ async function generate(
       return petitie.summary || petitie.body || petitie.title || null;
     }
     // 2026-06-11 (v11) — taie cifrele inventate din „Cifre & date cheie"
-    // (validare contra textului petiției). Vezi lib/stiri/validate-cifre.ts.
+    // (validare contra textului petiției). Vezi @/lib/ai/validate-cifre.
     const summary = stripInventedCifre(polishSynthesis(raw), rawText);
 
     try {

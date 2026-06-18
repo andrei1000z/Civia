@@ -6,7 +6,6 @@ import { LiveStatsBar } from "@/components/home/LiveStatsBar";
 import { CountUp } from "@/components/ui/CountUp";
 import { TopVotedWidget } from "@/components/home/TopVotedWidget";
 import { IntreruperiWidget } from "@/components/home/IntreruperiWidget";
-import { StiriWidget } from "@/components/home/StiriWidget";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { FaqJsonLd } from "@/components/FaqJsonLd";
 
@@ -194,9 +193,6 @@ export default async function HomePage() {
           <TopVotedWidget />
         </div>
       </section>
-
-      {/* STIRI WIDGET — 6 most recent national articles */}
-      <StiriWidget />
 
       {/* INTRERUPERI WIDGET */}
       <IntreruperiWidget />

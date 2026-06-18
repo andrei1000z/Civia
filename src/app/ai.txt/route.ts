@@ -26,9 +26,7 @@ Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /sitemap.xml
-Allow: /news-sitemap.xml
 Allow: /feed.xml
-Allow: /stiri-feed.xml
 
 # Disallow private user areas
 Disallow: /cont

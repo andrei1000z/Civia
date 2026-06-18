@@ -22,7 +22,7 @@ interface PageHeroProps {
 
 /**
  * Brand-consistent page hero used across Civia surfaces. Same shape as
- * /admin, /cont, /sesizari/[code], /petitii, /stiri etc.
+ * /admin, /cont, /sesizari/[code], /petitii etc.
  */
 /**
  * Liquid Civic v2027 — gradient presets refreshed.

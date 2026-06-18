@@ -1,12 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   AlertCircle,
   Map as MapIcon,
   Wind,
-  Newspaper,
   BookOpen,
   Building2,
   ArrowRight,
@@ -37,14 +35,14 @@ import { CountyStatCards, aqiColor } from "@/components/county/CountyStatCards";
 import { FollowAreaButton } from "@/components/area/FollowAreaButton";
 import { BreadcrumbJsonLd } from "@/components/FaqJsonLd";
 import { CountyPlaceJsonLd } from "@/components/JsonLd";
-import { SITE_URL, STATUS_COLORS, STATUS_LABELS, sourceTextColor } from "@/lib/constants";
+import { SITE_URL, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function generateStaticParams() {
   return ALL_COUNTIES.map((c) => ({ judet: c.slug }));
 }
 
-// Live data — sesizări + știri + interruptions counts.
+// Live data — sesizări + interruptions counts.
 // 2026-05-24 (Wave 4 perf audit): coborât 24h → 6h. Datele county-level
 // schimbă des și ISR on-demand acoperă writes — 6h e fallback safety net,
 // nu cap real. Audit-ul masiv P0 a marcat 24h ca „stale prea mult".
@@ -106,14 +104,6 @@ interface RecentSesizare {
   created_at: string;
 }
 
-interface RecentStire {
-  id: string;
-  title: string;
-  source: string;
-  image_url: string | null;
-  published_at: string;
-}
-
 async function fetchRecentSesizari(countyId: string): Promise<{
   rows: RecentSesizare[];
   totalCount: number;
@@ -142,21 +132,6 @@ async function fetchRecentSesizari(countyId: string): Promise<{
     };
   } catch {
     return { rows: [], totalCount: 0 };
-  }
-}
-
-async function fetchRecentStiri(countyId: string): Promise<RecentStire[]> {
-  try {
-    const admin = createSupabaseAdmin();
-    const { data } = await admin
-      .from("stiri_cache")
-      .select("id, title, source, image_url, published_at")
-      .contains("counties", [countyId])
-      .order("published_at", { ascending: false })
-      .limit(4);
-    return (data ?? []) as RecentStire[];
-  } catch {
-    return [];
   }
 }
 
@@ -356,113 +331,6 @@ function RecentSesizariColumn({
   );
 }
 
-function RecentStiriColumn({
-  countyName,
-  countySlug,
-  rows,
-}: {
-  countyName: string;
-  countySlug: string;
-  rows: RecentStire[];
-}) {
-  return (
-    <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <h3 className="font-[family-name:var(--font-sora)] font-extrabold text-base inline-flex items-center gap-2">
-          <span
-            className="w-7 h-7 rounded-[var(--radius-xs)] bg-sky-500/15 text-sky-600 grid place-items-center"
-            aria-hidden="true"
-          >
-            <Newspaper size={14} />
-          </span>
-          Știri locale
-        </h3>
-        <Link
-          href={`/${countySlug}/stiri`}
-          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded"
-        >
-          Toate <ArrowRight size={11} aria-hidden="true" />
-        </Link>
-      </div>
-      {rows.length === 0 ? (
-        <div className="bg-[var(--color-surface-2)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-xs)] p-5 text-center">
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-2">
-            Nicio știre indexată pentru {countyName} în catalogul local.
-          </p>
-          <Link
-            href={`/${countySlug}/stiri`}
-            className="text-xs text-[var(--color-primary)] hover:underline font-medium"
-          >
-            Vezi sursele naționale →
-          </Link>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {rows.map((s) => {
-            const textTint = sourceTextColor(s.source);
-            return (
-              <li key={s.id}>
-                <Link
-                  href={`/stiri/${s.id}`}
-                  className="flex items-start gap-3 bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 rounded-[var(--radius-xs)] p-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                >
-                  {/* Thumbnail container — visible neutral bg + Newspaper
-                      icon ca fallback. unoptimized bypassează /_next/image
-                      proxy (eșua pentru anumite feed-uri externe → black box).
-                      Vechiul cod folosea source-color la 10% alpha care era
-                      invizibil pe dark mode pentru surse near-black (G4Media). */}
-                  <div className="relative w-14 h-14 rounded-[var(--radius-xs)] overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-700">
-                    <div
-                      className="absolute inset-0 grid place-items-center"
-                      style={{ color: textTint }}
-                      aria-hidden="true"
-                    >
-                      <Newspaper size={20} className="opacity-80" />
-                    </div>
-                    {s.image_url && (
-                      <Image
-                        src={s.image_url}
-                        alt=""
-                        fill
-                        sizes="56px"
-                        unoptimized
-                        className="object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-wider"
-                        style={{ color: textTint }}
-                      >
-                        {s.source}
-                      </span>
-                      <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
-                        ·{" "}
-                        <time dateTime={s.published_at}>
-                          {new Date(s.published_at).toLocaleDateString("ro-RO", {
-                            timeZone: "Europe/Bucharest",
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </time>
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium leading-snug line-clamp-2">
-                      {s.title}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 function ActiveInterruperiColumn({
   countyName,
   countySlug,
@@ -635,7 +503,6 @@ const PRIMARY_SECTIONS = [
   { path: "/sesizari", icon: AlertCircle, label: "Sesizări", color: "#DC2626", prefetch: true },
   { path: "/intreruperi", icon: AlertTriangle, label: "Întreruperi", color: "#F59E0B", prefetch: true },
   { path: "/autoritati", icon: AlertCircle, label: "Autorități", color: "#059669", prefetch: true },
-  { path: "/stiri", icon: Newspaper, label: "Știri locale", color: "#0EA5E9", prefetch: false },
 ];
 
 // SECONDARY_SECTIONS = "Tot despre {judet}" grid. Round 2026-05-04:
@@ -664,7 +531,7 @@ export default async function CountyHomePage({
     ? "Bucureștiului."
     : `județului ${county.name}.`;
 
-  // Live data — sesizari + stiri DB-fan-out, intreruperi from Supabase
+  // Live data — sesizari DB-fan-out, intreruperi from Supabase
   // (scraped) merged with static seed. All in parallel so the slowest
   // dependency paces the page.
   // eslint-disable-next-line react-hooks/purity -- ISR Server Component, Date.now() captured per regeneration
@@ -672,11 +539,9 @@ export default async function CountyHomePage({
   const [
     allInterruptions,
     { rows: recentSesizari, totalCount: sesizariTotalCount },
-    recentStiri,
   ] = await Promise.all([
     getInterruptionsForCounty(county.id),
     fetchRecentSesizari(county.id),
-    fetchRecentStiri(county.id),
   ]);
   const activeInterruptions = allInterruptions.filter(
     (i) =>
@@ -706,7 +571,7 @@ export default async function CountyHomePage({
         countyName={county.name}
         countySlug={county.slug}
         countyId={county.id}
-        description={`Sesizări civice, statistici locale, autorități și știri pentru ${county.name}. Civia agregă date publice și permite cetățenilor să raporteze probleme către primării.`}
+        description={`Sesizări civice, statistici locale și autorități pentru ${county.name}. Civia agregă date publice și permite cetățenilor să raporteze probleme către primării.`}
         population={stats?.populatie}
         url={`${SITE_URL}/${county.slug}`}
       />
@@ -748,7 +613,7 @@ export default async function CountyHomePage({
               </h1>
 
               <p className="text-lg md:text-xl text-emerald-100/85 max-w-xl leading-relaxed mb-8">
-                Tot ce ține de {isBucharest ? "Bucureștiul tău" : `județul ${county.name}`} într-un singur loc — sesizări la primărie, calitate aer live, întreruperi programate și știri locale.
+                Tot ce ține de {isBucharest ? "Bucureștiul tău" : `județul ${county.name}`} într-un singur loc — sesizări la primărie, calitate aer live și întreruperi programate.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -812,21 +677,16 @@ export default async function CountyHomePage({
                 Ce se întâmplă acum în {county.name}
               </h2>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                Date live — sesizări depuse de cetățeni, știri din presa locală, întreruperi
+                Date live — sesizări depuse de cetățeni și întreruperi
                 programate ale operatorilor.
               </p>
             </div>
           </div>
-          <div className="grid lg:grid-cols-3 gap-5">
+          <div className="grid lg:grid-cols-2 gap-5">
             <RecentSesizariColumn
               countyName={county.name}
               countySlug={county.slug}
               rows={recentSesizari}
-            />
-            <RecentStiriColumn
-              countyName={county.name}
-              countySlug={county.slug}
-              rows={recentStiri}
             />
             <ActiveInterruperiColumn
               countyName={county.name}

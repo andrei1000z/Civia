@@ -9,7 +9,7 @@
  *   - DSA Reg. 2022/2065 — transparență moderare conținut
  *
  * 3 variante:
- *   - "sintetizat": AI summary (stiri, petitii) — disclosure inline
+ *   - "sintetizat": AI summary (petitii) — disclosure inline
  *   - "clasificat": AI a clasificat (sesizare tip, severity) — disclosure cu opt-out
  *   - "generat": text complet AI-generated (formal_text) — disclosure prominent
  *

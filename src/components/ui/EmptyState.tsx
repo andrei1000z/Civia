@@ -5,7 +5,7 @@ import Link from "next/link";
 /**
  * EmptyState — shared component pentru toate surfacele care altfel returnează
  * null când nu există date. Audit Wave B 2026-05-24 a identificat 10+ surfaces
- * silent (TopVotedWidget tracking gol, SimilarSesizari null, StiriList, etc.).
+ * silent (TopVotedWidget tracking gol, SimilarSesizari null, etc.).
  *
  * 3 variante:
  *   - "no-data" (first-time UX): „Încă nimic. Fii primul." motivator

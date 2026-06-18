@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SearchX, Home, AlertCircle, BookOpen, Newspaper, Megaphone } from "lucide-react";
+import { SearchX, Home, AlertCircle, BookOpen, Megaphone } from "lucide-react";
 import { NotFoundTracker } from "./NotFoundTracker";
 
 export default function NotFound() {
@@ -7,7 +7,6 @@ export default function NotFound() {
     { href: "/sesizari", label: "Trimit o sesizare", icon: AlertCircle },
     { href: "/petitii", label: "Petiții", icon: Megaphone },
     { href: "/ghiduri", label: "Ghiduri practice", icon: BookOpen },
-    { href: "/stiri", label: "Știri locale", icon: Newspaper },
   ];
 
   return (

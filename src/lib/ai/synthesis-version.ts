@@ -68,25 +68,21 @@
  *       cache rows where the AI produced text that's structurally
  *       valid but content-wise ~90% the excerpt — also returns null.
  *       Bump invalidates v8 cache.
- *  10 — Real fix: lib/stiri/extract-body.ts scrapes the original
- *       article URL when stiri_cache.content is empty/thin, returning
- *       up to 6000 chars of body text via deterministic regex (no
- *       new deps). Wired into:
- *         - getOrGenerateAiSummary (lazy-scrapes on first synthesis,
- *           persists to content column for next time)
- *         - /api/admin/stiri/regenerate-summaries (backfills on bulk
- *           regen so admins don't wait for organic traffic)
- *       With real article body, AI now has 2-5 KB of input and can
- *       produce the full 5-section structured brief that v6-v9 were
- *       failing to elicit. Bump invalidates v9 cache rows so they
- *       re-synthesize against the (now-richer) content.
+ *  10 — Real fix (news pipeline, since removed): a body extractor
+ *       scraped the original article URL when the cached content was
+ *       empty/thin, returning up to 6000 chars of body text via
+ *       deterministic regex (no new deps), wired into the synthesis +
+ *       bulk-regen paths. With real article body, AI had 2-5 KB of
+ *       input and could produce the full 5-section structured brief
+ *       that v6-v9 were failing to elicit. Bump invalidated v9 cache
+ *       rows so they re-synthesized against the (now-richer) content.
  *  11 — Defense-in-depth contra cifrelor INVENTATE în „Cifre cheie" /
  *       „Cifre & date cheie". Bug real (articol Gândul despre Ciucu,
  *       2026-06-11): modelul, forțat de structura cu secțiuni, a umplut
  *       „Cifre cheie" cu numere fabricate („0: numărul de funcții pe
  *       care dorește să le părăsească", „1: ani de muncă", „2024" —
  *       în 2026), deși promptul interzice explicit inventarea.
- *       Fix: stripInventedCifre (lib/stiri/validate-cifre.ts) — fiecare
+ *       Fix: stripInventedCifre (@/lib/ai/validate-cifre) — fiecare
  *       bullet cu cifre din secțiune trebuie să aibă TOATE numerele
  *       prezente în textul-sursă; bullet inventat → tăiat; secțiune
  *       golită → scoasă complet (e opțională prin prompt). Aplicat pe

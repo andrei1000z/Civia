@@ -12,7 +12,7 @@
   <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square">
 </p>
 
-Platformă civică independentă, gratuită, pentru cetățenii din România. Sesizări AI-formalizate către primării, petiții civice, calitatea aerului live, hărți de mobilitate, știri agregate, ghiduri practice și date publice — pentru toate cele 42 de județe.
+Platformă civică independentă, gratuită, pentru cetățenii din România. Sesizări AI-formalizate către primării, petiții civice, calitatea aerului live, hărți de mobilitate, ghiduri practice și date publice — pentru toate cele 42 de județe.
 
 **🌐 Live:** [civia.ro](https://civia.ro) · **📱 PWA** instalabilă (Android/iOS) · **🆓 100% gratuit, fără reclame, fără partid**
 
@@ -48,13 +48,12 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 ### Date civice live
 - **Proteste programate** (`/proteste`) — calendar civic cu mitinguri, marșuri, evenimente civice anunțate. Mod „cum a fost" cu imagini + presa.
 - **Întreruperi** (`/intreruperi`) — apă, caldură, gaz, curent, lucrări — agregate din Apa Nova, Termoenergetica, Distrigaz, E-Distribuție, PMB, RADP. iCal + RSS + JSON API.
-- **Știri** (`/stiri`) — RSS din Digi24, HotNews, G4Media, Mediafax, News.ro + ziare locale per județ. Sinteză AI structurată per articol cu reading-time + copy + listen, refresh la 30s pe traffic.
 
 ### Date publice deschise
 - **Sesizări publice** (`/sesizari-publice`) — feed live cu sesizările publice ale altor cetățeni, vot + co-semnături.
 - **Sesizări rezolvate** (`/sesizari-rezolvate`) — galerie înainte/după cu probleme rezolvate de primării.
 - **Embed widget** (`/embed/[judet]`) — iframe gratuit pentru jurnaliști și bloggeri; sesizările live din județ + counter total, util pentru investigații locale.
-- **42 județe** (`/{judet}`) — fiecare cu sesizări, întreruperi, știri, ghiduri, autorități, evenimente.
+- **42 județe** (`/{judet}`) — fiecare cu sesizări, întreruperi, ghiduri, autorități, evenimente.
 
 ### Cont + GDPR
 - **Magic-link auth** — fără parole, opțional Google + Apple OAuth.
@@ -88,9 +87,9 @@ update status sesizare (nou → trimis → înregistrată → în lucru → rezo
 
 **Decizii cheie de inginerie:**
 
-- **Cascadă AI multi-provider, rezistentă la rate-limits.** Sinteza (știri/petiții) și clasificarea trec prin Gemini → Groq → Cloudflare Workers AI, iar dacă toate sunt epuizate, cade pe un **rezumat extractiv determinist** (TextRank, 0 cost, 0 rețea). Niciodată „se generează, revino".
+- **Cascadă AI multi-provider, rezistentă la rate-limits.** Sinteza (petiții) și clasificarea trec prin Gemini → Groq → Cloudflare Workers AI, iar dacă toate sunt epuizate, cade pe un **rezumat extractiv determinist** (TextRank, 0 cost, 0 rețea). Niciodată „se generează, revino".
 - **Adresa de domiciliu criptată la nivel de câmp** (AES-256-GCM, cheie separată de DB) — o scurgere a bazei nu expune unde locuiesc cetățenii; decriptată doar la trimiterea către autoritate. Pe pagina publică, numele + adresa sunt **șterse automat** (scrub).
-- **Background work pe Vercel Hobby (1 cron/zi).** Un singur dispatcher zilnic (`/api/cron/daily`) fan-out la reminders, auto-status, retenție, newsletter. Plus *self-healing pe traffic*: fiecare vizită la `/api/stiri` reîmprospătează RSS-ul în `after()`, throttled cu un lock Redis NX — articolele apar în minute, fără cron extern.
+- **Background work pe Vercel Hobby (1 cron/zi).** Un singur dispatcher zilnic (`/api/cron/daily`) fan-out la reminders, auto-status, retenție, newsletter.
 - **Design system „Liquid Glass" (iOS 26-style).** Tokens CSS (`--color-*`, `--radius-*`, `--shadow-*`), `<PageHero>` canonic, material `.lc-nav-glass`, dark mode complet, bottom nav mobil flotant + navbar desktop — un singur set de tokens pe ambele.
 - **Conformitate EU = exact baseline-ul** (GDPR / ePrivacy / OWASP ASVS L2), nici sub, nici peste. Retenția nu e doar *declarată*, ci **aplicată** (`/api/cron/purge-retention`: sesizări anonimizate la 3 ani). Vezi [`docs/EU-COMPLIANCE.md`](./docs/EU-COMPLIANCE.md).
 - **Testat.** **1100+ teste** unitare (Vitest) pe `src/lib/**` (rutare autorități, extractoare AQI, anti-minimizare, format sesizări, chaining petiție↔sesizare…), `tsc --noEmit` strict pe tot proiectul. `npm run check` rulează ambele.
@@ -122,15 +121,15 @@ src/
     admin/                  # role-gated (profiles.role='admin')
     api/                    # 35+ route handlers
     legal/                  # GDPR + ToS + cookies, EU-grade
-    sesizari/, petitii/, proteste/, intreruperi/, stiri/, ghiduri/, embed/, ...
+    sesizari/, petitii/, proteste/, intreruperi/, ghiduri/, embed/, ...
   components/
     layout/PageHero.tsx     # canonical gradient hero — folosește-l, nu reinventa
-    sesizari/, petitii/, stiri/, ai/CivicAssistant.tsx
+    sesizari/, petitii/, ai/CivicAssistant.tsx
     maps/                   # Leaflet wrappers + custom AQI canvas
   lib/
     supabase/{client,server,admin}.ts
     sesizari/events.ts      # catalog comun pentru timeline events
-    stiri/, petitii/, groq/, analytics/
+    petitii/, groq/, analytics/
   data/                     # date statice (counties, ghiduri, evenimente, ...)
 supabase/
   schema.sql                # base

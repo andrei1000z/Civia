@@ -126,7 +126,6 @@ const PUBLIC_NO_AUTH_PATHS = new Set([
   "/sitemap.xml",
   "/robots.txt",
   "/feed.xml",
-  "/stiri-feed.xml",
   "/manifest.webmanifest",
   "/sw.js",
 ]);

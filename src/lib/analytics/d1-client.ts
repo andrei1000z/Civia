@@ -104,7 +104,7 @@ export class CiviaD1Client {
     if (opts?.nx) {
       // NX cu TTL corect: șterge mai întâi cheia dacă e expirată, apoi insert.
       // Fără acest pas, o cheie expirată fizic bloca NX pe termen nelimitat
-      // (ON CONFLICT DO NOTHING nu verifică expires_at — bug stiri:fetch:lock).
+      // (ON CONFLICT DO NOTHING nu verifică expires_at — bug pe locks cu TTL).
       const now = NOW();
       await d1Exec(
         `DELETE FROM kv WHERE k = ? AND expires_at IS NOT NULL AND expires_at <= ?`,

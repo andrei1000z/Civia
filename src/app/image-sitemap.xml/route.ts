@@ -6,7 +6,6 @@ import { SITE_URL } from "@/lib/constants";
  *
  * Plan SEO #6 (5/22/2026) — accelerates image indexing pentru:
  *   - sesizari publice cu poze (înainte/după)
- *   - știri cu imagini de copertă
  *   - proteste cu fotografii
  *
  * Per Google: maxim 1000 imagini per <url>, max 50.000 URL-uri per sitemap.
@@ -32,12 +31,6 @@ interface SesizareImg {
   resolved_photo_url: string | null;
 }
 
-interface StireImg {
-  id: string;
-  title: string;
-  image_url: string | null;
-}
-
 interface ProtestImg {
   slug: string;
   title: string;
@@ -47,11 +40,10 @@ interface ProtestImg {
 export async function GET() {
   const admin = createSupabaseAdmin();
   let sesizari: SesizareImg[] = [];
-  let stiri: StireImg[] = [];
   let proteste: ProtestImg[] = [];
 
   try {
-    const [sesResp, stiriResp, protResp] = await Promise.all([
+    const [sesResp, protResp] = await Promise.all([
       admin
         .from("sesizari")
         .select("code, titlu, photos, resolved_photo_url")
@@ -61,12 +53,6 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(500),
       admin
-        .from("stiri_cache")
-        .select("id, title, image_url")
-        .not("image_url", "is", null)
-        .order("published_at", { ascending: false })
-        .limit(200),
-      admin
         .from("proteste")
         .select("slug, title, cover_image_url")
         .eq("visibility", "publica")
@@ -75,7 +61,6 @@ export async function GET() {
         .limit(100),
     ]);
     sesizari = (sesResp.data as SesizareImg[] | null) ?? [];
-    stiri = (stiriResp.data as StireImg[] | null) ?? [];
     proteste = (protResp.data as ProtestImg[] | null) ?? [];
   } catch {
     // Continue with whatever we got
@@ -105,15 +90,6 @@ export async function GET() {
         `  <url>\n    <loc>${escapeXml(pageUrl)}</loc>\n${imgs.join("\n")}\n  </url>`
       );
     }
-  }
-
-  // Stiri with image_url
-  for (const s of stiri) {
-    if (!s.image_url) continue;
-    const pageUrl = `${SITE_URL}/stiri/${s.id}`;
-    urls.push(
-      `  <url>\n    <loc>${escapeXml(pageUrl)}</loc>\n    <image:image>\n      <image:loc>${escapeXml(s.image_url)}</image:loc>\n      <image:caption>${escapeXml(s.title)}</image:caption>\n    </image:image>\n  </url>`
-    );
   }
 
   // Proteste with cover_image_url

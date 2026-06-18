@@ -89,11 +89,10 @@ export const PETITIE_CATEGORII = [
 // fatigue minim. Personas Maria + Cristian au scor 2.5-2.6/5 din cauză
 // "prea multe link-uri". Ghiduri mutat în NAV_MORE (rareori click-uit
 // per analytics). Top-level rămâne: Sesizări (core action) • Petiții
-// (signing) • Știri (browsing) • Proteste (urgency).
+// (signing) • Proteste (urgency).
 export const NAV_LINKS = [
   { href: "/sesizari", label: "Sesizări", national: true },
   { href: "/petitii", label: "Petiții", national: true },
-  { href: "/stiri", label: "Știri", national: true },
   { href: "/proteste", label: "Proteste", national: true },
   // 2026-06-03 — Întreruperi promovat din „Explorează" în navbar top (cerere user).
   { href: "/intreruperi", label: "Întreruperi", national: true },

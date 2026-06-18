@@ -29,7 +29,6 @@ type MessageDict = Record<string, string>;
 const RO: MessageDict = {
   "nav.sesizari": "Sesizări",
   "nav.petitii": "Petiții",
-  "nav.stiri": "Știri",
   "nav.proteste": "Proteste",
   "nav.exploreaza": "Explorează",
   "common.submit": "Trimite",
@@ -50,7 +49,6 @@ const RO: MessageDict = {
 const HU: MessageDict = {
   "nav.sesizari": "Bejelentések",
   "nav.petitii": "Petíciók",
-  "nav.stiri": "Hírek",
   "nav.proteste": "Tüntetések",
   "nav.exploreaza": "Felfedezés",
   "common.submit": "Küldés",
@@ -71,7 +69,6 @@ const HU: MessageDict = {
 const UK: MessageDict = {
   "nav.sesizari": "Звернення",
   "nav.petitii": "Петиції",
-  "nav.stiri": "Новини",
   "nav.proteste": "Протести",
   "nav.exploreaza": "Дослідити",
   "common.submit": "Надіслати",
