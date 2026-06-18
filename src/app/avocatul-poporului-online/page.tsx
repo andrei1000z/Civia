@@ -88,7 +88,7 @@ const FAQ = [
 
 export default function AvocatulPoporuluiPage() {
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <HowToJsonLd
         name="Cum depui plângere la Avocatul Poporului online"
@@ -270,7 +270,7 @@ Semnătura: [SEMNĂTURĂ]
       {/* FAQ */}
       <section aria-labelledby="faq-avp" className="mb-12">
         <h2 id="faq-avp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6 flex items-center gap-2.5">
-          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-sky-500 text-white" />
+          <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
           Întrebări frecvente
         </h2>
         <div className="space-y-3 lc-stagger">
@@ -308,7 +308,7 @@ Semnătura: [SEMNĂTURĂ]
         <div className="flex flex-wrap gap-3 justify-center">
           <Link
             href="/sesizari"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors"
+            className="lc-liquid lc-magnetic inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors"
           >
             <Send size={16} aria-hidden="true" />
             Fă o sesizare acum

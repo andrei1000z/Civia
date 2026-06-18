@@ -56,7 +56,7 @@ export function TopVotedWidget() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] animate-pulse"
+            className="flex items-center gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl animate-pulse"
           >
             <div className="shrink-0 w-12 h-12 rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" />
             <div className="flex-1 min-w-0 space-y-2">
@@ -72,7 +72,7 @@ export function TopVotedWidget() {
 
   if (isEmpty) {
     return (
-      <div className="flex items-center justify-center min-h-[220px] p-6 bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] text-center">
+      <div className="flex items-center justify-center min-h-[220px] p-6 bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] rounded-3xl text-center">
         <div>
           <p className="text-sm font-medium text-[var(--color-text)]">
             Nicio sesizare încă

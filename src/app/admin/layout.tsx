@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
       <div className="container-narrow py-8 md:py-10">
       {/* Hero header — gradient strip identifies the admin area at a glance */}
       <header className="relative mb-6 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-rose-600 via-rose-700 to-orange-700 p-5 md:p-6 text-white shadow-[var(--shadow-3)]">

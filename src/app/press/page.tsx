@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function PressPage() {
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <BreadcrumbJsonLd
         items={[

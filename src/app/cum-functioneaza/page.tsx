@@ -98,7 +98,7 @@ const STEPS = [
 
 export default function CumFunctioneazaPage() {
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-4xl">
       <HowToJsonLd
         name="Cum trimiți o sesizare la primărie în România"
@@ -165,7 +165,7 @@ export default function CumFunctioneazaPage() {
           <div className="mt-6 text-center">
             <Link
               href="/sesizari"
-              className="inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+              className="lc-liquid lc-magnetic inline-flex items-center gap-2 h-12 px-6 rounded-[var(--radius-full)] bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-primary-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
             >
               <Send size={16} aria-hidden="true" />
               Trimite o sesizare acum
@@ -176,8 +176,8 @@ export default function CumFunctioneazaPage() {
 
         {/* Ce se întâmplă după */}
         <section aria-labelledby="dupa-heading">
-          <h2 id="dupa-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2">
-            <Clock size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
+          <h2 id="dupa-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<Clock size={16} aria-hidden="true" />} className="bg-sky-500 text-white" />
             Ce se întâmplă după ce trimiți
           </h2>
           <div className="lc-stagger grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -198,8 +198,8 @@ export default function CumFunctioneazaPage() {
 
         {/* De ce funcționează */}
         <section aria-labelledby="dece-heading">
-          <h2 id="dece-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2">
-            <Shield size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
+          <h2 id="dece-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<Shield size={16} aria-hidden="true" />} className="bg-emerald-500 text-white" />
             De ce funcționează cu Civia
           </h2>
           <div className="lc-stagger grid md:grid-cols-3 gap-4">
@@ -246,8 +246,8 @@ export default function CumFunctioneazaPage() {
 
         {/* Dacă nu răspunde */}
         <section aria-labelledby="nuraspund-heading">
-          <h2 id="nuraspund-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2">
-            <AlertTriangle size={24} className="text-amber-500" aria-hidden="true" />
+          <h2 id="nuraspund-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
+            <SectionIcon icon={<AlertTriangle size={16} aria-hidden="true" />} className="bg-rose-500 text-white" />
             Dacă primăria nu răspunde
           </h2>
           <ol className="lc-stagger space-y-3 text-sm">
@@ -274,7 +274,7 @@ export default function CumFunctioneazaPage() {
         {/* FAQ */}
         <section aria-labelledby="faq-heading">
           <h2 id="faq-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2.5">
-            <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-amber-500 text-white" />
+            <SectionIcon icon={<HelpCircle size={16} aria-hidden="true" />} className="bg-violet-500 text-white" />
             Întrebări frecvente
           </h2>
           <div className="lc-stagger space-y-3">

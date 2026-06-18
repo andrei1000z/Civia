@@ -122,7 +122,7 @@ export default async function StatisticiPage() {
   const lastUpdated = new Date().toISOString();
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12 max-w-5xl">
       <DatasetJsonLd
         name="Statistici sesizări civice România — Civia"

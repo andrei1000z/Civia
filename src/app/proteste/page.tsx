@@ -167,7 +167,7 @@ export default async function ProtestePage() {
   });
 
   return (
-    <div className="lc-canvas lc-canvas--flat">
+    <div className="lc-canvas lc-canvas--flat flex-1">
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
         name="Proteste programate — Civia"
@@ -334,7 +334,7 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
     <li>
       <Link
         href={`/proteste/${p.slug}`}
-        className="group block lc-glass-2 rounded-3xl overflow-hidden hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+        className="group block lc-glass-2 rounded-3xl overflow-hidden hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
       >
         {p.cover_image_url ? (
           <div className="relative aspect-[16/9] bg-[var(--color-surface-2)]">
