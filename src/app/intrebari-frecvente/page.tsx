@@ -323,11 +323,11 @@ export default function IntrebariFrecventePage() {
                 ({s.items.length} întrebări)
               </span>
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 lc-stagger">
               {s.items.map((q) => (
                 <details
                   key={q.q}
-                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+                  className="lc-glass-2 rounded-3xl group"
                 >
                   <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
                     {q.q}
@@ -347,18 +347,18 @@ export default function IntrebariFrecventePage() {
       </div>
 
       {/* Link-uri related */}
-      <section className="mt-12 grid md:grid-cols-3 gap-4">
-        <Link href="/glosar" className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors">
+      <section className="mt-12 grid md:grid-cols-3 gap-4 lc-stagger">
+        <Link href="/glosar" className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]">
           <BookOpen size={24} className="text-[var(--color-primary)] mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Glosar civic</h3>
           <p className="text-xs text-[var(--color-text-muted)]">50+ termeni definiți</p>
         </Link>
-        <Link href="/cum-functioneaza" className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors">
+        <Link href="/cum-functioneaza" className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]">
           <FileText size={24} className="text-[var(--color-primary)] mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Cum funcționează</h3>
           <p className="text-xs text-[var(--color-text-muted)]">Ghid complet pași</p>
         </Link>
-        <Link href="/avocatul-poporului-online" className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors">
+        <Link href="/avocatul-poporului-online" className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]">
           <Shield size={24} className="text-[var(--color-primary)] mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Escaladare AVP</h3>
           <p className="text-xs text-[var(--color-text-muted)]">Dacă nu răspunde primăria</p>

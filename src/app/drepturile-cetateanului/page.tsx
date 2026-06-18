@@ -199,11 +199,11 @@ export default function DrepturilePage() {
         <h2 id="drepturi" className="sr-only">
           Cele 12 drepturi
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-4 lc-stagger">
           {DREPTURI.map((d) => (
             <article
               key={d.numar}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:shadow-[var(--shadow-2)] transition-shadow"
+              className="lc-glass-2 rounded-3xl p-5 hover:shadow-[var(--shadow-2)] transition-shadow"
             >
               <header className="flex items-start gap-3 mb-3 flex-wrap">
                 <span
@@ -238,10 +238,10 @@ export default function DrepturilePage() {
       </section>
 
       {/* Quick navigation */}
-      <section className="grid md:grid-cols-3 gap-4 mb-12">
+      <section className="grid md:grid-cols-3 gap-4 mb-12 lc-stagger">
         <Link
           href="/sesizari"
-          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors"
+          className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
         >
           <FileText size={24} className="text-emerald-500 mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Folosește dreptul 1</h3>
@@ -251,7 +251,7 @@ export default function DrepturilePage() {
         </Link>
         <Link
           href="/avocatul-poporului-online"
-          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors"
+          className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
         >
           <Shield size={24} className="text-emerald-500 mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Folosește dreptul 6</h3>
@@ -261,7 +261,7 @@ export default function DrepturilePage() {
         </Link>
         <Link
           href="/petitii"
-          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)] transition-colors"
+          className="lc-glass-2 rounded-3xl p-5 hover:border-[var(--color-primary)] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
         >
           <Vote size={24} className="text-emerald-500 mb-2" aria-hidden="true" />
           <h3 className="font-bold mb-1">Folosește dreptul 1+9</h3>
@@ -279,13 +279,13 @@ export default function DrepturilePage() {
         >
           🤔 Întrebări frecvente
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-3 lc-stagger">
           {FAQ.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"

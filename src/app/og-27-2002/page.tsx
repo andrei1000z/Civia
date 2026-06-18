@@ -115,8 +115,8 @@ export default function OG272002Page() {
             📜 Articole cheie cu comentariu
           </h2>
 
-          <div className="space-y-5">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="space-y-5 lc-stagger">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <h3 className="font-bold mb-2 text-[var(--color-primary)]">Art. 1 — Cine poate depune petiții</h3>
               <blockquote className="border-l-4 border-[var(--color-primary)] pl-3 italic text-sm leading-relaxed mb-2">
                 „Prezenta ordonanță are ca obiect reglementarea modului de exercitare a dreptului de petiționare, garantat de articolul 51 din Constituție."
@@ -126,7 +126,7 @@ export default function OG272002Page() {
               </p>
             </div>
 
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <h3 className="font-bold mb-2 text-[var(--color-primary)]">Art. 2 — Forme acceptate</h3>
               <blockquote className="border-l-4 border-[var(--color-primary)] pl-3 italic text-sm leading-relaxed mb-2">
                 „Prin petiție se înțelege cererea, reclamația, sesizarea sau propunerea formulată în scris sau prin poșta electronică."
@@ -136,7 +136,7 @@ export default function OG272002Page() {
               </p>
             </div>
 
-            <div className="bg-[var(--color-surface)] border-2 border-[var(--color-primary)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5 ring-1 ring-[var(--color-primary)]">
               <h3 className="font-bold mb-2 text-[var(--color-primary)]">Art. 8 — Termenul de 30 de zile ⭐</h3>
               <blockquote className="border-l-4 border-[var(--color-primary)] pl-3 italic text-sm leading-relaxed mb-2">
                 „Termenul de soluționare al petițiilor este de 30 de zile de la data înregistrării petiției. Pentru petițiile complexe se poate prelungi cu cel mult 15 zile, cu notificare prealabilă a petentului."
@@ -146,7 +146,7 @@ export default function OG272002Page() {
               </p>
             </div>
 
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <h3 className="font-bold mb-2 text-[var(--color-primary)]">Art. 9 — Număr de înregistrare</h3>
               <blockquote className="border-l-4 border-[var(--color-primary)] pl-3 italic text-sm leading-relaxed mb-2">
                 „Petițiile vor fi înregistrate la autoritățile sau instituțiile publice cărora le sunt adresate."
@@ -156,7 +156,7 @@ export default function OG272002Page() {
               </p>
             </div>
 
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <h3 className="font-bold mb-2 text-[var(--color-primary)]">Art. 12 — Sesizări anonime</h3>
               <blockquote className="border-l-4 border-[var(--color-primary)] pl-3 italic text-sm leading-relaxed mb-2">
                 „Petițiile anonime sau cele în care nu sunt trecute datele de identificare a petiționarului nu se iau în considerare și se clasează."

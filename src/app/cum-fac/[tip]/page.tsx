@@ -86,8 +86,8 @@ export default async function CumFacTipPage({
       />
 
       {/* Info esențială */}
-      <section className="grid sm:grid-cols-3 gap-4 mb-12">
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
+      <section className="lc-stagger grid sm:grid-cols-3 gap-4 mb-12">
+        <div className="lc-glass-2 rounded-3xl p-4">
           <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
             Autoritate
           </p>
@@ -98,7 +98,7 @@ export default async function CumFacTipPage({
             </p>
           )}
         </div>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
+        <div className="lc-glass-2 rounded-3xl p-4">
           <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
             Temei legal
           </p>
@@ -107,7 +107,7 @@ export default async function CumFacTipPage({
             {t.temeiLegal}
           </p>
         </div>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
+        <div className="lc-glass-2 rounded-3xl p-4">
           <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-text-muted)] mb-1">
             Termen răspuns
           </p>
@@ -127,11 +127,11 @@ export default async function CumFacTipPage({
           >
             💡 Exemple concrete
           </h2>
-          <ul className="space-y-2">
+          <ul className="lc-stagger space-y-2">
             {t.exemple.map((ex, i) => (
               <li
                 key={i}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-3 text-sm flex items-start gap-2"
+                className="lc-glass-2 rounded-3xl p-3 text-sm flex items-start gap-2"
               >
                 <span className="text-[var(--color-text-muted)] shrink-0" aria-hidden="true">
                   →
@@ -148,11 +148,11 @@ export default async function CumFacTipPage({
         <h2 id="pasi" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           📋 Pași concreți
         </h2>
-        <ol className="space-y-4">
+        <ol className="lc-stagger space-y-4">
           {t.pasi.map((step, i) => (
             <li
               key={step.titlu}
-              className="howto-step bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 flex gap-4"
+              className="howto-step lc-glass-2 rounded-3xl p-5 flex gap-4"
             >
               <span
                 className="shrink-0 w-9 h-9 rounded-full bg-[var(--color-primary)] text-white grid place-items-center font-bold"
@@ -187,13 +187,13 @@ export default async function CumFacTipPage({
           <h2 id="faq" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
             🤔 Întrebări frecvente pentru {t.titlu.toLowerCase()}
           </h2>
-          <div className="space-y-3">
+          <div className="lc-stagger space-y-3">
             {t.faq.map((q) => (
               <details
                 key={q.q}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+                className="lc-glass-2 rounded-3xl group"
               >
-                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                   {q.q}
                   <span
                     className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"
@@ -232,14 +232,14 @@ export default async function CumFacTipPage({
         >
           📚 Alte tipuri de sesizări
         </h2>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="lc-stagger grid sm:grid-cols-2 md:grid-cols-3 gap-3">
           {CUM_FAC_TIPURI.filter((x) => x.slug !== t.slug)
             .slice(0, 6)
             .map((other) => (
               <Link
                 key={other.slug}
                 href={`/cum-fac/${other.slug}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)] transition-colors flex items-center gap-2"
+                className="lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)] transition-colors flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
               >
                 <span className="text-xl" aria-hidden="true">
                   {other.emoji}

@@ -395,9 +395,9 @@ export default async function SesizareDetailPage({
       })()}
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-8">
-        <div>
+        <div className="lc-stagger">
           {/* Description */}
-          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
+          <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
             <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
               <span
                 className="w-7 h-7 rounded-[var(--radius-xs)] bg-[var(--color-primary-soft)] text-[var(--color-primary-on-soft)] grid place-items-center"
@@ -468,7 +468,7 @@ export default async function SesizareDetailPage({
 
           {/* Formal text — address stripped for privacy */}
           {sesizare.formal_text && (
-            <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
+            <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
               <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
                 <span
                   className="w-7 h-7 rounded-[var(--radius-xs)] bg-violet-500/15 text-violet-600 dark:text-violet-400 grid place-items-center"
@@ -500,7 +500,7 @@ export default async function SesizareDetailPage({
 
           {/* Photos */}
           {sesizare.imagini.length > 0 && (
-            <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
+            <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
               <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
                 <span
                   className="w-7 h-7 rounded-[var(--radius-xs)] bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center"
@@ -518,7 +518,7 @@ export default async function SesizareDetailPage({
           )}
 
           {/* Map */}
-          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6 mb-6">
+          <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
             <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
               <span
                 className="w-7 h-7 rounded-[var(--radius-xs)] bg-rose-500/15 text-rose-600 dark:text-rose-400 grid place-items-center"
@@ -555,7 +555,7 @@ export default async function SesizareDetailPage({
               labels, icons and colors stay consistent across surfaces.
               2026-05-25 — UI refresh: bigger dots, color-tinted rail, current
               step highlighted cu „Acum" pill, time-ago inline cu Clock. */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <div className="flex items-center justify-between mb-5">
               <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
                 Status &amp; activitate

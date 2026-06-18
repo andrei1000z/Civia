@@ -211,7 +211,7 @@ export default async function StatisticiPage() {
         >
           🏆 Top 10 tipuri de probleme raportate
         </h2>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 space-y-3">
+        <div className="lc-glass-2 rounded-3xl p-5 space-y-3">
           {topTypes.length === 0 ? (
             <p className="text-sm text-[var(--color-text-muted)] text-center py-6">
               Datele se încarcă… reîncearcă în câteva momente.
@@ -258,7 +258,7 @@ export default async function StatisticiPage() {
         >
           🗺️ Top 10 județe active
         </h2>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 space-y-3">
+        <div className="lc-glass-2 rounded-3xl p-5 space-y-3">
           {topCounties.length === 0 ? (
             <p className="text-sm text-[var(--color-text-muted)] text-center py-6">
               Datele se încarcă…
@@ -302,7 +302,7 @@ export default async function StatisticiPage() {
       </section>
 
       {/* Open Data callout */}
-      <section className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 mb-12">
+      <section className="lc-glass-2 rounded-3xl p-6 mb-12">
         <div className="flex items-start gap-3 mb-3">
           <Download size={24} className="text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
           <div>
@@ -332,13 +332,13 @@ export default async function StatisticiPage() {
         <h2 id="faq-stats" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Despre date
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-3 lc-stagger">
           {FAQ.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"

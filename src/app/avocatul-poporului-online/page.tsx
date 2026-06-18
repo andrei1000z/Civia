@@ -144,11 +144,11 @@ export default function AvocatulPoporuluiPage() {
           <FileText size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
           5 pași concreți
         </h2>
-        <ol className="space-y-4">
+        <ol className="space-y-4 lc-stagger">
           {STEPS.map((step, i) => (
             <li
               key={step.name}
-              className="howto-step bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 flex gap-4"
+              className="howto-step lc-glass-2 rounded-3xl p-5 flex gap-4"
             >
               <span
                 className="shrink-0 w-9 h-9 rounded-full bg-[var(--color-primary)] text-white grid place-items-center font-bold"
@@ -235,8 +235,8 @@ Semnătura: [SEMNĂTURĂ]
         >
           📋 Și ce alte opțiuni mai am?
         </h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+        <div className="grid md:grid-cols-3 gap-4 lc-stagger">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <Clock size={20} className="text-emerald-500 mb-2" aria-hidden="true" />
             <h3 className="font-semibold mb-2">1. Trimite revenire</h3>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
@@ -244,7 +244,7 @@ Semnătura: [SEMNĂTURĂ]
               înregistrare original. 40% din primării răspund la revenire.
             </p>
           </div>
-          <div className="bg-[var(--color-surface)] border-2 border-emerald-500/30 rounded-[var(--radius-md)] p-5">
+          <div className="lc-glass-2 border-2 border-emerald-500/30 rounded-3xl p-5">
             <Shield size={20} className="text-emerald-500 mb-2" aria-hidden="true" />
             <h3 className="font-semibold mb-2">2. Avocatul Poporului</h3>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
@@ -252,7 +252,7 @@ Semnătura: [SEMNĂTURĂ]
               anual la Parlament — primarii preferă să răspundă.
             </p>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <FileText size={20} className="text-amber-500 mb-2" aria-hidden="true" />
             <h3 className="font-semibold mb-2">3. Contencios administrativ</h3>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
@@ -269,13 +269,13 @@ Semnătura: [SEMNĂTURĂ]
         <h2 id="faq-avp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Întrebări frecvente
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-3 lc-stagger">
           {FAQ.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"
@@ -293,7 +293,7 @@ Semnătura: [SEMNĂTURĂ]
       </section>
 
       {/* CTA */}
-      <section className="text-center bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-8">
+      <section className="text-center lc-glass-2 rounded-3xl p-8">
         <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-3">
           Începe cu o sesizare prima oară
         </h2>

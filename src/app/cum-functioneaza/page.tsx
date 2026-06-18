@@ -140,11 +140,11 @@ export default function CumFunctioneazaPage() {
           <h2 id="pasi-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6 flex items-center gap-2">
             <span aria-hidden="true">📋</span> Cei 5 pași concreți
           </h2>
-          <ol className="space-y-4">
+          <ol className="lc-stagger space-y-4">
             {STEPS.map((step, i) => (
               <li
                 key={step.name}
-                className="howto-step bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 flex gap-4 items-start"
+                className="howto-step lc-glass-2 rounded-3xl p-5 flex gap-4 items-start"
               >
                 <span
                   className="shrink-0 w-9 h-9 rounded-full bg-[var(--color-primary)] text-white grid place-items-center font-bold text-base"
@@ -177,14 +177,14 @@ export default function CumFunctioneazaPage() {
             <Clock size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
             Ce se întâmplă după ce trimiți
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="lc-stagger grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { day: "Ziua 0", title: "Email trimis", text: "Primăria primește email + Civia confirmă livrarea." },
               { day: "Zilele 1-3", title: "Înregistrare", text: "Primăria îți trimite nr. oficial de înregistrare." },
               { day: "Zilele 5-25", title: "Procesare", text: "Acțiune sau cerere de informații suplimentare." },
               { day: "Ziua 30 (max)", title: "Răspuns obligatoriu", text: "OG 27/2002 art. 8 — răspuns oficial scris." },
             ].map((s) => (
-              <div key={s.day} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
+              <div key={s.day} className="lc-glass-2 rounded-3xl p-4">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-primary)] mb-1">{s.day}</p>
                 <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
                 <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{s.text}</p>
@@ -199,22 +199,22 @@ export default function CumFunctioneazaPage() {
             <Shield size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
             De ce funcționează cu Civia
           </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="lc-stagger grid md:grid-cols-3 gap-4">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <CheckCircle2 size={20} className="text-emerald-500 mb-2" aria-hidden="true" />
               <h3 className="font-semibold mb-2">Temei legal OG 27/2002</h3>
               <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
                 Primăria e <strong>obligată</strong> să răspundă în 30 zile. Civia menționează explicit temeiul legal în fiecare email.
               </p>
             </div>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <CheckCircle2 size={20} className="text-emerald-500 mb-2" aria-hidden="true" />
               <h3 className="font-semibold mb-2">Autoritate corectă</h3>
               <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
                 AI-ul detectează exact cine răspunde: primărie, prefectură, poliție locală, CNAIR. <strong>220+ orașe</strong> + 42 județe acoperite.
               </p>
             </div>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+            <div className="lc-glass-2 rounded-3xl p-5">
               <CheckCircle2 size={20} className="text-emerald-500 mb-2" aria-hidden="true" />
               <h3 className="font-semibold mb-2">Limbaj formal</h3>
               <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
@@ -225,7 +225,7 @@ export default function CumFunctioneazaPage() {
         </section>
 
         {/* Ce zice legea */}
-        <section aria-labelledby="lege-heading" className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6">
+        <section aria-labelledby="lege-heading" className="lc-glass-2 rounded-3xl p-6">
           <h2 id="lege-heading" className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold mb-4">
             ⚖️ Ce zice OG 27/2002 (text literal)
           </h2>
@@ -246,18 +246,18 @@ export default function CumFunctioneazaPage() {
             <AlertTriangle size={24} className="text-amber-500" aria-hidden="true" />
             Dacă primăria nu răspunde
           </h2>
-          <ol className="space-y-3 text-sm">
-            <li className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4">
+          <ol className="lc-stagger space-y-3 text-sm">
+            <li className="lc-glass-2 rounded-3xl p-4">
               <strong>1. Trimite revenire</strong> — referință la nr. de înregistrare original. Civia generează automat textul.
             </li>
-            <li className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4">
+            <li className="lc-glass-2 rounded-3xl p-4">
               <strong>2. Plângere la Avocatul Poporului</strong> — gratuit, online la{" "}
               <a href="https://avp.ro" target="_blank" rel="noreferrer noopener" className="text-[var(--color-primary)] hover:underline">
                 avp.ro
               </a>
               . Recomandările AVP sunt greu de ignorat.
             </li>
-            <li className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xs)] p-4">
+            <li className="lc-glass-2 rounded-3xl p-4">
               <strong>3. Acțiune în contencios administrativ</strong> — termen 30 zile de la refuz. Vezi{" "}
               <Link href="/ghiduri/ghid-cetatean" className="text-[var(--color-primary)] hover:underline">
                 ghid drepturi cetățean
@@ -272,10 +272,10 @@ export default function CumFunctioneazaPage() {
           <h2 id="faq-heading" className="font-[family-name:var(--font-sora)] text-2xl md:text-3xl font-bold mb-6">
             🤔 Întrebări frecvente
           </h2>
-          <div className="space-y-3">
+          <div className="lc-stagger space-y-3">
             {FAQ.map((q) => (
-              <details key={q.question} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group">
-                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <details key={q.question} className="lc-glass-2 rounded-3xl group">
+                <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                   {q.question}
                   <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">▼</span>
                 </summary>
