@@ -51,7 +51,7 @@ export default function PressPage() {
           <FileText size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
           Boilerplate (text gata de copiat)
         </h2>
-        <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+        <div className="lc-glass-2 rounded-3xl p-5">
           <p className="text-sm leading-relaxed mb-4">
             <strong>Civia.ro</strong> este o platformă civică independentă din
             România care permite cetățenilor să trimită sesizări oficiale către
@@ -88,8 +88,8 @@ export default function PressPage() {
           <ImageIcon size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
           Logo & screenshot-uri
         </h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+        <div className="lc-stagger grid sm:grid-cols-2 gap-4">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <h3 className="font-semibold mb-2">Logo Civia</h3>
             <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
               Logo principal SVG + PNG (192×192, 512×512). Folosește pe fundal
@@ -112,7 +112,7 @@ export default function PressPage() {
               </a>
             </div>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <h3 className="font-semibold mb-2">Screenshot-uri produse</h3>
             <p className="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">
               Capturi din platformă pentru articole. Hi-res, gata pentru tipar.
@@ -170,7 +170,7 @@ export default function PressPage() {
         <h2 id="citate" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4">
           💬 Citate gata de folosit
         </h2>
-        <blockquote className="bg-[var(--color-surface)] border-l-4 border-[var(--color-primary)] rounded-[var(--radius-md)] p-5 mb-3">
+        <blockquote className="lc-glass-2 border-l-4 border-[var(--color-primary)] rounded-3xl p-5 mb-3">
           <p className="text-base italic leading-relaxed mb-2">
             „Civia transformă 2 ore de birocrație civică în 90 de secunde. AI-ul
             scrie limbajul juridic, găsește autoritatea, trimite emailul.
@@ -180,7 +180,7 @@ export default function PressPage() {
             — Echipa Civia
           </footer>
         </blockquote>
-        <blockquote className="bg-[var(--color-surface)] border-l-4 border-[var(--color-primary)] rounded-[var(--radius-md)] p-5">
+        <blockquote className="lc-glass-2 border-l-4 border-[var(--color-primary)] rounded-3xl p-5">
           <p className="text-base italic leading-relaxed mb-2">
             „România are 19 milioane de cetățeni cu drepturi civice clar
             definite în OG 27/2002, dar majoritatea nu știu cum să le folosească.
@@ -193,7 +193,7 @@ export default function PressPage() {
       </section>
 
       {/* Contact press */}
-      <section aria-labelledby="contact" className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 mb-12">
+      <section aria-labelledby="contact" className="lc-glass-2 rounded-3xl p-6 mb-12">
         <h2 id="contact" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-3 flex items-center gap-2">
           <Mail size={24} className="text-[var(--color-primary)]" aria-hidden="true" />
           Contact press

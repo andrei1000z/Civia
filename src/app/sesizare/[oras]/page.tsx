@@ -176,11 +176,11 @@ export default async function SesizareOrasPage({
           <h2 id="operatori" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4">
             🏛️ Operatori publici {o.nume}
           </h2>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="lc-stagger grid sm:grid-cols-2 gap-3">
             {o.operatori.map((op) => (
               <div
                 key={op.domeniu}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4"
+                className="lc-glass-2 rounded-3xl p-4"
               >
                 <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--color-primary)] mb-1">
                   {op.domeniu}
@@ -215,12 +215,12 @@ export default async function SesizareOrasPage({
         <h2 id="tipuri" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-4">
           📋 Ghiduri pentru tipuri specifice
         </h2>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="lc-stagger grid sm:grid-cols-2 md:grid-cols-3 gap-3">
           {CUM_FAC_TIPURI.slice(0, 6).map((t) => (
             <Link
               key={t.slug}
               href={`/cum-fac/${t.slug}`}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)] transition-colors flex items-center gap-2"
+              className="lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)] transition-colors flex items-center gap-2"
             >
               <span className="text-xl" aria-hidden="true">
                 {t.emoji}
@@ -244,13 +244,13 @@ export default async function SesizareOrasPage({
         <h2 id="faq" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Întrebări despre sesizările din {o.nume}
         </h2>
-        <div className="space-y-3">
+        <div className="lc-stagger space-y-3">
           {faq.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"

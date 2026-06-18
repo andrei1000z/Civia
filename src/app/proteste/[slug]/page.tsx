@@ -379,7 +379,7 @@ export default async function ProtestDetailPage({
         <div className="space-y-8 min-w-0">
           {/* Demands — surfaced at the top because they're the why. */}
           {p.demands.length > 0 && (
-            <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 md:p-6">
+            <section className="lc-glass-2 rounded-3xl p-5 md:p-6">
               <h2 className="font-[family-name:var(--font-sora)] font-extrabold text-base md:text-lg mb-4 inline-flex items-center gap-2">
                 <span className="w-1 h-5 rounded bg-[var(--color-primary)]" aria-hidden="true" />
                 Ce cer protestatarii
@@ -466,7 +466,7 @@ export default async function ProtestDetailPage({
             </div>
           )}
 
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 lg:sticky lg:top-20 space-y-3">
+          <div className="lc-glass-2 rounded-3xl p-4 lg:sticky lg:top-20 space-y-3">
             <DetailRow icon={Calendar} label="Început">
               {formatDateTime(p.start_at)}
             </DetailRow>

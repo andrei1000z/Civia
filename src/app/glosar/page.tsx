@@ -57,7 +57,7 @@ function TermCard({ term }: { term: GlosarTerm }) {
   return (
     <article
       id={term.slug}
-      className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:shadow-[var(--shadow-2)] transition-shadow scroll-mt-24"
+      className="lc-glass-2 rounded-3xl p-5 hover:shadow-[var(--shadow-2)] transition-shadow scroll-mt-24"
     >
       <header className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <h3 className="font-[family-name:var(--font-sora)] text-lg font-bold text-[var(--color-text)]">
@@ -195,7 +195,7 @@ export default function GlosarPage() {
                 ({terms.length} termeni)
               </span>
             </h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="lc-stagger grid md:grid-cols-2 gap-4">
               {terms.map((t) => (
                 <TermCard key={t.slug} term={t} />
               ))}
@@ -213,9 +213,9 @@ export default function GlosarPage() {
           {FAQ_GLOSAR.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"

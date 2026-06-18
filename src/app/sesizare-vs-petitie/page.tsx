@@ -95,8 +95,8 @@ export default function SesizareVsPetitiePage() {
       />
 
       {/* Quick answer */}
-      <section className="grid md:grid-cols-2 gap-4 mb-10">
-        <div className="bg-[var(--color-surface)] border-2 border-emerald-500/30 rounded-[var(--radius-md)] p-6">
+      <section className="lc-stagger grid md:grid-cols-2 gap-4 mb-10">
+        <div className="lc-glass-2 border-2 border-emerald-500/30 rounded-3xl p-6">
           <FileText size={28} className="text-emerald-500 mb-3" aria-hidden="true" />
           <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-2">
             Sesizare
@@ -116,7 +116,7 @@ export default function SesizareVsPetitiePage() {
             Fă o sesizare
           </Link>
         </div>
-        <div className="bg-[var(--color-surface)] border-2 border-violet-500/30 rounded-[var(--radius-md)] p-6">
+        <div className="lc-glass-2 border-2 border-violet-500/30 rounded-3xl p-6">
           <Users size={28} className="text-violet-500 mb-3" aria-hidden="true" />
           <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-2">
             Petiție
@@ -178,7 +178,7 @@ export default function SesizareVsPetitiePage() {
         >
           💡 Exemple concrete
         </h2>
-        <div className="space-y-3">
+        <div className="lc-stagger space-y-3">
           {[
             {
               situatie: "Iluminat stradal stricat de 3 luni pe strada ta",
@@ -208,7 +208,7 @@ export default function SesizareVsPetitiePage() {
           ].map((e) => (
             <div
               key={e.situatie}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 flex items-start gap-3"
+              className="lc-glass-2 rounded-3xl p-4 flex items-start gap-3"
             >
               <span
                 className={`shrink-0 w-2 h-2 rounded-full mt-2 ${
@@ -239,13 +239,13 @@ export default function SesizareVsPetitiePage() {
         <h2 id="faq-svp" className="font-[family-name:var(--font-sora)] text-2xl font-bold mb-6">
           🤔 Întrebări frecvente
         </h2>
-        <div className="space-y-3">
+        <div className="lc-stagger space-y-3">
           {FAQ.map((q) => (
             <details
               key={q.question}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] group"
+              className="lc-glass-2 rounded-3xl group"
             >
-              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-[var(--radius-md)]">
+              <summary className="cursor-pointer p-4 font-semibold text-sm flex items-center justify-between hover:bg-[var(--color-surface-2)] transition-colors rounded-3xl">
                 {q.question}
                 <span
                   className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform"
