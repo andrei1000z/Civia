@@ -30,6 +30,7 @@ Allow: /feed.xml
 
 # Disallow private user areas
 Disallow: /cont
+Disallow: /setari
 Disallow: /admin
 Disallow: /api/admin
 Disallow: /auth

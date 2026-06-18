@@ -15,7 +15,7 @@ import { join } from "path";
  */
 describe("/cont layout — mobile regression guards", () => {
   const source = readFileSync(
-    join(process.cwd(), "src/app/cont/page.tsx"),
+    join(process.cwd(), "src/app/setari/page.tsx"),
     "utf-8",
   );
 

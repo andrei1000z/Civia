@@ -67,7 +67,7 @@ export function FollowAreaButton({
 
   async function toggle() {
     if (!user) {
-      router.push(`/cont?next=${encodeURIComponent(window.location.pathname)}`);
+      router.push(`/setari?next=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     setBusy(true);

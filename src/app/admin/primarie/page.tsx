@@ -29,7 +29,7 @@ function isOverdue(createdAt: string): boolean {
 export default async function PrimariePage() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/cont?from=primarie");
+  if (!user) redirect("/setari?from=primarie");
 
   const { data: profile } = await supabase
     .from("profiles")

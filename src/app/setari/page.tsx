@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   Mail,
   MessageSquareText,
-  Camera,
   Trash2,
   ShieldCheck,
   Download,
@@ -31,7 +30,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundsToggle } from "@/components/liquid-civic/SoundsToggle";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 // 2026-05-24: BadgesSection + StreakWidget scoase din UI cont la cererea user-ului.
-import { AvatarCropModal } from "@/components/profile/AvatarCropModal";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
 import { EngagementPushToggle } from "@/components/notifications/EngagementPushToggle";
 import { MfaSetup } from "@/components/cont/MfaSetup";
@@ -193,9 +191,6 @@ export default function ContPage() {
   // deja datele; skip refetch dacă același user.
   const loadedForUserIdRef = useRef<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   // Form state hidratat din cache — zero flicker pe revisit
   const [form, setForm] = useState<FormState>(() => {
     const p = initialCache?.profile;
@@ -334,68 +329,6 @@ export default function ContPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
-  const uploadAvatar = async (file: File) => {
-    // Validation mutat la onChange — aici primim deja file decupat 256x256.
-    setAvatarUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("files", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Upload failed");
-      const url = json.data?.urls?.[0];
-      if (!url) throw new Error("Nu am primit URL-ul");
-
-      // Persist immediately so the avatar survives a page reload even
-      // if the user closes without clicking "Salvează modificările".
-      const saveRes = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar_url: url }),
-      });
-      const saveJson = await saveRes.json();
-      if (!saveRes.ok) throw new Error(saveJson.error || "Eroare salvare avatar");
-
-      setForm((f) => ({ ...f, avatar_url: url }));
-      setProfile((p) => {
-        const next = p ? { ...p, avatar_url: url } : p;
-        if (next && user?.id) writeCache(user.id, next, sesizari);
-        return next;
-      });
-      toast("Poză de profil actualizată", "success");
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Eroare upload", "error");
-    } finally {
-      setAvatarUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const removeAvatar = async () => {
-    if (!form.avatar_url) return;
-    setAvatarUploading(true);
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar_url: null }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Eroare ștergere avatar");
-      setForm((f) => ({ ...f, avatar_url: "" }));
-      setProfile((p) => {
-        const next = p ? { ...p, avatar_url: null } : p;
-        if (next && user?.id) writeCache(user.id, next, sesizari);
-        return next;
-      });
-      toast("Poza de profil ștearsă", "info");
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Eroare", "error");
-    } finally {
-      setAvatarUploading(false);
-    }
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     // audit fix: fără telefon NICIUN opt-in SMS nu poate fi activ → resetăm toate
@@ -526,56 +459,12 @@ export default function ContPage() {
         <div className="absolute -bottom-16 -left-8 w-72 h-72 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
+            {/* 2026-06-18 — poza de profil ELIMINATĂ la cererea userului.
+                Avatar static cu inițiala numelui, fără upload/crop/ștergere. */}
             <div className="relative">
-              {form.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={form.avatar_url}
-                  alt=""
-                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover ring-2 sm:ring-4 ring-white/30 shadow-[var(--shadow-3)]"
-                />
-              ) : (
-                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-[var(--shadow-3)]">
-                  {initial}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-[var(--color-primary)] grid place-items-center shadow-[var(--shadow-2)] hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50"
-                aria-label="Schimbă poza de profil"
-                title="Schimbă poza de profil"
-              >
-                {avatarUploading ? (
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Camera size={14} aria-hidden="true" />
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  // 2026-05-24: in loc de upload direct, deschidem crop modal.
-                  // User decupeaza zona pe care o vrea ca avatar (256x256).
-                  if (file) {
-                    if (!file.type.startsWith("image/")) {
-                      toast("Doar fișiere imagine (jpg, png, webp)", "error");
-                      return;
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast("Imagine prea mare. Maxim 5MB.", "error");
-                      return;
-                    }
-                    setPendingAvatarFile(file);
-                  }
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-                className="hidden"
-              />
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm ring-2 sm:ring-4 ring-white/30 grid place-items-center text-2xl sm:text-3xl font-bold shadow-[var(--shadow-3)]">
+                {initial}
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-[family-name:var(--font-sora)] text-lg sm:text-2xl md:text-3xl font-extrabold leading-tight break-words">
@@ -584,17 +473,6 @@ export default function ContPage() {
               <p className="text-xs sm:text-sm text-white/80 truncate">
                 {profile?.email}
               </p>
-              {form.avatar_url && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  disabled={avatarUploading}
-                  className="text-[11px] text-white/70 hover:text-white underline mt-1 inline-flex items-center gap-1"
-                >
-                  <Trash2 size={10} aria-hidden="true" />
-                  Șterge poza
-                </button>
-              )}
             </div>
           </div>
           <button
@@ -622,8 +500,10 @@ export default function ContPage() {
           extinde la latimea continutului. Daca un card are text neromp-
           ut (location lung, cod URL), coloana iese din viewport.
           minmax(0, 1fr) forteaza shrink. */}
-      <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] gap-6 lg:gap-8">
-        <aside className="lg:sticky lg:top-24 lg:self-start space-y-5">
+      {/* 2026-06-18 — layout stil „Setări de telefon": o singură coloană
+          centrată (max-w-2xl), grupuri stivuite. Înainte era dashboard 2-col. */}
+      <div className="space-y-5 sm:space-y-6 max-w-2xl mx-auto">
+        <div className="space-y-5">
           <form
             onSubmit={handleSave}
             className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] min-w-0 overflow-hidden"
@@ -760,9 +640,9 @@ export default function ContPage() {
 
           {/* 2026-06-07 (audit #11) — securitate cont: 2FA opt-in (Supabase MFA nativ). */}
           {user && <MfaSetup />}
-        </aside>
+        </div>
 
-        {/* ─── Sesizari column ────────────────────────────────────── */}
+        {/* ─── Sesizările tale (sub setări, în aceeași coloană) ──────── */}
         <div className="min-w-0">
           {/* Stats */}
           {sesizari.length > 0 && (() => {
@@ -988,16 +868,6 @@ export default function ContPage() {
           </div>
         </div>
       )}
-
-      {/* 2026-05-24 — Crop modal pentru avatar pre-upload */}
-      <AvatarCropModal
-        file={pendingAvatarFile}
-        onCancel={() => setPendingAvatarFile(null)}
-        onCrop={(croppedFile) => {
-          setPendingAvatarFile(null);
-          uploadAvatar(croppedFile);
-        }}
-      />
     </div>
   );
 }
