@@ -16,6 +16,7 @@ import { AlertBanner } from "@/components/AlertBanner";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { ReferralSelfBridge } from "@/components/referral/ReferralSelfBridge";
+import { StaggerReveal } from "@/components/ui/StaggerReveal";
 import { NavProgress } from "@/components/NavProgress";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { DeferredClientMount } from "@/components/DeferredClientMount";
@@ -265,6 +266,8 @@ export default function RootLayout({
               {/* Referral (Faza 1) — asigură cookie-ul propriu civia_rc pentru
                   share-uri cu ?ref=. Zero UI, doar pentru userii logați. */}
               <ReferralSelfBridge />
+              {/* Scroll-reveal global pentru .lc-stagger (zero UI) */}
+              <StaggerReveal />
               <AlertBanner />
               <Navbar />
               <BottomNav />

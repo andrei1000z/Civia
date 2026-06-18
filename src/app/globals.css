@@ -1568,9 +1568,17 @@ html.a11y-reduce-motion *::after {
   }
 }
 
-/* Intrare staggered — cardurile „urcă" lin, în secvență, la mount. */
-.lc-stagger > * {
+/* Intrare staggered — cardurile „urcă" lin, în secvență, CÂND grupul intră în
+   viewport (scroll-reveal). `.is-visible` e adăugat de <StaggerReveal> (un singur
+   IntersectionObserver global, re-scanat pe schimbare de rută). FOUC/no-JS-safe:
+   ascundem DOAR sub scripting:enabled (fără JS conținutul rămâne vizibil);
+   reduce-motion îl arată instant. */
+.lc-stagger.is-visible > * {
   animation: lc-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (scripting: enabled) {
+  .lc-stagger > * { opacity: 0; }
+  .lc-stagger.is-visible > * { opacity: 1; }
 }
 .lc-stagger > *:nth-child(1) { animation-delay: 0.02s; }
 .lc-stagger > *:nth-child(2) { animation-delay: 0.06s; }
@@ -1589,11 +1597,13 @@ html.a11y-reduce-motion *::after {
 @media (prefers-reduced-motion: reduce) {
   .lc-canvas::before,
   .setari-canvas::before { animation: none; }
-  .lc-stagger > * { animation: none; }
+  .lc-stagger > *,
+  .lc-stagger.is-visible > * { animation: none; opacity: 1; }
 }
 html.a11y-reduce-motion .lc-canvas::before,
 html.a11y-reduce-motion .setari-canvas::before { animation: none; }
-html.a11y-reduce-motion .lc-stagger > * { animation: none; opacity: 1; transform: none; }
+html.a11y-reduce-motion .lc-stagger > *,
+html.a11y-reduce-motion .lc-stagger.is-visible > * { animation: none; opacity: 1; transform: none; }
 
 /* Specular highlight — pseudo-element top reflection */
 .lc-specular {
