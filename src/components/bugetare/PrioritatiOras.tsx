@@ -152,7 +152,7 @@ export function PrioritatiOras() {
 
       {needsLogin && (
         <div className="mb-4 rounded-[var(--radius-md)] border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 px-4 py-3 text-sm">
-          <Link href="/cont" className="inline-flex items-center gap-1.5 font-semibold text-[var(--color-primary)] underline">
+          <Link href="/setari" className="inline-flex items-center gap-1.5 font-semibold text-[var(--color-primary)] underline">
             <LogIn size={14} aria-hidden="true" />
             Intră în cont (magic-link, fără parolă)
           </Link>{" "}

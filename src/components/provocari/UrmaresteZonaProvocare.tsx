@@ -50,7 +50,7 @@ export function UrmaresteZonaProvocare({
   if (state === "auth") {
     return (
       <Link
-        href="/cont"
+        href="/setari"
         className="inline-flex items-center gap-1.5 h-11 px-4 rounded-[var(--radius-button)] bg-[var(--color-surface-2)] text-[var(--color-text)] text-sm font-medium hover:bg-[var(--color-border)] transition-colors"
       >
         <Bell size={15} aria-hidden="true" />

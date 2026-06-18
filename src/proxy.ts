@@ -45,9 +45,9 @@ const COUNTY_SLUGS = new Set([
 // /legal/cod-de-conduita, /legal/dpa-autoritati. Redirect 308 la home pentru
 // link-uri vechi / Google cache.
 const LEGACY_REDIRECTS: Record<string, string> = {
-  // 2026-06-16 — /setari consolidat în /cont (nelogat = „Setări", logat = „Cont").
-  // #aspect → aterizează direct pe secțiunea Aspect & accesibilitate (slider sticlă).
-  "/setari": "/cont#aspect",
+  // 2026-06-18 — pagina de cont+setări trăiește ACUM la /setari (mutată din /cont,
+  // stil iOS Settings, funcțională și logat și nelogat). /cont vechi → /setari.
+  "/cont": "/setari",
   "/harti": "/",
   "/aer": "/",
   "/buget": "/",

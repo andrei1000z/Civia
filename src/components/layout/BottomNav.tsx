@@ -235,7 +235,7 @@ export function BottomNav() {
 
             {/* Contul meu */}
             <Link
-              href="/cont"
+              href="/setari"
               onClick={() => setOpen(false)}
               className="mt-3 w-full h-11 flex items-center gap-2.5 px-4 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[var(--color-text)] text-sm font-medium hover:bg-black/[0.08] dark:hover:bg-white/[0.09] active:scale-[0.99] transition-[scale,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >

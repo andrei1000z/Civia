@@ -15,7 +15,7 @@ import { join } from "path";
  */
 describe("/cont mobile compact layout", () => {
   const source = readFileSync(
-    join(process.cwd(), "src/app/cont/page.tsx"),
+    join(process.cwd(), "src/app/setari/page.tsx"),
     "utf-8",
   );
 
