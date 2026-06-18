@@ -483,7 +483,7 @@ export function SesizariPublice() {
             Bottom (cod + voturi + share): mt-auto pinned jos.
             Ordine top→bottom: status+tip+timp → titlu → adresă+sector
             → descriere → poze → bottom action row. */}
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0 auto-rows-fr stagger-children">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 min-w-0 auto-rows-fr stagger-children lc-stagger">
           {filtered.map((s) => {
             const { label: tipLabel, icon: tipIcon } = resolveTipLabel(s.tip, s.custom_category);
             const hasPhotos = s.imagini.length > 0 || !!s.resolved_photo_url;
@@ -491,7 +491,7 @@ export function SesizariPublice() {
               <Link
                 key={s.id}
                 href={`/sesizari/${s.code}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 card-lift hover:border-[var(--color-primary)]/30 overflow-hidden min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 flex flex-col h-full"
+                className="lc-glass-2 rounded-3xl p-5 card-lift hover:border-[var(--color-primary)]/30 overflow-hidden min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 flex flex-col h-full"
                 aria-label={`${s.titlu} — ${STATUS_LABELS[s.status]}`}
               >
                 {/* TOP ROW: status + tip + acum X timp (dreapta) */}

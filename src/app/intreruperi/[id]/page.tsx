@@ -300,7 +300,7 @@ export default async function InterruptionDetail({
       <div className="grid lg:grid-cols-[1fr_320px] gap-8">
         <div>
           {/* Info block */}
-          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-6 mb-6 space-y-4">
+          <section className="lc-glass-2 rounded-3xl p-6 mb-6 space-y-4">
             <div>
               <h2 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-2 flex items-center gap-1.5">
                 <Clock size={12} /> Interval
@@ -428,7 +428,7 @@ export default async function InterruptionDetail({
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <p className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3 flex items-center gap-1.5">
               <Building2 size={12} /> Provider
             </p>
@@ -467,7 +467,7 @@ export default async function InterruptionDetail({
             </div>
           </div>
 
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
+          <div className="lc-glass-2 rounded-3xl p-5">
             <p className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)] mb-3">
               Acțiuni
             </p>
@@ -502,12 +502,12 @@ export default async function InterruptionDetail({
           <h2 className="font-[family-name:var(--font-sora)] text-xl font-bold mb-4">
             Alte întreruperi în {item.county === "B" ? "București" : item.county}
           </h2>
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="lc-stagger grid md:grid-cols-2 gap-3">
             {related.map((r) => (
               <Link
                 key={r.id}
                 href={`/intreruperi/${r.id}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/40 transition-all flex gap-3"
+                className="lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)]/40 transition-all flex gap-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                 style={{ borderLeftWidth: "3px", borderLeftColor: TYPE_COLORS[r.type] }}
               >
                 <span className="text-2xl shrink-0">{TYPE_ICONS[r.type]}</span>

@@ -290,7 +290,7 @@ export default async function PetitiePage({
           {aiSummary && (
             <section
               aria-label="Sinteză Civia"
-              className="mb-7 bg-[var(--color-surface)] border border-purple-500/30 rounded-[var(--radius-md)] shadow-[var(--shadow-2)] p-5 md:p-6"
+              className="mb-7 lc-glass-2 rounded-3xl p-5 md:p-6"
             >
               <div className="flex items-center gap-2 mb-4">
                 <span
@@ -320,7 +320,7 @@ export default async function PetitiePage({
               Push notif se trimite automat pentru fiecare update nou (vezi
               /api/petitii/scrape-updates). */}
           {petitieUpdates.length > 0 && (
-            <section id="updates" className="bg-[var(--color-surface)] border border-purple-500/30 rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 md:p-6 scroll-mt-24">
+            <section id="updates" className="lc-glass-2 rounded-3xl p-5 md:p-6 scroll-mt-24">
               <div className="flex items-start gap-3 mb-5">
                 <div
                   className="w-9 h-9 rounded-[var(--radius-xs)] bg-purple-500/15 grid place-items-center shrink-0"
@@ -370,7 +370,7 @@ export default async function PetitiePage({
           {/* Body — collapsed by default when AI synthesis exists (the
               synthesis is the better read); open by default otherwise */}
           <details
-            className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-1)] p-5 md:p-6"
+            className="group lc-glass-2 rounded-3xl p-5 md:p-6"
             {...(aiSummary ? {} : { open: true })}
           >
             <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] inline-flex items-center gap-2 transition-colors">
