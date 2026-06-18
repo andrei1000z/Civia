@@ -63,7 +63,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* 3 hero stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lc-stagger">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const inner = (
