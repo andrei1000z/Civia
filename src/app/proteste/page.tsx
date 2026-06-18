@@ -235,7 +235,7 @@ export default async function ProtestePage() {
                 />
                 Active și viitoare
               </h2>
-              <ul className="grid gap-4 md:grid-cols-2">
+              <ul className="lc-stagger grid gap-4 md:grid-cols-2">
                 {upcoming.map((p) => (
                   <ProtestCard key={p.id} p={p} />
                 ))}
@@ -248,7 +248,7 @@ export default async function ProtestePage() {
               <h2 className="font-[family-name:var(--font-sora)] text-lg md:text-xl font-extrabold mb-4 text-[var(--color-text-muted)]">
                 Arhivă
               </h2>
-              <ul className="grid gap-4 md:grid-cols-2 opacity-90">
+              <ul className="lc-stagger grid gap-4 md:grid-cols-2 opacity-90">
                 {past.map((p) => (
                   <ProtestCard key={p.id} p={p} muted />
                 ))}
@@ -331,7 +331,7 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
     <li>
       <Link
         href={`/proteste/${p.slug}`}
-        className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+        className="group block lc-glass-2 rounded-3xl overflow-hidden hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
       >
         {p.cover_image_url ? (
           <div className="relative aspect-[16/9] bg-[var(--color-surface-2)]">

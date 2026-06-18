@@ -140,8 +140,8 @@ export default async function SesizariPage() {
       <div
         className={
           QUICK_LINKS.length === 3
-            ? "grid sm:grid-cols-3 gap-3 mb-8"
-            : "grid sm:grid-cols-2 gap-3 mb-8"
+            ? "lc-stagger grid sm:grid-cols-3 gap-3 mb-8"
+            : "lc-stagger grid sm:grid-cols-2 gap-3 mb-8"
         }
       >
         {QUICK_LINKS.map((q) => {
@@ -150,7 +150,7 @@ export default async function SesizariPage() {
             <Link
               key={q.href}
               href={q.href}
-              className="group relative flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 hover:border-[var(--color-primary)]/30 card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="group relative flex items-center gap-3 lc-glass-2 rounded-3xl p-4 hover:border-[var(--color-primary)]/30 card-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <span
                 className="w-9 h-9 rounded-[var(--radius-xs)] grid place-items-center shrink-0"

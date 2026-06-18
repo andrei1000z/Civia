@@ -171,7 +171,7 @@ export default async function PetitiiPage() {
                   {active.length}
                 </span>
               </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 lc-stagger">
                 {active.map((p) => (
                   <PetitieCard key={p.id} p={p} />
                 ))}
@@ -193,7 +193,7 @@ export default async function PetitiiPage() {
                   {closed.length}
                 </span>
               </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 opacity-80">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 opacity-80 lc-stagger">
                 {closed.map((p) => (
                   <PetitieCard key={p.id} p={p} />
                 ))}
@@ -263,7 +263,7 @@ function PetitieCard({
   return (
     <Link
       href={`/petitii/${p.slug}`}
-      className="group flex flex-col bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden card-lift hover:border-[var(--color-primary)]/30"
+      className="group flex flex-col lc-glass-2 rounded-3xl overflow-hidden card-lift hover:border-[var(--color-primary)]/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
     >
       {p.image_url ? (
         <div className="relative w-full aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
