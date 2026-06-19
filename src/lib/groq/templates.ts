@@ -53,6 +53,10 @@ export const TEMPLATES: Record<string, TipTemplate> = {
     propunere: "repararea urgentă a semaforului/indicatorului și sincronizarea cu traficul din zonă",
     urgenta: "urgentă",
   },
+  semaforizare: {
+    problema_ghid: "lipsa unui semafor la o intersecție sau trecere de pietoni cu trafic intens, ceea ce creează risc ridicat de accidente pentru pietoni și șoferi",
+    propunere: "montarea unui semafor / semaforizarea intersecției sau a trecerii de pietoni, inclusiv un semafor cu buton pentru pietoni acolo unde e cazul",
+  },
   pietonal: {
     problema_ghid: "o traversare de pietoni periculoasă (marcaj șters, fără semafor, fără rampă pentru cărucioare) unde riscul de accident e ridicat",
     propunere: "refacerea marcajului rutier și montarea unui semafor cu buton sau rampă accesibilizată",

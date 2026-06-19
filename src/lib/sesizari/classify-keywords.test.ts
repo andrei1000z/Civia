@@ -25,3 +25,25 @@ describe("deterministicTip — override stâlpișori anti-parcare", () => {
     expect(deterministicTip("mașini parcate ilegal pe trotuar")).toBeNull();
   });
 });
+
+describe("deterministicTip — cerere semaforizare (semafor nou)", () => {
+  it("prinde cererea de instalare/montare a unui semafor → semaforizare", () => {
+    expect(deterministicTip("Este nevoie de instalarea unui semafor la intersecția X")).toBe("semaforizare");
+    expect(deterministicTip("să se monteze un semafor unde nu există niciunul")).toBe("semaforizare");
+    expect(deterministicTip("cerem amplasarea unui semafor pe drumul spre școală")).toBe("semaforizare");
+  });
+
+  it("prinde cuvantul semaforizare / semaforizarea unei treceri sau intersectii", () => {
+    expect(deterministicTip("Cer semaforizarea trecerii de pietoni de pe strada Y")).toBe("semaforizare");
+    expect(deterministicTip("e nevoie de semaforizarea intersecției")).toBe("semaforizare");
+  });
+
+  it("NU declanșează pentru un semafor EXISTENT defect (→ rămâne pe AI = semafor)", () => {
+    expect(deterministicTip("semaforul de la intersecție e defect")).toBeNull();
+    expect(deterministicTip("semaforul nu mai funcționează de o săptămână")).toBeNull();
+  });
+
+  it("NU declanșează pe cerere de zebră fără semafor (→ AI: trecere_pietoni)", () => {
+    expect(deterministicTip("e nevoie de o trecere de pietoni cu marcaj aici")).toBeNull();
+  });
+});

@@ -16,6 +16,7 @@ const SERVICES = [
   { service_code: "gunoi", service_name: "Gunoi / salubritate", description: "Containere supraîncărcate, gunoi împrăștiat." },
   { service_code: "canalizare", service_name: "Canalizare / inundații", description: "Capace lipsă, guri de scurgere înfundate." },
   { service_code: "semafor", service_name: "Semafor defect", description: "Sisteme de semaforizare nefuncționale." },
+  { service_code: "semaforizare", service_name: "Semaforizare lipsă", description: "Cerere de montare semafor la intersecție sau trecere de pietoni nesemaforizată." },
   { service_code: "pietonal", service_name: "Traversare pietonală", description: "Treceri de pietoni periculoase." },
   { service_code: "graffiti", service_name: "Vandalism / graffiti", description: "Inscripții neautorizate pe clădiri publice." },
   { service_code: "mobilier", service_name: "Mobilier stradal", description: "Bănci, coșuri de gunoi, stații deteriorate." },

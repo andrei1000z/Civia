@@ -127,6 +127,15 @@ const TIP_DATA: Record<string, TipData> = {
     ],
     evidence: "defectarea semafoarelor sau indicatoarelor",
   },
+  semaforizare: {
+    affects: "siguranța rutieră și a pietonilor",
+    problem: "intersecția sau trecerea de pietoni semnalată nu este semaforizată, iar lipsa unui semafor creează risc ridicat de accidente pentru pietoni și șoferi",
+    actions: [
+      "Analiza oportunității de montare a unui semafor la intersecția sau trecerea semnalată.",
+      "Instalarea semaforizării, inclusiv a unui semafor cu buton pentru pietoni acolo unde e cazul.",
+    ],
+    evidence: "lipsa semaforizării la intersecție sau trecere de pietoni",
+  },
   pietonal: {
     affects: "siguranța pietonilor",
     problem: "există o traversare de pietoni periculoasă (marcaj șters, fără semaforizare sau rampă) unde riscul de accident e ridicat",

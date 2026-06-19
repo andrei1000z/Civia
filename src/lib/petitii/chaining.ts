@@ -34,6 +34,7 @@ export const SESIZARE_TIP_TO_CATEGORIE: Record<string, string | null> = {
   stalpisori: "Transport",
   canalizare: "Mediu",
   semafor: "Transport",
+  semaforizare: "Transport",
   graffiti: "Siguranță",
   mobilier: "Locuințe",
   transport: "Transport",

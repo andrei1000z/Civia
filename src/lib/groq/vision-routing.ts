@@ -27,7 +27,7 @@ export interface VisionRoutingResult {
 
 const SYSTEM_PROMPT = `Esti un router civic. Vezi o poza dintr-o sesizare cetateneasca si raspunzi STRICT in JSON:
 {
-  "tip": "groapa|trotuar|iluminat|copac|gunoi|parcare|stalpisori|canalizare|semafor|trecere_pietoni|graffiti|mobilier|zgomot|animale|transport|afisaj|altele",
+  "tip": "groapa|trotuar|iluminat|copac|gunoi|parcare|stalpisori|canalizare|semafor|semaforizare|trecere_pietoni|graffiti|mobilier|zgomot|animale|transport|afisaj|altele",
   "authority": "primarie_sector|primarie_municipiu|primarie_judet|cnair|salubritate|politia_locala|termoenergetica|apa_nova|necunoscut",
   "severity": "low|medium|high|critical",
   "confidence": number 0-100,
