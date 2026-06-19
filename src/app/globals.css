@@ -320,7 +320,6 @@ body::after {
   inset: -25%;
   z-index: -1;
   pointer-events: none;
-  will-change: transform;
   /* 2026-05-26 — Light mode: blob-urile sunt saturate optic pe alb. Pe
      light reducem opacity-ul la 35% (~0.30 effective alpha pe canale).
      Dark mode (.dark) revine la 100% — bg-ul dark are nevoie de pop-ul
@@ -333,22 +332,22 @@ body::after {
   opacity: 1;
 }
 
+/* 2026-06-19 — fundalul global = aceeași AURORĂ ambient ca .lc-canvas (4 glow-uri
+   brand în colțuri), ca să NU mai existe pagini „negre". Paginile fără lc-canvas
+   (formulare, homepage, legal etc.) iau direct aurora asta; cele cu lc-canvas o
+   ocludează și-și arată propria aurora identică → consistență cap-coadă. */
 body::before {
   background:
-    radial-gradient(ellipse 45% 35% at 22% 28%, rgba(16, 185, 129, 0.85), transparent 65%),
-    radial-gradient(ellipse 40% 32% at 78% 22%, rgba(34, 211, 238, 0.75), transparent 65%),
-    radial-gradient(ellipse 50% 40% at 50% 78%, rgba(168, 85, 247, 0.65), transparent 65%);
-  animation: liquid-flow-1 18s ease-in-out infinite alternate;
-  filter: blur(90px);
+    radial-gradient(48% 42% at 4% -8%, color-mix(in srgb, var(--color-primary) 30%, transparent), transparent 66%),
+    radial-gradient(46% 40% at 100% 2%, color-mix(in srgb, var(--color-news) 26%, transparent), transparent 68%);
+  filter: blur(50px);
 }
 
 body::after {
   background:
-    radial-gradient(ellipse 40% 32% at 60% 40%, rgba(20, 184, 166, 0.70), transparent 65%),
-    radial-gradient(ellipse 35% 28% at 18% 72%, rgba(244, 114, 182, 0.55), transparent 65%),
-    radial-gradient(ellipse 35% 30% at 88% 80%, rgba(56, 189, 248, 0.70), transparent 65%);
-  animation: liquid-flow-2 24s ease-in-out infinite alternate-reverse;
-  filter: blur(110px);
+    radial-gradient(48% 42% at 98% 100%, color-mix(in srgb, var(--color-petition) 24%, transparent), transparent 70%),
+    radial-gradient(54% 46% at 8% 104%, color-mix(in srgb, var(--color-secondary) 22%, transparent), transparent 72%);
+  filter: blur(60px);
 }
 
 @keyframes liquid-flow-1 {

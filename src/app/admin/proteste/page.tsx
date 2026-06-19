@@ -4,6 +4,11 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  ProtestLinkImport,
+  isoToLocalInput,
+  type ProtestExtractData,
+} from "@/components/proteste/ProtestLinkImport";
+import {
   Megaphone,
   Plus,
   Edit3,
@@ -325,6 +330,28 @@ export default function AdminProtestePage() {
     }
   };
 
+  // Auto-fill din LINK (scrape + AI) — complementar cu aiFill (din titlu).
+  const applyExtractedLink = (d: ProtestExtractData) => {
+    setDraft((prev) => ({
+      ...prev,
+      ...(d.title && !prev.title.trim() && { title: d.title }),
+      ...(d.subtitle && !prev.subtitle.trim() && { subtitle: d.subtitle }),
+      ...(d.cause && !prev.cause.trim() && { cause: d.cause }),
+      ...(d.description && !prev.description.trim() && { description: d.description }),
+      ...(d.start_at && !prev.start_at && { start_at: isoToLocalInput(d.start_at) }),
+      ...(d.end_at && !prev.end_at && { end_at: isoToLocalInput(d.end_at) }),
+      ...(d.location_name && !prev.location_name.trim() && { location_name: d.location_name }),
+      ...(d.city && !prev.city.trim() && { city: d.city }),
+      ...(d.county_slug && !prev.county_slug && { county_slug: d.county_slug }),
+      ...(d.organizer && !prev.organizer.trim() && { organizer: d.organizer }),
+      ...(d.organizer_url && !prev.organizer_url.trim() && { organizer_url: d.organizer_url }),
+      ...(d.external_url && !prev.external_url.trim() && { external_url: d.external_url }),
+      ...(d.hashtag && !prev.hashtag.trim() && { hashtag: d.hashtag }),
+      ...(d.expected_attendance && !prev.expected_attendance && { expected_attendance: d.expected_attendance }),
+      ...(d.demands.length > 0 && prev.demands.length === 0 && { demands: d.demands }),
+    }));
+  };
+
   const aiFill = async () => {
     if (draft.title.trim().length < 5) {
       toast("Scrie întâi titlul (min 5 caractere) ca AI să aibă context.", "error");
@@ -644,6 +671,10 @@ export default function AdminProtestePage() {
               </button>
             </div>
           </div>
+
+          {/* Auto-fill din LINK (scrape + AI) — lipești un link de protest și
+              completează câmpurile. Complementar cu „Completează cu AI" (din titlu). */}
+          <ProtestLinkImport onExtracted={applyExtractedLink} />
 
           {/* AI hint banner — apare DOAR după ce AI a completat câmpuri,
               pentru o vizită. Cresc încrederea și încurajez verificarea. */}
