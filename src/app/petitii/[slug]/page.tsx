@@ -179,7 +179,7 @@ export default async function PetitiePage({
               />
             </div>
           ) : (
-            <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] bg-gradient-to-br from-purple-600 via-purple-800 to-[#1a0a2e] rounded-[var(--radius-md)] flex items-center justify-center mb-5 md:mb-6">
+            <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] bg-gradient-to-br from-purple-600 via-purple-800 to-purple-950 rounded-[var(--radius-md)] flex items-center justify-center mb-5 md:mb-6">
               <Megaphone size={64} className="sm:hidden text-white/60" aria-hidden="true" />
               <Megaphone size={96} className="hidden sm:block text-white/60" aria-hidden="true" />
             </div>

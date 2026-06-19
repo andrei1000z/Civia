@@ -170,6 +170,7 @@ export function BottomNav() {
         {/* ===== SHEET ===== */}
         <div
           ref={dialogRef}
+          id="bottomnav-sheet"
           role="dialog"
           aria-modal="true"
           aria-label="Meniu"
@@ -297,6 +298,7 @@ export function BottomNav() {
                 aria-label="Meniu"
                 aria-expanded={open}
                 aria-haspopup="dialog"
+                aria-controls="bottomnav-sheet"
                 className={cls}
               >
                 {inner}
