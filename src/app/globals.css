@@ -1057,9 +1057,10 @@ html[data-cookie-open="1"] [data-civia-fab] {
 
 /* Focus ring */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  /* 2026-06-19 — focus liquid-glass: mai subțire (1.5px) + translucid. (border-radius
+     scos: schimba forma ELEMENTULUI pe focus — outline-ul urmează oricum raza nativă.) */
+  outline: 1.5px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Respect user motion preferences */
@@ -1134,12 +1135,13 @@ html[data-cookie-open="1"] [data-civia-fab] {
    touching per-component styles.
    ─────────────────────────────────────────────────────────────── */
 :where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-primary);
+  /* 2026-06-19 — focus liquid-glass: outline mai subțire (1.5px) + translucid,
+     consistent peste tot (vezi și FORM_INPUT_CLASS / Button pentru halou-ul soft). */
+  outline: 1.5px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 .dark :where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
-  outline-color: #34d399;
+  outline-color: color-mix(in srgb, #34d399 62%, transparent);
 }
 
 /* Keyboard shortcut <kbd> element styling */

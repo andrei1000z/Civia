@@ -80,9 +80,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         // 2026-05-19: focus ring per variant — primary/danger pe gradient
         // bg au nevoie de outline alb cu offset pe primary background;
         // celelalte (outline/ghost/secondary) pastreaza emerald.
+        // 2026-06-19 — focus liquid-glass: outline mai subțire (1.5px) + soft.
         variant === "primary" || variant === "danger" || variant === "petition"
-          ? "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          : "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]",
+          ? "focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-white/90"
+          : "focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]",
         variantStyles[variant],
         sizeStyles[size],
         className
