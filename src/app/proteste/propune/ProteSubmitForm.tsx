@@ -22,6 +22,11 @@ import {
 import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/Button";
 import { ALL_COUNTIES } from "@/data/counties";
+import {
+  ProtestLinkImport,
+  isoToLocalInput,
+  type ProtestExtractData,
+} from "@/components/proteste/ProtestLinkImport";
 
 // Draft persistence key (localStorage). Salvăm formularul de propunere
 // la fiecare schimbare ca user-ul să nu piardă work la refresh / accident.
@@ -167,6 +172,36 @@ export function ProteSubmitForm() {
   }
 
   const update = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
+
+  // Auto-fill din link: completează DOAR câmpurile GOALE (nu suprascrie ce-a scris
+  // userul — politica „nu clobber", la fel ca aiFill din admin).
+  const applyExtracted = (d: ProtestExtractData) => {
+    setF((prev) => ({
+      ...prev,
+      ...(d.title && !prev.title.trim() && { title: d.title }),
+      ...(d.subtitle && !prev.subtitle.trim() && { subtitle: d.subtitle }),
+      ...(d.cause && !prev.cause.trim() && { cause: d.cause }),
+      ...(d.description && !prev.description.trim() && { description: d.description }),
+      ...(d.start_at && !prev.start_at && { start_at: isoToLocalInput(d.start_at) }),
+      ...(d.end_at && !prev.end_at && { end_at: isoToLocalInput(d.end_at) }),
+      ...(d.location_name && !prev.location_name.trim() && { location_name: d.location_name }),
+      ...(d.city && !prev.city.trim() && { city: d.city }),
+      ...(d.county_slug && !prev.county_slug && { county_slug: d.county_slug }),
+      ...(d.organizer && !prev.organizer.trim() && { organizer: d.organizer }),
+      ...(d.organizer_url && !prev.organizer_url.trim() && { organizer_url: d.organizer_url }),
+      ...(d.external_url && !prev.external_url.trim() && { external_url: d.external_url }),
+      ...(d.hashtag && !prev.hashtag.trim() && { hashtag: d.hashtag }),
+      ...(d.expected_attendance && !prev.expected_attendance && { expected_attendance: d.expected_attendance }),
+      ...(d.demands.length > 0 && prev.demands.length === 0 && { demands: d.demands }),
+    }));
+    // Deschide secțiunea opțională dacă AI a completat câmpuri de-acolo.
+    if (
+      d.subtitle || d.cause || d.hashtag || d.organizer || d.organizer_url ||
+      d.external_url || d.expected_attendance || d.demands.length > 0
+    ) {
+      setShowOptional(true);
+    }
+  };
 
   const uploadProof = async (file: File) => {
     setUploadingProof(true);
@@ -336,6 +371,9 @@ export function ProteSubmitForm() {
       onSubmit={submit}
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 md:p-7 shadow-[var(--shadow-1)] space-y-7"
     >
+      {/* Completează automat din link (scrape + AI) — sus, înainte de orice. */}
+      <ProtestLinkImport onExtracted={applyExtracted} />
+
       {/* Restore-draft banner — afișat doar dacă există ciornă < 7 zile
           cu content semnificativ (titlu+descriere+demands ≥ 30 chars). */}
       {hasDraft && (
