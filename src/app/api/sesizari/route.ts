@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { listSesizari, createSesizare } from "@/lib/sesizari/repository";
@@ -112,8 +112,13 @@ export async function GET(req: Request) {
       }
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 2026-06-19 (audit) — NU returna e.message verbatim (poate scurge detalii
+    // interne: stack/SQL/path). Loghează-l, răspunde generic.
+    Sentry.captureException(e);
+    return NextResponse.json(
+      { error: "A apărut o eroare internă. Te rugăm încearcă din nou." },
+      { status: 500 },
+    );
   }
 }
 
@@ -570,7 +575,10 @@ export async function POST(req: Request) {
         // emailul de confirmare către cetățean.
         const cleanTitle = sanitizeText(polished.titlu, 120);
         const cleanLocation = sanitizeText(parsed.locatie, 120);
-        sendEmail({
+        // 2026-06-19 (audit) — after(): rulează DUPĂ ce răspunsul a plecat, dar
+        // Vercel garantează execuția → emailul de confirmare NU se mai pierde când
+        // lambda îngheață după return (fire-and-forget înainte de răspuns putea muri).
+        after(() => sendEmail({
           to: authorEmail,
           subject: `✓ Sesizare ${code} înregistrată — Civia`,
           html: emailTemplate({
@@ -639,9 +647,9 @@ export async function POST(req: Request) {
             ctaUrl: `${siteUrl}/sesizari/${code}`,
           }),
         }).catch((err) => {
-          // fire-and-forget, but report to Sentry so we know if Resend breaks
+          // raportăm la Sentry dacă Resend pică (rulăm în after, post-răspuns)
           Sentry.captureException(err, { tags: { kind: "sesizare_email" }, extra: { code } });
-        });
+        }));
       }
 
       return NextResponse.json({ data: row });
@@ -660,7 +668,12 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 2026-06-19 (audit) — NU returna e.message verbatim (poate scurge detalii
+    // interne: stack/SQL/path). Loghează-l, răspunde generic.
+    Sentry.captureException(e);
+    return NextResponse.json(
+      { error: "A apărut o eroare internă. Te rugăm încearcă din nou." },
+      { status: 500 },
+    );
   }
 }

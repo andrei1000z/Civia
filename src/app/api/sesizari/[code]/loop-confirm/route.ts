@@ -59,27 +59,12 @@ export async function GET(
     return new Response("Sesizare not found", { status: 404 });
   }
 
-  // Increment counter pe coloana existentă verif_da / verif_nu.
-  // Acestea sunt și pentru cetățenii care verifică prin /sesizari/[code]
-  // panel — combinăm semnalele pentru un singur „verified resolution"
-  // count. Loop-follow-up emit-uri counter dedicat pentru North-Star.
-  const colToIncrement = outcome === "yes" ? "verif_da" : "verif_nu";
-  // Manual fetch + update — simplu și safe. PostgREST RPC ar fi mai
-  // atomic dar necesită funcție SQL. Pentru low traffic e OK.
-  try {
-    const { data: cur } = await admin
-      .from("sesizari")
-      .select(colToIncrement)
-      .eq("id", sez.id)
-      .maybeSingle();
-    const curVal = ((cur as Record<string, number> | null)?.[colToIncrement] ?? 0) as number;
-    await admin
-      .from("sesizari")
-      .update({ [colToIncrement]: curVal + 1 })
-      .eq("id", sez.id);
-  } catch {
-    // silent — counter update nu trebuie să blocheze thank-you page
-  }
+  // 2026-06-19 (audit #9) — eliminat increment-ul pe `sesizari.verif_da/verif_nu`:
+  // acelea NU sunt coloane reale pe tabel, ci câmpuri COMPUTED în view-ul de feed
+  // (count(*) din `sesizare_verifications`). Vechiul select-then-update pe ele
+  // eșua silențios ("column does not exist", înghițit de try/catch) → cod mort
+  // (deci și „lost update"-ul raportat era moot). Semnalul agregat real e contorul
+  // Redis de mai jos (atomic via hincrby).
 
   // 2026-05-25 #31 — Redis counter pentru North-Star metric dedicated.
   // Aggregat per zi + total ca să surfacem pe /admin/analytics.
