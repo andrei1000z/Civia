@@ -70,5 +70,7 @@ export function FormField({
  * - text-base mobile (16px previne zoom iOS) / sm:text-sm desktop
  * - focus ring tokens-based
  */
+// 2026-06-19 — focus „liquid glass": muchie subțire (border 1px colorat) + halou
+// soft difuz (ring 4px la 15% opacitate), în loc de inelul gros saturat de 2px.
 export const FORM_INPUT_CLASS =
-  "w-full h-11 sm:h-10 px-4 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus:border-transparent";
+  "w-full h-11 sm:h-10 px-4 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] text-base sm:text-sm transition-[color,border-color,box-shadow] focus:outline-none focus-visible:border-[var(--color-primary)] focus-visible:ring-4 focus-visible:ring-[var(--color-primary)]/15";
