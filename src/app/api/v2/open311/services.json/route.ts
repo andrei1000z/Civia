@@ -11,6 +11,7 @@ const SERVICES = [
   { service_code: "trotuar", service_name: "Trotuar degradat", description: "Plăci sparte, borduri lipsă, denivelări." },
   { service_code: "stalpisori", service_name: "Stâlpișori anti-parcare lipsă", description: "Mașini parcate pe trotuar din lipsa elementelor de protecție." },
   { service_code: "parcare", service_name: "Parcare ilegală", description: "Vehicule parcate neregulamentar." },
+  { service_code: "parcare_trasata", service_name: "Loc de parcare trasat ilegal", description: "Marcaj de parcare neautorizat trasat pe domeniul public." },
   { service_code: "iluminat", service_name: "Iluminat public defect", description: "Becuri arse, stâlpi nefuncționali." },
   { service_code: "copac", service_name: "Copac periculos", description: "Ramuri uscate sau instabile, risc de cădere." },
   { service_code: "gunoi", service_name: "Gunoi / salubritate", description: "Containere supraîncărcate, gunoi împrăștiat." },

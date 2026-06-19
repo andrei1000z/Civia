@@ -39,7 +39,7 @@ describe("Groq system prompts", () => {
     // pietonal, zgomot, animale au fost mutate la „deprecated" — nu apar
     // in classifier prompt (DB inca le accepta pentru sesizari vechi).
     const activeTypes = [
-      "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare",
+      "groapa", "trotuar", "iluminat", "copac", "gunoi", "parcare", "parcare_trasata",
       "stalpisori", "canalizare", "semafor",
       "graffiti", "mobilier", "transport",
       "afisaj",

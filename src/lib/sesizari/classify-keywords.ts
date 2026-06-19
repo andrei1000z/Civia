@@ -26,5 +26,13 @@ export function deterministicTip(text: string): string | null {
     /(nu (este|e|exista)|lipseste|lipsa de)\s*semafor/.test(t);
   if (cereSemafor && !eSemaforDefect) return "semaforizare";
 
+  // 2026-06-20 (raport user) — loc de parcare TRASAT ILEGAL pe domeniul public
+  // (marcaj neautorizat) ≠ „parcare" (mașină parcată ilegal). AI-ul prindea doar
+  // „parcare…ilegal" → parcare. Semnal: verb de trasare + parcare + ilegal/singur.
+  const ePeParcare = /(loc[a-z]*\s+de\s+parcare|parcare)/.test(t);
+  const eTrasat = /(trasat|trasar|trasam|vopsit|vopse|desenat|pictat|delimitat|conturat)/.test(t);
+  const eIlegalApropriat = /(ilegal|abuziv|neautoriz|fara drept|singur|privat|pe cont propriu|si-a facut|si-au facut|isi fac)/.test(t);
+  if (ePeParcare && eTrasat && eIlegalApropriat) return "parcare_trasata";
+
   return null;
 }
