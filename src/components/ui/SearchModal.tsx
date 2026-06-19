@@ -205,6 +205,9 @@ export function SearchModal({ open, onClose }: Props) {
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  // 2026-06-19 (audit #15) — restaurăm focus-ul la închidere + capcană de Tab.
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -222,8 +225,12 @@ export function SearchModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    previouslyFocusedRef.current = (document.activeElement as HTMLElement) ?? null;
     const raf = requestAnimationFrame(() => inputRef.current?.focus());
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      previouslyFocusedRef.current?.focus?.();
+    };
   }, [open]);
 
   useEffect(() => {
@@ -318,6 +325,15 @@ export function SearchModal({ open, onClose }: Props) {
           e.preventDefault();
           navigate(r.url, query);
         }
+      } else if (e.key === "Tab" && dialogRef.current) {
+        const f = dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        );
+        if (f.length === 0) return;
+        const first = f[0]!;
+        const last = f[f.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
     document.addEventListener("keydown", onKey);
@@ -345,6 +361,7 @@ export function SearchModal({ open, onClose }: Props) {
       role="presentation"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Caută pe Civia"
