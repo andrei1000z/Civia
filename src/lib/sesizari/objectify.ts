@@ -20,7 +20,7 @@
 export interface ObjectifyContext {
   /** Locația obiectivă din formular (ex: „Șoseaua Pantelimon nr. 300"). */
   locatie?: string | null;
-  /** Adresa de domiciliu a cetateanului (ex: „Strada Novaci 12, Sector 5").
+  /** Adresa de domiciliu a cetateanului (ex: „Strada Exemplu 12, Sector 5").
    *  Folosita pentru a detecta cazul de match EXACT cu locatia. */
   adresaCetatean?: string | null;
 }

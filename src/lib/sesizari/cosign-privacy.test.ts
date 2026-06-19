@@ -2,7 +2,7 @@
  * Privacy guard tests pentru pipeline-ul de cosigners.
  *
  * Bug raportat 5/19/2026: pagina publica afisa nume complet + adresa
- * pentru cosigners („Eduard Andrei Mușat · Strada Novaci 12, Sector 5"),
+ * pentru cosigners („Eduard Andrei Mușat · Strada Exemplu 12, Sector 5"),
  * leaked prin GET /api/sesizari/[code]/cosign.
  *
  * Fix in 2 straturi (defense-in-depth):
@@ -44,8 +44,8 @@ describe("cosign privacy guards (defense-in-depth)", () => {
     it("CRITIC: strada + nr NU mai pleaca catre server", () => {
       // Inainte de fix, „city: data.address" trimitea adresa complet.
       // Acum extractLocality intoarce DOAR localitatea/sectorul.
-      const safe = extractLocality("Strada Novaci 12, Sector 5");
-      expect(safe).not.toMatch(/Novaci/i);
+      const safe = extractLocality("Strada Exemplu 12, Sector 5");
+      expect(safe).not.toMatch(/Exemplu/i);
       expect(safe).not.toMatch(/\b12\b/);
       expect(safe).toBe("Sector 5");
     });
@@ -59,7 +59,7 @@ describe("cosign privacy guards (defense-in-depth)", () => {
   describe("pipeline integrat (extract + publicAuthorName)", () => {
     it("CRITIC: scenariu exact bug 00041 → output curat", () => {
       const userInputName = "Eduard Andrei Mușat";
-      const userInputAddress = "Strada Novaci 12, Sector 5";
+      const userInputAddress = "Strada Exemplu 12, Sector 5";
       // 1. Client filtreaza adresa inainte de POST
       const cityForServer = extractLocality(userInputAddress);
       // 2. Server intoarce la GET doar primul nume
@@ -71,7 +71,7 @@ describe("cosign privacy guards (defense-in-depth)", () => {
       const publicDisplay = `${displayName} · ${cityForServer ?? ""}`.trim();
       expect(publicDisplay).not.toMatch(/Andrei/);
       expect(publicDisplay).not.toMatch(/Mușat/);
-      expect(publicDisplay).not.toMatch(/Novaci/);
+      expect(publicDisplay).not.toMatch(/Exemplu/);
       expect(publicDisplay).not.toMatch(/\b12\b/);
       expect(publicDisplay).toBe("Eduard · Sector 5");
     });

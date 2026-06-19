@@ -6,7 +6,7 @@
  * stradală completă (street + nr).
  *
  * Bug fix (5/19/2026): inainte trimiteam adresa intreaga ca `city`
- * (ex: „Strada Novaci 12, Sector 5") si se afisa public in
+ * (ex: „Strada Exemplu 12, Sector 5") si se afisa public in
  * CosignersBadge. Acum extragem doar localitatea.
  *
  * Strategie:

@@ -24,7 +24,7 @@ const NAME_REDACTED = "[nume]";
 // daca punctul vine dupa o abreviere romana de adresa (Str., Bd., Bl.,
 // Sc., Ap., Et., Nr., Sect., Jud., Com., Sos., Cal., Cod.) pentru ca dupa
 // ele urmeaza obligatoriu un cuvant cu majuscula (numele strazii, blocului).
-// Bug istoric (raport 2026-05-14): „Str. Novaci..." prelua doar „Str" si
+// Bug istoric (raport 2026-05-14): „Str. Exemplu..." prelua doar „Str" si
 // lasa restul adresei in plain text → leak PII.
 const SENTENCE_END_NOT_ABBREV = String.raw`(?<!\b(?:str|bd|bld|blv|bl|sc|ap|et|nr|sect|sec|jud|com|loc|cod|sos|cal))[.?!]\s+[A-ZĂÂÎȘȚ]`;
 

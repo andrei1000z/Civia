@@ -422,7 +422,7 @@ export function SesizareForm() {
     const detected = detectCountyFromLocatie(text);
     // 2026-06-14 FIX: când userul a TASTAT o adresă, NU mai cădem pe
     // county-context din COOKIE. Cookie-ul reflectă județul pe care l-a
-    // RĂSFOIT (ex: Cluj), nu unde e problema. Pe „Strada Novaci 12" (stradă
+    // RĂSFOIT (ex: Cluj), nu unde e problema. Pe „Strada Exemplu 12" (stradă
     // bucureșteană pe care regex-ul nu o știe) cădeam pe Cluj și rutam la
     // Primăria Cluj-Napoca — inadmisibil. Acum: oraș clar din text → îl
     // folosim; altfel null → fallback-ul AI (detect-city) rulează sau userul
@@ -943,7 +943,7 @@ export function SesizareForm() {
           const g = json.data;
           // 2026-06-14 — GPS imprecis (>100m): NU afișa strada+numărul ghicite
           // din coordonate grosiere (pot fi la km distanță — „Strada Ileana
-          // Cosânzeana 2" în loc de „Novaci 12"). Afișăm doar ZONA (sector/
+          // Cosânzeana 2" în loc de „Exemplu 12"). Afișăm doar ZONA (sector/
           // localitate) ca punct de plecare; userul completează strada exactă
           // (scris cu autocomplete sau pe hartă). Sub 100m → adresa completă.
           let addr: string;
@@ -1936,7 +1936,7 @@ export function SesizareForm() {
                 }}
                 onFocus={() => { if (addrSugg.length) setShowSugg(true); }}
                 onBlur={() => { setTimeout(() => setShowSugg(false), 150); }}
-                placeholder="Scrie adresa: ex. Strada Novaci 12, București"
+                placeholder="Scrie adresa: ex. Strada Exemplu 12, București"
                 autoComplete="off"
                 role="combobox"
                 aria-expanded={showSugg && addrSugg.length > 0}

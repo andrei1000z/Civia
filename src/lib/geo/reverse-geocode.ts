@@ -94,7 +94,7 @@ function countyFromNominatim(addr: Record<string, string>, displayName: string, 
 }
 
 export interface AddressSuggestion {
-  label: string;          // „Strada Novaci 12, Sector 5, București"
+  label: string;          // „Strada Exemplu 12, Sector 5, București"
   lat: number;
   lng: number;
   countyCode: string | null;
@@ -104,7 +104,7 @@ export interface AddressSuggestion {
 /**
  * Forward geocode (search) — userul scrie o adresă, primește sugestii cu
  * coordonate exacte. Esențial când GPS-ul e imprecis (desktop/wifi ±km):
- * scrii „Strada Novaci 12, București" și primești locul EXACT, nu o stradă
+ * scrii „Strada Exemplu 12, București" și primești locul EXACT, nu o stradă
  * apropiată ghicită din coordonate grosiere. Nominatim, gratuit, doar RO.
  */
 export async function searchAddress(query: string): Promise<AddressSuggestion[]> {
@@ -113,7 +113,7 @@ export async function searchAddress(query: string): Promise<AddressSuggestion[]>
   // Numărul casei din CE A TASTAT userul (număr la finalul query-ului).
   // Nominatim adesea NU are date la nivel de număr pentru străzile din RO →
   // întoarce centroidul străzii fără `house_number`. Păstrăm numărul scris de
-  // user („Strada Novaci 12" → „Strada Novaci 12", nu „Strada Novaci").
+  // user („Strada Exemplu 12" → „Strada Exemplu 12", nu „Strada Exemplu").
   // Doar număr TRAILING — ca să nu confundăm „Strada 13 Septembrie" (13 = nume).
   const qNum = q.match(/\b(\d{1,4}[a-z]?)\b\s*$/i)?.[1] ?? "";
   try {
@@ -137,7 +137,7 @@ export async function searchAddress(query: string): Promise<AddressSuggestion[]>
       return { label, lat, lng, countyCode, sector };
     }).filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
     // Dedupe pe label (Nominatim întoarce des același rezultat de 2× — ex.
-    // „Strada Novaci, Sector 5, București" apărea duplicat).
+    // „Strada Exemplu, Sector 5, București" apărea duplicat).
     const seen = new Set<string>();
     return mapped.filter((s) => {
       const key = s.label.toLowerCase();
@@ -252,7 +252,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Geocoded
     // 2026-06-14 — NU includem house_number la REVERSE: Nominatim întoarce
     // numărul celei mai apropiate case INDEXATE (acoperire sparse în RO), NU
     // numărul de la coordonată. La ±20m strada e corectă, dar numărul e des
-    // greșit („Novaci 12" → nearest indexed „Novaci 11") și contrazice
+    // greșit („Exemplu 12" → nearest indexed „Exemplu 11") și contrazice
     // domiciliul → arată neserios. Numărul exact îl scrie userul (autocomplete
     // forward în searchAddress îl păstrează deja, sau alegerea pe hartă).
     const parts: string[] = [];

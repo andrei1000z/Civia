@@ -188,7 +188,7 @@ describe("formatAddress", () => {
 
   it("strip Sector X. Y trailing duplicate", () => {
     
-    expect(formatAddress("Strada Novaci 12, Sector 5. 12")).toBe("Strada Novaci 12, Sector 5");
+    expect(formatAddress("Strada Exemplu 12, Sector 5. 12")).toBe("Strada Exemplu 12, Sector 5");
   });
 
   it("nu modifica adresa fara artifact", () => {
