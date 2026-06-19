@@ -119,14 +119,21 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1. Scrape pagina.
-  const scraped = await scrapeArticleMeta(url);
+  // 1. Scrape — Facebook + multe site-uri „gated" servesc OG-ul (titlu+descriere
+  //    cu detaliile evenimentului) DOAR la un crawler-UA (Googlebot). Site-urile de
+  //    presă care dau 403 la boți le prindem cu fallback pe UA-ul implicit (Chrome).
+  const CRAWLER_UA =
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+  let scraped = await scrapeArticleMeta(url, { userAgent: CRAWLER_UA });
+  if (!scraped.title && (scraped.body ?? "").length < 60) {
+    scraped = await scrapeArticleMeta(url);
+  }
   const text = (scraped.body ?? "").slice(0, 6000);
-  if ((!scraped.ok || text.length < 60) && !scraped.title) {
+  if (!scraped.title && text.length < 60) {
     return NextResponse.json(
       {
         error:
-          "Nu am putut citi pagina (poate blochează roboții, ex. Facebook privat). Completează manual sau încearcă alt link.",
+          "Nu am putut citi pagina (poate e privat sau blochează roboții). Completează manual sau încearcă alt link.",
       },
       { status: 422 },
     );
@@ -140,7 +147,8 @@ export async function POST(req: Request) {
     year: "numeric",
     timeZone: "Europe/Bucharest",
   });
-  const userPrompt = `DATA DE AZI: ${today}\n\nPAGINA (${url})\nTitlu: ${scraped.title ?? "(n/a)"}\n\n${text}\n\nReturnează DOAR JSON conform schemei.`;
+  const ogDesc = scraped.ogDescription ? `Descriere (OG): ${scraped.ogDescription}\n` : "";
+  const userPrompt = `DATA DE AZI: ${today}\n\nPAGINA (${url})\nTitlu: ${scraped.title ?? "(n/a)"}\n${ogDesc}\n${text}\n\nReturnează DOAR JSON conform schemei.`;
 
   const messages = [
     { role: "system" as const, content: SYSTEM_PROMPT },

@@ -142,6 +142,7 @@ export interface ScrapedArticle {
   publication: string | null;
   body: string | null;
   ogImage: string | null;
+  ogDescription: string | null;
   fetchedAt: string;
   ok: boolean;
   error?: string;
@@ -163,10 +164,13 @@ const UA =
  * Failure modes graceful: ok=false dar dacă avem măcar title-ul,
  * articolul rămâne útil pentru sources card chiar dacă body=null.
  */
-export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
+export async function scrapeArticleMeta(
+  url: string,
+  opts?: { userAgent?: string },
+): Promise<ScrapedArticle> {
   const fetchedAt = new Date().toISOString();
   if (!/^https?:\/\//i.test(url)) {
-    return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: "URL invalid" };
+    return { url, title: null, publication: null, body: null, ogImage: null, ogDescription: null, fetchedAt, ok: false, error: "URL invalid" };
   }
 
   let html = "";
@@ -176,7 +180,7 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url, {
       headers: {
-        "User-Agent": UA,
+        "User-Agent": opts?.userAgent ?? UA,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.7,en;q=0.5",
@@ -191,16 +195,16 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
     clearTimeout(timer);
     httpStatus = res.status;
     if (!res.ok) {
-      return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: `HTTP ${res.status}` };
+      return { url, title: null, publication: null, body: null, ogImage: null, ogDescription: null, fetchedAt, ok: false, error: `HTTP ${res.status}` };
     }
     html = await res.text();
   } catch (e) {
     const msg = e instanceof Error ? e.message : "fetch failed";
-    return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: msg };
+    return { url, title: null, publication: null, body: null, ogImage: null, ogDescription: null, fetchedAt, ok: false, error: msg };
   }
 
   if (!html || html.length < 200) {
-    return { url, title: null, publication: null, body: null, ogImage: null, fetchedAt, ok: false, error: `html prea scurt (HTTP ${httpStatus}, ${html.length} bytes)` };
+    return { url, title: null, publication: null, body: null, ogImage: null, ogDescription: null, fetchedAt, ok: false, error: `html prea scurt (HTTP ${httpStatus}, ${html.length} bytes)` };
   }
 
   // Title — preferă OG title, fallback la <title>
@@ -229,11 +233,21 @@ export async function scrapeArticleMeta(url: string): Promise<ScrapedArticle> {
   // găsește container suficient de bogat, cădem pe OG description (poate
   // 200-400 chars dar e mai bun decât null pentru AI synthesis).
   let body = extractBodyFromHtml(html);
-  if (!body && ogDescription) {
-    body = decodeEntities(ogDescription);
+  const ogDescDecoded = ogDescription ? decodeEntities(ogDescription) : null;
+  if (!body && ogDescDecoded) {
+    body = ogDescDecoded;
   }
 
-  return { url, title, publication, body, ogImage, fetchedAt, ok: !!(title || body) };
+  return {
+    url,
+    title,
+    publication,
+    body,
+    ogImage,
+    ogDescription: ogDescDecoded,
+    fetchedAt,
+    ok: !!(title || body),
+  };
 }
 
 /** Extract <meta property|name="X" content="Y"> Y. Robust to attribute order. */
@@ -260,7 +274,11 @@ function decodeEntities(s: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&hellip;/g, "…")
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)));
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => {
+      const cp = parseInt(hex, 16);
+      return Number.isFinite(cp) ? String.fromCodePoint(cp) : "";
+    })
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(parseInt(code, 10)));
 }
 
 export async function scrapeMultiple(urls: string[]): Promise<ScrapedArticle[]> {
