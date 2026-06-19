@@ -4,6 +4,7 @@ import { groqText, GROQ_MODEL_FAST } from "@/lib/groq/client";
 import { SYSTEM_PROMPT_CLASSIFIER } from "@/lib/groq/prompts";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
 import { SESIZARE_TIPURI } from "@/lib/constants";
+import { deterministicTip } from "@/lib/sesizari/classify-keywords";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -27,6 +28,12 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { text } = schema.parse(body);
+
+    // Semnal clar (stâlpișori) → răspuns determinist, fără AI (rapid + 100% sigur).
+    const det = deterministicTip(text);
+    if (det) {
+      return NextResponse.json({ data: { tip: det } });
+    }
 
     // groqText = cascadă Groq→Gemini→Cloudflare + cache + fallback. Clasificarea
     // e în fluxul de sesizare → la 429 pe Groq nu mai dăm 500 utilizatorului.
