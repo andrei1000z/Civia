@@ -325,6 +325,20 @@ function getCountdown(startAt: string, muted: boolean): { label: string; tone: "
   return null;
 }
 
+// Gradient de cover per temă — folosit ca placeholder ÎN SPATELE imaginii, deci
+// dacă imaginea lipsește SAU e spartă (ex. URL Facebook CDN expirat), cardul
+// arată un gradient brand frumos + iconiță, nu o cutie neagră.
+const COVER_GRADIENT: Record<string, string> = {
+  warning: "from-amber-600 to-rose-800",
+  primary: "from-emerald-600 to-indigo-800",
+  petition: "from-purple-600 to-indigo-900",
+  news: "from-slate-700 to-indigo-900",
+  success: "from-emerald-600 to-teal-800",
+  data: "from-sky-600 to-indigo-800",
+  authority: "from-slate-700 to-indigo-900",
+  health: "from-teal-600 to-cyan-800",
+};
+
 function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
   const status = STATUS_META[deriveStatus(p)];
   const county = countyLabel(p.county_slug);
@@ -337,7 +351,13 @@ function ProtestCard({ p, muted = false }: { p: Protest; muted?: boolean }) {
         className="group block lc-glass-2 rounded-3xl overflow-hidden hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-2)] transition-all focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-primary)]"
       >
         {p.cover_image_url ? (
-          <div className="relative aspect-[16/9] bg-[var(--color-surface-2)]">
+          <div className={`relative aspect-[16/9] bg-gradient-to-br ${COVER_GRADIENT[p.color_theme] ?? COVER_GRADIENT.warning}`}>
+            {/* placeholder sub imagine — dacă imaginea lipsește sau e spartă
+                (ex. URL Facebook CDN expirat), rămâne gradientul + iconița,
+                nu o cutie neagră */}
+            <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
+              <Megaphone size={44} className="text-white/30" />
+            </div>
             <Image
               src={p.cover_image_url}
               unoptimized

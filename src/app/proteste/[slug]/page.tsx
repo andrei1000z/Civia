@@ -356,7 +356,11 @@ export default async function ProtestDetailPage({
       {/* Cover image — wide hero shot under the gradient. */}
       {p.cover_image_url && (
         <figure className="mb-8 -mt-2 rounded-[var(--radius-lg)] overflow-hidden border border-[var(--color-border)] shadow-[var(--shadow-2)]">
-          <div className="relative aspect-[16/8] bg-[var(--color-surface-2)]">
+          <div className={`relative aspect-[16/8] bg-gradient-to-br ${gradient}`}>
+            {/* placeholder sub imagine — dacă e spartă/lipsă, rămâne gradientul */}
+            <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
+              <Megaphone size={52} className="text-white/25" />
+            </div>
             <Image
               src={p.cover_image_url}
               unoptimized
