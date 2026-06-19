@@ -690,9 +690,14 @@ export function SesizareForm() {
   useEffect(() => {
     if (data.lat == null || data.lng == null) return;
 
-    // Quick local sector detection (instant, for București)
+    // Quick local sector detection (instant, for București). DAR un „Sector N"
+    // scris EXPLICIT în locație e AUTORITAR (vezi efectul de pe data.locatie):
+    // detecția pe coordonate greșește la limita dintre sectoare (ex. Bd. Uverturii
+    // = S6, dar tag-uit S5), așa că NU suprascriem un sector explicit din text.
+    // Bug raportat 2026-06-19: locație „Sector 6" dar autoritatea CC = Primăria S5.
+    const explicitSectorInText = /sector(?:ul)?\s*[1-6]\b/i.test(data.locatie ?? "");
     const s = detectSectorFromCoords(data.lat, data.lng);
-    if (s && s !== data.sector) {
+    if (s && s !== data.sector && !explicitSectorInText) {
       setData((d) => ({ ...d, sector: s }));
     }
 
