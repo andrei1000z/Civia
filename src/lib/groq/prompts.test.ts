@@ -44,7 +44,7 @@ describe("Groq system prompts", () => {
       "graffiti", "mobilier", "transport",
       "afisaj",
       // Tipuri noi
-      "banda_transport", "trecere_pietoni", "rampa_acces", "colectare_selectiva",
+      "banda_transport", "trecere_pietoni", "semaforizare", "rampa_acces", "colectare_selectiva",
       "altele",
     ];
     for (const t of activeTypes) {

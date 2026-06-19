@@ -9,7 +9,7 @@ describe("SESIZARE_TIPURI", () => {
   });
 
   it("contine noile tipuri propuse: banda_transport, trecere_pietoni, rampa_acces, colectare_selectiva", () => {
-    const newTypes = ["banda_transport", "trecere_pietoni", "rampa_acces", "colectare_selectiva"];
+    const newTypes = ["banda_transport", "trecere_pietoni", "semaforizare", "rampa_acces", "colectare_selectiva"];
     for (const t of newTypes) {
       const found = SESIZARE_TIPURI.find((x) => x.value === t);
       expect(found, `tip ${t} lipseste`).toBeDefined();
@@ -38,7 +38,7 @@ describe("SESIZARE_TIPURI", () => {
   });
 
   it("SESIZARE_TIPURI_ACTIVE contine noile tipuri", () => {
-    const newTypes = ["banda_transport", "trecere_pietoni", "rampa_acces", "colectare_selectiva"];
+    const newTypes = ["banda_transport", "trecere_pietoni", "semaforizare", "rampa_acces", "colectare_selectiva"];
     for (const t of newTypes) {
       const found = SESIZARE_TIPURI_ACTIVE.find((x) => x.value === t);
       expect(found, `tip ${t} lipseste din SESIZARE_TIPURI_ACTIVE`).toBeDefined();

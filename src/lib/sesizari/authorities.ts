@@ -332,6 +332,13 @@ export function getAuthoritiesFor(
       if (sectorPrimarie) addCc(sectorPrimarie);
       break;
 
+    case "semaforizare":
+      addTo(AUTH.brigadaRutiera);
+      addTo(AUTH.adminStrazi);
+      addTo(AUTH.pmb);
+      if (sectorPrimarie) addCc(sectorPrimarie);
+      break;
+
     case "pietonal":
       addTo(AUTH.brigadaRutiera);
       addTo(AUTH.adminStrazi);

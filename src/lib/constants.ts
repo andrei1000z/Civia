@@ -180,6 +180,7 @@ export const SESIZARE_TIPURI = [
   { value: "amenajare_parcare", label: "Amenajare locuri de parcare — cerere", short: "Parcare nouă", icon: "🅿️", active: true },
   { value: "banda_transport", label: "Bandă transport public — cerere", short: "Bandă bus", icon: "🚌", active: true },
   { value: "trecere_pietoni", label: "Trecere pietoni — cerere amenajare", short: "Zebră nouă", icon: "🚸", active: true },
+  { value: "semaforizare", label: "Semaforizare — cerere (semafor nou)", short: "Semafor nou", icon: "🚥", active: true },
   { value: "rampa_acces", label: "Rampă acces persoane cu dizabilități", short: "Rampă", icon: "♿", active: true },
   { value: "colectare_selectiva", label: "Colectare selectivă — container lipsă", short: "Reciclare", icon: "♻️", active: true },
   { value: "fumat_interzis", label: "Fumat în locuri interzise (Legea 15/2016)", short: "Fumat", icon: "🚭", active: true },
