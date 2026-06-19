@@ -171,7 +171,31 @@ export async function POST(
     }
   }
 
-  if (sesizare.sent_via_civia) {
+  // 2026-06-19 (audit Critical) — CLAIM ATOMIC al trimiterii ÎNAINTE de send.
+  // Guard-ul vechi era read-then-act (`if (sesizare.sent_via_civia)`): două
+  // requesturi concurente (SesizareForm ȘI SuccessScreen pot declanșa send-ul
+  // aproape simultan) treceau AMBELE → primăria primea emailul DE DOUĂ ORI.
+  // UPDATE condiționat = lock: doar UN request flip-uiește not-true → true.
+  const claimClient = createSupabaseAdmin();
+  const claimNow = new Date().toISOString();
+  const { data: claimed, error: claimErr } = await claimClient
+    .from("sesizari")
+    .update({ sent_via_civia: true, sent_at: claimNow })
+    .eq("id", sesizare.id)
+    .not("sent_via_civia", "is", true) // doar dacă NU e deja trimisă (false SAU null)
+    .select("id")
+    .maybeSingle();
+  if (claimErr) {
+    Sentry.captureMessage("send-via-civia: claim atomic esuat", {
+      level: "error",
+      tags: { kind: "send_civia_claim_fail", code: sesizare.code },
+    });
+    return NextResponse.json(
+      { error: "Eroare internă la trimitere. Încearcă din nou." },
+      { status: 500 },
+    );
+  }
+  if (!claimed) {
     return NextResponse.json(
       {
         error: "Sesizarea a fost deja trimisa via Civia.",
@@ -181,6 +205,14 @@ export async function POST(
       { status: 409 },
     );
   }
+  // Dacă send-ul efectiv eșuează DUPĂ claim, eliberăm flag-ul ca o re-tentativă
+  // legitimă să poată retrimite (altfel ar rămâne „trimisă" fără email plecat).
+  const releaseClaim = () =>
+    claimClient
+      .from("sesizari")
+      .update({ sent_via_civia: false, sent_at: null })
+      .eq("id", sesizare.id)
+      .then(() => undefined, () => undefined);
 
   // 2026-05-26 — Fallback county detection când DB are county=null.
   // Bug 00049: sesizare din Cluj-Napoca avea county null → routing
@@ -305,6 +337,7 @@ export async function POST(
       level: "error",
       tags: { kind: "resend_failure", code: sesizare.code },
     });
+    await releaseClaim(); // send-ul a eșuat → permite o re-tentativă
     return NextResponse.json(
       { error: "Email-ul nu a putut fi trimis. Foloseste optiunea cu emailul tau." },
       { status: 500 },
@@ -325,6 +358,7 @@ export async function POST(
         result,
       },
     });
+    await releaseClaim(); // ghost-send (config Resend) → probabil nelivrat, permite retry
     return NextResponse.json(
       {
         error: "Email-ul a fost trimis dar fără confirmare de livrare. Verifică configurarea Resend (FROM email + domain DKIM) sau încearcă din nou.",
