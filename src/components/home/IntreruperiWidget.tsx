@@ -17,7 +17,7 @@ export async function IntreruperiWidget() {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16 bg-[var(--color-bg)] min-h-[280px]">
+    <section className="py-12 md:py-16 min-h-[280px]">
       <div className="container-narrow">
         <div className="flex items-center justify-between mb-5 gap-3">
           <h2 className="font-[family-name:var(--font-sora)] text-xl md:text-2xl font-bold flex items-center gap-2 min-w-0">
