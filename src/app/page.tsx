@@ -117,7 +117,7 @@ export default async function HomePage() {
 
         <div className="container-narrow relative z-10 pt-10 pb-20 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] hero-enter-1">
+            <h1 className="font-[family-name:var(--font-sora)] text-5xl sm:text-6xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[1.04] tracking-tight break-words dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] hero-enter-1">
               Ajută la schimbarea{" "}
               <span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-violet-600 dark:from-emerald-200 dark:via-cyan-100 dark:to-violet-200 bg-clip-text text-transparent">
                 României.
