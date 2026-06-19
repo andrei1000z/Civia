@@ -46,7 +46,7 @@ Platformă civică independentă, gratuită, pentru cetățenii din România. Se
 - **Ghiduri practice** (`/ghiduri`) — Legea 544, contestare amendă, dezbatere publică, înființare ONG, ajutoare sociale, ghid cutremur ș.a.m.d.
 
 ### Date civice live
-- **Proteste programate** (`/proteste`) — calendar civic cu mitinguri, marșuri, evenimente civice anunțate. Mod „cum a fost" cu imagini + presa.
+- **Proteste programate** (`/proteste`) — calendar civic cu mitinguri, marșuri, evenimente civice anunțate. Propunerile (`/proteste/propune`) și formularul de admin pot auto-completa câmpurile dintr-un singur link (scrape + AI). Mod „cum a fost" cu imagini + presa.
 - **Întreruperi** (`/intreruperi`) — apă, caldură, gaz, curent, lucrări — agregate din Apa Nova, Termoenergetica, Distrigaz, E-Distribuție, PMB, RADP. iCal + RSS + JSON API.
 
 ### Date publice deschise
