@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitAsync, getClientIp } from "@/lib/ratelimit";
-import { scrapeArticleMeta } from "@/lib/proteste/aftermath";
+import { scrapeEventPage } from "@/lib/proteste/event-scrape";
 import {
   callGemini,
   isGeminiConfigured,
@@ -64,7 +64,13 @@ Câmpuri:
 - expected_attendance: număr întreg sau null
 - demands: listă de revendicări scurte (max 10) sau []
 
-Reguli: output în ROMÂNĂ. Conservator — null în loc de ghicit. Data e critică: dacă pagina zice "15 iulie, ora 18:00" și azi e altă dată, calculează ANUL corect (viitor apropiat). Returnează DOAR obiectul JSON, fără markdown, fără explicații.`;
+Reguli STRICTE (anti-halucinație):
+- NU INVENTA. organizer_url, hashtag, demands, organizer, expected_attendance: pune-le DOAR dacă apar EXPLICIT în text. Altfel null / [] / "".
+- NU pune un site de organizator (ex. declic.ro) dacă nu e scris în text. NU inventa hashtag-uri.
+- Dacă ți se dau deja titlul/locația/data ca „cunoscute exact", NU le contrazice — concentrează-te pe restul.
+- organizer = numele din "organizat de X" / "Event by X", dacă apare; altfel null.
+- expected_attendance = doar dacă e un număr clar de participanți în text.
+Output în ROMÂNĂ. Returnează DOAR obiectul JSON, fără markdown, fără explicații.`;
 
 function normalizeName(s: string): string {
   return s
@@ -119,17 +125,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1. Scrape — Facebook + multe site-uri „gated" servesc OG-ul (titlu+descriere
-  //    cu detaliile evenimentului) DOAR la un crawler-UA (Googlebot). Site-urile de
-  //    presă care dau 403 la boți le prindem cu fallback pe UA-ul implicit (Chrome).
-  const CRAWLER_UA =
-    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
-  let scraped = await scrapeArticleMeta(url, { userAgent: CRAWLER_UA });
-  if (!scraped.title && (scraped.body ?? "").length < 60) {
-    scraped = await scrapeArticleMeta(url);
-  }
-  const text = (scraped.body ?? "").slice(0, 6000);
-  if (!scraped.title && text.length < 60) {
+  // 1. Scrape STRUCTURAT — Facebook (JSON de relay) / JSON-LD dau data, locația și
+  //    descrierea EXACTE, embedate în pagină. Le scoatem DETERMINIST (autoritative)
+  //    ca AI-ul să NU le ghicească (cauza halucinațiilor de dată/locație).
+  const ev = await scrapeEventPage(url);
+  if (!ev.ok && !ev.title && ev.aiText.length < 60) {
     return NextResponse.json(
       {
         error:
@@ -139,7 +139,8 @@ export async function POST(req: Request) {
     );
   }
 
-  // 2. Prompt.
+  // 2. Prompt — AI scoate doar câmpurile „soft" (cauză/subtitlu/hashtag/revendicări/
+  //    organizator) din text. Data/locația/descrierea vin din `ev` (autoritative).
   const today = new Date().toLocaleDateString("ro-RO", {
     weekday: "long",
     day: "numeric",
@@ -147,8 +148,15 @@ export async function POST(req: Request) {
     year: "numeric",
     timeZone: "Europe/Bucharest",
   });
-  const ogDesc = scraped.ogDescription ? `Descriere (OG): ${scraped.ogDescription}\n` : "";
-  const userPrompt = `DATA DE AZI: ${today}\n\nPAGINA (${url})\nTitlu: ${scraped.title ?? "(n/a)"}\n${ogDesc}\n${text}\n\nReturnează DOAR JSON conform schemei.`;
+  const known = [
+    ev.title ? `Titlu: ${ev.title}` : "",
+    ev.startIso ? "(data și ora sunt deja cunoscute EXACT din pagină — nu le recalcula)" : "",
+    ev.locationName ? `Locație: ${ev.locationName}` : "",
+    ev.city ? `Oraș: ${ev.city}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const userPrompt = `DATA DE AZI: ${today}\n\nEVENIMENT (${url})\n${known}\n\n${ev.aiText}\n\nReturnează DOAR JSON conform schemei.`;
 
   const messages = [
     { role: "system" as const, content: SYSTEM_PROMPT },
@@ -274,16 +282,18 @@ export async function POST(req: Request) {
     ? j.demands.filter((d): d is string => typeof d === "string" && d.trim().length > 0).map((d) => d.trim()).slice(0, 10)
     : [];
 
+  // Merge: câmpurile STRUCTURATE din `ev` (Facebook/JSON-LD) sunt AUTORITATIVE —
+  // bat AI-ul pt. dată/locație/descriere/titlu. AI-ul umple restul (soft).
   const data = {
-    title: str(j.title),
+    title: ev.title || str(j.title),
     subtitle: str(j.subtitle),
     cause: str(j.cause),
-    description: str(j.description),
-    start_at: futureIso(j.start_at),
-    end_at: validIso(j.end_at),
-    location_name: str(j.location_name),
-    city: str(j.city),
-    county_slug: countyNameToSlug(str(j.county)),
+    description: ev.description || str(j.description),
+    start_at: ev.startIso || futureIso(j.start_at),
+    end_at: ev.endIso || validIso(j.end_at),
+    location_name: ev.locationName || str(j.location_name),
+    city: ev.city || str(j.city),
+    county_slug: countyNameToSlug(str(j.county)) || countyNameToSlug(ev.city ?? ""),
     organizer: str(j.organizer),
     organizer_url: str(j.organizer_url),
     external_url: url,
@@ -299,6 +309,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     data,
     filledCount: filled,
-    source: { url, title: scraped.title ?? null },
+    source: { url, title: ev.title ?? null },
   });
 }
