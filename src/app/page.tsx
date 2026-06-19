@@ -115,24 +115,19 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-[var(--color-bg)]/40 dark:from-black/30 pointer-events-none" />
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.07] pointer-events-none" />
 
-        <div className="container-narrow relative z-10 pt-32 pb-16 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
+        <div className="container-narrow relative z-10 pt-10 pb-20 md:pt-40 md:pb-24 lg:pt-48 lg:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] hero-enter-1">
+            <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-[1.05] tracking-tight break-words dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] hero-enter-1">
               Ajută la schimbarea{" "}
               <span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-violet-600 dark:from-emerald-200 dark:via-cyan-100 dark:to-violet-200 bg-clip-text text-transparent">
                 României.
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-[var(--color-text)]/85 dark:text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed dark:drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)] hero-enter-2">
+            <p className="text-lg md:text-xl text-[var(--color-text)]/85 dark:text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed dark:drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)] hero-enter-2">
               <strong className="text-[var(--color-text)] dark:text-white">Faci o poză. Scrii câteva fraze. Apeși trimite.</strong>{" "}
               Restul facem noi — generăm sesizarea formală, o trimitem la primărie
               cu temei legal OG 27/2002 și te anunțăm de fiecare dată când răspund.
-            </p>
-            <p className="text-sm md:text-base text-[var(--color-text-muted)] dark:text-white/75 mb-10 max-w-2xl mx-auto leading-relaxed dark:drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
-              Plus: notificare la fiecare petiție nouă, la fiecare protest anunțat,
-              la întreruperile programate din zona ta și știri civice agregate din presă —
-              totul gratuit, fără cont obligatoriu.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 hero-enter-3">

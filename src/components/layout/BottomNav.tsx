@@ -258,7 +258,7 @@ export function BottomNav() {
               pillIndex < 0 && "opacity-0",
             )}
             style={{
-              width: "calc((100% - 0.75rem) / 4)",
+              width: "calc((100% - 0.75rem) / 3)",
               transform: `translateX(calc(${Math.max(pillIndex, 0)} * 100%))`,
               transition: `transform 280ms ${SPRING}, opacity 200ms ease`,
             }}
