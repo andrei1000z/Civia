@@ -13,6 +13,7 @@
  * Sentry but isn't surfaced.
  */
 
+import { cache } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import {
@@ -75,12 +76,16 @@ function rowToInterruption(r: ScrapedRow): Interruption {
  * `end_at` is more than 7 days in the past — keeps the read query small
  * and the page free of long-finished outages.
  */
-export async function loadInterruptions(countyCode?: string): Promise<{
+// 2026-06-19 (audit #11/#12) — cache() per request: /intreruperi/[id] ȘI homepage
+// IntreruperiWidget apelau loadInterruptions de mai multe ori pe același render,
+// fiecare trăgând tot catalogul național (≤500 rânduri). cache() dedup (același
+// argument în același request = un singur fetch).
+export const loadInterruptions = cache(async (countyCode?: string): Promise<{
   items: Interruption[];
   scrapedCount: number;
   lastSeenAt: string | null;
   source: "supabase+seed" | "seed-only";
-}> {
+}> => {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const cc = countyCode?.toUpperCase();
   let scraped: Interruption[] = [];
@@ -135,7 +140,7 @@ export async function loadInterruptions(countyCode?: string): Promise<{
     lastSeenAt,
     source,
   };
-}
+});
 
 // ─── Public getters ────────────────────────────────────────────────────
 
