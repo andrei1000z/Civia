@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import {
   ProtestLinkImport,
   isoToLocalInput,
@@ -1283,13 +1283,14 @@ function ListGroup({
               <div className="flex items-start gap-3 flex-wrap">
                 {r.cover_image_url && (
                   <div className="relative w-20 h-14 rounded-[var(--radius-xs)] overflow-hidden bg-[var(--color-surface-2)] shrink-0">
-                    <Image
+                    <SafeImage
                       src={r.cover_image_url}
                       unoptimized
                       alt=""
                       fill
                       sizes="80px"
                       className="object-cover"
+                      fallbackIconSize={18}
                     />
                   </div>
                 )}

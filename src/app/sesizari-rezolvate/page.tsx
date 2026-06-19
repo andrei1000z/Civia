@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { CheckCircle2, MapPin, Calendar, Send } from "lucide-react";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { SESIZARE_TIPURI, SITE_URL } from "@/lib/constants";
@@ -135,7 +135,7 @@ export default async function SesizariResolvatePage() {
                     >
                       <div className="grid grid-cols-2">
                         <div className="relative h-44 sm:h-48">
-                          <Image
+                          <SafeImage
                             src={s.imagini[0] ?? ""}
                             alt="Înainte"
                             fill
@@ -148,8 +148,8 @@ export default async function SesizariResolvatePage() {
                           </span>
                         </div>
                         <div className="relative h-44 sm:h-48">
-                          <Image
-                            src={s.resolved_photo_url!}
+                          <SafeImage
+                            src={s.resolved_photo_url ?? ""}
                             alt="După"
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
