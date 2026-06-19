@@ -169,6 +169,7 @@ export const SESIZARE_TIPURI = [
   { value: "copac", label: "Copac căzut/periculos", short: "Copac", icon: "🌳", active: true },
   { value: "gunoi", label: "Gunoi necolectat", short: "Gunoi", icon: "🗑️", active: true },
   { value: "parcare", label: "Parcare ilegală", short: "Parcare", icon: "🚗", active: true },
+  { value: "parcare_trasata", label: "Loc de parcare trasat ilegal", short: "Parcare trasată", icon: "🚧", active: true },
   { value: "stalpisori", label: "Montare stâlpișori anti-parcare", short: "Stâlpișori", icon: "🪧", active: true },
   { value: "canalizare", label: "Canalizare/inundație", short: "Canalizare", icon: "💧", active: true },
   { value: "semafor", label: "Semafor/semnalizare defect", short: "Semafor", icon: "🚦", active: true },

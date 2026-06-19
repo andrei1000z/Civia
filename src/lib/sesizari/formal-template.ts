@@ -54,6 +54,16 @@ const TIP_DATA: Record<string, TipData> = {
     ],
     evidence: "prezența mașinilor parcate ilegal",
   },
+  parcare_trasata: {
+    affects: "ordinea pe domeniul public și accesul echitabil la parcare",
+    problem: "pe domeniul public a fost trasat/vopsit ILEGAL un loc de parcare (marcaj neautorizat), prin care o persoană își apropriază abuziv spațiu public, fără autorizația administratorului arterei",
+    actions: [
+      "Verificarea legalității marcajului de parcare și identificarea celui care l-a trasat.",
+      "Ștergerea marcajului neautorizat și readucerea carosabilului la starea legală.",
+      "Aplicarea sancțiunilor pentru ocuparea și marcarea neautorizată a domeniului public.",
+    ],
+    evidence: "marcajul de parcare trasat ilegal pe domeniul public",
+  },
   stalpisori: {
     affects: "siguranța pietonilor",
     problem: "lipsa elementelor de protecție (stâlpișori anti-parcare) permite parcarea ilegală în zonă și pune în pericol pietonii",

@@ -47,3 +47,20 @@ describe("deterministicTip — cerere semaforizare (semafor nou)", () => {
     expect(deterministicTip("e nevoie de o trecere de pietoni cu marcaj aici")).toBeNull();
   });
 });
+
+describe("deterministicTip — loc de parcare trasat ilegal", () => {
+  it("prinde marcaj de parcare trasat ILEGAL pe domeniul public → parcare_trasata", () => {
+    expect(deterministicTip("loc de parcare trasat ilegal pe Calea Plevnei 29")).toBe("parcare_trasata");
+    expect(deterministicTip("Ne trasăm singuri locuri de parcare pe stradă")).toBe("parcare_trasata");
+    expect(deterministicTip("cineva și-a vopsit abuziv un loc de parcare privat pe carosabil")).toBe("parcare_trasata");
+  });
+
+  it("NU declanșează pentru o mașină parcată ilegal (→ AI: parcare)", () => {
+    expect(deterministicTip("mașină parcată ilegal pe trotuar")).toBeNull();
+    expect(deterministicTip("loc de parcare ocupat ilegal de o dubă")).toBeNull();
+  });
+
+  it("NU declanșează pentru o CERERE de amenajare/trasare (→ AI: amenajare_parcare)", () => {
+    expect(deterministicTip("cer să se traseze locuri de parcare noi în cartier")).toBeNull();
+  });
+});

@@ -254,6 +254,19 @@ export function getAuthoritiesFor(
       addCc(AUTH.pmbDispecerat);
       break;
 
+    case "parcare_trasata":
+      // Loc de parcare TRASAT ILEGAL pe domeniul public. ASPMB (Administrația
+      // Străzilor) administrează artera + șterge marcajul; Brigada Rutieră +
+      // Poliția Locală sancționează (raport r/fuckcarsRomania: „brigadă rutieră,
+      // PLB și ASPMB ca ei administrează artera").
+      addTo(AUTH.brigadaRutiera);
+      addTo(AUTH.adminStrazi);
+      addTo(AUTH.politiaLocalaBuc);
+      if (sectorPolitie) addCc(sectorPolitie);
+      if (sectorPrimarie) addCc(sectorPrimarie);
+      addCc(AUTH.pmb);
+      break;
+
     case "parcare": {
       // Jurisdiction split — the user told us whether the car blocks a
       // sidewalk/zebra ("trotuar") or a traffic lane / tram line
@@ -464,7 +477,7 @@ function getCountyAuthorities(
     }
     // For parcare/zgomot/graffiti/afisaj, add city's Poliția Locală if available
     if (
-      ["parcare", "zgomot", "graffiti", "afisaj"].includes(tip) &&
+      ["parcare", "parcare_trasata", "zgomot", "graffiti", "afisaj"].includes(tip) &&
       city.politieLocala?.email
     ) {
       primary.unshift({
@@ -491,7 +504,7 @@ function getCountyAuthorities(
 
     // For parcare/zgomot/graffiti/afisaj/mobilier/gunoi, Poliția Locală takes
     // the TO slot; IPJ falls to CC (they only intervene on criminal matters).
-    const plTags = new Set(["parcare", "zgomot", "graffiti", "afisaj", "mobilier", "gunoi"]);
+    const plTags = new Set(["parcare", "parcare_trasata", "zgomot", "graffiti", "afisaj", "mobilier", "gunoi"]);
     if (plTags.has(tip) && politiaLocala?.email) {
       primary.unshift({
         id: `pl-${countyCode}`,
@@ -503,7 +516,7 @@ function getCountyAuthorities(
 
     // IPJ in CC when tip is criminal-adjacent (parcare blocking access,
     // zgomot) — but most IPJ entries have no email, only phone.
-    if (["parcare", "zgomot"].includes(tip) && politie?.email) {
+    if (["parcare", "parcare_trasata", "zgomot"].includes(tip) && politie?.email) {
       cc.push({ id: `politie-${countyCode}`, name: `IPJ ${countyDisplayName(countyCode)}`, email: politie.email });
     }
   }
