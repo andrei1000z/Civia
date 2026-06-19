@@ -7,6 +7,7 @@ import { repairJsonStrings, extractFieldsRegex } from "@/lib/groq/json-repair";
 import { PETITIE_CATEGORII } from "@/lib/constants";
 import { lookup } from "dns/promises";
 import net from "net";
+import { safeFetch } from "@/lib/security/ssrf";
 
 /** audit fix (anti-SSRF): doar http(s) + blochează IP-uri private/loopback/
  *  link-local. Înainte fetch pe URL arbitrar putea lovi servicii interne. */
@@ -51,15 +52,18 @@ const ALLOWED_IMAGE_MIME: Record<string, string> = {
  */
 async function rehostImage(srcUrl: string): Promise<string | null> {
   try {
+    // 2026-06-19 (audit) — og:image vine din HTML-ul scrapuit (controlabil de
+    // atacator). Validează-l SSRF (DNS) + fetch cu re-validare per redirect, la
+    // fel ca URL-ul paginii (înainte: fetch direct cu redirect:"follow", 0 check).
+    await assertSafePublicUrl(srcUrl);
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 8_000);
-    const res = await fetch(srcUrl, {
+    const res = await safeFetch(srcUrl, {
       signal: ctrl.signal,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Accept: "image/jpeg,image/png,image/webp,image/gif,*/*;q=0.8",
       },
-      redirect: "follow",
     });
     clearTimeout(tid);
     if (!res.ok) return null;

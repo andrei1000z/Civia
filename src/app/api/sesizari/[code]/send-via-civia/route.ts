@@ -157,6 +157,17 @@ export async function POST(
       );
     }
   } else {
+    // 2026-06-19 (audit Major) — un anonim poate trimite DOAR o sesizare genuin
+    // anonimă (fără user_id). Dacă aparține unui cont, doar autorul LOGAT o poate
+    // trimite — altfel un terț care ghicește codul scurt ar declanșa send-ul
+    // sesizării altcuiva (rate-limit 5/h/IP + claim atomic limitau dauna, dar
+    // tot era o fereastră de impersonare cross-user).
+    if (sesizare.user_id) {
+      return NextResponse.json(
+        { error: "Autentifică-te pentru a trimite această sesizare.", needs_login: true },
+        { status: 401 },
+      );
+    }
     // Anonim: verifică sesizarea e recentă (autorul probabil)
     const sesizareAge = Date.now() - new Date(sesizare.created_at).getTime();
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;

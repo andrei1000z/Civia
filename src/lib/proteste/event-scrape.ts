@@ -9,6 +9,8 @@
  * (cauză, subtitlu, hashtag, revendicări) din descriere — fără să ghicească ora.
  */
 
+import { safeFetch } from "@/lib/security/ssrf";
+
 const CRAWLER_UA = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -47,14 +49,15 @@ async function fetchHtml(url: string, ua: string): Promise<{ ok: boolean; html: 
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(url, {
+    // redirect:"manual" + re-validare per hop (anti-SSRF). safeFetch aruncă la
+    // țintă internă → cade în catch = {ok:false} (degradare grațioasă).
+    const res = await safeFetch(url, {
       headers: {
         "User-Agent": ua,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "ro-RO,ro;q=0.9,en;q=0.5",
       },
       signal: ctrl.signal,
-      redirect: "follow",
       cache: "no-store",
     });
     clearTimeout(timer);
