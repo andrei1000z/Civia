@@ -204,7 +204,13 @@ export function AuthModal() {
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setEmailTouched(true)}
                 aria-invalid={inlineError != null || (status === "error" && errorMsg != null)}
-                aria-describedby={inlineError ? "auth-email-error" : undefined}
+                aria-describedby={
+                  inlineError
+                    ? "auth-email-error"
+                    : status === "error" && errorMsg
+                    ? "auth-server-error"
+                    : undefined
+                }
                 placeholder="nume@exemplu.ro"
                 className={`w-full h-11 pl-9 pr-4 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border text-base sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 transition-colors ${
                   inlineError
@@ -220,7 +226,7 @@ export function AuthModal() {
               </p>
             )}
             {errorMsg && (
-              <p role="alert" className="text-sm text-red-600 dark:text-red-400 mb-3">{errorMsg}</p>
+              <p id="auth-server-error" role="alert" className="text-sm text-red-600 dark:text-red-400 mb-3">{errorMsg}</p>
             )}
             <label className="flex items-start gap-2.5 mb-3 text-xs text-[var(--color-text-muted)] cursor-pointer leading-relaxed">
               <input

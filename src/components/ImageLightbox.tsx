@@ -13,6 +13,7 @@ interface Props {
 export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
   const [index, setIndex] = useState(initialIndex);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const prev = useCallback(() => setIndex((i) => (i - 1 + urls.length) % urls.length), [urls.length]);
   const next = useCallback(() => setIndex((i) => (i + 1) % urls.length), [urls.length]);
@@ -23,10 +24,24 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
     // on <body>.
     previouslyFocusedRef.current = (document.activeElement as HTMLElement) ?? null;
 
+    // 2026-06-19 (audit #14) — mută focus ÎN dialog (altfel rămâne pe pagina de
+    // dedesubt, ascunsă de overlay — WCAG 2.4.3) + capcană de Tab.
+    const root = dialogRef.current;
+    root?.focus();
+
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowLeft") { prev(); return; }
+      if (e.key === "ArrowRight") { next(); return; }
+      if (e.key === "Tab" && root) {
+        const f = root.querySelectorAll<HTMLElement>("button:not([disabled]),a[href]");
+        if (f.length === 0) { e.preventDefault(); return; }
+        const first = f[0]!;
+        const last = f[f.length - 1]!;
+        const act = document.activeElement;
+        if (e.shiftKey && (act === first || act === root)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus(); }
+      }
     };
     document.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
@@ -41,7 +56,9 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal-priority)] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+      ref={dialogRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-[var(--z-modal-priority)] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in focus:outline-none"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
