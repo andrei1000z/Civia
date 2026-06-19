@@ -1566,7 +1566,10 @@ html.a11y-reduce-motion *::after {
     radial-gradient(46% 40% at 96% 100%, color-mix(in srgb, var(--color-petition) 16%, transparent), transparent 70%),
     radial-gradient(52% 44% at 12% 104%, color-mix(in srgb, var(--color-secondary) 15%, transparent), transparent 72%);
   animation: setari-aurora 26s ease-in-out infinite alternate;
-  will-change: transform, opacity;
+  /* 2026-06-19 (audit #13) — fără will-change permanent: .lc-canvas e site-wide,
+     iar hint-ul promova un layer GPU pe aproape fiecare pagină chiar și
+     în background. Browserul compozitează oricum în timpul animației de
+     transform/opacity; layer-ul permanent doar consuma memorie. */
 }
 @keyframes setari-aurora {
   from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.78; }
