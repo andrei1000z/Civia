@@ -6,7 +6,7 @@ describe("objectifyFormalText - sanitizare claims subjective", () => {
     const input = "Recent am observat că pe Șoseaua Pantelimon nr. 300, în dreptul domiciliu meu, există o problemă.";
     const { text, changed } = objectifyFormalText(input, {
       locatie: "Șoseaua Pantelimon nr. 300",
-      adresaCetatean: "Strada Novaci 12, Sector 5",
+      adresaCetatean: "Strada Exemplu 12, Sector 5",
     });
     expect(changed).toBe(true);
     expect(text).toContain("pe Șoseaua Pantelimon nr. 300");
@@ -54,8 +54,8 @@ describe("objectifyFormalText - sanitizare claims subjective", () => {
   it("NU schimba textul cand domiciliul cetateanului = locatia problemei (exceptie legitima)", () => {
     const input = "În fața blocului meu, mașinile blochează trotuarul.";
     const { text, changed, replacements } = objectifyFormalText(input, {
-      locatie: "Strada Novaci 12, Sector 5",
-      adresaCetatean: "Strada Novaci nr. 12, Sector 5",
+      locatie: "Strada Exemplu 12, Sector 5",
+      adresaCetatean: "Strada Exemplu nr. 12, Sector 5",
     });
     expect(changed).toBe(false);
     expect(replacements).toBe(0);

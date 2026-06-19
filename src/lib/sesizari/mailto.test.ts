@@ -16,7 +16,7 @@ const BASE = {
   locatie: "Șoseaua Pantelimon 292",
   descriere: "d",
   author_name: "Ion Andrei Popescu",
-  author_address: "Strada Novaci 12, Sector 5",
+  author_address: "Strada Exemplu 12, Sector 5",
 };
 
 describe("buildFormalText — identity rewrite", () => {
@@ -35,7 +35,7 @@ CineVrea Altcineva
     const matches = out.match(/Sector 5/g) ?? [];
     expect(matches.length).toBe(1);
     expect(out).toContain("Mă numesc Ion Andrei Popescu");
-    expect(out).toContain("locuiesc în Strada Novaci 12, Sector 5");
+    expect(out).toContain("locuiesc în Strada Exemplu 12, Sector 5");
     // Tail ("și doresc...") must survive
     expect(out).toMatch(/și\s+doresc/);
   });
@@ -70,7 +70,7 @@ Altcineva
     const out = buildFormalText({ ...BASE, formal_text: aiText });
     expect(out).not.toContain("Subsemnatul");
     expect(out).toContain("Mă numesc Ion Andrei Popescu");
-    expect(out).toContain("Strada Novaci 12, Sector 5");
+    expect(out).toContain("Strada Exemplu 12, Sector 5");
   });
 
   it("keeps punctuation when opener ends with a period instead of verb", () => {
@@ -84,7 +84,7 @@ Cu stimă,
 Altcineva
 20 martie 2024`;
     const out = buildFormalText({ ...BASE, formal_text: aiText });
-    expect(out).toContain("locuiesc în Strada Novaci 12, Sector 5.");
+    expect(out).toContain("locuiesc în Strada Exemplu 12, Sector 5.");
     expect(out).toContain("În ultima perioadă am observat");
     expect(out).not.toMatch(/Sector 5,?\s*Sector 6/);
   });
@@ -146,7 +146,7 @@ describe("buildEmailPayload — parcare legal template", () => {
       lng: 26.123,
       descriere: "Mașină parcată pe trotuar de o săptămână.",
       author_name: "Ion Andrei Popescu",
-      author_address: "Strada Novaci 12, Sector 5",
+      author_address: "Strada Exemplu 12, Sector 5",
       imagini: ["https://x/a.jpg", "https://x/b.jpg"],
       parking: { plate: "B 123 ABC", jurisdiction: "trotuar" },
     });

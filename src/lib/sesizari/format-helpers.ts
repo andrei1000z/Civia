@@ -107,7 +107,7 @@ export function repairSesizareLeaks(text: string): string {
   );
 
   // 2.5. „Sector X. Y" → „Sector X" — pattern observat de user pe
-  //      adrese tip „Strada Novaci 12, Sector 5. 12" unde trailing
+  //      adrese tip „Strada Exemplu 12, Sector 5. 12" unde trailing
   //      „. 12" e un artefact (probabil număr stradă duplicat la
   //      capătul adresei). Detectăm „Sector \d+\. \d+" și păstrăm doar
   //      sectorul. Match doar dacă numărul după punct e ≤ 999 (nu

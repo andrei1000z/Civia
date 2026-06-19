@@ -6,7 +6,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/geocode/search?q=Strada+Novaci+12+Bucuresti
+ * GET /api/geocode/search?q=Strada+Exemplu+12+Bucuresti
  * Forward geocode (autocomplete adresă) → sugestii cu coordonate exacte.
  *
  * De ce: pe GPS imprecis (desktop/wifi ±km) reverse-geocode-ul ghicea o stradă

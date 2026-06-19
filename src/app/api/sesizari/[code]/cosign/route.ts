@@ -173,7 +173,7 @@ export async function GET(
 
   // PRIVACY: returnam DOAR primul cuvant din nume + data. NU mai expunem:
   //   - nume complet (fost: „Eduard Andrei Mușat")
-  //   - city/adresa (fost: „Strada Novaci 12, Sector 5")
+  //   - city/adresa (fost: „Strada Exemplu 12, Sector 5")
   //   - email, ip_hash
   // Asta respecta GDPR principiul de minimizare a datelor.
   const { data: recent } = await admin

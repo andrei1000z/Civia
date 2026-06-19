@@ -78,15 +78,6 @@ export const STRAZI_POPULARE: StradaPopulara[] = [
       "Sesizări civice pe Calea 13 Septembrie, Sector 5, București: trotuare ocupate, stâlpișori anti-parcare.",
   },
   {
-    slug: "novaci",
-    nume: "Strada Novaci",
-    aliases: ["Novaci"],
-    sector: "S5",
-    countyCode: "B",
-    descriere:
-      "Sesizări civice pe Strada Novaci, Sector 5, București: parcare pe trotuar, stâlpișori.",
-  },
-  {
     slug: "panduri",
     nume: "Șoseaua Panduri",
     aliases: ["Panduri", "Sos Panduri"],

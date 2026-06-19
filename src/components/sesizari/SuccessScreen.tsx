@@ -11,9 +11,9 @@ import { CivicSprite } from "@/components/liquid-civic/CivicSprite";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { SendViaCiviaButton } from "@/components/sesizari/SendViaCiviaButton";
 import { PushPermissionButton } from "@/components/notifications/PushPermissionButton";
-import { withRef } from "@/lib/referral/client";
 import { RelatedPetitiiCard } from "@/components/sesizari/RelatedPetitiiCard";
 import { Button } from "@/components/ui/Button";
+import { SuccessShareSection } from "@/components/sesizari/SuccessShareSection";
 
 /**
  * Success screen post-submit — extras din SesizareForm in fisier separat
@@ -157,7 +157,7 @@ export function SuccessScreen({
         </Button>
       </div>
 
-      <SuccessShareSection code={code} title={emailInput.titlu} />
+      <SuccessShareSection code={code} title={emailInput.titlu} className="mt-8" />
 
       {/* Chaining sesizare→petiție (Faza 1) — a doua acțiune la intenție maximă. */}
       <RelatedPetitiiCard
@@ -169,138 +169,6 @@ export function SuccessScreen({
       <p className="text-[11px] text-[var(--color-text-muted)] mt-6 leading-relaxed">
         Răspunsul vine în max. <strong className="text-[var(--color-text)]">30 de zile</strong> calendaristice (OG 27/2002).
       </p>
-    </div>
-  );
-}
-
-function SuccessShareSection({ code, title }: { code: string; title: string }) {
-  const [copied, setCopied] = useState(false);
-  // Referral (Faza 1) — atașăm ?ref={codul meu} pe link-ul partajat după mount
-  // (cookie civia_rc, citit client-side). Anonim → fără cod, url neschimbat.
-  const baseUrl = `https://civia.ro/sesizari/${code}`;
-  const [url, setUrl] = useState(baseUrl);
-  useEffect(() => {
-    setUrl(withRef(baseUrl));
-  }, [baseUrl]);
-  // Mesaj „acțiune" — îndeamnă alți cetățeni să trimită și ei (viralitate),
-  // nu doar titlul sec. Reddit folosește un titlu separat, action-framed.
-  const shareText = `Am trimis o sesizare pe Civia: „${title}". Mai multe voci → primăria mișcă mai repede. Trimite și tu în 90 de secunde 👇`;
-  // Reddit: titlu de link-post action-framed (mai multe click-uri decât titlul
-  // sec) — îndeamnă direct cetățeanul care vede postarea în r/Romania, r/{oraș}.
-  const redditTitle = `Trimite și tu o sesizare oficială: ${title}`;
-
-  const trackShare = (channel: string) => {
-    import("@/components/analytics/CiviaTracker")
-      .then(({ trackCustomEvent }) => trackCustomEvent("share", { channel, url, source: "success-screen" }))
-      .catch(() => { /* silent */ });
-  };
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(`${shareText}\n${url}`);
-      setCopied(true);
-      trackShare("clipboard-success");
-      setTimeout(() => setCopied(false), 2000);
-    } catch { /* silent */ }
-  };
-
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${url}`)}`;
-  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`;
-  const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText}\n${url}`)}`;
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
-  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-  // Reddit — excelent pentru cauze civice (r/Romania, r/Bucuresti, r/{oras}).
-  // Title = titlul sesizării (headline), url = link-ul Civia.
-  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(redditTitle)}`;
-
-  return (
-    <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
-      <p className="text-sm font-semibold mb-1 text-[var(--color-text)]">
-        Spune-le și prietenilor — 5 secunde
-      </p>
-      <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
-        Cu cât mai mulți cetățeni trimit aceeași sesizare, cu atât primăria
-        răspunde mai rapid. Distribuie în cartier:
-      </p>
-      <div className="grid grid-cols-3 gap-2 mb-2">
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("whatsapp-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#25D366] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-          aria-label="Distribuie pe WhatsApp"
-        >
-          <span className="text-xl" aria-hidden="true">💬</span>
-          <span className="text-[10px] font-medium">WhatsApp</span>
-        </a>
-        <a
-          href={telegramUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("telegram-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0088cc] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-          aria-label="Distribuie pe Telegram"
-        >
-          <span className="text-xl" aria-hidden="true">✈️</span>
-          <span className="text-[10px] font-medium">Telegram</span>
-        </a>
-        <a
-          href={blueskyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("bluesky-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-16 rounded-[var(--radius-xs)] bg-[#0085ff] text-white hover:opacity-90 active:scale-[0.97] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-          aria-label="Distribuie pe Bluesky"
-        >
-          <span className="text-xl" aria-hidden="true">🦋</span>
-          <span className="text-[10px] font-medium">Bluesky</span>
-        </a>
-      </div>
-      <div className="grid grid-cols-4 gap-2">
-        <a
-          href={facebookUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("facebook-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          aria-label="Distribuie pe Facebook"
-        >
-          <span className="text-[#1877F2] font-bold" aria-hidden="true">f</span>
-          <span className="text-[10px]">Facebook</span>
-        </a>
-        <a
-          href={twitterUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("twitter-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          aria-label="Distribuie pe Twitter/X"
-        >
-          <span className="font-bold" aria-hidden="true">𝕏</span>
-          <span className="text-[10px]">Twitter</span>
-        </a>
-        <a
-          href={redditUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackShare("reddit-success")}
-          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          aria-label="Distribuie pe Reddit"
-        >
-          <span className="text-[#FF4500] font-bold" aria-hidden="true">r/</span>
-          <span className="text-[10px]">Reddit</span>
-        </a>
-        <button
-          type="button"
-          onClick={copyLink}
-          className="inline-flex flex-col items-center justify-center gap-1 h-12 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          aria-label="Copiază link-ul"
-        >
-          <span aria-hidden="true">{copied ? "✓" : "🔗"}</span>
-          <span className="text-[10px]">{copied ? "Copiat!" : "Copiază"}</span>
-        </button>
-      </div>
     </div>
   );
 }

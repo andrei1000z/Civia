@@ -3,7 +3,7 @@ import { extractLocality } from "./extract-locality";
 
 describe("extractLocality (PII guard pentru cosign address)", () => {
   it("extrage 'Sector N' din adrese București", () => {
-    expect(extractLocality("Strada Novaci 12, Sector 5")).toBe("Sector 5");
+    expect(extractLocality("Strada Exemplu 12, Sector 5")).toBe("Sector 5");
     expect(extractLocality("Bd. Magheru 1, Sector 1, București")).toBe("Sector 1");
     expect(extractLocality("Aleea Florilor 22 Sector 3")).toBe("Sector 3");
     expect(extractLocality("sector 6")).toBe("Sector 6");
@@ -12,8 +12,8 @@ describe("extractLocality (PII guard pentru cosign address)", () => {
   it("CRITIC: nu mai expune numele strazii sau numarul de imobil", () => {
     // „Sector N" e ok (1 cifra acceptabila, e localitate). Dar numele
     // strazii + nr de imobil nu trebuie sa apara.
-    const out = extractLocality("Strada Novaci 12, Sector 5");
-    expect(out).not.toMatch(/Novaci/i);
+    const out = extractLocality("Strada Exemplu 12, Sector 5");
+    expect(out).not.toMatch(/Exemplu/i);
     expect(out).not.toMatch(/\b12\b/); // nr de imobil
     expect(out).toBe("Sector 5");
   });

@@ -3,7 +3,7 @@ import { scrubFormalTextForPublic } from "./scrub-public";
 
 const NEW_OPENER = `Bună ziua,
 
-Mă numesc Ion Andrei Popescu, locuiesc în Strada Novaci 12, Sector 5 și doresc să vă aduc la cunoștință o problemă care afectează siguranța pietonilor pe Calea 13 Septembrie.
+Mă numesc Ion Andrei Popescu, locuiesc în Strada Exemplu 12, Sector 5 și doresc să vă aduc la cunoștință o problemă care afectează siguranța pietonilor pe Calea 13 Septembrie.
 
 În ultima perioadă, am observat că mașinile opresc și parchează pe trotuar.
 
@@ -13,7 +13,7 @@ Ion Andrei Popescu
 
 const LEGACY_OPENER = `Bună ziua,
 
-Subsemnatul Ion Andrei Popescu, domiciliat în Strada Novaci 12, Sector 5, vă adresez prezenta sesizare în temeiul OG 27/2002.
+Subsemnatul Ion Andrei Popescu, domiciliat în Strada Exemplu 12, Sector 5, vă adresez prezenta sesizare în temeiul OG 27/2002.
 
 Cu respect,
 Ion Andrei Popescu
@@ -25,7 +25,7 @@ describe("scrubFormalTextForPublic", () => {
       authorName: "Ion Andrei Popescu",
       hideName: false,
     });
-    expect(out).not.toContain("Strada Novaci 12");
+    expect(out).not.toContain("Strada Exemplu 12");
     expect(out).not.toContain("Sector 5 și doresc"); // address removed
     expect(out).toContain("[adresa]");
     expect(out).toContain("Ion Andrei Popescu"); // name kept
@@ -37,7 +37,7 @@ describe("scrubFormalTextForPublic", () => {
       hideName: true,
     });
     expect(out).not.toContain("Ion Andrei Popescu");
-    expect(out).not.toContain("Strada Novaci 12");
+    expect(out).not.toContain("Strada Exemplu 12");
     expect(out).toContain("[nume]");
     expect(out).toContain("[adresa]");
   });
@@ -55,7 +55,7 @@ describe("scrubFormalTextForPublic", () => {
       authorName: "Ion Andrei Popescu",
       hideName: false,
     });
-    expect(out).not.toContain("Strada Novaci 12");
+    expect(out).not.toContain("Strada Exemplu 12");
     expect(out).toContain("[adresa]");
   });
 
@@ -102,24 +102,24 @@ describe("scrubFormalTextForPublic", () => {
   });
 
   it("captures full multi-comma address with Sector marker", () => {
-    const text = `Mă numesc Ion Popescu, locuiesc în Strada Novaci 12, Sector 5, București și doresc să vă aduc la cunoștință.`;
+    const text = `Mă numesc Ion Popescu, locuiesc în Strada Exemplu 12, Sector 5, București și doresc să vă aduc la cunoștință.`;
     const out = scrubFormalTextForPublic(text, {
       authorName: "Ion Popescu",
       hideName: false,
     });
-    expect(out).not.toContain("Strada Novaci");
+    expect(out).not.toContain("Strada Exemplu");
     expect(out).not.toContain("Sector 5");
     expect(out).not.toContain("București și");
     expect(out).toContain("[adresa]");
   });
 
   it("handles address with Romanian abbreviations (Str., nr., bl., ap.)", () => {
-    const text = `Mă numesc Maria Ionescu, locuiesc pe Str. Novaci nr. 12, bl. A3, sc. 1, ap. 15, Sector 5 și doresc să semnalez.`;
+    const text = `Mă numesc Maria Ionescu, locuiesc pe Str. Exemplu nr. 12, bl. A3, sc. 1, ap. 15, Sector 5 și doresc să semnalez.`;
     const out = scrubFormalTextForPublic(text, {
       authorName: "Maria Ionescu",
       hideName: false,
     });
-    expect(out).not.toContain("Novaci");
+    expect(out).not.toContain("Exemplu");
     expect(out).not.toContain("bl. A3");
     expect(out).not.toContain("ap. 15");
     expect(out).toContain("[adresa]");

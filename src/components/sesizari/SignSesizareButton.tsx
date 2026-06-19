@@ -16,6 +16,7 @@ import {
 import { getRecipientsLabel } from "@/lib/sesizari/mailto";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
+import { SuccessShareSection } from "@/components/sesizari/SuccessShareSection";
 import { trackSesizareCosign } from "@/components/analytics/CiviaTracker";
 
 interface Props {
@@ -108,10 +109,6 @@ export function SignSesizareButton({
     return { name: "", address: "", email: "" };
   });
   const [remember, setRemember] = useState(true);
-  // GDPR Art. 7 — consimțământ explicit (NEBIFAT default) ca numele+adresa să
-  // fie trimise autorității. Obligatoriu pentru submit; dovada (consent_at) e
-  // stocată server-side.
-  const [consent, setConsent] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   // Honeypot — bots completează automat, respinge silent
   const [honey, setHoney] = useState("");
@@ -163,9 +160,10 @@ export function SignSesizareButton({
       .catch(() => setProfileLoaded(true));
   }, [user, profileLoaded]);
 
-  // Preview NU cere consimțământ (nu trimite date la autoritate); submit DA.
+  // 2026-06-19 — consimțământul e IMPLICIT prin apăsarea „Trimite acum" (acțiune
+  // afirmativă clară, GDPR Art. 7), cu notice sub buton — fără checkbox separat.
   const canPreview = data.name.trim().length >= 2 && data.address.trim().length >= 3;
-  const canSubmit = canPreview && consent;
+  const canSubmit = canPreview;
 
   async function handlePreview() {
     if (!canPreview || previewLoading) return;
@@ -282,15 +280,19 @@ export function SignSesizareButton({
 
             <div className="flex-1 overflow-y-auto">
             {state === "sent" ? (
-              <div className="p-6 space-y-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/15 text-emerald-500 grid place-items-center mx-auto">
-                  <CheckCircle2 size={32} aria-hidden="true" />
+              <div className="p-5 sm:p-6 space-y-4">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 text-emerald-500 grid place-items-center mx-auto">
+                    <CheckCircle2 size={32} aria-hidden="true" />
+                  </div>
+                  <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                    Trimisă! Cu cât suntem mai mulți, cu atât autoritățile răspund mai repede.
+                    Mulțumim pentru implicare! 🙌
+                  </p>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-                  Cu cât suntem mai mulți, cu atât autoritățile răspund mai repede.
-                  Mulțumim pentru implicare! 🙌
-                </p>
-                <Button type="button" onClick={handleClose} variant="primary" size="md">
+                {/* Distribuire — fă-i pe alții să trimită și ei (viralitate + SEO). */}
+                <SuccessShareSection code={code} title={titlu} source="cosign-modal" />
+                <Button type="button" onClick={handleClose} variant="outline" size="md" className="w-full">
                   Închide
                 </Button>
               </div>
@@ -382,25 +384,6 @@ export function SignSesizareButton({
                   </span>
                 </label>
 
-                {/* GDPR Art. 7 — consimțământ explicit (NEBIFAT default), obligatoriu. */}
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
-                    required
-                    className="mt-0.5 w-4 h-4 accent-[var(--color-primary)]"
-                  />
-                  <span className="text-xs text-[var(--color-text)]">
-                    Sunt de acord ca numele și adresa mea să fie trimise autorității,
-                    conform OG 27/2002 și{" "}
-                    <a href="/legal/confidentialitate" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] underline">
-                      politicii de confidențialitate
-                    </a>
-                    .
-                  </span>
-                </label>
-
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -435,6 +418,17 @@ export function SignSesizareButton({
                     {errorMsg}
                   </p>
                 )}
+
+                {/* Consimțământ IMPLICIT prin apăsarea butonului (GDPR Art. 7 —
+                    acțiune afirmativă clară). Fără checkbox separat. */}
+                <p className="text-[11px] text-center text-[var(--color-text-muted)] leading-relaxed">
+                  Apăsând „Trimite acum" ești de acord ca numele și adresa ta să fie trimise
+                  autorității, conform OG 27/2002 și{" "}
+                  <a href="/legal/confidentialitate" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] underline">
+                    politicii de confidențialitate
+                  </a>
+                  .
+                </p>
 
                 <p className="text-[11px] text-center text-[var(--color-text-muted)] leading-relaxed">
                   📎 Pozele se atașează automat · 🇪🇺 Date stocate în UE · Conform OG 27/2002
