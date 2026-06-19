@@ -145,7 +145,7 @@ export function EvenimenteFilter({ evenimente }: { evenimente: Eveniment[] }) {
                   {ev.victime !== undefined && ev.victime > 0 && <span>{ev.victime} {ev.victime === 1 ? "victimă" : "victime"}</span>}
                   {ev.evacuati !== undefined && ev.evacuati > 0 && <span>{ev.evacuati} {ev.evacuati === 1 ? "evacuat" : "evacuați"}</span>}
                   <span className="ml-auto flex items-center gap-1 text-[var(--color-primary)] font-medium">
-                    Detalii <ArrowRight size={12} aria-hidden="true" />
+                    Vezi detalii <ArrowRight size={12} aria-hidden="true" />
                   </span>
                 </div>
               </div>

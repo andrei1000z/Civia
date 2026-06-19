@@ -352,21 +352,8 @@ body::after {
   filter: blur(60px);
 }
 
-@keyframes liquid-flow-1 {
-  0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1); }
-  25%  { transform: translate3d(6%, -4%, 0) rotate(22deg) scale(1.10); }
-  50%  { transform: translate3d(-5%, 5%, 0) rotate(-18deg) scale(0.94); }
-  75%  { transform: translate3d(4%, 3%, 0) rotate(14deg) scale(1.07); }
-  100% { transform: translate3d(-3%, -2%, 0) rotate(-8deg) scale(1.02); }
-}
-
-@keyframes liquid-flow-2 {
-  0%   { transform: translate3d(0%, 0%, 0) rotate(0deg) scale(1.05); }
-  25%  { transform: translate3d(-6%, 5%, 0) rotate(-20deg) scale(0.95); }
-  50%  { transform: translate3d(5%, -5%, 0) rotate(25deg) scale(1.12); }
-  75%  { transform: translate3d(-4%, 4%, 0) rotate(-12deg) scale(0.98); }
-  100% { transform: translate3d(3%, 2%, 0) rotate(10deg) scale(1.04); }
-}
+/* 2026-06-19 (audit #21) — scoase @keyframes liquid-flow-1/2: definite dar
+   nereferențiate nicăieri (blob-urile din fundal sunt statice). Cod mort CSS. */
 
 body {
   color: var(--color-text);
