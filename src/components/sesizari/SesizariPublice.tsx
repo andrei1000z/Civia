@@ -602,19 +602,19 @@ export function SesizariPublice() {
                     <span className="font-mono" aria-label={`cod ${s.code}`}>{s.code}</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* 2026-06-14 — TOTAL trimiteri = co-semnatari + autorul
-                        original, ca să coincidă cu „Trimisă de N cetățeni" din
-                        pagina de detaliu (înainte arăta doar co-semnatarii → -1). */}
-                    {(s.nr_cosigners ?? 0) > 0 && (
-                      <span
-                        className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
-                        aria-label={`Trimisă de ${(s.nr_cosigners ?? 0) + 1} cetățeni`}
-                        title="Câți cetățeni au trimis această sesizare"
-                      >
-                        <Users size={13} aria-hidden="true" />
-                        <span className="font-medium tabular-nums">{(s.nr_cosigners ?? 0) + 1}</span>
-                      </span>
-                    )}
+                    {/* TOTAL trimiteri = co-semnatari + autorul original (minim 1),
+                        ca să coincidă cu „Trimisă de N cetățeni" din pagina de
+                        detaliu. 2026-06-19 — MEREU vizibil: înainte era ascuns la
+                        0 co-semnatari, deci sesizările „solo" (1 trimitere) nu
+                        arătau nimic lângă comentarii — inconsistent cu detaliul. */}
+                    <span
+                      className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
+                      aria-label={`Trimisă de ${(s.nr_cosigners ?? 0) + 1} ${(s.nr_cosigners ?? 0) + 1 === 1 ? "cetățean" : "cetățeni"}`}
+                      title="Câți cetățeni au trimis această sesizare"
+                    >
+                      <Users size={13} aria-hidden="true" />
+                      <span className="font-medium tabular-nums">{(s.nr_cosigners ?? 0) + 1}</span>
+                    </span>
                     <span
                       className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
                       aria-label={`${s.nr_comentarii} ${s.nr_comentarii === 1 ? "comentariu" : "comentarii"}`}
