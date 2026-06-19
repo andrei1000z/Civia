@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, X, Share, Plus, Bell, Zap, WifiOff } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -60,6 +60,10 @@ export function InstallPrompt() {
   const [updateReady, setUpdateReady] = useState(false);
   // Tipul de dispozitiv — textul se adaptează (telefon vs calculator/laptop).
   const [isMobile, setIsMobile] = useState(false);
+  // 2026-06-19 — guard reapariție după dismiss + un singur timer de afișare
+  // (beforeinstallprompt poate „refire" → promptul reapărea după câteva secunde).
+  const dismissedRef = useRef(false);
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Register the service worker once + listen for update events
   useEffect(() => {
@@ -169,7 +173,7 @@ export function InstallPrompt() {
     // surface manual A2HS instructions instead. Delay 15s — generos
     // pentru ca userul sa intre in lectura, nu sa primeasca popup la load.
     if (isIOSSafari()) {
-      const t = setTimeout(() => setIosVisible(true), 15_000);
+      const t = setTimeout(() => { if (!dismissedRef.current) setIosVisible(true); }, 15_000);
       return () => clearTimeout(t);
     }
 
@@ -179,11 +183,21 @@ export function InstallPrompt() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Delay 15s (de la 5s) — analytics 5/19/2026 a aratat ca 88% dismiss
       // inainte de submit. Userul nu apucase sa se obisnuiasca cu site-ul.
-      setTimeout(() => setVisible(true), 15_000);
+      // Guard: dacă userul a închis deja în sesiune NU mai reapărem; un singur
+      // timer (evenimentul poate refire → reapariție „bug" raportată de user).
+      if (dismissedRef.current || showTimerRef.current) return;
+      showTimerRef.current = setTimeout(() => {
+        showTimerRef.current = null;
+        if (dismissedRef.current || isStandalone()) return;
+        setVisible(true);
+      }, 15_000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (showTimerRef.current) { clearTimeout(showTimerRef.current); showTimerRef.current = null; }
+    };
   }, []);
 
   const install = async () => {
@@ -206,6 +220,10 @@ export function InstallPrompt() {
   };
 
   const dismiss = () => {
+    // Închidere STICKY pe sesiune: nu mai reapărem (era bug — „Mai târziu" și
+    // promptul revenea după câteva secunde la refire-ul evenimentului).
+    dismissedRef.current = true;
+    if (showTimerRef.current) { clearTimeout(showTimerRef.current); showTimerRef.current = null; }
     localStorage.setItem(DISMISS_KEY, Date.now().toString());
     import("@/components/analytics/CiviaTracker")
       .then(({ trackCustomEvent }) => {

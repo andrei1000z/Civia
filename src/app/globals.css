@@ -244,8 +244,10 @@
   --z-fab: 40;
   --z-nav: 50;
   --z-banner: 55;
+  /* 2026-06-19 — install prompt SUB meniul mobil (BottomNav: scrim z-60, bară
+     z-65) ca să nu mai plutească PESTE meniu când e deschis. Era 80 (deasupra). */
+  --z-install-prompt: 58;
   --z-mobile-menu: 70;
-  --z-install-prompt: 80;
   --z-cookie: 90;
   --z-modal: 100;
   --z-modal-priority: 120;
