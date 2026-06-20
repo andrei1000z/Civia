@@ -223,8 +223,8 @@ export default async function IntreruperiPage() {
           </div>
         </div>
       ) : (
-        {/* hideCountyFilter — chips „Vezi pe județe" de mai sus fac DEJA navigarea
-            pe județe; ascundem dropdown-ul redundant din bară (review #2). */}
+        // hideCountyFilter — chips „Vezi pe județe" fac deja navigarea pe județe;
+        // ascundem dropdown-ul redundant din bară (review).
         <IntreruperiFilters items={all} hideCountyFilter />
       )}
 
