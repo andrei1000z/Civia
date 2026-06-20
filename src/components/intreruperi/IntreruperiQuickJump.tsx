@@ -59,7 +59,7 @@ export function IntreruperiQuickJump() {
           scrollTo("alerts-form");
         }}
       >
-        Anunță-mă când e întrerupere pe strada mea
+        Anunță-mă pe adresa mea
       </Button>
     </div>
   );
