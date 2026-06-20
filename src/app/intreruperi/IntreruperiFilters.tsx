@@ -295,7 +295,7 @@ export function IntreruperiFilters({
                 }
               }}
               aria-label="Schimbă județul (deschide pagina dedicată)"
-              className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
             >
               <option value="toate">Toate județele</option>
               {counties.map((c) => {

@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { loadInterruptions } from "@/lib/intreruperi/store";
 import { SITE_URL } from "@/lib/constants";
-import { ALL_COUNTIES } from "@/data/counties";
 import { IntreruperiFilters } from "./IntreruperiFilters";
 import { SubmitForm } from "./SubmitForm";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
@@ -61,7 +60,7 @@ export const metadata: Metadata = {
 export const revalidate = 7200;
 
 export default async function IntreruperiPage() {
-  const { items, scrapedCount, lastSeenAt, source } = await loadInterruptions();
+  const { items, lastSeenAt } = await loadInterruptions();
   // Filter active (same logic ca getActiveInterruptions ca să nu se schimbe
   // comportamentul vechi, dar acum avem și metadata pentru hero).
   // eslint-disable-next-line react-hooks/purity -- ISR Server Component, Date.now() captured per regeneration
@@ -118,22 +117,12 @@ export default async function IntreruperiPage() {
         title="Întreruperi programate"
         icon={AlertTriangle}
         gradient={HERO_GRADIENT.warning}
-        description={
-          <>
-            Află din timp când ți se oprește apa, caldura, gazul sau curentul + lucrările
-            de stradă în curs. Agregat automat din <strong>29 de surse oficiale</strong>{" "}
-            naționale (Apa Nova, RAJA, Aquatim, DEER, REE, ENGIE, PMB ș.a.) la fiecare
-            12 ore.
-          </>
-        }
+        description="Apă, căldură, gaz, curent și lucrări de stradă — vezi-le din timp, agregat automat din surse oficiale."
         tagline={
           <>
             {all.length} {all.length === 1 ? "întrerupere activă" : "întreruperi active"}
-            {scrapedCount > 0 && ` · ${scrapedCount} anunțuri colectate în ultimele 7 zile`}
             {lastUpdateLabel && (
-              <>
-                {" · ultima actualizare "}<strong>{lastUpdateLabel}</strong>
-              </>
+              <>{" · actualizat "}<strong>{lastUpdateLabel}</strong></>
             )}
           </>
         }
@@ -144,51 +133,10 @@ export default async function IntreruperiPage() {
           click în prod (probabil ScrollRestoration intercepta). */}
       <IntreruperiQuickJump />
 
-      {/* 2026-06-20 — scos grid-ul de statistici pe categorii: DUBLA exact
-          tab-urile de filtrare din IntreruperiFilters (aceleași 5 categorii +
-          counts). Counts rămân pe tab-urile INTERACTIVE de jos → mai puțin scroll
-          până la conținut, zero redundanță. */}
-
-      {/* County picker — navigheaza la /intreruperi/[county-slug] pentru
-          o pagina dedicata per judet. Ordonat dupa numarul de intreruperi
-          active descrescator, ca user-ul sa vada judetele „fierbinti" primele. */}
-      {(() => {
-        const countsByCounty = new Map<string, number>();
-        for (const i of all) {
-          countsByCounty.set(i.county, (countsByCounty.get(i.county) ?? 0) + 1);
-        }
-        const countiesWithActivity = ALL_COUNTIES
-          .map((c) => ({ ...c, count: countsByCounty.get(c.id) ?? 0 }))
-          .filter((c) => c.count > 0)
-          .sort((a, b) => b.count - a.count);
-        if (countiesWithActivity.length === 0) return null;
-        return (
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold mb-3 text-[var(--color-text)] flex items-center gap-2">
-              <MapPin size={14} aria-hidden="true" />
-              Vezi pe județe
-              <span className="text-xs font-normal text-[var(--color-text-muted)]">
-                · {countiesWithActivity.length}{" "}
-                {countiesWithActivity.length === 1 ? "județ activ" : "județe active"}
-              </span>
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {countiesWithActivity.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/intreruperi/${c.slug}`}
-                  className="inline-flex items-center gap-1.5 px-3 h-9 rounded-[var(--radius-full)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary-soft)] transition-colors"
-                >
-                  <span className="font-medium">{c.name}</span>
-                  <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
-                    {c.count}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        );
-      })()}
+      {/* 2026-06-20 — content-first: scos grid-ul de statistici (dubla tab-urile)
+          ȘI chip-row-ul „Vezi pe județe". Navigarea pe județe trăiește acum în
+          dropdown-ul din BARĂ (un singur control, nu 10-30 de pilule). Lista vine
+          DIRECT sub hero — userul vede întreruperile, nu un perete de chips. */}
 
       {all.length === 0 ? (
         <div className="lc-glass-2 rounded-3xl p-8 text-center">
@@ -223,9 +171,9 @@ export default async function IntreruperiPage() {
           </div>
         </div>
       ) : (
-        // hideCountyFilter — chips „Vezi pe județe" fac deja navigarea pe județe;
-        // ascundem dropdown-ul redundant din bară (review).
-        <IntreruperiFilters items={all} hideCountyFilter />
+        // Navigarea pe județe trăiește acum DOAR în dropdown-ul din bară
+        // (chip-row-ul separat a fost scos pentru a pune lista direct sub hero).
+        <IntreruperiFilters items={all} />
       )}
 
       {/* User submission — cineva care știe ceva despre întreruperi poate raporta */}
