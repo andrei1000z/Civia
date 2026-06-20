@@ -244,11 +244,12 @@ export function IntreruperiFilters({
     <div>
       {/* Filter bar — panou de sticlă (consistent cu restul site-ului). */}
       <div className="lc-glass-2 rounded-2xl px-2.5 py-2.5 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-2">
+          {/* Rând 1: categorii — UN singur rând, scroll orizontal pe mobil. */}
           <div
             role="tablist"
             aria-label="Filtrează după tip"
-            className="flex flex-wrap items-center gap-1 p-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-sm)] max-w-full"
+            className="flex items-center gap-1 p-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-sm)] overflow-x-auto no-scrollbar"
           >
             {TYPE_TABS.map((t) => {
               const count = t.value === "toate"
@@ -261,7 +262,7 @@ export function IntreruperiFilters({
                   onClick={() => setType(t.value)}
                   role="tab"
                   aria-selected={type === t.value}
-                  className={`shrink-0 px-3 h-9 rounded-[var(--radius-xs)] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
+                  className={`shrink-0 px-2.5 h-8 rounded-[var(--radius-xs)] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
                     type === t.value
                       ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-1)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]"
@@ -275,92 +276,92 @@ export function IntreruperiFilters({
             })}
           </div>
 
-          {!hideCountyFilter && (
-            <select
-              value={county}
-              onChange={(e) => {
-                const val = e.target.value;
-                // Pe pagina nationala: schimbarea judetului navigheaza la
-                // /intreruperi/[county-slug]. Eliminam state-ul local de filtru
-                // pentru ca pagina dedicata are URL bookmark-abil + SEO.
-                if (val === "toate") {
-                  setCounty("toate");
-                  return;
-                }
-                const targetCounty = ALL_COUNTIES.find((c) => c.id === val);
-                if (targetCounty) {
-                  router.push(`/intreruperi/${targetCounty.slug}`);
-                } else {
-                  setCounty(val);
-                }
-              }}
-              aria-label="Schimbă județul (deschide pagina dedicată)"
-              className="h-10 px-3 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            >
-              <option value="toate">Toate județele</option>
-              {counties.map((c) => {
-                const cnt = ALL_COUNTIES.find((co) => co.id === c);
-                return (
-                  <option key={c} value={c}>
-                    {cnt?.name ?? (c === "B" ? "București" : c)}
-                  </option>
-                );
-              })}
-            </select>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              if (!me) requestMe();
-              else setSort((s) => (s === "distanta" ? "timp" : "distanta"));
-            }}
-            disabled={locating}
-            aria-pressed={sort === "distanta"}
-            title={me ? "Sortează după distanța de la tine" : "Localizează-mă"}
-            className={`inline-flex items-center gap-1.5 h-10 px-3 rounded-[var(--radius-xs)] border text-xs font-medium transition-colors ${
-              sort === "distanta" && me
-                ? "bg-blue-500 text-white border-blue-500"
-                : "bg-[var(--color-surface-2)] text-[var(--color-text)] border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
-            } ${locating ? "opacity-60" : ""}`}
-          >
-            {locating ? (
-              <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Locate size={13} aria-hidden="true" />
+          {/* Rând 2: județ + aproape + listă/hartă — UN singur rând, compacte. */}
+          <div className="flex items-center gap-2">
+            {!hideCountyFilter && (
+              <select
+                value={county}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "toate") {
+                    setCounty("toate");
+                    return;
+                  }
+                  const targetCounty = ALL_COUNTIES.find((c) => c.id === val);
+                  if (targetCounty) {
+                    router.push(`/intreruperi/${targetCounty.slug}`);
+                  } else {
+                    setCounty(val);
+                  }
+                }}
+                aria-label="Schimbă județul (deschide pagina dedicată)"
+                className="h-9 px-2.5 rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              >
+                <option value="toate">Toate județele</option>
+                {counties.map((c) => {
+                  const cnt = ALL_COUNTIES.find((co) => co.id === c);
+                  return (
+                    <option key={c} value={c}>
+                      {cnt?.name ?? (c === "B" ? "București" : c)}
+                    </option>
+                  );
+                })}
+              </select>
             )}
-            {me ? (sort === "distanta" ? "Distanță" : "Timp") : "Aproape de mine"}
-          </button>
 
-          <div
-            className="sm:ml-auto inline-flex rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] p-0.5"
-            role="group"
-            aria-label="Mod de afișare"
-          >
             <button
               type="button"
-              onClick={() => setView("list")}
-              aria-pressed={view === "list"}
-              className={`px-3 h-9 rounded-[6px] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                view === "list"
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-              }`}
+              onClick={() => {
+                if (!me) requestMe();
+                else setSort((s) => (s === "distanta" ? "timp" : "distanta"));
+              }}
+              disabled={locating}
+              aria-pressed={sort === "distanta"}
+              title={me ? "Sortează după distanța de la tine" : "Aproape de mine"}
+              className={`inline-flex items-center gap-1 h-9 px-2.5 rounded-[var(--radius-xs)] border text-xs font-medium shrink-0 transition-colors ${
+                sort === "distanta" && me
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "bg-[var(--color-surface-2)] text-[var(--color-text)] border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
+              } ${locating ? "opacity-60" : ""}`}
             >
-              <ListIcon size={13} aria-hidden="true" /> Listă
+              {locating ? (
+                <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Locate size={12} aria-hidden="true" />
+              )}
+              {me ? (sort === "distanta" ? "Distanță" : "Timp") : "Aproape"}
             </button>
-            <button
-              type="button"
-              onClick={() => setView("map")}
-              aria-pressed={view === "map"}
-              className={`px-3 h-9 rounded-[6px] text-xs font-medium transition-colors inline-flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
-                view === "map"
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-              }`}
+
+            <div
+              className="ml-auto inline-flex rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] p-0.5 shrink-0"
+              role="group"
+              aria-label="Mod de afișare"
             >
-              <MapIcon size={13} aria-hidden="true" /> Hartă
-            </button>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                aria-pressed={view === "list"}
+                className={`px-2.5 h-8 rounded-[6px] text-xs font-medium transition-colors inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
+                  view === "list"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                <ListIcon size={12} aria-hidden="true" /> Listă
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("map")}
+                aria-pressed={view === "map"}
+                className={`px-2.5 h-8 rounded-[6px] text-xs font-medium transition-colors inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
+                  view === "map"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                <MapIcon size={12} aria-hidden="true" /> Hartă
+              </button>
+            </div>
           </div>
         </div>
       </div>
