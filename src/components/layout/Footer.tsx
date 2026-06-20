@@ -39,6 +39,27 @@ export function Footer() {
             <ul className="flex flex-col gap-2 items-center">
               <li>
                 <a
+                  href="https://www.instagram.com/civia.ro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Instagram — @civia.ro"
+                  className="inline-flex items-center gap-2 h-11 sm:h-10 pl-1.5 pr-3.5 rounded-[var(--radius-pill)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-2)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] w-fit"
+                >
+                  <Image
+                    src="/instagram.png"
+                    alt="Instagram"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-[7px] object-cover shrink-0"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold text-[var(--color-text)]">Instagram</span>
+                    <span className="text-[var(--color-text-muted)]"> · @civia.ro</span>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://bsky.app/profile/civiaro.bsky.social"
                   target="_blank"
                   rel="noopener noreferrer"
