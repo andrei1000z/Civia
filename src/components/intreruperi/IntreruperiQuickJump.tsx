@@ -43,21 +43,11 @@ export function IntreruperiQuickJump() {
     });
   }, []);
 
+  // 2026-06-20 — content-first: păstrăm DOAR CTA-ul cu valoare (alerte pe adresă).
+  // „Raportează" trăiește în secțiunea proprie de jos (cu header + formular), deci
+  // butonul-jump duplicat de sus a fost scos ca pagina să nu mai pară aglomerată.
   return (
-    <div className="flex flex-wrap gap-2 justify-center -mt-2 mb-6">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        shape="pill"
-        leftIcon={<span aria-hidden="true">📣</span>}
-        onClick={(e) => {
-          e.preventDefault();
-          scrollTo("submit-form");
-        }}
-      >
-        Raportează o întrerupere
-      </Button>
+    <div className="flex justify-center -mt-2 mb-6">
       <Button
         type="button"
         variant="primary"
@@ -69,7 +59,7 @@ export function IntreruperiQuickJump() {
           scrollTo("alerts-form");
         }}
       >
-        Anunță-mă pe adresa mea
+        Anunță-mă când e întrerupere pe strada mea
       </Button>
     </div>
   );
