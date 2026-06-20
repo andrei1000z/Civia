@@ -25,7 +25,10 @@ import { useCountyOptional } from "@/lib/county-context";
 type SortKey = "recent";
 type ViewMode = "list" | "map";
 
-const PAGE_SIZE = 20;
+// 2026-06-20 — 24 e divizibil cu 2/3/4 → rândul de carduri se umple COMPLET la
+// toate breakpoint-urile (grila cardurilor e md:grid-cols-2 xl:grid-cols-3).
+// 20 lăsa 2 pe ultimul rând (părea că „lipsește una").
+const PAGE_SIZE = 24;
 
 /** audit fix: culoare text lizibilă (alb/negru) după luminanța fundalului —
  *  text alb pe amber (#F59E0B) / sky (#0EA5E9) pica WCAG AA (~2:1). */
