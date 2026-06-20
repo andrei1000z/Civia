@@ -7,10 +7,6 @@ import {
   Rss,
   ExternalLink,
 } from "lucide-react";
-import {
-  TYPE_ICONS,
-  TYPE_LABELS,
-} from "@/data/intreruperi";
 import { loadInterruptions } from "@/lib/intreruperi/store";
 import { SITE_URL } from "@/lib/constants";
 import { ALL_COUNTIES } from "@/data/counties";
@@ -148,35 +144,10 @@ export default async function IntreruperiPage() {
           click în prod (probabil ScrollRestoration intercepta). */}
       <IntreruperiQuickJump />
 
-      {/* Stats quick — five real categories instead of four. The
-          stat block was rendering apa/caldura/gaz/electricitate but
-          /intreruperi catalog ALSO scrapes lucrari-strazi (street
-          works), and the count there is often non-trivial — surfacing
-          it in the stat row matches what the filter chips offer. */}
-      {/* Mobile: 3 cols (compact, 5 carduri = 3+2 layout natural).
-          Tablet+: 5 col equal. Pe iPhone narrow (360px), grid-cols-2
-          forța text-ul "Electricitate" / "Lucrări la stradă" peste
-          marginea card-ului. Trecut și label la break-words ca
-          "Lucrări la stradă" să se rupă pe 2 linii. */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-8">
-        {(["apa", "caldura", "gaz", "electricitate", "lucrari-strazi"] as const).map((t) => {
-          const count = all.filter((i) => i.type === t).length;
-          return (
-            <div
-              key={t}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-3 md:p-4 min-w-0"
-            >
-              <div className="text-xl md:text-2xl mb-1">{TYPE_ICONS[t]}</div>
-              <div className="text-xl md:text-2xl font-bold text-[var(--color-primary)] font-[family-name:var(--font-sora)] tabular-nums">
-                {count}
-              </div>
-              <div className="text-[10px] md:text-xs text-[var(--color-text-muted)] mt-0.5 leading-tight break-words">
-                {TYPE_LABELS[t]}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* 2026-06-20 — scos grid-ul de statistici pe categorii: DUBLA exact
+          tab-urile de filtrare din IntreruperiFilters (aceleași 5 categorii +
+          counts). Counts rămân pe tab-urile INTERACTIVE de jos → mai puțin scroll
+          până la conținut, zero redundanță. */}
 
       {/* County picker — navigheaza la /intreruperi/[county-slug] pentru
           o pagina dedicata per judet. Ordonat dupa numarul de intreruperi
@@ -220,7 +191,7 @@ export default async function IntreruperiPage() {
       })()}
 
       {all.length === 0 ? (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-8 text-center">
+        <div className="lc-glass-2 rounded-3xl p-8 text-center">
           <Calendar
             size={40}
             className="mx-auto mb-3 text-[var(--color-text-muted)]"
@@ -252,7 +223,9 @@ export default async function IntreruperiPage() {
           </div>
         </div>
       ) : (
-        <IntreruperiFilters items={all} />
+        {/* hideCountyFilter — chips „Vezi pe județe" de mai sus fac DEJA navigarea
+            pe județe; ascundem dropdown-ul redundant din bară (review #2). */}
+        <IntreruperiFilters items={all} hideCountyFilter />
       )}
 
       {/* User submission — cineva care știe ceva despre întreruperi poate raporta */}

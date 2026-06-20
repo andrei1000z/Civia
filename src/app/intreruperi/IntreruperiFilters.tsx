@@ -242,13 +242,13 @@ export function IntreruperiFilters({
 
   return (
     <div>
-      {/* Filter bar */}
-      <div className="-mx-4 px-4 py-3 mb-5 border-b border-[var(--color-border)]">
+      {/* Filter bar — panou de sticlă (consistent cu restul site-ului). */}
+      <div className="lc-glass-2 rounded-2xl px-2.5 py-2.5 mb-6">
         <div className="flex flex-wrap items-center gap-2">
           <div
             role="tablist"
             aria-label="Filtrează după tip"
-            className="flex flex-wrap items-center gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] max-w-full"
+            className="flex flex-wrap items-center gap-1 p-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-[var(--radius-sm)] max-w-full"
           >
             {TYPE_TABS.map((t) => {
               const count = t.value === "toate"
@@ -321,7 +321,7 @@ export function IntreruperiFilters({
             className={`inline-flex items-center gap-1.5 h-10 px-3 rounded-[var(--radius-xs)] border text-xs font-medium transition-colors ${
               sort === "distanta" && me
                 ? "bg-blue-500 text-white border-blue-500"
-                : "bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
+                : "bg-[var(--color-surface-2)] text-[var(--color-text)] border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
             } ${locating ? "opacity-60" : ""}`}
           >
             {locating ? (
@@ -333,7 +333,7 @@ export function IntreruperiFilters({
           </button>
 
           <div
-            className="ml-auto inline-flex rounded-[var(--radius-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] p-0.5"
+            className="sm:ml-auto inline-flex rounded-[var(--radius-xs)] bg-[var(--color-surface-2)] border border-[var(--color-border)] p-0.5"
             role="group"
             aria-label="Mod de afișare"
           >
@@ -366,7 +366,7 @@ export function IntreruperiFilters({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-10 text-center">
+        <div className="lc-glass-2 rounded-3xl p-10 text-center">
           <div className="text-5xl mb-3 opacity-60" aria-hidden="true">
             🔎
           </div>
@@ -534,7 +534,7 @@ function InterruptionCard({
   return (
     <Link
       href={`/intreruperi/${item.id}`}
-      className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5 hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-md)] transition-all min-w-0"
+      className="block lc-glass-2 rounded-3xl p-5 card-lift hover:border-[var(--color-primary)]/30 transition-all min-w-0"
       style={{ borderLeftWidth: "4px", borderLeftColor: TYPE_COLORS[item.type] }}
     >
       <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
