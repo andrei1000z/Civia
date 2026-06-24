@@ -292,9 +292,16 @@ export function SignSesizareButton({
                 </div>
                 {/* Distribuire — fă-i pe alții să trimită și ei (viralitate + SEO). */}
                 <SuccessShareSection code={code} title={titlu} source="cosign-modal" />
-                <Button type="button" onClick={handleClose} variant="outline" size="md" className="w-full">
+                {/* 2026-06-24 — „Închide" retrogradat la link discret: e o IEȘIRE
+                    care concura vizual cu share-ul exact la momentul de datorie
+                    reciprocă maximă (tocmai a cosemnat). Share-ul rămâne acțiunea. */}
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] py-2 transition-colors"
+                >
                   Închide
-                </Button>
+                </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-5 space-y-4" autoComplete="on">

@@ -23,6 +23,8 @@ export function SuccessShareSection({
 }) {
   const [copied, setCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
+  // Micro-recompensă după un share reușit → încurajează al doilea share.
+  const [justShared, setJustShared] = useState(false);
 
   // Referral (Faza 1) — atașăm ?ref={codul meu} pe link după mount (cookie
   // civia_rc, citit client-side). Anonim → fără cod, url neschimbat.
@@ -36,6 +38,8 @@ export function SuccessShareSection({
   const shareText = `Am trimis o sesizare pe Civia: „${title}". Mai multe voci → primăria mișcă mai repede. Trimite și tu în 90 de secunde 👇`;
 
   const trackShare = (channel: string) => {
+    setJustShared(true);
+    setTimeout(() => setJustShared(false), 2500);
     import("@/components/analytics/CiviaTracker")
       .then(({ trackCustomEvent }) => trackCustomEvent("share", { channel, url, source }))
       .catch(() => {});
@@ -74,8 +78,10 @@ export function SuccessShareSection({
 
   return (
     <div className={`pt-5 border-t border-[var(--color-border)] text-left ${className ?? ""}`}>
-      <p className="text-sm font-semibold mb-1 text-[var(--color-text)] text-center">
-        Distribuie — și alții pot trimite în 90 de secunde
+      <p className="text-sm font-semibold mb-1 text-[var(--color-text)] text-center transition-colors">
+        {justShared
+          ? "🙌 Mulțumim! Fiecare distribuire aduce o voce în plus."
+          : "Distribuie — și alții pot trimite în 90 de secunde"}
       </p>
       <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed text-center">
         Cu cât mai mulți cetățeni semnalează aceeași problemă, cu atât primăria răspunde mai repede.
@@ -93,33 +99,36 @@ export function SuccessShareSection({
         </button>
       )}
 
+      {/* 2026-06-24 — în RO WhatsApp + Facebook domină share-ul, deci ele +
+          „Copiază" stau în rândul proeminent (colorat). Telegram/Bluesky/X
+          coboară în rândul secundar. Înainte Facebook era degradat la gri. */}
       <div className="grid grid-cols-3 gap-2 mb-2">
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("whatsapp")} className={`${tileTop} bg-[#25D366]`} aria-label="Distribuie pe WhatsApp">
           <span className="text-xl" aria-hidden="true">💬</span>
           <span className="text-[10px] font-medium">WhatsApp</span>
         </a>
-        <a href={telegramUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("telegram")} className={`${tileTop} bg-[#0088cc]`} aria-label="Distribuie pe Telegram">
-          <span className="text-xl" aria-hidden="true">✈️</span>
-          <span className="text-[10px] font-medium">Telegram</span>
+        <a href={facebookUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("facebook")} className={`${tileTop} bg-[#1877F2]`} aria-label="Distribuie pe Facebook">
+          <span className="text-xl font-bold" aria-hidden="true">f</span>
+          <span className="text-[10px] font-medium">Facebook</span>
         </a>
-        <a href={blueskyUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("bluesky")} className={`${tileTop} bg-[#0085ff]`} aria-label="Distribuie pe Bluesky">
-          <span className="text-xl" aria-hidden="true">🦋</span>
-          <span className="text-[10px] font-medium">Bluesky</span>
-        </a>
+        <button type="button" onClick={copyLink} className={`${tileTop} bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)]`} aria-label="Copiază link-ul">
+          <span className="text-xl" aria-hidden="true">{copied ? "✓" : "🔗"}</span>
+          <span className="text-[10px] font-medium">{copied ? "Copiat!" : "Copiază"}</span>
+        </button>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <a href={facebookUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("facebook")} className={tileBottom} aria-label="Distribuie pe Facebook">
-          <span className="text-[#1877F2] font-bold" aria-hidden="true">f</span>
-          <span className="text-[10px]">Facebook</span>
+        <a href={telegramUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("telegram")} className={tileBottom} aria-label="Distribuie pe Telegram">
+          <span aria-hidden="true">✈️</span>
+          <span className="text-[10px]">Telegram</span>
+        </a>
+        <a href={blueskyUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("bluesky")} className={tileBottom} aria-label="Distribuie pe Bluesky">
+          <span aria-hidden="true">🦋</span>
+          <span className="text-[10px]">Bluesky</span>
         </a>
         <a href={twitterUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackShare("twitter")} className={tileBottom} aria-label="Distribuie pe X (Twitter)">
           <span className="font-bold" aria-hidden="true">𝕏</span>
           <span className="text-[10px]">X</span>
         </a>
-        <button type="button" onClick={copyLink} className={tileBottom} aria-label="Copiază link-ul">
-          <span aria-hidden="true">{copied ? "✓" : "🔗"}</span>
-          <span className="text-[10px]">{copied ? "Copiat!" : "Copiază"}</span>
-        </button>
       </div>
     </div>
   );
