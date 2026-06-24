@@ -3,7 +3,6 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { getSesizareByCode } from "@/lib/sesizari/repository";
 import { invalidateSesizariCache } from "@/lib/cached-queries";
 import {
   sendEmail,
@@ -55,14 +54,24 @@ export async function POST(
     );
   }
 
-  const sesizare = await getSesizareByCode(code);
+  const admin = createSupabaseAdmin();
+  // 2026-06-24 — citim direct din tabela `sesizari` (RLS-bypass), NU din
+  // getSesizareByCode → view-ul sesizari_feed filtrează moderation_status='approved',
+  // deci o sesizare PENDING (exact ce trebuie moderat) întorcea null → 404.
+  const { data: sesizare } = await admin
+    .from("sesizari")
+    .select("id, code, titlu, author_email, author_name, moderation_status")
+    .eq("code", code)
+    .maybeSingle<{
+      id: string; code: string; titlu: string;
+      author_email: string | null; author_name: string | null; moderation_status: string;
+    }>();
   if (!sesizare) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
-  const admin = createSupabaseAdmin();
   const { error } = await admin
     .from("sesizari")
     .update({

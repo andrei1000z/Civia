@@ -57,6 +57,10 @@ export default async function AdminUtilizatoriPage({
         .from("sesizari")
         .select("user_id")
         .in("user_id", ids)
+        // 2026-06-24 — limită explicită peste default-ul PostgREST de 1000:
+        // altfel, dacă userii din pagina curentă au cumulat >1000 sesizări,
+        // numărătoarea per-user ieșea trunchiată silent.
+        .limit(10000)
     : { data: [] };
 
   const countMap: Record<string, number> = {};
