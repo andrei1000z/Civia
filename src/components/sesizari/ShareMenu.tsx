@@ -106,7 +106,10 @@ export function ShareMenu({ url, title, message, size = "sm" }: Props) {
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (typeof nav.share !== "function") return false;
     try {
-      await nav.share({ title, url: shareUrl });
+      // 2026-06-24 — trimitem și `text` (mesajul de acțiune): pe mobil (53% din
+      // trafic) share-ul nativ ducea doar titlu+link pe WhatsApp, fără îndemnul
+      // care convertește. fullText = message ?? „{title} - Civia".
+      await nav.share({ title, text: fullText, url: shareUrl });
       trackShare("native");
       return true;
     } catch {

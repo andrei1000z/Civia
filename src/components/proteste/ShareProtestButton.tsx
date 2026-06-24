@@ -28,6 +28,14 @@ export function ShareProtestButton({
 }) {
   const [copied, setCopied] = useState(false);
 
+  // 2026-06-24 — lipsea tracking-ul → share-urile de protest erau invizibile
+  // în analytics (la fel ca ShareButton-ul de pe carduri).
+  const trackShare = (channel: string) => {
+    import("@/components/analytics/CiviaTracker")
+      .then(({ trackCustomEvent }) => trackCustomEvent("share", { channel, url, source: "protest" }))
+      .catch(() => { /* silent */ });
+  };
+
   const handleShare = async () => {
     const shareData: ShareData = {
       title,
@@ -37,6 +45,7 @@ export function ShareProtestButton({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share(shareData);
+        trackShare("native");
         return;
       } catch {
         // User cancelled OR API not allowed in current context → fallback
@@ -46,6 +55,7 @@ export function ShareProtestButton({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackShare("clipboard");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // No clipboard either — open mailto: as last resort

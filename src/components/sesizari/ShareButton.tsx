@@ -4,18 +4,39 @@ import { useState } from "react";
 import { Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-export function ShareButton({ code, size = "sm" }: { code: string; size?: "sm" | "md" }) {
+export function ShareButton({
+  code,
+  title,
+  size = "sm",
+}: {
+  code: string;
+  title?: string;
+  size?: "sm" | "md";
+}) {
   const [copied, setCopied] = useState(false);
+
+  // 2026-06-24 — ShareButton NU trackuia deloc (share-uri din carduri =
+  // invizibile în analytics → „1 share" era artefact de măsurare). Plus
+  // share-ul nativ trimitea doar titlu, fără îndemn → link sec pe WhatsApp.
+  const trackShare = (channel: string, url: string) => {
+    import("@/components/analytics/CiviaTracker")
+      .then(({ trackCustomEvent }) => trackCustomEvent("share", { channel, url, source: "listing-card" }))
+      .catch(() => { /* silent */ });
+  };
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}/sesizari/${code}`;
+    const text = title
+      ? `Sesizare pe Civia: „${title}". Vezi și trimite și tu 👇`
+      : "Vezi sesizarea pe Civia 👇";
 
     // Try native share first
     if (navigator.share) {
       try {
-        await navigator.share({ url, title: `Sesizare ${code}` });
+        await navigator.share({ url, title: "Civia — sesizare", text });
+        trackShare("native", url);
         return;
       } catch {
         // User cancelled — fall through to copy
@@ -23,8 +44,9 @@ export function ShareButton({ code, size = "sm" }: { code: string; size?: "sm" |
     }
 
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       setCopied(true);
+      trackShare("clipboard", url);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: prompt
