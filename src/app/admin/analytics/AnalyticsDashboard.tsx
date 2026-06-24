@@ -473,7 +473,7 @@ export function AnalyticsDashboard() {
           icon={Users}
           label="DAU (azi)"
           value={fmt(data.today.dau)}
-          sub={`ieri: ${data.yesterday.dau} (${dauDelta >= 0 ? "+" : ""}${dauDelta})`}
+          sub={`ieri: ${fmt(data.yesterday.dau)} (${dauDelta >= 0 ? "+" : ""}${dauDelta})`}
           accent="#2563EB"
           sparkline={
             data.trendDau7d && data.trendDau7d.length > 0
@@ -1199,18 +1199,23 @@ function CompareCard({
  */
 function DerivedKpiPanel({ data }: { data: Summary }) {
   const totalViews = toNum(data.total.views);
-  const totalSessions = toNum(data.total.sessions ?? 0);
+  // 2026-06-24 — sesiuni REALE: `sessionsPerReferrer` e incrementat exact o dată
+  // per sesiune nouă (route.ts:365). Înainte citeam `total.sessions`, un câmp pe
+  // care route-ul nu-l scrie NICIODATĂ → „Total sesiuni / Bounce / Pagini/sesiune"
+  // erau mereu 0 (dashboardul mințea owner-ul). Sursa e aceeași cu „Growth funnel".
+  const totalSessions = sum(data.sessionsPerReferrer ?? {});
+  const totalNonBounces = sum(data.nonBouncesPerReferrer ?? {});
   const errorCount = sum(data.errors);
   const eventsTotal = sum(data.eventsTotal);
 
-  // Bounce-rate proxy: sesiuni cu exact 1 pageview / total sesiuni.
-  // Folosim eventsTotal aproximativ ca proxy pentru engaged sessions.
-  const bounceProxy =
+  // Bounce rate REAL: sesiuni cu un singur pageview / total sesiuni. O „non-bounce"
+  // e o sesiune cu 2+ pageview-uri (route.ts:367). Coerent cu tabelul Growth funnel.
+  const bounceRate =
     totalSessions > 0
-      ? Math.max(0, Math.min(100, Math.round(100 - (eventsTotal / totalSessions) * 100)))
+      ? Math.max(0, Math.min(100, Math.round((1 - totalNonBounces / totalSessions) * 100)))
       : 0;
 
-  // Average pages per session.
+  // Average pages per session (din sesiuni reale).
   const pagesPerSession = totalSessions > 0 ? (totalViews / totalSessions).toFixed(1) : "0";
 
   // Error-rate per 1000 pageviews — semnal de calitate frontend.
@@ -1221,9 +1226,10 @@ function DerivedKpiPanel({ data }: { data: Summary }) {
   const engagementScore =
     totalViews > 0 ? Math.round((eventsTotal / totalViews) * 100) : 0;
 
-  // Mobile share din date.total.mobile vs desktop.
-  const mobile = toNum(data.total.mobile ?? 0);
-  const desktop = toNum(data.total.desktop ?? 0);
+  // Mobile share din cheile REALE scrise de route (device_mobile/device_desktop).
+  // Înainte citea total.mobile/total.desktop (inexistente) → mereu 0%.
+  const mobile = toNum(data.total.device_mobile ?? 0);
+  const desktop = toNum(data.total.device_desktop ?? 0);
   const mobilePct = mobile + desktop > 0 ? Math.round((mobile / (mobile + desktop)) * 100) : 0;
 
   // Returning vs new — folosim stickiness DAU/MAU ca proxy (loyalty).
@@ -1239,7 +1245,7 @@ function DerivedKpiPanel({ data }: { data: Summary }) {
     totalViews > 0 ? Math.round((countyHits / totalViews) * 100) : 0;
 
   const kpis: Array<{ label: string; value: string | number; sub?: string; color: string }> = [
-    { label: "Bounce rate (proxy)", value: `${bounceProxy}%`, sub: "1-event sessions", color: "#DC2626" },
+    { label: "Bounce rate", value: `${bounceRate}%`, sub: "sesiuni cu 1 pagină", color: "#DC2626" },
     { label: "Pagini / sesiune", value: pagesPerSession, sub: "depth signal", color: "#7C3AED" },
     { label: "Engagement score", value: `${engagementScore}%`, sub: "events / view", color: "#0891B2" },
     { label: "Erori / 1000 views", value: errorRate1k, sub: "JS reliability", color: "#F59E0B" },
