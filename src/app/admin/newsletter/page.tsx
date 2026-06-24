@@ -114,27 +114,30 @@ export default async function NewsletterPage() {
 
   return (
     <div className="space-y-6">
-      {/* Resend free tier limitation — warning vizibil ca admin sa stie
-          ca blast-ul efectiv funcționeaza doar dupa verificare domeniu. */}
-      <div className="rounded-[var(--radius-md)] bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-4">
-        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
-          ⚠️ Resend free tier — limitare critica
-        </p>
-        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-          Pe tier free, Resend trimite DOAR la emails verificate ale contului.
-          Newsletter blast la abonati externi <strong>esueaza silent</strong> fara
-          verificare DNS. Ca sa trimiti la oricine, verifica domeniul civia.ro la{" "}
+      {/* 2026-06-24 — info Resend free-tier, dar pliat (details) ca să nu fie
+          un banner amber permanent care strigă la fiecare vizită (ethos
+          minimalist: scoatem clutter, păstrăm informația la un click). */}
+      <details className="group rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] border border-[var(--color-border)] px-3 py-2">
+        <summary className="cursor-pointer list-none text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors flex items-center gap-1.5">
+          <span aria-hidden="true">ℹ️</span>
+          Resend free tier — limitări la trimitere
+          <span className="ml-auto text-[10px] opacity-60 group-open:hidden">arată</span>
+        </summary>
+        <p className="mt-2 text-xs text-[var(--color-text-muted)] leading-relaxed">
+          Pe tier free, Resend trimite DOAR la emailuri verificate ale contului.
+          Blast-ul către abonați externi <strong>eșuează silent</strong> fără
+          verificare DNS. Ca să trimiți la oricine, verifică domeniul civia.ro la{" "}
           <a
             href="https://resend.com/domains"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline font-medium"
+            className="underline font-medium text-[var(--color-primary)]"
           >
             resend.com/domains
           </a>{" "}
           (SPF + DKIM + DMARC). Setup ~10 min.
         </p>
-      </div>
+      </details>
 
       {/* Stats — 4 acum: email, SMS, anonim public, total. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

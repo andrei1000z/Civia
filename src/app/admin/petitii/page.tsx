@@ -177,7 +177,9 @@ export default function AdminPetitiiPage() {
   };
 
   return (
-    <div className="container-narrow py-8 md:py-12">
+    // Layout-ul /admin oferă deja container-narrow + padding vertical;
+    // nu re-împachetăm (înainte: dublu container = conținut mai îngust + padding dublu).
+    <div>
       <header className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-[family-name:var(--font-sora)] text-3xl font-extrabold flex items-center gap-2">
