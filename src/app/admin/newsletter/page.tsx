@@ -21,6 +21,24 @@ interface SubscriberRow {
   createdAt: string;
 }
 
+/**
+ * 2026-06-24 — listUsers({perPage:1000}) plafona la 1000 conturi: orice abonat
+ * peste prag apărea cu email „(necunoscut)". Paginăm prin TOATE paginile Auth.
+ * Cap de siguranță 50 pagini (50k conturi) ca să nu buclăm la nesfârșit.
+ */
+async function listAllAuthUsers(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+): Promise<Array<{ id: string; email?: string; email_confirmed_at?: string }>> {
+  const out: Array<{ id: string; email?: string; email_confirmed_at?: string }> = [];
+  for (let page = 1; page <= 50; page++) {
+    const { data } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    const users = data?.users ?? [];
+    out.push(...users.map((u) => ({ id: u.id, email: u.email, email_confirmed_at: u.email_confirmed_at })));
+    if (users.length < 1000) break;
+  }
+  return out;
+}
+
 async function loadSubscribers(): Promise<SubscriberRow[]> {
   const admin = createSupabaseAdmin();
 
@@ -40,12 +58,10 @@ async function loadSubscribers(): Promise<SubscriberRow[]> {
       .select("id, email, confirmed_at, created_at, unsubscribed_at")
       .is("unsubscribed_at", null)
       .order("created_at", { ascending: false }),
-    admin.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(admin),
   ]);
 
-  const userById = new Map(
-    (usersPageRes.data?.users ?? []).map((u) => [u.id, u]),
-  );
+  const userById = new Map(usersPageRes.map((u) => [u.id, u]));
 
   const contRows: SubscriberRow[] = (profilesRes.data ?? []).map((p) => {
     const u = userById.get(p.id);

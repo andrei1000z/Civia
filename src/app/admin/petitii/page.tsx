@@ -62,6 +62,7 @@ interface FormState {
   category: string;
   county_code: string; // empty string = național
   ends_at: string;
+  status: "draft" | "active" | "closed" | "archived";
 }
 
 const EMPTY_FORM: FormState = {
@@ -76,6 +77,7 @@ const EMPTY_FORM: FormState = {
   category: "",
   county_code: "",
   ends_at: "",
+  status: "active",
 };
 
 function getDraftKey(editingId: string | null): string {
@@ -428,6 +430,7 @@ function PetitieForm({
         category: existing.category ?? "",
         county_code: existing.county_code ?? "",
         ends_at: existing.ends_at?.slice(0, 10) ?? "",
+        status: existing.status,
       }
     : { ...EMPTY_FORM, ...(seedData ?? {}) };
 
@@ -645,7 +648,10 @@ function PetitieForm({
         category: form.category.trim() || null,
         county_code: form.county_code.trim() || null,
         ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
-        status: "active" as const,
+        // 2026-06-24 — la EDITARE păstrăm statusul ales (înainte era hardcodat
+        // „active" → editarea unei petiții închise/arhivate o reactiva silent).
+        // La CREARE rămâne „active" (default-ul din EMPTY_FORM).
+        status: form.status,
       };
       const url = editingId ? `/api/admin/petitii/${editingId}` : "/api/admin/petitii";
       const method = editingId ? "PATCH" : "POST";
@@ -979,6 +985,23 @@ function PetitieForm({
                 ))}
               </select>
             </div>
+            {/* STATUS — doar la editare (petițiile noi sunt „active" implicit) */}
+            {editingId && (
+              <div>
+                <label htmlFor="p-status" className={labelCls}>Status</label>
+                <select
+                  id="p-status"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as FormState["status"] })}
+                  className={inputCls}
+                >
+                  <option value="draft">📝 Ciornă</option>
+                  <option value="active">🟢 Activă</option>
+                  <option value="closed">🔒 Închisă</option>
+                  <option value="archived">📦 Arhivată</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">

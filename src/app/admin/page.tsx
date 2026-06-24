@@ -7,11 +7,19 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   const admin = createSupabaseAdmin();
 
-  // ── Beginning of "today" in Bucharest local time, ISO for SQL filter ──
+  // ── Începutul zilei „azi" în Europe/Bucharest, ISO pentru filtru SQL ──
+  // 2026-06-24 — înainte: d.setHours(0,0,0,0) folosea fusul SERVERULUI (UTC pe
+  // Vercel) → „azi" începea la miezul nopții UTC, cu 2-3h mai târziu decât în RO,
+  // deci „+N azi" număra greșit între 00:00 și 03:00 ora RO.
   const todayStart = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
+    const now = new Date();
+    const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Bucharest" }).format(now);
+    const off = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Bucharest", timeZoneName: "longOffset",
+    }).formatToParts(now).find((p) => p.type === "timeZoneName")?.value ?? "GMT+02:00";
+    const m = off.match(/GMT([+-])(\d{2}):(\d{2})/);
+    const tz = m ? `${m[1]}${m[2]}:${m[3]}` : "+02:00";
+    return new Date(`${ymd}T00:00:00${tz}`).toISOString();
   })();
 
   const [
@@ -62,8 +70,8 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* 3 hero stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lc-stagger">
+      {/* hero stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lc-stagger">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const inner = (

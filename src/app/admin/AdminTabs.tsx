@@ -13,15 +13,19 @@ import {
   Mail,
   Sparkles,
   Users,
+  Inbox,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/sesizari", label: "Sesizări", icon: FileText, exact: false },
+  { href: "/admin/inbox", label: "Inbox", icon: Inbox, exact: false },
   { href: "/admin/petitii", label: "Petiții", icon: Megaphone, exact: false },
   { href: "/admin/proteste", label: "Proteste", icon: Flag, exact: false },
   { href: "/admin/intreruperi", label: "Întreruperi", icon: AlertTriangle, exact: false },
+  { href: "/admin/primarie", label: "Primărie", icon: Building2, exact: false },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquareText, exact: false },
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail, exact: false },
   { href: "/admin/categorii-noi", label: "Categorii AI", icon: Sparkles, exact: false },
