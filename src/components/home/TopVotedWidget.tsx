@@ -1,11 +1,9 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MapPin, ArrowRight, Send } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI } from "@/lib/constants";
 import { TimeAgo } from "@/components/ui/TimeAgo";
+import { getRecentSesizariCached } from "@/lib/cached-queries";
 
 interface Row {
   id: string;
@@ -24,53 +22,15 @@ interface Row {
  * eliminată; acum arată cele mai RECENTE sesizări active („Ce semnalează
  * cetățenii acum"). Numele fișierului păstrat pentru a minimiza churn-ul de
  * importuri; rolul e „recent".
+ *
+ * 2026-06-24 — Server Component: datele vin din getRecentSesizariCached (incluse
+ * în HTML-ul ISR al homepage-ului). Înainte era „use client" + fetch în useEffect
+ * → waterfall + skeleton pe „/" (cale fierbinte, 53% mobil) la fiecare încărcare.
  */
-export function TopVotedWidget() {
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+export async function TopVotedWidget() {
+  const rows = (await getRecentSesizariCached(5)) as Row[];
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    const timeoutId = setTimeout(() => ctrl.abort(), 6000);
-
-    fetch("/api/sesizari/recent?limit=5", { signal: ctrl.signal })
-      .then((r) => r.json())
-      .then((j) => setRows(j.data ?? []))
-      .catch(() => setRows([]))
-      .finally(() => {
-        clearTimeout(timeoutId);
-        setLoading(false);
-      });
-
-    return () => {
-      clearTimeout(timeoutId);
-      ctrl.abort();
-    };
-  }, []);
-
-  const isEmpty = !loading && rows.length === 0;
-
-  if (loading) {
-    return (
-      <div className="space-y-3" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl animate-pulse"
-          >
-            <div className="shrink-0 w-12 h-12 rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" />
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="h-3 w-24 rounded bg-[var(--color-surface-2)]" />
-              <div className="h-4 w-3/4 rounded bg-[var(--color-surface-2)]" />
-              <div className="h-3 w-1/2 rounded bg-[var(--color-surface-2)]" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (isEmpty) {
+  if (rows.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[220px] p-6 bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] rounded-3xl text-center">
         <div>
