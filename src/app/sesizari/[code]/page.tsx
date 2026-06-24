@@ -317,10 +317,9 @@ export default async function SesizareDetailPage({
             {/* Action row: butoane standardizate (h-10 cu wrap) in ordine
                 de prioritate vizuala:
                   1. „Trimite si tu" (primary highlight) - h-11
-                  2. „Urmaresti / Urmareste" (toggle)
+                  2. „Distribuie" (accent) — suprafata de viralitate, urcata 2026-06-24
                   3. „Ai vazut progres? Raporteaza" (amber)
-                  4. „S-a rezolvat" (DOAR autor)
-                  5. „Distribuie" (last, neutral) */}
+                  4. „S-a rezolvat" (DOAR autor) */}
             <div className="flex flex-wrap items-stretch gap-2">
               {/* 2026-05-26 — pe rezolvat ascundem „Trimite și tu" +
                   „Urmărești" — nu mai are sens să trimiți / urmărești o
@@ -340,6 +339,16 @@ export default async function SesizareDetailPage({
                   variant="primary"
                 />
               )}
+              {/* 2026-06-24 — share-ul urcat pe poziția 2 (era ultimul, gri):
+                  e suprafața pe care vrem viralitate maximă (linkul partajabil).
+                  variant="accent" = tentă de primary, nu gri-muted. */}
+              <ShareMenu
+                url={`${SITE_URL}/sesizari/${sesizare.code}`}
+                title={sesizare.titlu}
+                message={`Am trimis o sesizare pe Civia: „${sesizare.titlu}". Trimite și tu — durează 90 de secunde și pune presiune pe autorități să rezolve 👇`}
+                size="lg"
+                variant="accent"
+              />
               {/* 2026-05-26 — „Ai văzut progres? Raportează" ascuns pe
                   rezolvat. Pentru impact retroactiv (problema revine),
                   cetățeanul poate folosi „Distribuie" + comentarii. */}
@@ -353,12 +362,6 @@ export default async function SesizareDetailPage({
                 code={sesizare.code}
                 status={sesizare.status}
                 isAuthor={isAuthor}
-              />
-              <ShareMenu
-                url={`${SITE_URL}/sesizari/${sesizare.code}`}
-                title={sesizare.titlu}
-                message={`Am trimis o sesizare pe Civia: „${sesizare.titlu}". Trimite și tu — durează 90 de secunde și pune presiune pe autorități să rezolve 👇`}
-                size="lg"
               />
               {/* 2026-06-12 — utilitarele autorului (reamintire + șterge) stau
                   pe ACELAȘI rând, cu aceeași mărime/stil ca restul acțiunilor

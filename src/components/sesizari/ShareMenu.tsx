@@ -16,9 +16,12 @@ interface Props {
    *  tu:". Dacă lipsește, cade pe „{title} - Civia". */
   message?: string;
   size?: "sm" | "md" | "lg";
+  /** „accent" = trigger evidențiat (tentă de primary) pentru suprafețele unde
+   *  vrem viralitate (pagina publică a sesizării). „muted" (default) = gri. */
+  variant?: "muted" | "accent";
 }
 
-export function ShareMenu({ url, title, message, size = "sm" }: Props) {
+export function ShareMenu({ url, title, message, size = "sm", variant = "muted" }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -145,7 +148,9 @@ export function ShareMenu({ url, title, message, size = "sm" }: Props) {
             "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-xs)] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]",
             px,
             textSize,
-            "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
+            variant === "accent"
+              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/15"
+              : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
           )}
           aria-label="Distribuie"
           aria-haspopup="menu"

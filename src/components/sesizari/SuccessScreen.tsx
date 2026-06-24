@@ -138,6 +138,14 @@ export function SuccessScreen({
         </div>
       )}
 
+      {/* 2026-06-24 — share-ul URCĂ deasupra butoanelor de navigație: e momentul
+          de intenție maximă (mândrie civică, sprite de celebrare deja redat).
+          Înainte era al 3-lea bloc, sub fold pe mobil (36% scroll la final) →
+          ~0 share. Navigația devine secundară, sub share. */}
+      {autoSendStatus === "sent" && (
+        <SuccessShareSection code={code} title={emailInput.titlu} className="mb-6" />
+      )}
+
       <div className="flex flex-col gap-3">
         <Button
           variant="primary"
@@ -156,8 +164,6 @@ export function SuccessScreen({
           Altă sesizare
         </Button>
       </div>
-
-      <SuccessShareSection code={code} title={emailInput.titlu} className="mt-8" />
 
       {/* Chaining sesizare→petiție (Faza 1) — a doua acțiune la intenție maximă. */}
       <RelatedPetitiiCard
