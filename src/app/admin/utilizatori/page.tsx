@@ -34,21 +34,19 @@ export default async function AdminUtilizatoriPage({
     ? `full_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%,display_name.ilike.%${safeQ}%`
     : null;
 
-  // Total count
+  // 2026-06-24 — count + listă sunt independente → le rulăm în paralel
+  // (înainte: 2 round-trip-uri Supabase secvențiale).
   let countQuery = admin.from("profiles").select("*", { count: "exact", head: true });
   if (orFilter) countQuery = countQuery.or(orFilter);
-  const { count: total } = await countQuery;
 
-  // Fetch profiles
   let query = admin
     .from("profiles")
     .select("id, email, full_name, display_name, role, created_at")
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1);
-
   if (orFilter) query = query.or(orFilter);
 
-  const { data: profiles } = await query;
+  const [{ count: total }, { data: profiles }] = await Promise.all([countQuery, query]);
 
   // Per-user sesizari count (batch)
   const ids = (profiles ?? []).map((p) => p.id);

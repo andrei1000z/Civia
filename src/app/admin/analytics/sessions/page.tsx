@@ -165,7 +165,8 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="container-narrow py-8 md:py-12">
+    // Layout-ul /admin oferă deja container-narrow + padding (fără dublu wrap).
+    <div>
       <header className="mb-6">
         <Link
           href="/admin/analytics"
