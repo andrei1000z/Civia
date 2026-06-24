@@ -625,7 +625,7 @@ export function SesizariPublice() {
                       <MessageSquare size={13} aria-hidden="true" />
                       <span className="font-medium tabular-nums">{s.nr_comentarii}</span>
                     </span>
-                    <ShareButton code={s.code} size="sm" />
+                    <ShareButton code={s.code} title={s.titlu} size="sm" />
                   </div>
                 </div>
               </Link>
