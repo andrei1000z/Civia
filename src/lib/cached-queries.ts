@@ -57,6 +57,25 @@ export const getSesizariStatsCached = unstable_cache(
   { revalidate: 1800, tags: ["sesizari-stats"] }
 );
 
+/**
+ * Cele mai recente sesizări aprobate — homepage „Ce semnalează cetățenii acum".
+ * 2026-06-24 — înlocuiește fetch-ul client-side din TopVotedWidget (waterfall pe
+ * „/" după hidratare) cu date randate pe server (incluse în HTML-ul ISR).
+ */
+export const getRecentSesizariCached = unstable_cache(
+  async (limit = 5) => {
+    const admin = createSupabaseAdmin();
+    const { data } = await admin
+      .from("sesizari_feed")
+      .select("id,code,titlu,tip,status,sector,locatie,nr_comentarii,created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return data ?? [];
+  },
+  ["sesizari-recent"],
+  { revalidate: 300, tags: ["sesizari-stats"] }
+);
+
 /** County-level sesizari counts (sum per county) — used on /impact + county pages */
 export const getSesizariByCountyCached = unstable_cache(
   async () => {

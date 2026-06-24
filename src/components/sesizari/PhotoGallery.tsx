@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Image as ImgIcon, Download } from "lucide-react";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { downloadImageAsJpeg } from "@/lib/image-download";
@@ -51,17 +52,18 @@ export function PhotoGallery({ urls, title = "Foto" }: Props) {
             >
               <span className="sr-only">Mărește imaginea</span>
             </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {/* 2026-06-24 — thumbnail object-cover (umple celula pătrată, grilă
-                curată) indiferent de orientarea pozei. Înainte: aspect-[3/4] +
-                object-contain → pozele LANDSCAPE (majoritatea, ex. stradă) stăteau
-                mici cu mult spațiu gol/întunecat. Fotografia INTEGRALĂ (necropată)
-                rămâne vizibilă în lightbox la click — deci nu se pierde contextul. */}
-            <img
+            {/* 2026-06-24 — next/image (înlocuiește <img> brut): optimizare
+                AVIF/WebP + resize la dimensiunea reală a celulei (~jumătate de
+                lățime pe mobil). Înainte se descărca JPEG-ul full-res din Storage
+                = megabytes inutili pe 4g (53% din trafic). object-cover umple
+                celula pătrată indiferent de orientare; lightbox-ul deschide tot
+                full-res la click, deci nu se pierde contextul. */}
+            <Image
               src={url}
               alt={`${title} ${i + 1}`}
-              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform pointer-events-none"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 50vw, 33vw"
+              className="object-cover group-hover:scale-[1.03] transition-transform pointer-events-none"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
               <span className="text-white opacity-0 group-hover:opacity-100 text-xs font-medium bg-black/60 rounded-full px-3 py-1 transition-opacity">
