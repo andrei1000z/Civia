@@ -4,6 +4,8 @@ import { SesizariPublice } from "@/components/sesizari/SesizariPublice";
 import { CollectionPageJsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/constants";
 import { PageHero, HERO_GRADIENT } from "@/components/layout/PageHero";
+import { listSesizari } from "@/lib/sesizari/repository";
+import { getSesizariStatsCached } from "@/lib/cached-queries";
 
 export const metadata: Metadata = {
   title: "Vezi ce semnalează cetățenii",
@@ -12,7 +14,19 @@ export const metadata: Metadata = {
   alternates: { canonical: "/sesizari-publice" },
 };
 
-export default function SesizariPublicePage() {
+// 2026-06-24 — prima pagină + statisticile sunt randate pe server (carduri reale
+// la primul paint, fără skeleton + waterfall client pe mobil/4g). Dinamic pentru
+// că listSesizari anonimizează autorii în funcție de cine vizualizează (per-viewer);
+// datele oricum se aduceau per-request prin /api/sesizari, deci nu pierdem cache —
+// doar eliminăm un round-trip client.
+export const dynamic = "force-dynamic";
+
+export default async function SesizariPublicePage() {
+  const [initialRows, stats] = await Promise.all([
+    listSesizari({ limit: 24 }).catch(() => []),
+    getSesizariStatsCached().catch(() => null),
+  ]);
+
   return (
     <div className="container-narrow py-8 md:py-12">
       <CollectionPageJsonLd
@@ -35,7 +49,11 @@ export default function SesizariPublicePage() {
         tagline="Numere mari schimbă prioritatea la primărie."
       />
 
-      <SesizariPublice />
+      <SesizariPublice
+        initialRows={initialRows}
+        initialTotalCount={stats?.total ?? null}
+        initialResolvedCount={stats?.rezolvate ?? null}
+      />
     </div>
   );
 }

@@ -40,12 +40,22 @@ function readableTextColor(hex: string | undefined): string {
   return lum > 150 ? "#111827" : "#ffffff";
 }
 
-export function SesizariPublice() {
+export function SesizariPublice({
+  initialRows,
+  initialTotalCount = null,
+  initialResolvedCount = null,
+}: {
+  /** 2026-06-24 — prima pagină randată pe server (page.tsx) ca să apară carduri
+   *  reale la primul paint pe mobil/4g, fără skeleton + waterfall client. */
+  initialRows?: SesizareFeedRow[];
+  initialTotalCount?: number | null;
+  initialResolvedCount?: number | null;
+} = {}) {
   const county = useCountyOptional();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [rows, setRows] = useState<SesizareFeedRow[]>([]);
+  const [rows, setRows] = useState<SesizareFeedRow[]>(initialRows ?? []);
   // Read initial filter state from URL — so shared links carry filters
   const [filterTip, setFilterTip] = useState<string>(
     () => searchParams.get("tip") || "toate",
@@ -65,7 +75,7 @@ export function SesizariPublice() {
   const [view, setView] = useState<ViewMode>(
     () => (searchParams.get("view") === "map" ? "map" : "list"),
   );
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState((initialRows?.length ?? PAGE_SIZE) >= PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   // Filtre collapsed default. Deschise automat daca user are filtru activ
   // (ex: a venit din /sesizari?tip=parcare → filtrul e vizibil instant).
@@ -101,7 +111,12 @@ export function SesizariPublice() {
 
   // "loading" is derived: true when last-fetched key differs from current filter key
   const fetchKey = `${filterTip}|${filterStatus}|${sort}|${effectiveCounty ?? "all"}`;
-  const [lastFetchedKey, setLastFetchedKey] = useState<string | null>(null);
+  // 2026-06-24 — dacă avem date SSR și suntem pe vederea default (fără filtru
+  // activ), marcăm cheia ca deja-adusă → fetch-ul de pe mount sare (vezi guard).
+  // Cu filtru activ din URL, lăsăm null ca să aducem datele filtrate.
+  const [lastFetchedKey, setLastFetchedKey] = useState<string | null>(
+    () => (initialRows != null && !hasActiveFilter ? fetchKey : null),
+  );
   // audit fix: error-state distinct — fără el, eșecul de rețea cădea pe
   // empty-state („Fii primul care semnalează"), confundând eroarea cu zero date.
   const [fetchError, setFetchError] = useState(false);
@@ -109,6 +124,10 @@ export function SesizariPublice() {
 
   // Fetch from API
   useEffect(() => {
+    // 2026-06-24 — sărim fetch-ul dacă deja avem datele pentru cheia curentă
+    // (seed SSR pe vederea default, sau un fetch anterior). Filtrele schimbă
+    // fetchKey → guard-ul nu mai prinde → aduce datele filtrate normal.
+    if (lastFetchedKey === fetchKey) return;
     const controller = new AbortController();
     const params = new URLSearchParams();
     if (filterTip !== "toate") params.set("tip", filterTip);
@@ -149,10 +168,13 @@ export function SesizariPublice() {
   // Total platform-wide count (toate aprobate, NU filtrate). User a cerut
   // să apară numărul global de sesizări făcute, nu cele 20 paginate. Sursa:
   // /api/v1/stats (cached 15 min). Fallback la rows.length dacă API eșuează.
-  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [totalCount, setTotalCount] = useState<number | null>(initialTotalCount);
   // roadmap F0 — social proof: nr. rezolvate (dovada că platforma funcționează).
-  const [resolvedCount, setResolvedCount] = useState<number | null>(null);
+  const [resolvedCount, setResolvedCount] = useState<number | null>(initialResolvedCount);
   useEffect(() => {
+    // 2026-06-24 — sărim al doilea fetch dacă statisticile au venit din SSR
+    // (eliminăm al doilea round-trip client pe load-ul default).
+    if (initialTotalCount != null) return;
     fetch("/api/v1/stats")
       .then((r) => r.json())
       .then((j) => {
@@ -160,7 +182,7 @@ export function SesizariPublice() {
         if (typeof j?.data?.resolved === "number") setResolvedCount(j.data.resolved);
       })
       .catch(() => { /* silent — fallback la rows.length */ });
-  }, []);
+  }, [initialTotalCount]);
   useEffect(() => {
     // Realtime OPTIONAL — daca esueaza (rate limit, free tier
     // concurrency), pagina functioneaza fara live updates. NU lasam un
