@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Download, ImageOff, ExternalLink, RotateCw, Loader2 } from "lucide-react";
 import { downloadImageAsJpeg } from "@/lib/image-download";
@@ -61,8 +62,9 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose, unoptimized = f
 
     // 2026-06-19 (audit #14) — mută focus ÎN dialog (altfel rămâne pe pagina de
     // dedesubt, ascunsă de overlay — WCAG 2.4.3) + capcană de Tab.
+    // preventScroll: focus pe overlay-ul fixed nu trebuie să sară pagina în top.
     const root = dialogRef.current;
-    root?.focus();
+    root?.focus({ preventScroll: true });
 
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") { onClose(); return; }
@@ -102,10 +104,19 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose, unoptimized = f
   }, []);
 
   if (urls.length === 0) return null;
+  // SSR-safe: lightbox-ul se deschide doar pe client (după click), deci
+  // document există; guard defensiv pentru orice randare server.
+  if (typeof document === "undefined") return null;
 
   const currentUrl = urls[index]!;
 
-  return (
+  // 2026-06-28 — PORTAL la <body>. Galeria foto e randată în interiorul unei
+  // secțiuni `.lc-glass-2`, care are `backdrop-filter`. Un backdrop-filter
+  // (ca și `transform`/`filter`) creează un containing-block pentru descendenții
+  // `position: fixed` → overlay-ul nu se mai raporta la viewport, ci la cardul de
+  // sticlă: se deschidea în afara ecranului, bloca scroll-ul și „nu apărea nimic".
+  // Portarea la body scoate overlay-ul din containing-block-ul de sticlă.
+  const overlay = (
     <div
       ref={dialogRef}
       tabIndex={-1}
@@ -252,4 +263,6 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose, unoptimized = f
       )}
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }
