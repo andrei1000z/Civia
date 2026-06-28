@@ -81,13 +81,24 @@ export function ImageLightbox({ urls, initialIndex = 0, onClose, unoptimized = f
       }
     };
     document.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
       previouslyFocusedRef.current?.focus?.();
     };
   }, [prev, next, onClose]);
+
+  // Scroll-lock + restaurare poziție (mount-only, deci NU se reia când `onClose`
+  // se recreează la fiecare render al părintelui). `overflow:hidden` poate reseta
+  // scrollY la 0; salvăm înainte și restaurăm la închidere ca să nu rămână userul
+  // în top după ce închide galeria.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   // Focus management la eroare: când apare cardul, focus pe „Reîncearcă"
   // (descoperibil + în capcana de Tab); când îl părăsim (retry/navigare), mută
