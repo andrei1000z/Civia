@@ -80,6 +80,10 @@ export function AftermathGallery({ images }: Props) {
           urls={urls}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
+          // URL-uri externe de presă (CDN-uri terțe) — la fel ca thumbnail-urile
+          // raw de mai sus; optimizer-ul Next ar face fetch server-side și unele
+          // CDN-uri dau 403 la hotlinking. Le ținem raw, dar tot cu spinner+onError.
+          unoptimized
         />
       )}
     </>
