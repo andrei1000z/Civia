@@ -39,7 +39,7 @@
  *      normalizează oricum www.→apex defensiv, dar setează DIRECT apex în env.
  */
 
-const WORKER_VERSION = "4.1.0";
+const WORKER_VERSION = "4.1.1";
 
 // Limite atașamente — protejează R2 cost + Vercel function timeout.
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB per file
@@ -241,8 +241,13 @@ export default {
       // Authorization (schimbare de host) → /api/inbox/reply întoarce 401
       // „MISSING" și răspunsurile autorităților NU mai sunt procesate (status
       // blocat pe „trimis"). Forțăm host-ul fără www. (apex), care răspunde direct,
-      // fără redirect → Authorization păstrat. `redirect: error` ca să prindem
-      // zgomotos orice redirect viitor în loc de un 401 tăcut.
+      // fără redirect → Authorization păstrat.
+      // 6/29 ROOT CAUSE NOU (inbox mort tăcut din 06-18, v4.1.0): `redirect: "error"`
+      // NU e suportat de fetch-ul din Cloudflare Workers — DOAR "follow"/"manual".
+      // "error" arunca „Invalid redirect value" → fetch-ul pica ÎNAINTE să plece
+      // (webhook_status 0) → niciun răspuns procesat. Folosim "manual": un eventual
+      // 3xx vine ca status (prins zgomotos mai jos în `retriable`), fără să urmeze
+      // redirectul (deci fără pierderea Authorization). Apex-ul oricum nu redirect-ează.
       let webhookUrl = env.WEBHOOK_URL;
       try {
         const u = new URL(env.WEBHOOK_URL);
@@ -257,7 +262,7 @@ export default {
             "User-Agent": `civia-inbox-worker/${WORKER_VERSION}`,
           },
           body: JSON.stringify(payload),
-          redirect: "error",
+          redirect: "manual",
         });
         webhookStatus = res.status;
         try { webhookBody = (await res.text()).slice(0, 500); } catch {}
@@ -293,7 +298,10 @@ export default {
       // acceptăm, fără retry inutil.
       const retriable =
         webhookStatus === 0 || webhookStatus === 401 || webhookStatus === 403 ||
-        webhookStatus === 408 || webhookStatus === 429 || webhookStatus >= 500;
+        webhookStatus === 408 || webhookStatus === 429 || webhookStatus >= 500 ||
+        // 3xx = redirect neașteptat (config WEBHOOK_URL greșit) → retry zgomotos,
+        // nu accepta+arunca tăcut. Cu redirect:"manual" un 3xx ajunge aici ca status.
+        (webhookStatus >= 300 && webhookStatus < 400);
       if (retriable) {
         try { message.setReject(`Civia inbox webhook ${webhookStatus || "unreachable"} — retry later`); } catch {}
         return;

@@ -10,7 +10,7 @@ sesizarea corectă + push notification pentru cetățean.
 2. Copy-paste `email-handler.js` integral
 3. **Save and Deploy**
 4. Verifică deploy: `https://civia-inbox-handler.musateduardandrei10.workers.dev/`
-   → trebuie să răspundă `Civia Inbox Email Worker v4.1.0 — OK`
+   → trebuie să răspundă `Civia Inbox Email Worker v4.1.1 — OK`
 
 ## Bindings (Settings → Bindings)
 
@@ -94,6 +94,7 @@ Worker dropulește înainte de webhook (NU mai ajung la /api/inbox/reply):
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.1.1 | 2026-06-29 | **Fix CRITICAL inbox mort tăcut (din 06-18)**: `redirect: "error"` din v4.1.0 NU e suportat de fetch-ul Cloudflare Workers (doar `follow`/`manual`) → fetch-ul către `/api/inbox/reply` arunca „Invalid redirect value" ÎNAINTE să plece (`webhook_status: 0`) → ZERO răspunsuri procesate, toate sesizările blocate pe „trimis". Schimbat în `redirect: "manual"` + 3xx adăugat la `retriable` (un redirect neașteptat pică zgomotos, fără să urmeze redirectul → Authorization păstrat). |
 | v4.1.0 | 2026-06-17 | **Fix webhook 401**: normalizează `www.`→apex înainte de fetch (apex e canonical de la flip-ul Play Store; `www` 307→apex pierdea header-ul Authorization → inbox mort tăcut din 06-12). `redirect: error` (redirect viitor pică zgomotos). `message.setReject` pe eșec retriabil (0/401/403/408/429/5xx) → autoritatea reîncearcă în loc să pierdem tăcut răspunsul. |
 | v4.0.0 | 2026-05-27 | R2 attachment upload (PDF/DOCX/imagini → CIVIA_INBOX_R2 bucket) cu key `attachments/{date}/{uuid}-{filename}`. Payload include `r2_key` per attachment. Backend AI extraction (unpdf, Gemini Vision, mammoth) îmbogățește body înainte de classifyReply. |
 | v3.1.0 | 2026-05-27 | `ctx.waitUntil()` fire-and-forget (fix P99 wall time 10s → <500ms); plus-addressing Reply-To în send-via-civia |
