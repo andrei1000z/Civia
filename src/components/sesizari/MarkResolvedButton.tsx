@@ -94,8 +94,13 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
         variant="primary"
         size="md"
         leftIcon={<CheckCircle2 size={16} aria-hidden="true" />}
+        // Label scurt (eticheta veche „S-a rezolvat — marchează ca rezolvată" era
+        // redundantă ȘI depășea lățimea pe mobil → se tăia în dreapta, fiindcă
+        // Button are `whitespace-nowrap`). whitespace-normal = plasă de siguranță:
+        // dacă vreodată e strâmt, textul se rupe în loc să se taie.
+        className="whitespace-normal text-center leading-tight"
       >
-        S-a rezolvat — marchează ca rezolvată
+        Marchează ca rezolvată
       </Button>
       {error && !open && (
         <p role="alert" className="text-xs text-red-600 mt-1">{error}</p>
@@ -103,7 +108,7 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
 
       {open && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto animate-fade-in"
           onClick={() => setOpen(false)}
           role="presentation"
         >
@@ -112,7 +117,7 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="resolve-modal-title"
-            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
+            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto animate-modal-pop"
           >
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-5 relative">
               <button
