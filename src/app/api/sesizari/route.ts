@@ -128,7 +128,10 @@ export async function POST(req: Request) {
   const supabase = await createSupabaseServer();
   const { data: { user: rlUser } } = await supabase.auth.getUser();
   const rlKey = `sesizari-create:${identityKey(rlUser?.id ?? null, ip)}`;
-  const rl = await rateLimitAsync(rlKey, { limit: 5, windowMs: 10 * 60_000 });
+  // 2026-06-29 — anonimii sunt mai stricți (3 vs 5 / 10 min): abuzul de duplicate
+  // vine de la submisii anonime fără cont. Dedup-ul de mai jos prinde clonele
+  // exacte; asta e doar backstop-ul coarse pe volum.
+  const rl = await rateLimitAsync(rlKey, { limit: rlUser ? 5 : 3, windowMs: 10 * 60_000 });
   if (!rl.success) {
     return NextResponse.json(
       { error: "Prea multe sesizări create. Încearcă în 10 min." },
@@ -317,6 +320,42 @@ export async function POST(req: Request) {
         },
         { status: 400 },
       );
+    }
+
+    // 2026-06-29 — DEDUP HARD-BLOCK la trimitere. Un singur om a postat 3 sesizări
+    // „amenajare parcare" aproape identice la aceeași adresă în 7 min (2 clone la
+    // virgulă, nume diferite, anonim). Rate-limit-ul nu prinde 2-3 submisii, iar
+    // dedup-ul era doar advisory (ignorabil). Aici blocăm re-trimiterea unei
+    // sesizări aproape-identice pe bază NEUTRĂ (același tip + aceeași zonă ≤150m +
+    // text foarte similar, SAU descriere clonă oriunde). Permite UNA, blochează
+    // clonele → cetățeanul e îndrumat să susțină sesizarea existentă. Best-effort:
+    // dacă query-ul pică, NU blocăm (fail-open) ca să nu pierdem o sesizare reală.
+    try {
+      const { createSupabaseAdmin } = await import("@/lib/supabase/admin");
+      const { findDuplicate } = await import("@/lib/sesizari/dedup");
+      const since = new Date(Date.now() - 14 * 24 * 60 * 60_000).toISOString();
+      const { data: recent } = await createSupabaseAdmin()
+        .from("sesizari")
+        .select("code, lat, lng, titlu, descriere")
+        .eq("tip", parsed.tip)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(80);
+      const dupCode = findDuplicate(
+        { lat: finalLat, lng: finalLng, titlu: polished.titlu, descriere: polished.descriere },
+        (recent ?? []) as { code: string; lat: number | null; lng: number | null; titlu: string | null; descriere: string | null }[],
+      );
+      if (dupCode) {
+        return NextResponse.json(
+          {
+            error: `Există deja o sesizare aproape identică pentru acest loc (#${dupCode}). În loc să creezi una nouă, susține-o pe aceea — o sesizare cu mai multe semnături cântărește mai mult la autorități decât mai multe duplicate.`,
+            duplicateOf: dupCode,
+          },
+          { status: 409 },
+        );
+      }
+    } catch (dupErr) {
+      Sentry.captureException(dupErr, { tags: { kind: "dedup_check_failed" } });
     }
 
     // Defense-in-depth: sanitize formal_text de claims subjective inainte
