@@ -245,7 +245,7 @@ export function SignSesizareButton({
 
       {open && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto animate-fade-in"
           onClick={handleClose}
           role="presentation"
         >
@@ -254,7 +254,7 @@ export function SignSesizareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="sign-modal-title"
-            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 overflow-hidden animate-modal-pop flex flex-col max-h-[calc(100dvh-4rem)]"
+            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto overflow-hidden animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)]"
           >
             <header className="shrink-0 bg-gradient-to-r from-[var(--color-secondary)] to-emerald-700 text-white p-5 relative">
               <button
@@ -452,7 +452,7 @@ export function SignSesizareButton({
           formal_text cu nume + adresa substituite real (compute server-side). */}
       {showPreview && previewData && (
         <div
-          className="fixed inset-0 z-[calc(var(--z-modal)+1)] bg-black/60 backdrop-blur-md flex items-start md:items-center justify-center p-2 md:p-4 overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[calc(var(--z-modal)+1)] bg-black/60 backdrop-blur-md flex items-start justify-center p-2 md:p-4 overflow-y-auto animate-fade-in"
           onClick={() => setShowPreview(false)}
           role="presentation"
         >
@@ -461,7 +461,7 @@ export function SignSesizareButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cosign-preview-title"
-            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-4 md:my-8 animate-modal-pop flex flex-col max-h-[calc(100dvh-4rem)]"
+            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-auto animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)]"
           >
             {/* Header — gradient cu eyebrow + titlu + close */}
             <header className="shrink-0 relative bg-gradient-to-br from-[var(--color-secondary)] via-emerald-700 to-emerald-800 text-white px-5 md:px-6 py-5">
