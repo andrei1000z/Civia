@@ -28,7 +28,10 @@ export function ShareMenu({ url, title, message, size = "sm", variant = "muted" 
   // Direction smart: cand butonul e in jumatatea de sus a viewport-ului
   // deschidem in jos, altfel in sus. Inainte era hard-coded „bottom-full"
   // care taia meniul cand butonul era langa top (pagina sesizare detail).
-  const [direction, setDirection] = useState<"up" | "down">("up");
+  const [direction, setDirection] = useState<"up" | "down">("down");
+  // Înălțimea max calculată la deschidere (spațiul real disponibil) → meniul nu
+  // mai e niciodată „tăiat", ci derulează intern dacă nu încape.
+  const [menuMaxH, setMenuMaxH] = useState<number>();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -134,13 +137,21 @@ export function ShareMenu({ url, title, message, size = "sm", variant = "muted" 
               const shared = await tryNativeShare();
               if (shared) return;
             }
-            // Smart direction: meniul are ~340px inaltime cu toate optiunile.
-            // Daca am loc dedesubt → deschide in jos. Daca nu → in sus.
+            // Direcție + înălțime smart, conștiente de navbar. Navbar-ul e `fixed`
+            // (z-nav, ~64px) — scădem un inset ca meniul să NU se deschidă în
+            // spatele lui (cauza „tăiat mâncat": primele opțiuni dispăreau sub
+            // navbar). Alegem direcția cu mai mult loc REAL și plafonăm înălțimea
+            // la spațiul disponibil → scroll intern dacă nu încape, niciodată tăiat.
             if (!open && triggerRef.current) {
               const rect = triggerRef.current.getBoundingClientRect();
-              const spaceBelow = window.innerHeight - rect.bottom;
-              const spaceAbove = rect.top;
-              setDirection(spaceBelow >= 340 || spaceBelow > spaceAbove ? "down" : "up");
+              const NAVBAR_INSET = 76;
+              const EDGE = 12;
+              const GAP = 8;
+              const roomBelow = window.innerHeight - rect.bottom - GAP - EDGE;
+              const roomAbove = rect.top - NAVBAR_INSET - GAP;
+              const dir = roomBelow >= roomAbove ? "down" : "up";
+              setDirection(dir);
+              setMenuMaxH(Math.max(200, Math.floor(dir === "down" ? roomBelow : roomAbove)));
             }
             setOpen(!open);
           }}
@@ -163,10 +174,12 @@ export function ShareMenu({ url, title, message, size = "sm", variant = "muted" 
         {open && (
           <div
             role="menu"
+            style={menuMaxH ? { maxHeight: menuMaxH } : undefined}
             // lc-nav-glass: același limbaj „liquid glass" ca meniurile din navbar
             // (Explorează / notificări) — un singur stil de meniu plutitor în app.
+            // z peste navbar (z-nav=50) + scroll intern plafonat → nu mai e tăiat.
             className={cn(
-              "absolute right-0 w-56 lc-nav-glass rounded-2xl overflow-hidden z-50",
+              "absolute right-0 w-56 lc-nav-glass rounded-2xl overflow-y-auto overscroll-contain z-[var(--z-modal)]",
               direction === "up" ? "bottom-full mb-2" : "top-full mt-2",
             )}>
             <a
