@@ -209,7 +209,7 @@ export default async function SesizareDetailPage({
                 </Badge>
                 {sesizare.sector && <Badge variant="neutral">{sesizare.sector}</Badge>}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
                   style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}

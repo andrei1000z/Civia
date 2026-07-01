@@ -568,27 +568,33 @@ h4 { font-weight: 500; }
 /* Custom scrollbar — subtle, theme-aware. Track stays transparent
    so it disappears in screenshots; thumb uses border tone with
    slightly darker hover accent. Firefox uses scrollbar-color (CSS
-   standard); WebKit uses ::-webkit-scrollbar-* pseudo-elements. */
-html {
-  scrollbar-color: var(--color-border) transparent;
-  scrollbar-width: thin;
-}
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-  background-clip: padding-box;
+   standard); WebKit uses ::-webkit-scrollbar-* pseudo-elements.
+   2026-07-01 — DOAR pe desktop (`pointer: fine`). Pe mobil/touch, stilizarea
+   `::-webkit-scrollbar` transforma overlay-ul nativ (auto-hide) într-o bară
+   CLASICĂ persistentă, mereu vizibilă pe marginea din dreapta → „scrollbar urât
+   în carduri" + acoperea marginea din dreapta a textului. Pe touch lăsăm nativul. */
+@media (pointer: fine) {
+  html {
+    scrollbar-color: var(--color-border) transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+    background-clip: padding-box;
+  }
 }
 
 /* Selection color — albastru-civic în loc de albastru-OS-default. Subtil. */
