@@ -7,7 +7,6 @@ import {
   getTimeline,
   getComments,
   getSimilarSesizari,
-  getNrInregistrareForAuthor,
   getCosignersCount,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -136,13 +135,6 @@ export default async function SesizareDetailPage({
     ? sesizare.user_id === user.id || sesizare.author_email === user.email
     : false;
 
-  // 5/23/2026 — nr_inregistrare e privat (unic per sesizare). Fetch separat
-  // doar pentru autor, ca să nu fie inclus în RSC payload pentru viewerii public.
-  const authorNrInregistrare =
-    isAuthor && user
-      ? await getNrInregistrareForAuthor(sesizare.id, user.id)
-      : null;
-
   // Poză "before" pentru before/after: prima imagine a sesizării (dacă există)
   const beforeUrl = sesizare.imagini.length > 0 ? sesizare.imagini[0] : null;
   const afterUrl = sesizare.resolved_photo_url;
@@ -259,32 +251,9 @@ export default async function SesizareDetailPage({
                 „Sesizare depusă pe platformă" („Co-trimisă de alți X
                 cetățeni"). Evităm duplicare informație în header + sidebar. */}
 
-            {/* 5/23/2026 — Banner de confirmare oficială DOAR pentru autor.
-                Numărul de înregistrare e unic per sesizare → expunere publică
-                ar permite tracking 1:1 al persoanei care a depus. Strict private:
-                - repository.getSesizareByCode strip-uie nr_inregistrare la return
-                - aici facem fetch separat cu getNrInregistrareForAuthor care
-                  verifică user_id la query level. */}
-            {authorNrInregistrare && (
-              <div className="mt-1 mb-5 inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-xs)] bg-purple-500/10 border border-purple-500/30 text-sm">
-                <Scroll
-                  size={14}
-                  className="text-purple-600 dark:text-purple-400 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  <strong className="text-purple-700 dark:text-purple-300">
-                    Înregistrată oficial:
-                  </strong>{" "}
-                  <span className="font-mono text-[var(--color-text)] font-bold">
-                    {authorNrInregistrare}
-                  </span>
-                  <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
-                    · doar pentru tine
-                  </span>
-                </span>
-              </div>
-            )}
+            {/* 2026-07-01 — Banner „Înregistrată oficial: <nr> · doar pentru tine"
+                SCOS la cererea userului (numărul de înregistrare nu se mai afișează
+                nicăieri). Fetch-ul authorNrInregistrare a fost eliminat de asemenea. */}
 
             {/* 5/22/2026 — Resend alert pentru ghost-sends / bounces.
                 Vizibil DOAR pentru autor + DOAR dacă există problemă.
@@ -398,8 +367,8 @@ export default async function SesizareDetailPage({
         );
       })()}
 
-      <div className="grid lg:grid-cols-[1fr_340px] gap-8">
-        <div className="lc-stagger">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 min-w-0">
+        <div className="lc-stagger min-w-0">
           {/* Description */}
           <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
             <h2 className="font-semibold mb-3 inline-flex items-center gap-2">
