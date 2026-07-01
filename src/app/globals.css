@@ -1531,46 +1531,27 @@ html.a11y-reduce-motion *::after {
    staggered + micro-interacții. TOTUL respectă prefers-reduced-motion +
    html.a11y-reduce-motion (panoul de accesibilitate).
    ───────────────────────────────────────────────────────────────────── */
-/* Canvas „recessed" reutilizabil pe tot site-ul. .setari-canvas = alias istoric.
-   .lc-canvas--flat = fără aurora (pagini dense: admin, tabele). */
+/* Canvas structural reutilizabil pe tot site-ul (.setari-canvas = alias istoric).
+   TRANSPARENT — aurora vine DOAR de la body::before/::after (globală, identică
+   peste tot). `--flat` e acum un no-op istoric (nu mai există aurora per-canvas). */
 .lc-canvas,
 .setari-canvas {
   position: relative;
-  background: var(--color-surface-soft);
+  /* 2026-07-01 — TRANSPARENT. Înainte punea un „floor" opac `--color-surface-soft`
+     (în dark = #0F0F10, aproape-negru) care OCLUDEA aurora globală de pe body →
+     paginile cu .lc-canvas apăreau NEGRE, iar cele fără canvas (ex. /sesizari-publice)
+     colorate. Acum canvas-ul e transparent → aurora vine DOAR de la body::before/
+     ::after (globală, blurată, opacity 1 în dark), IDENTICĂ pe toate paginile. */
+  background: transparent;
   isolation: isolate;
 }
-/* Aurora ambient brand — 4 glow-uri în colțuri (emerald / albastru / violet /
-   aqua) peste fundalul recessed → adâncime „iOS 27 / One UI 9", calm. z-index:-1
-   + isolation pe părinte → stă SUB conținut fără wrapper z-10 per pagină. */
+/* 2026-07-01 — aurora per-canvas ELIMINATĂ (era neblurată + mai slabă + peste un
+   floor aproape-negru → citea „negru"). O singură sursă de aurora = body::before/
+   ::after (globală) → consistență cap-coadă, fără dublare și fără animație grea de
+   blur sub sticlă (motivul pentru care exista `--flat`; acum e un no-op inofensiv). */
 .lc-canvas::before,
 .setari-canvas::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(46% 40% at 6% -8%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 66%),
-    radial-gradient(44% 38% at 100% 4%, color-mix(in srgb, var(--color-news) 18%, transparent), transparent 68%),
-    radial-gradient(46% 40% at 96% 100%, color-mix(in srgb, var(--color-petition) 16%, transparent), transparent 70%),
-    radial-gradient(52% 44% at 12% 104%, color-mix(in srgb, var(--color-secondary) 15%, transparent), transparent 72%);
-  animation: setari-aurora 26s ease-in-out infinite alternate;
-  /* 2026-06-19 (audit #13) — fără will-change permanent: .lc-canvas e site-wide,
-     iar hint-ul promova un layer GPU pe aproape fiecare pagină chiar și
-     în background. Browserul compozitează oricum în timpul animației de
-     transform/opacity; layer-ul permanent doar consuma memorie. */
-}
-@keyframes setari-aurora {
-  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.78; }
-  to   { transform: translate3d(0, -1.5%, 0) scale(1.05); opacity: 1; }
-}
-/* Variantă „flată" — aceeași aurora ambient, dar STATICĂ (fără mișcare → fără
-   re-blur per frame sub multe carduri de sticlă). Pagini dense (conținut/admin).
-   Înainte era `display: none` (fundal negru plat) — de-aici inconsistența
-   „ambient pe unele pagini, negru pe altele". */
-.lc-canvas--flat::before {
-  animation: none;
-  will-change: auto;
+  content: none;
 }
 
 /* Mobile: cap blur-ul de sticlă. backdrop-filter blur e fill-rate-bound pe
