@@ -126,6 +126,16 @@ export default async function SesizareDetailPage({
   const timeline = dedupeConsecutiveEvents(
     allTimelineEvents.filter((e) => !PRIVATE_EVENT_TYPES.has(e.event_type)),
   );
+  // Ultima reamintire trimisă (evenimente ordonate ascendent) → butonul de
+  // reamintire se pre-dezactivează dacă suntem în cooldown-ul de 3 zile.
+  // Calcul pe server (evită Date.now() în render-ul clientului + hydration).
+  const lastRemindedAt =
+    allTimelineEvents.filter((e) => e.event_type === "reamintire").at(-1)?.created_at ?? null;
+  // eslint-disable-next-line react-hooks/purity -- Server Component: ora de request (o dată/request, fără hydration)
+  const nowMs = Date.now();
+  const recentlyReminded = lastRemindedAt
+    ? nowMs - new Date(lastRemindedAt).getTime() < 3 * 24 * 60 * 60_000
+    : false;
 
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -345,6 +355,8 @@ export default async function SesizareDetailPage({
                 createdAt={sesizare.created_at}
                 status={sesizare.status}
                 officialResponseAt={sesizare.official_response_at ?? null}
+                lastRemindedAt={lastRemindedAt}
+                recentlyReminded={recentlyReminded}
               />
               {isAuthor && (
                 <DeleteSesizareButton

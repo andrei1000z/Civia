@@ -197,6 +197,17 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
                   className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                   role="radiogroup"
                   aria-label="Selectează statusul propus"
+                  onKeyDown={(e) => {
+                    // 2026-07-01 — pattern WAI-ARIA radio: săgețile mută selecția
+                    // (grupul e un singur tab-stop via roving tabindex de mai jos).
+                    if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(e.key)) return;
+                    e.preventDefault();
+                    const cur = Math.max(0, proposable.findIndex((x) => x === proposed));
+                    const dir = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+                    const next = (cur + dir + proposable.length) % proposable.length;
+                    setProposed(proposable[next]!);
+                    e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
+                  }}
                 >
                   {proposable.map((s) => {
                     const meta = SESIZARE_STATUS_META[s];
@@ -207,6 +218,7 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
                         type="button"
                         role="radio"
                         aria-checked={active}
+                        tabIndex={active ? 0 : -1}
                         onClick={() => setProposed(s)}
                         className={`text-left p-3 rounded-[var(--radius-xs)] border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 ${
                           active
