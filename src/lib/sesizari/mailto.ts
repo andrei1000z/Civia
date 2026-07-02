@@ -278,52 +278,11 @@ export function buildFormalText(input: MailtoInput): string {
   });
 }
 
-/**
- * Construiește un email de REAMINTIRE pentru o sesizare care n-a primit
- * răspuns în termenul legal (30 zile, OG 27/2002 art. 14).
- *
- * Format: opener formal cu citarea articolului → menționează data
- * inițială → recopiază sesizarea originală integral → solicitare expresă.
- *
- * `daysOverdue` e număr pozitiv (zile peste termen). Doar cetățeanul
- * (autorul) poate trimite o reamintire — verifică în UI înainte de apel.
- */
-export function buildReminderText(
-  input: MailtoInput & { daysOverdue: number; originalFiledAt: string | Date },
-): string {
-  const name = input.author_name?.trim() || "[NUMELE]";
-  const address = input.author_address?.trim() || "[ADRESA]";
-  const today = formatRoDate();
-  const filed = formatRoDate(new Date(input.originalFiledAt));
-  // Construim corpul original folosind același pipeline ca o sesizare
-  // proaspătă — `buildFormalText` știe să trateze formal_text, parking, etc.
-  const originalBody = buildFormalText(input);
-
-  return `Bună ziua,
-
-Mă numesc ${name}, locuiesc în ${address}.
-
-Vă reamintesc, conform <strong>art. 14 alin. (1) din OG 27/2002</strong> privind reglementarea activității de soluționare a petițiilor, că <strong>termenul legal de 30 de zile</strong> pentru soluționarea petiției depuse pe data de ${filed} a fost depășit cu ${input.daysOverdue} ${input.daysOverdue === 1 ? "zi" : "zile"}.
-
-Vă rog respectuos să îmi comunicați:
-1. Stadiul actual al sesizării și ce măsuri concrete s-au luat;
-2. Termenul estimat de finalizare;
-3. Numărul de înregistrare alocat (dacă încă nu mi-a fost comunicat).
-
-Reiau mai jos textul integral al sesizării inițiale pentru claritate:
-
-──────────────────────────
-
-${originalBody}
-
-──────────────────────────
-
-În lipsa unui răspuns în 10 zile de la prezenta reamintire, mă voi adresa Avocatului Poporului și instanței de contencios administrativ, conform legii.
-
-Cu stimă,
-${name}
-${today}`;
-}
+// 2026-07-01 — `buildReminderText` (mailto) ELIMINAT. Reamintirea se trimite
+// acum server-side de pe sesizari@civia.ro (POST /api/sesizari/[code]/remind),
+// cu conținut impersonal/anonim. Vechiul generator avea bug-uri (tag-uri
+// <strong> literale în plaintext, „[ADRESA]", semnătură „Cu stimă" + data
+// greșită). NU-l reintroduce.
 
 export function buildEmailPayload(input: MailtoInput): EmailPayload {
   const recipients = getAuthoritiesFor(

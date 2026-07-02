@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Share2, MessageCircle, Send, Link2, QrCode, Check } from "lucide-react";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/Toast";
@@ -34,6 +35,8 @@ export function ShareMenu({ url, title, message, size = "sm", variant = "muted" 
   const [menuMaxH, setMenuMaxH] = useState<number>();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const qrDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(qrDialogRef, qrOpen);
   const { toast } = useToast();
 
   // Referral (Faza 1) — după mount, adaugă ?ref={codul meu} pe URL-ul de share
@@ -289,11 +292,13 @@ export function ShareMenu({ url, title, message, size = "sm", variant = "muted" 
           role="presentation"
         >
           <div
+            ref={qrDialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="qr-modal-title"
-            className="bg-[var(--color-surface)] rounded-[var(--radius-md)] p-6 max-w-sm shadow-[var(--shadow-4)] animate-modal-pop"
+            className="bg-[var(--color-surface)] rounded-[var(--radius-md)] p-6 max-w-sm shadow-[var(--shadow-4)] animate-modal-pop focus:outline-none"
           >
             <h3 id="qr-modal-title" className="font-semibold text-lg mb-3 text-[var(--color-text)] text-center">Scanează codul</h3>
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import {
   UserPlus,
   X,
@@ -116,6 +117,10 @@ export function SignSesizareButton({
   // (cu county-fallback rezolvat + nume/adresă substituite în formal_text).
   const [showPreview, setShowPreview] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const signDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(signDialogRef, open);
+  const previewDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(previewDialogRef, showPreview);
   const [previewData, setPreviewData] = useState<{
     recipients: string;
     recipientsLabel: string;
@@ -250,11 +255,13 @@ export function SignSesizareButton({
           role="presentation"
         >
           <div
+            ref={signDialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="sign-modal-title"
-            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto overflow-hidden animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)]"
+            className="w-full max-w-lg bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto overflow-hidden animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)] focus:outline-none"
           >
             <header className="shrink-0 bg-gradient-to-r from-[var(--color-secondary)] to-emerald-700 text-white p-5 relative">
               <button
@@ -457,11 +464,13 @@ export function SignSesizareButton({
           role="presentation"
         >
           <div
+            ref={previewDialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="cosign-preview-title"
-            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-auto animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)]"
+            className="w-full max-w-3xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] overflow-hidden my-auto animate-modal-pop flex flex-col max-h-[calc(100dvh-2rem)] focus:outline-none"
           >
             {/* Header — gradient cu eyebrow + titlu + close */}
             <header className="shrink-0 relative bg-gradient-to-br from-[var(--color-secondary)] via-emerald-700 to-emerald-800 text-white px-5 md:px-6 py-5">

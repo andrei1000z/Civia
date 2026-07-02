@@ -294,10 +294,10 @@ export function CommentsSection({ code, initialComments }: CommentsSectionProps)
 
   return (
     <section aria-labelledby="comments-heading">
-      <h3 id="comments-heading" className="font-[family-name:var(--font-sora)] font-semibold text-lg mb-4 flex items-center gap-2">
+      <h2 id="comments-heading" className="font-[family-name:var(--font-sora)] font-semibold text-lg mb-4 flex items-center gap-2">
         <MessageSquare size={18} aria-hidden="true" />
         Comentarii (<span className="tabular-nums">{comments.length}</span>)
-      </h3>
+      </h2>
 
       {/* Compose top-level */}
       <form

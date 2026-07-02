@@ -3,7 +3,6 @@ import { MapPin, ArrowRight } from "lucide-react";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import type { SesizareFeedRow } from "@/lib/supabase/types";
-import { publicAuthorName } from "@/lib/sesizari/display-name";
 
 interface Props {
   sesizari: SesizareFeedRow[];
@@ -14,9 +13,9 @@ export function SimilarSesizari({ sesizari }: Props) {
 
   return (
     <aside aria-labelledby="similar-heading" className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-5">
-      <p id="similar-heading" className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-3">
+      <h2 id="similar-heading" className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-3">
         Alții au sesizat aceeași problemă
-      </p>
+      </h2>
       <ul className="space-y-3">
         {sesizari.slice(0, 5).map((s) => (
           <li key={s.id}>

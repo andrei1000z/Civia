@@ -83,7 +83,7 @@ export function ResendButton({ code, deliveryStatus, isGhostSend }: Props) {
       <div className="flex items-start gap-3">
         <AlertTriangle size={20} className="text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-amber-100 mb-1">
+          <p className="font-bold text-sm text-amber-800 dark:text-amber-100 mb-1">
             {problemLabel}
           </p>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-3">
@@ -111,7 +111,7 @@ export function ResendButton({ code, deliveryStatus, isGhostSend }: Props) {
             </Button>
           )}
           {state === "error" && errorMsg && (
-            <p className="text-xs text-red-400 mt-2">{errorMsg}</p>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-2">{errorMsg}</p>
           )}
         </div>
       </div>

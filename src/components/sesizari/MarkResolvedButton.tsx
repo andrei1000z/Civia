@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { trackCustomEvent, trackAuthModalOpen } from "@/components/analytics/CiviaTracker";
@@ -29,6 +30,8 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
   const [photo, setPhoto] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   // Escape closes + lock body scroll while modal is open.
   // Hook runs before the early-return below — react-hooks/rules-of-hooks
@@ -113,11 +116,13 @@ export function MarkResolvedButton({ code, status, isAuthor }: Props) {
           role="presentation"
         >
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="resolve-modal-title"
-            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto animate-modal-pop"
+            className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto animate-modal-pop focus:outline-none"
           >
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-5 relative">
               <button

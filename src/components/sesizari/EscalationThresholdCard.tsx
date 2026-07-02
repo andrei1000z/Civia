@@ -71,17 +71,20 @@ export function EscalationThresholdCard({
         <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
           {elig.eligible ? (
             <>
-              Termenul legal de răspuns a expirat. Autoritatea nu a răspuns în
-              termenul OG 27/2002 — sesizarea poate fi escaladată.
+              Autoritatea nu a răspuns nici în termenul extins (OG 27/2002) —
+              sesizarea poate fi escaladată la Avocatul Poporului.
             </>
           ) : (
             <>
-              Termenul legal de răspuns (OG 27/2002) expiră în{" "}
+              {/* 2026-07-01 — reformulat ca să NU se contrazică cu badge-ul
+                  „Termen depășit" din header (termenul de bază de 30 de zile).
+                  Aici numărăm până la fereastra de escaladare la AVP (30 + 15
+                  zile extindere, art. 9), care e un prag DISTINCT. */}
+              Escaladarea la Avocatul Poporului devine disponibilă în{" "}
               <strong className="tabular-nums">
                 {elig.daysUntilEligible} {elig.daysUntilEligible === 1 ? "zi" : "zile"}
               </strong>
-              . Escaladarea către Avocatul Poporului se deblochează atunci —
-              numărul de co-semnături nu grăbește termenul.
+              . Numărul de co-semnături nu grăbește acest termen.
             </>
           )}
         </p>

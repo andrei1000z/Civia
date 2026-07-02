@@ -1,4 +1,5 @@
 import {
+  Bell,
   Building2,
   CheckCircle2,
   FileText,
@@ -60,6 +61,7 @@ export const SESIZARE_EVENT_META: Record<string, SesizareEventVisual> = {
   amanata: { label: "Amânată", icon: PauseCircle, color: "#C2410C" },
   ignorat: { label: "Ignorat de autoritate (60+ zile fără răspuns)", icon: VolumeX, color: "#991B1B" },
   escaladat_avp: { label: "Plângere trimisă la Avocatul Poporului", icon: Scale, color: "#7C2D12" },
+  reamintire: { label: "Reamintire trimisă către autoritate", icon: Bell, color: "#EA580C" },
 };
 
 const FALLBACK: SesizareEventVisual = {

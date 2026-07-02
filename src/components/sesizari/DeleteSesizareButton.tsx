@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, X, AlertTriangle } from "lucide-react";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +23,8 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, confirm);
 
   // Escape closes confirm + lock body scroll while modal is open.
   // (We don't allow Escape during delete in flight — accidental cancel mid-call
@@ -72,16 +75,18 @@ export function DeleteSesizareButton({ code, isAuthor }: Props) {
 
       {confirm && (
         <div
-          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto overscroll-contain animate-fade-in"
+          className="fixed inset-0 z-[var(--z-modal)] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto overscroll-contain animate-fade-in"
           onClick={() => !deleting && setConfirm(false)}
           role="presentation"
         >
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-sesizare-title"
-            className="w-full max-w-sm bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-8 max-h-[calc(100dvh-4rem)] overflow-y-auto animate-modal-pop"
+            className="w-full max-w-sm bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto animate-modal-pop focus:outline-none"
           >
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-5 relative">
               {!deleting && (

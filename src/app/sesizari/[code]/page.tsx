@@ -10,7 +10,7 @@ import {
   getCosignersCount,
 } from "@/lib/sesizari/repository";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { STATUS_COLORS, STATUS_LABELS, SESIZARE_TIPURI, resolveTipLabel, bestTextColor } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS, resolveTipLabel, bestTextColor } from "@/lib/constants";
 import { ogTitle, ogDescription } from "@/lib/seo/share-meta";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -18,7 +18,6 @@ import { CommentsSection } from "@/components/sesizari/CommentsSection";
 import { LiveSesizareRefresh } from "@/components/sesizari/LiveSesizareRefresh";
 import { EvenimentMap } from "@/components/maps/EvenimentMap";
 import { SignSesizareButton } from "@/components/sesizari/SignSesizareButton";
-import { publicAuthorName } from "@/lib/sesizari/display-name";
 import { MarkResolvedButton } from "@/components/sesizari/MarkResolvedButton";
 import { ShareMenu } from "@/components/sesizari/ShareMenu";
 import { BeforeAfter } from "@/components/sesizari/BeforeAfter";
@@ -131,8 +130,12 @@ export default async function SesizareDetailPage({
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // 2026-07-01 — email match case-insensitive + trim (aliniat cu regula de
+  // ownership din anonymizeHiddenAuthors / rutele API). Altfel rânduri guest
+  // vechi cu email mixed-case nu-și recunoșteau autorul → butoanele lipseau.
   const isAuthor = user
-    ? sesizare.user_id === user.id || sesizare.author_email === user.email
+    ? sesizare.user_id === user.id ||
+      sesizare.author_email?.toLowerCase().trim() === user.email?.toLowerCase().trim()
     : false;
 
   // Poză "before" pentru before/after: prima imagine a sesizării (dacă există)
@@ -332,35 +335,22 @@ export default async function SesizareDetailPage({
                 status={sesizare.status}
                 isAuthor={isAuthor}
               />
-              {/* 2026-06-12 — utilitarele autorului (reamintire + șterge) stau
-                  pe ACELAȘI rând, cu aceeași mărime/stil ca restul acțiunilor
-                  (cerere user: toate butoanele uniforme). flex-wrap = pe ecrane
-                  înguste trec pe rândul următor natural. */}
+              {/* 2026-07-01 — „Reamintire" vizibilă ORICUI când termenul e depășit
+                  (nudge comunitar). Trimite SERVER-SIDE de pe sesizari@civia.ro,
+                  conținut impersonal/anonim; se auto-ascunde dacă nu e depășit.
+                  „Șterge" rămâne doar pentru autor. flex-wrap = trec natural pe
+                  rândul următor pe ecrane înguste. */}
+              <ReminderButton
+                code={sesizare.code}
+                createdAt={sesizare.created_at}
+                status={sesizare.status}
+                officialResponseAt={sesizare.official_response_at ?? null}
+              />
               {isAuthor && (
-                <>
-                  <ReminderButton
-                    emailInput={{
-                      tip: sesizare.tip,
-                      titlu: sesizare.titlu,
-                      locatie: sesizare.locatie,
-                      sector: sesizare.sector,
-                      descriere: sesizare.descriere,
-                      formal_text: sesizare.formal_text,
-                      author_name: sesizare.author_name,
-                      author_email: null,
-                      author_address: null,
-                      imagini: sesizare.imagini,
-                      code: sesizare.code,
-                    }}
-                    createdAt={sesizare.created_at}
-                    status={sesizare.status}
-                    officialResponseAt={sesizare.official_response_at ?? null}
-                  />
-                  <DeleteSesizareButton
-                    code={sesizare.code}
-                    isAuthor={isAuthor}
-                  />
-                </>
+                <DeleteSesizareButton
+                  code={sesizare.code}
+                  isAuthor={isAuthor}
+                />
               )}
             </div>
           </header>
@@ -433,8 +423,11 @@ export default async function SesizareDetailPage({
                   </>
                 )}
               </p>
+              {/* 2026-07-01 — scrub PII defensiv: official_response e text lipit
+                  de admin (poate cita nume/adresă/telefon din răspunsul autorității)
+                  și e PUBLIC. Trecut prin același stripPrivateAddress ca formal_text. */}
               <blockquote className="text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-current pl-4 opacity-90">
-                {sesizare.official_response}
+                {stripPrivateAddress(sesizare.official_response, sesizare.author_name)}
               </blockquote>
             </section>
           )}
@@ -530,9 +523,9 @@ export default async function SesizareDetailPage({
               step highlighted cu „Acum" pill, time-ago inline cu Clock. */}
           <div className="lc-glass-2 rounded-3xl p-5">
             <div className="flex items-center justify-between mb-5">
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
+              <h2 className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">
                 Status &amp; activitate
-              </p>
+              </h2>
               {timeline.length > 0 && (
                 <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
                   {timeline.length} {timeline.length === 1 ? "etapă" : "etape"}

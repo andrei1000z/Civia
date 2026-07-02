@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
   X as CloseX,
   XCircle,
 } from "lucide-react";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/Button";
@@ -57,6 +58,8 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
   const [proof, setProof] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<TicketRow[] | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   // Esc closes + lock body scroll while modal is open.
   useEffect(() => {
@@ -142,6 +145,7 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
         size="md"
         onClick={handleClick}
         leftIcon={<Flag size={16} aria-hidden="true" />}
+        className="whitespace-normal text-center leading-tight"
         title="Ai vazut progres in teren sau ai primit raspuns? Raporteaza si admin-ul verifica."
       >
         Ai văzut progres? Raportează
@@ -154,11 +158,13 @@ export function StatusTicketButton({ code, currentStatus }: Props) {
           role="presentation"
         >
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="ticket-modal-title"
-            className="w-full max-w-xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] overflow-hidden animate-modal-pop"
+            className="w-full max-w-xl bg-[var(--color-surface)] rounded-[var(--radius-md)] shadow-[var(--shadow-xl)] border border-[var(--color-border)] overflow-hidden animate-modal-pop focus:outline-none"
           >
             <div className="bg-gradient-to-r from-[var(--color-primary)] to-cyan-600 text-white p-5 relative">
               <button
