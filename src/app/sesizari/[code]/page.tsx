@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Calendar, User, Clock, UserPlus, FileText, Image as ImageIcon, Map as MapIcon, Scroll } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Clock, UserPlus, FileText, Image as ImageIcon, Map as MapIcon, Scroll } from "lucide-react";
 import {
   getSesizareByCode,
   getTimeline,

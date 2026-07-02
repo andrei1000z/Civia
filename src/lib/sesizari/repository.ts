@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { getHiddenUserIds } from "@/lib/privacy/hidden-users";
 import { scrubFormalTextForPublic } from "./scrub-public";
+import { stripPrivateAddress } from "@/lib/privacy";
 import { safeTitlu } from "./titlu";
 import { restoreDiacritics } from "./diacritice";
 import type {
@@ -112,6 +113,15 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
       });
     }
 
+    // 2026-07-01 (PII) — official_response e text lipit de admin din răspunsul
+    // autorității; adresează des cetățeanul pe NUME. Scrub-ul trebuie făcut AICI,
+    // cât r.author_name încă e numele REAL (mai jos e suprascris cu „[nume]", iar
+    // un scrub la nivel de pagină cu numele deja anonimizat nu redactează nimic).
+    let scrubbedOfficialResponse = (r as { official_response?: string | null }).official_response ?? null;
+    if (scrubbedOfficialResponse) {
+      scrubbedOfficialResponse = stripPrivateAddress(scrubbedOfficialResponse, r.author_name);
+    }
+
     return {
       ...r,
       author_name: ANONYMOUS_LABEL,
@@ -124,6 +134,7 @@ async function anonymizeHiddenAuthors<T extends Anonymizable>(rows: T[]): Promis
       // (înainte era returnată RAW oricui știa codul sesizării).
       author_address: null,
       formal_text: scrubbedFormalText,
+      official_response: scrubbedOfficialResponse,
     };
   });
 }

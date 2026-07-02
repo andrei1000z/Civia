@@ -41,7 +41,11 @@ export function ReminderButton({ code, createdAt, status, officialResponseAt }: 
         return;
       }
       setState("sent");
-      toast(`Reamintire trimisă către ${json.count ?? "autorități"} — așteptăm răspunsul.`, "success", 4000);
+      const dest =
+        typeof json.count === "number"
+          ? `${json.count} ${json.count === 1 ? "autoritate" : "autorități"}`
+          : "autorități";
+      toast(`Reamintire trimisă către ${dest}. Așteptăm răspunsul.`, "success", 4000);
       router.refresh();
     } catch {
       setState("idle");
@@ -56,7 +60,7 @@ export function ReminderButton({ code, createdAt, status, officialResponseAt }: 
       size="md"
       onClick={onClick}
       loading={state === "sending"}
-      disabled={state === "sent"}
+      aria-disabled={state === "sent"}
       leftIcon={state === "sent" ? <Check size={16} aria-hidden="true" /> : <Bell size={16} aria-hidden="true" />}
       className="whitespace-normal text-center leading-tight"
       title="Trimite o reamintire formală conform art. 14 OG 27/2002, direct de pe sesizari@civia.ro"

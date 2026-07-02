@@ -132,11 +132,15 @@ export function SignSesizareButton({
     photoCount: number;
   } | null>(null);
 
-  // Escape closes + body scroll lock
+  // Escape closes + body scroll lock. 2026-07-01 — Escape închide întâi stratul
+  // de sus (previzualizarea), apoi tot fluxul — comportament standard de dialoguri
+  // stivuite (nu mai arunci userul din tot compose-ul când voia doar preview off).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key !== "Escape") return;
+      if (showPreview) setShowPreview(false);
+      else handleClose();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -144,8 +148,8 @@ export function SignSesizareButton({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-     
-  }, [open]);
+
+  }, [open, showPreview]);
 
   // Auto-fill din profile dacă user logat
   useEffect(() => {
@@ -228,6 +232,10 @@ export function SignSesizareButton({
 
   function handleClose() {
     setOpen(false);
+    // 2026-07-01 — resetăm și preview-ul: altfel rămâne showPreview=true și la
+    // redeschiderea „Trimite și tu" apare modalul de previzualizare orfan peste
+    // formular (+ două focus-trap-uri active simultan).
+    setShowPreview(false);
     // Reset state după 300ms (timpul animației de fade-out)
     setTimeout(() => {
       setState("form");
