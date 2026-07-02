@@ -367,7 +367,7 @@ export default async function SesizareDetailPage({
         );
       })()}
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 min-w-0">
         <div className="lc-stagger min-w-0">
           {/* Description */}
           <section className="lc-glass-2 rounded-3xl p-5 md:p-6 mb-6">
